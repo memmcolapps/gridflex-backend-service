@@ -1,0 +1,26 @@
+hazelcast:
+  instance-name: ${hazelcast.instance-name}
+  cluster-name: ${hazelcast.cluster-name}
+  network:
+    port: ${hazelcast.network.port}
+    join:
+      multicast:
+        enabled: ${hazelcast.network.multicast.enabled}
+    near-cache:
+      sbcCache:
+        in-memory-format: ${hazelcast-in-memory-format}
+        invalidate-on-change: ${hazelcast-invalidate-on-change}
+        time-to-live-seconds: ${hazelcast.timeToLiveSeconds}
+        max-idle-seconds: ${hazelcast-max-idle-seconds}
+        eviction:
+          max-size: ${hazelcast.maxSize}
+          max-size-policy: ${hazelcast-max-size-policy}
+          eviction-policy: ${hazelcast-eviction-policy}
+        cache-local-entries: ${hazelcast-cache-local-entries}
+        local-update-policy: ${hazelcast-local-update-policy}
+        preloader:
+          enabled: ${hazelcast-enabled}
+          directory: ${hazelcast-directory}
+          store-initial-delay-seconds: ${hazelcast-store-initial-delay-seconds}
+          store-interval-seconds: ${hazelcast-store-interval-seconds}
+	

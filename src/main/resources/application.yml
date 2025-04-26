@@ -1,0 +1,43 @@
+server:
+  port: 9080
+
+#spring:
+#  application:
+#    name: authorization-service
+#  config:
+#    import: optional:configserver:http://localhost:8888
+##  cloud:
+##    config:
+##      uri: http://localhost:8888  # Pointing to your config-service
+##  sleuth:
+##    sampler:
+##      probability: 1.0
+##  zipkin:
+##    base-url: http://localhost:9411/
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+      # https://eureka-service-production-6595.up.railway.app/eureka/ #memmcolapp railway address
+      # https://eureka-service-production.up.railway.app/eureka/ #my railway address
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+    health-check-interval-seconds: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productService:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
