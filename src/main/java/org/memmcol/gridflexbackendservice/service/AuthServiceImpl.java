@@ -50,8 +50,6 @@ public class AuthServiceImpl implements AuthService {
 
 	@Autowired private RestTemplate restTemplate;
 
-	private final ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-
 	private final Random random = new SecureRandom();
 
 	String user = "Operator";
@@ -66,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
 		this.auditCache = hazelcastInstance.getMap("audit-Cache");
 		this.otpCache = hazelcastInstance.getMap("otp-Cache");
 		this.verifiedUsers = hazelcastInstance.getMap("verified-Users");
+
 	}
 
 	@Override
@@ -91,6 +90,7 @@ public class AuthServiceImpl implements AuthService {
 			auditRepository.save(auditNotificationDTO);
 			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
 		} catch (Exception exception) {
+			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while logout");
 			exceptionErrorLogs.setError_message(exception.getMessage());
@@ -145,6 +145,7 @@ public class AuthServiceImpl implements AuthService {
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");
 
 		} catch (Exception exception) {
+			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while changing operator password");
 			exceptionErrorLogs.setError_message(exception.getMessage());
@@ -166,6 +167,7 @@ public class AuthServiceImpl implements AuthService {
 					"message", "Your OTP code is: " + otp
 			), Void.class);
 		} catch (RestClientException emailException) {
+			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage(), emailException);
 			exceptionErrorLogs.setDescription("Error occurred while generating OTP");
 			exceptionErrorLogs.setError_message(emailException.getMessage());
@@ -197,6 +199,7 @@ public class AuthServiceImpl implements AuthService {
 			}
 			return ResponseMap.response(status.getNotFoundCode(), "OTP verification failed", "");
 		} catch (Exception exception){
+			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while verifying OTP");
 			exceptionErrorLogs.setError_message(exception.getMessage());
