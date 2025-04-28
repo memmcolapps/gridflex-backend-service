@@ -190,12 +190,10 @@ public class AuthServiceImpl implements AuthService {
 			if (storedOtp != null && storedOtp.equals(otp)) {
 				otpCache.remove(email);
 
-				// Store email as verified for password change (Valid for 2 minutes)
 				verifiedUsers.put(email, true, 2, TimeUnit.MINUTES);
 
 				return handleForgetPassword(email, password);
 
-//				return ResponseMap.response(status.getSuccessCode(), "OTP verification successful", "");
 			}
 			return ResponseMap.response(status.getNotFoundCode(), "OTP verification failed", "");
 		} catch (Exception exception){
@@ -213,20 +211,4 @@ public class AuthServiceImpl implements AuthService {
 		authCache.put(token, true, expirySeconds, TimeUnit.SECONDS);
 	}
 
-//	private void handleCacheUpdate(Operator operator) {
-//		authCache.remove(operator.getEmail());
-//		authCache.remove("dashboard");
-//		for (String key : authCache.keySet()) {
-//			if (key.startsWith("operators_")) {
-//				authCache.remove(key);
-//			}
-//		}
-//		for (String key : auditCache.keySet()) {
-//			if (key.startsWith("grid_flex_audit_log_page_")) {
-//				System.out.println("grid_flex_audit_log_page_1");
-//				auditCache.remove(key);
-//			}
-//		}
-//		authCache.put(operator.getEmail(), operator);  // Cache updated or deleted entity
-//	}
 }

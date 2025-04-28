@@ -58,11 +58,11 @@ public class  SecurityConfig {
 
 		CustomAuthenticationFilter userAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
-		userAuthFilter.setFilterProcessesUrl("/service/login");
+		userAuthFilter.setFilterProcessesUrl("/auth/service/login");
 
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
-		adminAuthFilter.setFilterProcessesUrl("/service/admin/login");
+		adminAuthFilter.setFilterProcessesUrl("/auth/service/admin/login");
 
 		// disable csrf
 		http.csrf((csrf) -> csrf.disable());
@@ -73,12 +73,12 @@ public class  SecurityConfig {
 				.xssProtection()); // Enable XSS protection
 
 		// Authorization
-//		http.authorizeHttpRequests((authorize) -> authorize
-//				.requestMatchers("/service/login/**", "/service/admin/login/**",
-//						"service/logout/**","/service/generate-otp/**",
-//						"/service/verify-otp/**").permitAll()
-//				.requestMatchers("/service/**").hasAuthority("ROLE_WRITE")
-//				.anyRequest().authenticated());
+		http.authorizeHttpRequests((authorize) -> authorize
+				.requestMatchers("/auth/service/login/**", "/auth/service/admin/login/**",
+						"/auth/service/logout/**","/auth/service/generate-otp/**",
+						"/auth/service/forget-password/**").permitAll()
+				.requestMatchers("/service/**").hasAuthority("ROLE_WRITE")
+				.anyRequest().authenticated());
 
 //		http.addFilter(customAuthenticationFilter);
 		http.addFilter(userAuthFilter);

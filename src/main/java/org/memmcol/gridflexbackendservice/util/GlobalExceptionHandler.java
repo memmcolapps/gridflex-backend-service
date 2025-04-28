@@ -35,8 +35,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> handleGenericException(Exception ex, WebRequest request) {
 		ex.printStackTrace();
-		String msg = "An unexpected error occurred: " + ex.getMessage();
-		errorMessage.put("responsecode", "100");
+		String msg = "An unexpected error occurred: " + "";
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
 		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
@@ -50,126 +50,126 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(SQLException.class)
 	public ResponseEntity<?> handleSQLException(SQLException ex) {
 		String msg = "Internal server Error";
-		errorMessage.put("responsecode", "101");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(NullPointerException.class)
 	public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
 		String msg = "Internal server Error"; // We encountered a problem while processing your request
-		errorMessage.put("responsecode", "102");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(IndexOutOfBoundsException.class)
 	public ResponseEntity<?> handleIndexOutOfBoundsException(IndexOutOfBoundsException ex) {
 		String msg = "Internal server Error";
-		errorMessage.put("responsecode", "103");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
 		String msg = "Invalid argument";
-		errorMessage.put("responsecode", "104");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
 	@ExceptionHandler(ArithmeticException.class)
 	public ResponseEntity<?> handleArithmeticException(ArithmeticException ex) {
 		String msg = "We encountered a problem while performing a calculation";
-		errorMessage.put("responsecode", "105");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(FileNotFoundException.class)
 	public ResponseEntity<?> handleFileNotFoundException(FileNotFoundException ex) {
 		String msg = "The file or resource you're looking for could not be found";
-		errorMessage.put("responsecode", "106");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}
 
 	@ExceptionHandler(IOException.class)
 	public ResponseEntity<?> handleIOException(IOException ex) {
 		String msg = "There was an issue with processing your file";
-		errorMessage.put("responsecode", "107");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<?> handleNoResourceFoundException(NoResourceFoundException ex) {
 		String msg = "Resources not found";
-		errorMessage.put("responsecode", "108");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}
 
 	@ExceptionHandler(NumberFormatException.class)
 	public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
 		String msg = "The data provided isn't in the correct format";
-		errorMessage.put("responsecode", "109");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
 	@ExceptionHandler(ArrayIndexOutOfBoundsException.class)
 	public ResponseEntity<?> handleArrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException ex) {
 		String msg = "We're encountering difficulties accessing the requested data";
-		errorMessage.put("responsecode", "110");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(ClassCastException.class)
 	public ResponseEntity<?> handleClassCastException(ClassCastException ex) {
 		String msg = "It seems we encountered an unexpected error while processing your request";
-		errorMessage.put("responsecode", "111");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(DataAccessException.class)
 	public ResponseEntity<?> handleDataAccessException(DataAccessException ex) {
 		String msg = "There's a problem with accessing some data";
-		errorMessage.put("responsecode", "112");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(ResourceNotFoundException.class)
 	public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException ex) {
 		String msg = "Resources not found";
-		errorMessage.put("responsecode", "113");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}
 
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<?> handleUnauthorizedException(UnauthorizedException ex) {
 		String msg = "Uauthorized";
-		errorMessage.put("responsecode", "114");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMessage);
 	}
 
@@ -182,63 +182,63 @@ public class GlobalExceptionHandler {
 			msg.put(fieldName, errorMessage);
 		});
 		// String msg = "Bad request";
-		errorMessage.put("responsecode", "115");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg.toString());
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
 	@ExceptionHandler(AuthenticationException.class)
 	public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
 		String msg = "Authentication failed";
-		errorMessage.put("responsecode", "116");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMessage);
 	}
 
 	@ExceptionHandler(AuthorizationException.class)
 	public ResponseEntity<?> handleAuthorizationException(AuthorizationException ex) {
 		String msg = "Authorization forbidden";
-		errorMessage.put("responsecode", "117");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorMessage);
 	}
 
 	@ExceptionHandler(MethodNotAllowedException.class)
 	public ResponseEntity<?> handleMethodNotAllowedException(MethodNotAllowedException ex) {
 		String msg = "The action you're trying to perform is not supported.";
-		errorMessage.put("responsecode", "118");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorMessage);
 	}
 
 	@ExceptionHandler(ConcurrencyFailureException.class)
 	public ResponseEntity<?> handleConcurrencyFailureException(ConcurrencyFailureException ex) {
 		String msg = "We encountered a problem while processing your request. Concurrency failure.";
-		errorMessage.put("responsecode", "119");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
 	}
 
 	@ExceptionHandler(DataNotFoundException.class)
 	public ResponseEntity<?> DataNotFoundException(DataNotFoundException ex) {
 		String msg = "Data not found";
-		errorMessage.put("responsecode", "120");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}
 
 	@ExceptionHandler(UncategorizedSQLException.class)
 	public ResponseEntity<Object> handleUncategorizedSQLException(UncategorizedSQLException ex, WebRequest request) {
 		String msg = "The offset specified in a OFFSET clause may not be negative";
-		errorMessage.put("responsecode", "123");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 
 	}
@@ -247,9 +247,9 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
 		String parameterName = ex.getParameterName();
 		String msg = String.format("Required request parameter '%s' is not present", parameterName);
-		errorMessage.put("responsecode", "124");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
@@ -257,9 +257,9 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
 		String msg = String.format("Request method '%s' is not supported for this endpoint. Supported methods are %s.",
 				ex.getMethod(), ex.getSupportedHttpMethods());
-		errorMessage.put("responsecode", "125");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
@@ -268,9 +268,9 @@ public class GlobalExceptionHandler {
 			WebRequest request) {
 		ex.printStackTrace();
 		String msg = "Unable to connect to the database. Please try again later";
-		errorMessage.put("responsecode", "126");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
@@ -282,18 +282,18 @@ public class GlobalExceptionHandler {
 
 		// Create a meaningful response
 		String msg = "Data integrity violation";
-		errorMessage.put("responsecode", "127");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(errorMessage);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
 		String msg = "Malformed JSON request";
-		errorMessage.put("responsecode", "128");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
@@ -301,11 +301,11 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<Object> handleRestClientException(RestClientException ex) {
 		Map<String, Object> body = new HashMap<>();
 //		body.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
-//		body.put("message", "Failed to communicate with external service: " + ex.getMessage());
+//		body.put("message", "Failed to communicate with external service: " + "");
 		String msg = "Failed to send OTP email";
-		errorMessage.put("responsecode", "129");
+		errorMessage.put("responsecode", HttpStatus.INTERNAL_SERVER_ERROR.toString());
 		errorMessage.put("responsedesc", msg);
-		errorMessage.put("responsedata", ex.getMessage());
+		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorMessage);
 	}
 

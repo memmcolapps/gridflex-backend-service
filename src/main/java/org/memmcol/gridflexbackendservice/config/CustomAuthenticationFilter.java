@@ -92,17 +92,9 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 		// Dynamically set service URL
 		if (isAdmin) {
-			setFilterProcessesUrl("/service/admin/login");
-			setFilterProcessesUrl("/service/logout");
-			setFilterProcessesUrl("/service/reset-password");
-			setFilterProcessesUrl("/service/generate-otp");
-			setFilterProcessesUrl("/service/verify-otp");
+			setFilterProcessesUrl("/auth/service/admin/login");
 		} else {
-			setFilterProcessesUrl("/service/login");
-			setFilterProcessesUrl("/service/logout");
-			setFilterProcessesUrl("/service/reset-password");
-			setFilterProcessesUrl("/service/generate-otp");
-			setFilterProcessesUrl("/service/verify-otp");
+			setFilterProcessesUrl("/auth/service/login");
 		}
 		
 		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);

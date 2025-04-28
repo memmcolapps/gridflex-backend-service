@@ -18,7 +18,7 @@ import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/service")
+@RequestMapping("/auth/service")
 public class AuthController {
 
     @Autowired private AuthService service;
@@ -39,24 +39,13 @@ public class AuthController {
                 // Return the map wrapped in ResponseEntity
                 return ResponseEntity.ok(result);
             }
-            Map<String, Object> errorResponse = ResponseMap.response("121", "Invalid Token", "");
+            Map<String, Object> errorResponse = ResponseMap.response(HttpStatus.UNAUTHORIZED.toString(), "Invalid Token", "");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
 
         } catch (SQLServerException e) {
             return handleException(e);
         }
     }
-
-//    @PostMapping("/forget-password")
-//    public ResponseEntity<?> resetPassword(@RequestParam String username, @RequestParam String password, @RequestParam String retype_password) {
-//        try {
-//            Map<String, Object> result = service.forgetPassword(username, password, retype_password);
-//            return ResponseEntity.ok(result);
-//        } catch (SQLServerException e) {
-//            return handleException(e);
-//        }
-//
-//    }
 
 
     @PostMapping("/generate-otp")
