@@ -63,6 +63,15 @@ public class HazelcastConfig {
 						.setMaxSizePolicy(MaxSizePolicy.PER_NODE)
 						.setSize(1000))
 				.setBackupCount(1));
+
+		// Configure Band Cache
+		config.addMapConfig(new MapConfig("band-cache")
+				.setTimeToLiveSeconds(18000)
+				.setEvictionConfig(new EvictionConfig()
+						.setEvictionPolicy(EvictionPolicy.LRU)
+						.setMaxSizePolicy(MaxSizePolicy.PER_NODE)
+						.setSize(1000))
+				.setBackupCount(1));
 		// Set up Near Cache
 		config.getMapConfig("near-cache").setNearCacheConfig(nearCacheConfig);
 

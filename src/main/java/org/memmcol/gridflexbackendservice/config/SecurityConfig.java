@@ -75,8 +75,8 @@ public class  SecurityConfig {
 		// Authorization
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/auth/service/login/**", "/auth/service/admin/login/**",
-						"/auth/service/logout/**","/auth/service/generate-otp/**",
-						"/auth/service/forget-password/**", "/band/service/all-band/**").permitAll()
+						"/auth/service/logout/**","/auth/service/generate-otp/**","/auth/service/forget-password/**",
+						 "/band/service/all-band/**", "/band/service/single-band/**", "/band/service/change-state/**").permitAll()
 				.requestMatchers("/service/**").hasAuthority("ROLE_WRITE")
 				.anyRequest().authenticated());
 

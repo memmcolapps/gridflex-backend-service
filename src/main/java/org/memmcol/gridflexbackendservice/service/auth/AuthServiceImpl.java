@@ -81,11 +81,7 @@ public class AuthServiceImpl implements AuthService {
 			auditNotificationDTO.setCreator(isOperatorExist);
 			auditNotificationDTO.setDescription(username + " Logged out");
 			auditNotificationDTO.setType("auth");
-			for (String key : auditCache.keySet()) {
-				if (key.startsWith("grid_flex_audit_log_page_")) {
-					auditCache.remove(key);
-				}
-			}
+			removeFromCache();
 //			authCache.remove("dashboard");
 			auditRepository.save(auditNotificationDTO);
 			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
@@ -209,6 +205,25 @@ public class AuthServiceImpl implements AuthService {
 
 	private void blacklistToken(String token, int expirySeconds) {
 		authCache.put(token, true, expirySeconds, TimeUnit.SECONDS);
+	}
+
+	private void removeFromCache() {
+//		authCache.remove("dashboard");
+//		for (String key : authCache.keySet()) {
+//			if (key.startsWith("operators_")) {
+//				authCache.remove(key);
+//			}
+//		}
+		for (String key : auditCache.keySet()) {
+			if (key.startsWith("audit_log_page_")) {
+				auditCache.remove(key);
+			}
+		}
+//		for (String key : sbcCache.keySet()) {
+//			if (key.startsWith("breakers_")) {
+//				sbcCache.remove(key);
+//			}
+//		}
 	}
 
 }

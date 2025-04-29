@@ -42,10 +42,20 @@ public class BandController {
         }
     }
 
-    @GetMapping("/all")
+    @GetMapping("/all-band")
     public ResponseEntity<?> getAllBands() {
         try {
             Map<String, Object> result = service.getBands();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/single-band")
+    public ResponseEntity<?> getSingleBand(@RequestParam Long bandId) {
+        try {
+            Map<String, Object> result = service.getBand(bandId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

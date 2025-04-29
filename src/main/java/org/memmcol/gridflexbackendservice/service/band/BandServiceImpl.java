@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.band;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.model.Band;
@@ -9,6 +11,8 @@ import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,9 +34,16 @@ public class BandServiceImpl implements BandService {
     @Autowired
     private AuditRepository auditRepository;
 
+    private final IMap<String, Object> bandCache;
+
+    private final IMap<String, Object> auditCache;
+
     private String bandName = "Band";
 
-    private String user = "Operator";
+    public BandServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
+        this.bandCache = hazelcastInstance.getMap("band-Cache");
+        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+    }
 
     @Override
     public Map<String, Object> createBand(Band band) {
@@ -41,8 +52,8 @@ public class BandServiceImpl implements BandService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
             Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (isOperatorExist == null) {
-                return ResponseMap.response(status.getNotFoundCode(), user + " " + status.getNotFoundDesc(), "");
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
             }
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist != null) {
@@ -53,17 +64,12 @@ public class BandServiceImpl implements BandService {
                 return ResponseMap.response(status.getRegCode(), bandName + " " + status.getRegFailureDesc(), "");
             }
             Band bandByName = bandMapper.getBand(band.getName());
+            isOperatorExist.setPasswordEncrypt("");
+            handleAddCache(bandByName);
             auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription(band.getName() + " Created band");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandByName);
-//            auditRepository.setCreaytion
-//            for (String key : auditCache.keySet()) {
-//                if (key.startsWith("grid_flex_audit_log_page_")) {
-//                    auditCache.remove(key);
-//                }
-//            }
-//			authCache.remove("dashboard");
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception e) {
@@ -80,8 +86,8 @@ public class BandServiceImpl implements BandService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
             Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (isOperatorExist == null) {
-                return ResponseMap.response(status.getNotFoundCode(), user + status.getNotFoundDesc(), "");
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
             }
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist == null) {
@@ -95,33 +101,17 @@ public class BandServiceImpl implements BandService {
                 return ResponseMap.response(status.getUpdateCode(), bandName + " " + status.getUpdateFailureDesc(), "");
             }
             Band bandById = bandMapper.getBandById(band.getId());
+            handleAddCache(bandById);
+            isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription(band.getName() + " Updated band");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandById);
-//            for (String key : auditCache.keySet()) {
-//                if (key.startsWith("grid_flex_audit_log_page_")) {
-//                    auditCache.remove(key);
-//                }
-//            }
 //			authCache.remove("dashboard");
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public Map<String, Object> getBands() {
-        try {
-            List<Band> result = bandMapper.fetchBands();
-            if(result == null) {
-                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
-            }
-            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
-        } catch (Exception e) {
             throw e;
         }
     }
@@ -133,7 +123,9 @@ public class BandServiceImpl implements BandService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
             Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
             Band bandById = bandMapper.getBandById(bandId);
             if(bandById == null) {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
@@ -143,15 +135,90 @@ public class BandServiceImpl implements BandService {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
             Band band = bandMapper.getBandById(bandById.getId());
+            handleAddCache(bandById);
+            isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription(bandById.getName() + " Disabled band");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(band);
-            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDeleteDesc(), "");
+
+            return ResponseMap.response(status.getSuccessCode(), band.getName() + " " + (band.getStatus() ? "Enabled Successfully" : status.getDeleteDesc()), "");
         } catch (Exception e) {
             System.out.println(e.getMessage());
             throw e;
         }
 
+    }
+
+    @Override
+    public Map<String, Object> getBands() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
+            String cacheKey = "bands_";
+            Object cachedBand = bandCache.get(cacheKey);
+
+            if (cachedBand != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + "s " + status.getDesc(), cachedBand);
+            }
+            List<Band> result = bandMapper.fetchBands();
+            if(result == null) {
+                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
+            }
+            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getBand(Long bandId) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
+            Object cachedBand = bandCache.get(bandId.toString());
+
+            if (cachedBand != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + " " + status.getDesc(), cachedBand);
+            }
+            Band result = bandMapper.getBandById(bandId);
+            if(result == null) {
+                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
+            }
+            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    private void handleAddCache(Band band) {
+        bandCache.remove(band.getName());
+        for (String key : auditCache.keySet()) {
+            if (key.startsWith("grid_flex_audit_log_page_")) {
+                auditCache.remove(key);
+            }
+        }
+        for (String key : bandCache.keySet()) {
+            if (key.startsWith("bands_")) {
+                bandCache.remove(key);
+            }
+        }
+        bandCache.put(band.getId().toString(), band);  // Cache updated or deleted entity
+    }
+
+    private void removeFromCache() {
+        for (String key : auditCache.keySet()) {
+            if (key.startsWith("grid_flex_audit_log_page_")) {
+                auditCache.remove(key);
+            }
+        }
     }
 }
