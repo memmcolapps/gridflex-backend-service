@@ -17,9 +17,8 @@ public class BandController {
     @Autowired
     private BandService service;
 
-    @Autowired private ResponseProperties status;
-
-    @Autowired private GlobalExceptionHandler exception;
+    @Autowired
+    private GlobalExceptionHandler exception;
 
     @PostMapping("/create")
     public ResponseEntity<?> createBand(@RequestBody Band band) {

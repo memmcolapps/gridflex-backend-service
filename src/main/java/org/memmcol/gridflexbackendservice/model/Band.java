@@ -11,9 +11,7 @@ import java.util.Date;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Band implements Serializable {
-    /**
-     *
-     */
+
     private static final long serialVersionUID = 1L;
 
     @Id
