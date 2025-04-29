@@ -1,11 +1,21 @@
 package org.memmcol.gridflexbackendservice.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class Band {
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class Band implements Serializable {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+
     @Id
     private Long id;
 

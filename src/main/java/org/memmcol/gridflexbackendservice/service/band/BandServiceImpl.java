@@ -169,6 +169,7 @@ public class BandServiceImpl implements BandService {
             if(result == null) {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
+            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception e) {
             throw e;

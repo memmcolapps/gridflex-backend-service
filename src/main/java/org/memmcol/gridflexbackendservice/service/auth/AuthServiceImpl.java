@@ -109,10 +109,6 @@ public class AuthServiceImpl implements AuthService {
 				throw new LockedException("User is blocked");
 			}
 
-//			if(!Objects.equals(password, retype_password)){
-//				return ResponseMap.response(status.getNotFoundCode(), "Passwords do not match", "");
-//			}
-
 			Operator isOperator = operatorMapper.GetOperator(username);
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
