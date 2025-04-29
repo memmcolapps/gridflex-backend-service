@@ -13,6 +13,8 @@ public class Band {
 
     private String hour;
 
+    private Boolean status;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdat;
 
@@ -45,5 +47,13 @@ public class Band {
 
     public void setHour(String hour) {
         this.hour = hour;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
     }
 }

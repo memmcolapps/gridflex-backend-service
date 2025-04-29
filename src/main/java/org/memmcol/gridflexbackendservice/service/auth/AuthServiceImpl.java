@@ -138,8 +138,8 @@ public class AuthServiceImpl implements AuthService {
 			verifiedUsers.remove(username);
 //			handleCacheUpdate(isOperator);
 			operatorAudit.setCreator(isUser);
-			operatorAudit.setCreation(isOperator);
-			operatorAudit.setDescription("Reset password: "+isOperator.getEmail());
+			operatorAudit.setCreatedOperator(isOperator);
+			operatorAudit.setDescription(isOperator.getEmail() + " Reset password");
 			operatorAudit.setType("operator");
 			auditRepository.save(operatorAudit);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");

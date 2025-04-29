@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface BandMapper {
 
-    @Insert("INSERT INTO band_tb (name, hour, createdat, updatedat) VALUES (#{name}, #{hour}, #{createdat}, #{updatedat})")
+    @Insert("INSERT INTO band_tb (name, hour, status, createdat, updatedat) VALUES (#{name}, #{hour}, true, #{createdat}, #{updatedat})")
     int createBand(Band band);
 
     @Update("UPDATE band_tb SET name = #{name}, hour = #{hour}, updatedat = #{updatedat} WHERE Id = #{id}")
@@ -21,5 +21,11 @@ public interface BandMapper {
     List<Band> fetchBands();
 
     @Select("SELECT * FROM band_tb WHERE name = #{name}")
-    String getBand(String name);
+    Band getBand(String name);
+
+    @Select("SELECT * FROM band_tb WHERE id = #{id}")
+    Band getBandById(Long id);
+
+    @Update("UPDATE band_tb SET status = #{status} WHERE id = #{bandId}")
+    int disableBand(Long bandId, Boolean status);
 }

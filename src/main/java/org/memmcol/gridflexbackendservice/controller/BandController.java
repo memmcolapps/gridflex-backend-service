@@ -53,6 +53,17 @@ public class BandController {
     }
 
 
+    @PatchMapping("/change-state")
+    public ResponseEntity<?> disableBand(@RequestParam Long bandId, @RequestParam Boolean status) {
+        try {
+            Map<String, Object> result = service.disableBand(bandId, status);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }

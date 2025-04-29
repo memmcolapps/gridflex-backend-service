@@ -22,7 +22,9 @@ public class OperatorAudit implements Serializable {
 
     private String type;
 
-    private Operator creation;
+    private Operator createdOperator;
+
+    private Band createdBand;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -47,14 +49,6 @@ public class OperatorAudit implements Serializable {
         this.creator = creator;
     }
 
-    public Operator getCreation() {
-        return creation;
-    }
-
-    public void setCreation(Operator creation) {
-        this.creation = creation;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -77,5 +71,21 @@ public class OperatorAudit implements Serializable {
 
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Operator getCreatedOperator() {
+        return createdOperator;
+    }
+
+    public void setCreatedOperator(Operator createdOperator) {
+        this.createdOperator = createdOperator;
+    }
+
+    public Band getCreatedBand() {
+        return createdBand;
+    }
+
+    public void setCreatedBand(Band createdBand) {
+        this.createdBand = createdBand;
     }
 }

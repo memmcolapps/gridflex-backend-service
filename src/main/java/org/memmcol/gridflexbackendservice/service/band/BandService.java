@@ -10,4 +10,6 @@ public interface BandService {
     Map<String, Object> updateBand(Band band);
 
     Map<String, Object> getBands();
+
+    Map<String, Object> disableBand(Long bandId,Boolean status);
 }
