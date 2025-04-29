@@ -29,6 +29,8 @@ public class Tariff implements Serializable {
 
     private Band band;
 
+    private Boolean status;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
@@ -94,6 +96,14 @@ public class Tariff implements Serializable {
 
     public void setBand(Band band) {
         this.band = band;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
     }
 
     public Date getCreatedAt() {
