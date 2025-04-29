@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.service;
+package org.memmcol.gridflexbackendservice.service.auth;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;

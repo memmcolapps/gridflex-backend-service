@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.memmcol.gridflexbackendservice.service.AuthService;
+import org.memmcol.gridflexbackendservice.service.auth.AuthService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;

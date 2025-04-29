@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.service;
+package org.memmcol.gridflexbackendservice.service.auth;
 
 import java.util.Map;
 

@@ -153,7 +153,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	    // Prepare the response message
 	    Map<String, String> errorMessage = new HashMap<>();
-	    errorMessage.put("responsecode", "122");
+	    errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
 	    errorMessage.put("responsedesc", failed.getMessage());
 	    errorMessage.put("responsedata", "");
 

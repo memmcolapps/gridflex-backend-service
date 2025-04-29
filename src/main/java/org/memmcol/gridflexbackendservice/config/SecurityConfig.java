@@ -76,7 +76,7 @@ public class  SecurityConfig {
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/auth/service/login/**", "/auth/service/admin/login/**",
 						"/auth/service/logout/**","/auth/service/generate-otp/**",
-						"/auth/service/forget-password/**").permitAll()
+						"/auth/service/forget-password/**", "/band/service/all-band/**").permitAll()
 				.requestMatchers("/service/**").hasAuthority("ROLE_WRITE")
 				.anyRequest().authenticated());
 
