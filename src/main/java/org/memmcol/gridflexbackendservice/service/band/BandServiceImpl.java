@@ -5,11 +5,16 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.model.Band;
+import org.memmcol.gridflexbackendservice.model.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.Operator;
 import org.memmcol.gridflexbackendservice.model.OperatorAudit;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
+import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.service.auth.AuthServiceImpl;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.LockedException;
@@ -22,6 +27,8 @@ import java.util.Map;
 
 @Service
 public class BandServiceImpl implements BandService {
+    private static final Logger log = LoggerFactory.getLogger(BandServiceImpl.class);
+
     @Autowired
     private BandMapper bandMapper;
 
@@ -33,6 +40,9 @@ public class BandServiceImpl implements BandService {
 
     @Autowired
     private AuditRepository auditRepository;
+
+    @Autowired
+    private ExceptionAuditRepository exceptionAuditRepository;
 
     private final IMap<String, Object> bandCache;
 
@@ -72,9 +82,14 @@ public class BandServiceImpl implements BandService {
             auditNotificationDTO.setCreatedBand(bandByName);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw e;
+        } catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception);
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
         }
 
     }
@@ -110,9 +125,14 @@ public class BandServiceImpl implements BandService {
 //			authCache.remove("dashboard");
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw e;
+        } catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception);
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
         }
     }
 
@@ -143,9 +163,14 @@ public class BandServiceImpl implements BandService {
             auditNotificationDTO.setCreatedBand(band);
 
             return ResponseMap.response(status.getSuccessCode(), band.getName() + " " + (band.getStatus() ? "Enabled Successfully" : status.getDeleteDesc()), "");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw e;
+        } catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception);
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
         }
 
     }
@@ -171,8 +196,14 @@ public class BandServiceImpl implements BandService {
             }
             bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
-        } catch (Exception e) {
-            throw e;
+        } catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception);
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
         }
     }
 
@@ -195,8 +226,14 @@ public class BandServiceImpl implements BandService {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
-        } catch (Exception e) {
-            throw e;
+        } catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception);
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
         }
     }
 
