@@ -18,7 +18,9 @@ public class ExceptionErrorLogs implements Serializable {
 
     private String error_message;
 
-    private Exception error;
+    private String error;
+
+
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -51,11 +53,11 @@ public class ExceptionErrorLogs implements Serializable {
         this.error_message = error_message;
     }
 
-    public Exception getError() {
+    public String getError() {
         return error;
     }
 
-    public void setError(Exception error) {
+    public void setError(String error) {
         this.error = error;
     }
 

@@ -19,7 +19,7 @@ public class Tariff implements Serializable {
 
     private String name;
 
-    private String tariff_index;
+    private Long tariff_index;
 
     private String tariff_type;
 
@@ -27,19 +27,19 @@ public class Tariff implements Serializable {
 
     public String tariff_rate;
 
-    private Band band;
+    private String band;
 
     private Boolean status;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
+    private Date createdat;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedAt;
+    private Date updatedat;
 
     public Tariff() {
-        this.createdAt = new Date();
-        this.updatedAt = new Date();
+        this.createdat = new Date();
+        this.updatedat = new Date();
     }
 
     public Long getId() {
@@ -58,11 +58,11 @@ public class Tariff implements Serializable {
         this.name = name;
     }
 
-    public String getTariff_index() {
+    public Long getTariff_index() {
         return tariff_index;
     }
 
-    public void setTariff_index(String tariff_index) {
+    public void setTariff_index(Long tariff_index) {
         this.tariff_index = tariff_index;
     }
 
@@ -90,11 +90,11 @@ public class Tariff implements Serializable {
         this.tariff_rate = tariff_rate;
     }
 
-    public Band getBand() {
+    public String getBand() {
         return band;
     }
 
-    public void setBand(Band band) {
+    public void setBand(String band) {
         this.band = band;
     }
 
@@ -106,19 +106,19 @@ public class Tariff implements Serializable {
         this.status = status;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
+    public Date getCreatedat() {
+        return createdat;
     }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setCreatedat(Date createdat) {
+        this.createdat = createdat;
     }
 
-    public Date getUpdatedAt() {
-        return updatedAt;
+    public Date getUpdatedat() {
+        return updatedat;
     }
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setUpdatedat(Date updatedat) {
+        this.updatedat = updatedat;
     }
 }

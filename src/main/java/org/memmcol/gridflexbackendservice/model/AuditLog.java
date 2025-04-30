@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Document(collection = "gridflex-audit-logs")
-public class OperatorAudit implements Serializable {
+public class AuditLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -26,10 +26,12 @@ public class OperatorAudit implements Serializable {
 
     private Band createdBand;
 
+    private Tariff createdTariff;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
-    public OperatorAudit() {
+    public AuditLog() {
         this.createdAt = new Date();
     }
 
@@ -87,5 +89,13 @@ public class OperatorAudit implements Serializable {
 
     public void setCreatedBand(Band createdBand) {
         this.createdBand = createdBand;
+    }
+
+    public Tariff getCreatedTariff() {
+        return createdTariff;
+    }
+
+    public void setCreatedTariff(Tariff createdTariff) {
+        this.createdTariff = createdTariff;
     }
 }

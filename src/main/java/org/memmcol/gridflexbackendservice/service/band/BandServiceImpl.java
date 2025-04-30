@@ -7,7 +7,7 @@ import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.model.Band;
 import org.memmcol.gridflexbackendservice.model.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.Operator;
-import org.memmcol.gridflexbackendservice.model.OperatorAudit;
+import org.memmcol.gridflexbackendservice.model.AuditLog;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.auth.AuthServiceImpl;
@@ -57,7 +57,7 @@ public class BandServiceImpl implements BandService {
 
     @Override
     public Map<String, Object> createBand(Band band) {
-        OperatorAudit auditNotificationDTO = new OperatorAudit();
+        AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
@@ -77,7 +77,7 @@ public class BandServiceImpl implements BandService {
             isOperatorExist.setPasswordEncrypt("");
             handleAddCache(bandByName);
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription(band.getName() + " Created band");
+            auditNotificationDTO.setDescription("Created band "+band.getName());
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandByName);
             auditRepository.save(auditNotificationDTO);
@@ -87,7 +87,7 @@ public class BandServiceImpl implements BandService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception);
+            exceptionErrorLogs.setError(exception.toString());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -96,7 +96,7 @@ public class BandServiceImpl implements BandService {
 
     @Override
     public Map<String, Object> updateBand(Band band) {
-        OperatorAudit auditNotificationDTO = new OperatorAudit();
+        AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
@@ -119,7 +119,7 @@ public class BandServiceImpl implements BandService {
             handleAddCache(bandById);
             isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription(band.getName() + " Updated band");
+            auditNotificationDTO.setDescription("Updated band "+band.getName());
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandById);
 //			authCache.remove("dashboard");
@@ -130,7 +130,7 @@ public class BandServiceImpl implements BandService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception);
+            exceptionErrorLogs.setError(exception.toString());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -138,7 +138,7 @@ public class BandServiceImpl implements BandService {
 
     @Override
     public Map<String, Object> disableBand(Long bandId, Boolean state) {
-        OperatorAudit auditNotificationDTO = new OperatorAudit();
+        AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
@@ -158,7 +158,7 @@ public class BandServiceImpl implements BandService {
             handleAddCache(bandById);
             isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription(bandById.getName() + " Disabled band");
+            auditNotificationDTO.setDescription("Disabled band "+bandById.getName());
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(band);
 
@@ -168,7 +168,7 @@ public class BandServiceImpl implements BandService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception);
+            exceptionErrorLogs.setError(exception.toString());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -201,7 +201,7 @@ public class BandServiceImpl implements BandService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception);
+            exceptionErrorLogs.setError(exception.toString());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -231,7 +231,7 @@ public class BandServiceImpl implements BandService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception);
+            exceptionErrorLogs.setError(exception.toString());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }

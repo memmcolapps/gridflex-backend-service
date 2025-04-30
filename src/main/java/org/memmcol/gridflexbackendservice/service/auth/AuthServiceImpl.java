@@ -5,7 +5,7 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.Operator;
-import org.memmcol.gridflexbackendservice.model.OperatorAudit;
+import org.memmcol.gridflexbackendservice.model.AuditLog;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -69,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	public Map<String, Object> logout(String token, int expirySeconds, String username) {
-		OperatorAudit auditNotificationDTO = new OperatorAudit();
+		AuditLog auditNotificationDTO = new AuditLog();
 		try {
 			Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
 			if (isOperatorExist == null) {
@@ -90,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while logout");
 			exceptionErrorLogs.setError_message(exception.getMessage());
-			exceptionErrorLogs.setError(exception);
+			exceptionErrorLogs.setError(exception.toString());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw exception;
 		}
@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
 
 	public Map<String, Object> handleForgetPassword(String username, String password) {
 
-		OperatorAudit operatorAudit = new OperatorAudit();
+		AuditLog AuditLog = new AuditLog();
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		try {
 			String email = (authentication != null) ? authentication.getName() : "Unknown";
@@ -129,11 +129,11 @@ public class AuthServiceImpl implements AuthService {
 			// Remove OTP verification from cache after successful password reset
 			verifiedUsers.remove(username);
 //			handleCacheUpdate(isOperator);
-			operatorAudit.setCreator(isUser);
-			operatorAudit.setCreatedOperator(isOperator);
-			operatorAudit.setDescription(isOperator.getEmail() + " Reset password");
-			operatorAudit.setType("operator");
-			auditRepository.save(operatorAudit);
+			AuditLog.setCreator(isUser);
+			AuditLog.setCreatedOperator(isOperator);
+			AuditLog.setDescription(isOperator.getEmail() + " Reset password");
+			AuditLog.setType("operator");
+			auditRepository.save(AuditLog);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");
 
 		} catch (Exception exception) {
@@ -141,7 +141,7 @@ public class AuthServiceImpl implements AuthService {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while changing operator password");
 			exceptionErrorLogs.setError_message(exception.getMessage());
-			exceptionErrorLogs.setError(exception);
+			exceptionErrorLogs.setError(exception.toString());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw exception;
 		}
@@ -163,7 +163,7 @@ public class AuthServiceImpl implements AuthService {
 			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage(), emailException);
 			exceptionErrorLogs.setDescription("Error occurred while generating OTP");
 			exceptionErrorLogs.setError_message(emailException.getMessage());
-			exceptionErrorLogs.setError(emailException);
+			exceptionErrorLogs.setError(emailException.toString());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw emailException;
 		}
@@ -193,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while verifying OTP");
 			exceptionErrorLogs.setError_message(exception.getMessage());
-			exceptionErrorLogs.setError(exception);
+			exceptionErrorLogs.setError(exception.toString());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw exception;
 		}

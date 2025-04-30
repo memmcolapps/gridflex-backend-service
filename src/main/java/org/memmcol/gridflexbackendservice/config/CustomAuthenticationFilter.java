@@ -12,8 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
+import org.memmcol.gridflexbackendservice.model.AuditLog;
 import org.memmcol.gridflexbackendservice.model.Operator;
-import org.memmcol.gridflexbackendservice.model.OperatorAudit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -106,7 +106,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authentication) throws IOException, ServletException {
 		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
-		OperatorAudit auditNotificationDTO = new OperatorAudit();
+		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes()); //Encrypt/Sign the token
 		String access_token = JWT.create()
 				.withSubject(user.getUsername())

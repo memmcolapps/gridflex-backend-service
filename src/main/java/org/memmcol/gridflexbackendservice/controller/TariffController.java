@@ -34,7 +34,7 @@ public class TariffController {
     }
 
 
-    @PutMapping("/all-tariff")
+    @GetMapping("/all-tariff")
     public ResponseEntity<?> getAllTariff(
             @RequestParam(required = true) int page,
             @RequestParam(required = true) int size,
@@ -49,10 +49,34 @@ public class TariffController {
         }
     }
 
-    @PutMapping("/change-state")
-    public ResponseEntity<?> disableTariff(@RequestParam Long bandId, @RequestParam Boolean status) {
+    @GetMapping("/filter-tariff")
+    public ResponseEntity<?> filterTariff(
+            @RequestParam(required = true) int page,
+            @RequestParam(required = true) int size,
+            @RequestParam(required = true) String filter
+    ) {
         try {
-            Map<String, Object> result = service.disableTariff(bandId, status);
+            Map<String, Object> result = service.getFilterTariffs(filter, page, size);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/filter/unique-id")
+    public ResponseEntity<?> UniqueTariffId() {
+        try {
+            Map<String, Object> result = service.getUniqueTariffId();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PatchMapping("/change-state")
+    public ResponseEntity<?> disableTariff(@RequestParam Long tariffId, @RequestParam Boolean status) {
+        try {
+            Map<String, Object> result = service.disableTariff(tariffId, status);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

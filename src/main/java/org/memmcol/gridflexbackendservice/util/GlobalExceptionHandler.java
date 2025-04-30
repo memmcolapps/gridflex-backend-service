@@ -171,7 +171,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<?> handleUnauthorizedException(UnauthorizedException ex) {
-		String msg = "Uauthorized";
+		String msg = "Unauthorized";
 		errorMessage.put("responsecode", "114");
 		errorMessage.put("responsedesc", msg);
 		errorMessage.put("responsedata", "");
