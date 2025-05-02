@@ -137,7 +137,7 @@ public class BandServiceImpl implements BandService {
     }
 
     @Override
-    public Map<String, Object> disableBand(Long bandId, Boolean state) {
+    public Map<String, Object> manageBandState(Long bandId, Boolean state) {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

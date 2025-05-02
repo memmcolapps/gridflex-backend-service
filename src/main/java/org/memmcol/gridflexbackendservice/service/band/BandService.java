@@ -11,7 +11,7 @@ public interface BandService {
 
     Map<String, Object> getBands();
 
-    Map<String, Object> disableBand(Long bandId,Boolean status);
+    Map<String, Object> manageBandState(Long bandId,Boolean status);
 
     Map<String, Object> getBand(Long bandId);
 }

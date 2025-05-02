@@ -118,6 +118,10 @@ public class TariffServiceImpl implements TariffService {
             if(tariffById == null) {
                 return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
             }
+
+            if(state != null && approveStatus != null) {
+                return ResponseMap.response(status.getNotFoundCode(), "you can not perform two operations at the same time", "");
+            }
             if(approveStatus != null && (approveStatus.equalsIgnoreCase("pending") || approveStatus.equalsIgnoreCase("approved") || approveStatus.equalsIgnoreCase("rejected"))) {
                 result = tariffMapper.approveTariff(tariffId, approveStatus);
                 if (result == 0) {
@@ -131,7 +135,7 @@ public class TariffServiceImpl implements TariffService {
                 }
                 desc = tariffById.getName()+ state + " tariff";
             } else {
-                return ResponseMap.response(status.getNotFoundCode(), "Status parameter messing", "");
+                return ResponseMap.response(status.getNotFoundCode(), "Status parameter missing", "");
             }
 
             Tariff tariff = tariffMapper.getTariffById(tariffById.getId());
