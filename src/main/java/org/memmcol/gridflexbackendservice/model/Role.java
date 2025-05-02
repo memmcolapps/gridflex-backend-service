@@ -20,6 +20,9 @@ public class Role implements Serializable {
 	@NotBlank(message = "Operator role is required")
     private String operatorRole;
 
+//	private String name; // e.g., "ADMIN"
+//	private List<Permission> permissions;
+
 	public Long getRoleId() {
 		return roleId;
 	}

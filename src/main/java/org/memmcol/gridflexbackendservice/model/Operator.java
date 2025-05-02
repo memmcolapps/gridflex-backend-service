@@ -47,6 +47,8 @@ public class Operator implements Serializable {
     @NotNull(message = "Roles must not be null")
     private Collection<Role> roles = new ArrayList<>();
 
+//    private Group group;
+
     private Collection<OrganizationNode> nodes = new ArrayList<>();
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")

@@ -12,8 +12,8 @@ import java.util.List;
 @Mapper
 public interface TariffMapper {
 
-    @Insert("INSERT INTO tariff_tb (name, tariff_index, tariff_type, tariff_rate, band, status, tariff_date, createdat, updatedat) " +
-            "VALUES (#{name,}, #{tariff_index}, #{tariff_type}, #{tariff_rate}, #{band}, true, #{tariff_date}, #{createdat}, #{updatedat})")
+    @Insert("INSERT INTO tariff_tb (name, tariff_index, tariff_type, tariff_rate, band, status, effective_date, approve_status, createdat, updatedat) " +
+            "VALUES (#{name,}, #{tariff_index}, #{tariff_type}, #{tariff_rate}, #{band}, true, #{effective_date}, #{approve_status}, #{createdat}, #{updatedat})")
     int createTariff(Tariff tariff);
 
     @Select("SELECT * FROM tariff_tb WHERE name = #{name}")
@@ -55,50 +55,35 @@ public interface TariffMapper {
     @Select("SELECT DISTINCT updatedat FROM tariff_tb;")
     List<String> getUniqueModifiedDate();
 
-    @Select("SELECT COUNT(*) FROM tariff_tb WHERE " +
-            "(name::text = #{filter}) OR " +
-            "(tariff_index::text = #{filter}) OR " +
-            "(tariff_type::text) = #{filter} OR " +
-            "(band::text) = #{filter} OR " +
-            "(tariff_rate::text) = #{filter} OR " +
-            "(tariff_date::text) = #{filter} OR " +
-            "(updatedat::text) = #{filter}")
-    int checkTariffFilterData(String filter);
+    @Select("SELECT * FROM tariff_tb")
+    List<Tariff> GetTariffs();
 
-    @Select("SELECT COUNT(*) FROM tariff_tb WHERE " +
-            "(status::boolean = #{filterBool})")
-    int checkTariffFilterStatusData(Boolean filterBool);
+    @Select("SELECT * FROM tariff_tb WHERE tariff_name = #{tariffName} ORDER BY createdat DESC ")
+    List<Tariff> GetTariffByNameFilter(String tariffName);
 
-    @Select("SELECT * FROM tariff_tb WHERE " +
-            "(name::text = #{filter}) OR " +
-            "(tariff_index::text = #{filter}) OR " +
-            "(tariff_type::text) = #{filter} OR " +
-            "(band::text) = #{filter} OR " +
-            "(tariff_rate::text) = #{filter} OR " +
-            "(tariff_date::text) = #{filter} OR " +
-            "(updatedat::text) = #{filter} " +
-            "ORDER BY updatedat DESC " +
-            "OFFSET #{page} ROWS FETCH NEXT #{size} ROWS ONLY")
-    List<Tariff> GetTariffByFilter(int page, int size, String filter);
+    @Select("SELECT * FROM tariff_tb WHERE tariff_index = #{tariffIndex} ORDER BY createdat DESC ")
+    List<Tariff> GetTariffByIndexFilter(String tariffIndex);
 
+    @Select("SELECT * FROM tariff_tb WHERE tariff_tariff = #{tariffIndex} ORDER BY createdat DESC ")
+    List<Tariff> GetTariffByTypeFilter(String tariffType);
 
-    @Select("SELECT * FROM tariff_tb WHERE " +
-            "(status::boolean = #{filterBool}) " +
-            "ORDER BY updatedat DESC " +
-            "OFFSET #{page} ROWS FETCH NEXT #{size} ROWS ONLY")
-    List<Tariff> GetTariffByStatusFilter(int page, int size, Boolean filterBool);
+    @Select("SELECT * FROM tariff_tb WHERE band = #{bandCode} ORDER BY createdat DESC ")
+    List<Tariff> GetTariffBandCodeFilter(String bandCode);
 
-//    @Select("SELECT * " +
-//            "FROM (" +
-//            "    SELECT *, ROW_NUMBER() OVER (PARTITION BY band ORDER BY id DESC) AS rn " +
-//            "    FROM tariff_tb " +
-//            ") sub " +
-//            "WHERE rn = 1;")
+    @Select("SELECT * FROM tariff_tb WHERE effective_date = #{effectiveDate} ORDER BY createdat DESC ")
+    List<Tariff> GetTariffEffectiveDateFilter(String effectiveDate);
 
-//    SELECT *
-//    FROM (
-//            SELECT *, ROW_NUMBER() OVER (PARTITION BY band ORDER BY id DESC) AS rn
-//    FROM tariff_tb
-//) sub
-//    WHERE rn = 1;
 }
+
+//    @Select("SELECT * FROM tariff_tb WHERE " +
+//            "(name::text = #{filter}) OR " +
+//            "(tariff_index::text = #{filter}) OR " +
+//            "(tariff_type::text) = #{filter} OR " +
+//            "(band::text) = #{filter} OR " +
+//            "(tariff_rate::text) = #{filter} OR " +
+//            "(tariff_date::text) = #{filter} OR " +
+//            "(updatedat::text) = #{filter} " +
+//            "ORDER BY createdat DESC " +
+//            "OFFSET #{page} ROWS FETCH NEXT #{size} ROWS ONLY")
+//    List<Tariff> GetTariffByFilter(int page, int size, String filter);
+

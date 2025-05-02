@@ -4,6 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,7 +36,8 @@ public class  SecurityConfig {
 	@Autowired
 	private AuditRepository auditRepository;
 
-	@Autowired
+    @Qualifier("hazelcastInstance")
+    @Autowired
 	private HazelcastInstance hazelcastInstance;
 
 	@Autowired

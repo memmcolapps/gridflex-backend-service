@@ -23,13 +23,15 @@ public class Tariff implements Serializable {
 
     private String tariff_type;
 
-    private String tariff_date;
+    private String effective_date;
 
     public String tariff_rate;
 
     private String band;
 
     private Boolean status;
+
+    private String approve_status;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdat;
@@ -74,12 +76,12 @@ public class Tariff implements Serializable {
         this.tariff_type = tariff_type;
     }
 
-    public String getTariff_date() {
-        return tariff_date;
+    public String getEffective_date() {
+        return effective_date;
     }
 
-    public void setTariff_date(String tariff_date) {
-        this.tariff_date = tariff_date;
+    public void setEffective_date(String effective_date) {
+        this.effective_date = effective_date;
     }
 
     public String getTariff_rate() {
@@ -104,6 +106,15 @@ public class Tariff implements Serializable {
 
     public void setStatus(Boolean status) {
         this.status = status;
+    }
+
+
+    public String getApprove_status() {
+        return approve_status;
+    }
+
+    public void setApprove_status(String approve_status) {
+        this.approve_status = approve_status;
     }
 
     public Date getCreatedat() {

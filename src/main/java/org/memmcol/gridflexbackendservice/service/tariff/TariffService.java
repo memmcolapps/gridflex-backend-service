@@ -10,9 +10,10 @@ public interface TariffService {
 
     Map<String, Object> disableTariff(Long tariffId, Boolean status);
 
-    Map<String, Object> getTariffs(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
+//    Map<String, Object> getTariffs(int page, int size);
 
-    Map<String, Object> getFilterTariffs(String filter, int page, int size);
+    Map<String, Object> getFilterTariffs(String tariffName, String tariffIndex, String tariffType, String tariffRate, String bandCode, Boolean status, String effectiveDate, String approveStatus);
 
     Map<String, Object> getUniqueTariffId();
+
 }
