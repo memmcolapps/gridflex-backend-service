@@ -86,7 +86,7 @@ public class TariffServiceImpl implements TariffService {
             isOperatorExist.setPasswordEncrypt("");
             handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription("Created tariff "+tariffByName.getName());
+            auditNotificationDTO.setDescription(tariffByName.getName()+ " Created tariff");
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariffByName);
             auditRepository.save(auditNotificationDTO);
@@ -102,9 +102,11 @@ public class TariffServiceImpl implements TariffService {
     }
 
     @Override
-    public Map<String, Object> disableTariff(Long tariffId, Boolean state) {
+    public Map<String, Object> manageTariffStatus(Long tariffId, Boolean state, String approveStatus) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        int result;
+        String desc = "";
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
@@ -116,19 +118,35 @@ public class TariffServiceImpl implements TariffService {
             if(tariffById == null) {
                 return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
             }
-            int result = tariffMapper.disableTariff(tariffId, state);
-            if (result == 0) {
-                return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
+            if(approveStatus != null && (approveStatus.equalsIgnoreCase("pending") || approveStatus.equalsIgnoreCase("approved") || approveStatus.equalsIgnoreCase("rejected"))) {
+                result = tariffMapper.approveTariff(tariffId, approveStatus);
+                if (result == 0) {
+                    return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
+                }
+                desc = tariffById.getName() + approveStatus +" tariff";
+            } else if (state != null) {
+                result = tariffMapper.disableTariff(tariffId, state);
+                if (result == 0) {
+                    return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
+                }
+                desc = tariffById.getName()+ state + " tariff";
+            } else {
+                return ResponseMap.response(status.getNotFoundCode(), "Status parameter messing", "");
             }
+
             Tariff tariff = tariffMapper.getTariffById(tariffById.getId());
             handleAddCache(tariffById);
             isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription("Disabled tariff "+tariffById.getName());
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariff);
 
-            return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (tariff.getStatus() ? "Enabled Successfully" : status.getDeleteDesc()), "");
+            if(state != null) {
+                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (tariff.getStatus() ? "Activated Successfully" : status.getDeleteDesc()), "");
+            } else {
+                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (approveStatus +" Successfully"), "");
+            }
 
 
         } catch (Exception exception) {

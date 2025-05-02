@@ -77,9 +77,12 @@ public class TariffController {
     }
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> disableTariff(@RequestParam Long tariffId, @RequestParam Boolean status) {
+    public ResponseEntity<?> manageTariffStatus(
+            @RequestParam (value = "tariffId", required = true) Long tariffId,
+            @RequestParam (value = "status", required = false) Boolean status,
+            @RequestParam (value = "approveStatus", required = false) String approveStatus) {
         try {
-            Map<String, Object> result = service.disableTariff(tariffId, status);
+            Map<String, Object> result = service.manageTariffStatus(tariffId, status, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

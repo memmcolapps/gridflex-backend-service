@@ -13,7 +13,7 @@ import java.util.List;
 public interface TariffMapper {
 
     @Insert("INSERT INTO tariff_tb (name, tariff_index, tariff_type, tariff_rate, band, status, effective_date, approve_status, createdat, updatedat) " +
-            "VALUES (#{name,}, #{tariff_index}, #{tariff_type}, #{tariff_rate}, #{band}, true, #{effective_date}, #{approve_status}, #{createdat}, #{updatedat})")
+            "VALUES (#{name,}, #{tariff_index}, #{tariff_type}, #{tariff_rate}, #{band}, true, #{effective_date}, pending, #{createdat}, #{updatedat})")
     int createTariff(Tariff tariff);
 
     @Select("SELECT * FROM tariff_tb WHERE name = #{name}")
@@ -24,6 +24,9 @@ public interface TariffMapper {
 
     @Update("UPDATE tariff_tb SET status = #{state} WHERE id = #{tariffId}")
     int disableTariff(Long tariffId, Boolean state);
+
+    @Update("UPDATE tariff_tb SET approve_status = #{approveStatus} WHERE id = #{tariffId}")
+    int approveTariff(Long tariffId, String approveStatus);
 
     @Select("SELECT COUNT(*) FROM tariff_tb")
     int getTotalCount();
