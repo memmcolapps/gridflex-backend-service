@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 import org.memmcol.gridflexbackendservice.model.Band;
+import org.memmcol.gridflexbackendservice.model.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.Tariff;
 import org.memmcol.gridflexbackendservice.service.band.BandService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -47,7 +49,7 @@ public class TariffController {
 //        }
 //    }
 
-    @GetMapping("/filter-tariff")
+    @GetMapping("/all-tariff")
     public ResponseEntity<?> filterTariff(
             @RequestParam(value = "tariffName", required = false, defaultValue = "") String tariffName,
             @RequestParam(value = "tariffIndex", required = false, defaultValue = "") String tariffIndex,
@@ -83,6 +85,16 @@ public class TariffController {
             @RequestParam (value = "approveStatus", required = false) String approveStatus) {
         try {
             Map<String, Object> result = service.manageTariffStatus(tariffId, status, approveStatus);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PatchMapping("/bulk-approve")
+    public ResponseEntity<?> bulkApproveTariff(@RequestBody BulkApprovalRequest request) {
+        try {
+            Map<String, Object> result = service.bulkApproveTariff(request);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

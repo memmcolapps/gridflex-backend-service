@@ -34,14 +34,14 @@ public class Tariff implements Serializable {
     private String approve_status;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdat;
+    private Date created_at;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedat;
+    private Date updated_at;
 
     public Tariff() {
-        this.createdat = new Date();
-        this.updatedat = new Date();
+        this.created_at = new Date();
+        this.updated_at = new Date();
     }
 
     public Long getId() {
@@ -117,19 +117,19 @@ public class Tariff implements Serializable {
         this.approve_status = approve_status;
     }
 
-    public Date getCreatedat() {
-        return createdat;
+    public Date getCreated_at() {
+        return created_at;
     }
 
-    public void setCreatedat(Date createdat) {
-        this.createdat = createdat;
+    public void setCreated_at(Date created_at) {
+        this.created_at = created_at;
     }
 
-    public Date getUpdatedat() {
-        return updatedat;
+    public Date getUpdated_at() {
+        return updated_at;
     }
 
-    public void setUpdatedat(Date updatedat) {
-        this.updatedat = updatedat;
+    public void setUpdated_at(Date updated_at) {
+        this.updated_at = updated_at;
     }
 }

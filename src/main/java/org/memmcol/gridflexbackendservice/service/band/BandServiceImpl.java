@@ -77,17 +77,17 @@ public class BandServiceImpl implements BandService {
             isOperatorExist.setPasswordEncrypt("");
             handleAddCache(bandByName);
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription("Created band "+band.getName());
+            auditNotificationDTO.setDescription("Created Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandByName);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -119,7 +119,7 @@ public class BandServiceImpl implements BandService {
             handleAddCache(bandById);
             isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription("Updated band "+band.getName());
+            auditNotificationDTO.setDescription("Updated Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandById);
 //			authCache.remove("dashboard");
@@ -127,10 +127,10 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -158,17 +158,17 @@ public class BandServiceImpl implements BandService {
             handleAddCache(bandById);
             isOperatorExist.setPasswordEncrypt("");
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription("Disabled band "+bandById.getName());
+            auditNotificationDTO.setDescription("Disabled Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(band);
 
             return ResponseMap.response(status.getSuccessCode(), band.getName() + " " + (band.getStatus() ? "Enabled Successfully" : status.getDeleteDesc()), "");
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -198,10 +198,10 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -228,10 +228,10 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }

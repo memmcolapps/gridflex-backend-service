@@ -24,18 +24,18 @@ public class Band implements Serializable {
     private Boolean status;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdat;
+    private Date created_at;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedat;
+    private Date updated_at;
 
     public Long getId() {
         return id;
     }
 
     public Band() {
-        this.createdat = new Date();
-        this.updatedat = new Date();
+        this.created_at = new Date();
+        this.updated_at = new Date();
     }
     public void setId(Long id) {
         this.id = id;

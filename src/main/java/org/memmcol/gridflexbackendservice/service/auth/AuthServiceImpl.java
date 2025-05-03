@@ -87,10 +87,10 @@ public class AuthServiceImpl implements AuthService {
 			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
 		} catch (Exception exception) {
 			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while logout");
-			exceptionErrorLogs.setError_message(exception.getMessage());
-			exceptionErrorLogs.setError(exception.toString());
+			exceptionErrorLogs.setError_message(exception.getMessage().trim());
+			exceptionErrorLogs.setError(exception.toString().trim());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw exception;
 		}
@@ -138,10 +138,10 @@ public class AuthServiceImpl implements AuthService {
 
 		} catch (Exception exception) {
 			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while changing operator password");
-			exceptionErrorLogs.setError_message(exception.getMessage());
-			exceptionErrorLogs.setError(exception.toString());
+			exceptionErrorLogs.setError_message(exception.getMessage().trim());
+			exceptionErrorLogs.setError(exception.toString().trim());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw exception;
 		}
@@ -160,10 +160,10 @@ public class AuthServiceImpl implements AuthService {
 			), Void.class);
 		} catch (RestClientException emailException) {
 			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage(), emailException);
+			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage().trim(), emailException);
 			exceptionErrorLogs.setDescription("Error occurred while generating OTP");
-			exceptionErrorLogs.setError_message(emailException.getMessage());
-			exceptionErrorLogs.setError(emailException.toString());
+			exceptionErrorLogs.setError_message(emailException.getMessage().trim());
+			exceptionErrorLogs.setError(emailException.toString().trim());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw emailException;
 		}
@@ -190,10 +190,10 @@ public class AuthServiceImpl implements AuthService {
 			return ResponseMap.response(status.getNotFoundCode(), "OTP verification failed", "");
 		} catch (Exception exception){
 			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-			log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
 			exceptionErrorLogs.setDescription("Error occurred while verifying OTP");
-			exceptionErrorLogs.setError_message(exception.getMessage());
-			exceptionErrorLogs.setError(exception.toString());
+			exceptionErrorLogs.setError_message(exception.getMessage().trim());
+			exceptionErrorLogs.setError(exception.toString().trim());
 			exceptionAuditRepository.save(exceptionErrorLogs);
 			throw exception;
 		}

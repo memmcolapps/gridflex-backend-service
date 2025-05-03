@@ -78,6 +78,8 @@ public class TariffServiceImpl implements TariffService {
             if (isBand == null) {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
+            tariff.setApprove_status("pending");
+            tariff.setStatus(true);
             int result = tariffMapper.createTariff(tariff);
             if (result == 0) {
                 return ResponseMap.response(status.getRegCode(), tariffName + " " + status.getRegFailureDesc(), "");
@@ -86,7 +88,7 @@ public class TariffServiceImpl implements TariffService {
             isOperatorExist.setPasswordEncrypt("");
             handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(isOperatorExist);
-            auditNotificationDTO.setDescription(tariffByName.getName()+ " Created tariff");
+            auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariffByName);
             auditRepository.save(auditNotificationDTO);
@@ -95,7 +97,7 @@ public class TariffServiceImpl implements TariffService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -120,20 +122,20 @@ public class TariffServiceImpl implements TariffService {
             }
 
             if(state != null && approveStatus != null) {
-                return ResponseMap.response(status.getNotFoundCode(), "you can not perform two operations at the same time", "");
+                return ResponseMap.response(status.getUpdateCode(), "you can not perform two operations at the same time", "");
             }
             if(approveStatus != null && (approveStatus.equalsIgnoreCase("pending") || approveStatus.equalsIgnoreCase("approved") || approveStatus.equalsIgnoreCase("rejected"))) {
                 result = tariffMapper.approveTariff(tariffId, approveStatus);
                 if (result == 0) {
-                    return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
+                    return ResponseMap.response(status.getUpdateCode(), tariffName +" "+ approveStatus + " "+ status.getUpdateFailureDesc(), "");
                 }
-                desc = tariffById.getName() + approveStatus +" tariff";
+                desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + tariffById.getName() + "]";
             } else if (state != null) {
                 result = tariffMapper.disableTariff(tariffId, state);
                 if (result == 0) {
-                    return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
+                    return ResponseMap.response(status.getUpdateCode(), tariffName +" Activated or Deactivated "+ status.getUpdateFailureDesc(), "");
                 }
-                desc = tariffById.getName()+ state + " tariff";
+                desc = state ? "Activated" : "Deactivated" + " Tariff [" + tariffById.getName() + "]";
             } else {
                 return ResponseMap.response(status.getNotFoundCode(), "Status parameter missing", "");
             }
@@ -145,11 +147,11 @@ public class TariffServiceImpl implements TariffService {
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariff);
-
+            auditRepository.save(auditNotificationDTO);
             if(state != null) {
                 return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (tariff.getStatus() ? "Activated Successfully" : status.getDeleteDesc()), "");
             } else {
-                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (approveStatus +" Successfully"), "");
+                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
             }
 
 
@@ -157,7 +159,7 @@ public class TariffServiceImpl implements TariffService {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -256,11 +258,12 @@ public class TariffServiceImpl implements TariffService {
             // Ideally, this should be a dynamic query in the mapper layer
             List<Tariff> allTariffs = tariffMapper.GetTariffs();
 
+            System.out.println(">>>>>>>>>>lllllllllll:::::::::: "+tariffName);
             List<Tariff> filteredTariffs = allTariffs.stream()
                     .filter(t -> tariffName == null || tariffName.isEmpty() || t.getName().equalsIgnoreCase(tariffName))
                     .filter(t -> tariffIndex == null || tariffIndex.isEmpty() || Objects.equals(t.getTariff_index(), parseLongOrNull(tariffIndex)))
                     .filter(t -> tariffType == null || tariffType.isEmpty() || t.getTariff_type().equalsIgnoreCase(tariffType))
-                    .filter(t -> tariffRate == null || tariffRate.isEmpty() || t.getTariff_rate().equalsIgnoreCase(tariffType))
+                    .filter(t -> tariffRate == null || tariffRate.isEmpty() || t.getTariff_rate().equalsIgnoreCase(tariffRate))
                     .filter(t -> bandCode == null || bandCode.isEmpty() || t.getBand().equalsIgnoreCase(bandCode))
                     .filter(t -> effectiveDate == null || effectiveDate.isEmpty() || t.getEffective_date().equalsIgnoreCase(effectiveDate))
                     .filter(t -> approveStatus == null || approveStatus.isEmpty() || t.getApprove_status().equalsIgnoreCase(approveStatus))
@@ -271,10 +274,10 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(),  "Tariffs "+status.getDesc(), filteredTariffs);
 
         } catch (Exception exception) {
-            log.error("Error occurred while filtering tariffs: {}", exception.getMessage(), exception);
+            log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to filter tariffs");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString());
+            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
@@ -287,6 +290,142 @@ public class TariffServiceImpl implements TariffService {
             return null;
         }
     }
+
+
+    @Override
+    public Map<String, Object> getUniqueTariffId() {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+            validateAuthenticatedOperator();
+
+            List<String> tariffName = tariffMapper.getUniqueTariffName();
+            List<String> tariffIndex = tariffMapper.getUniqueTariffIndex();
+            List<String> tariffType = tariffMapper.getUniqueTariffType();
+            List<String> bandCode = tariffMapper.getUniqueBandCode();
+            List<String> tariffRate = tariffMapper.getUniqueTariffRate();
+            List<Boolean> state = tariffMapper.getUniqueStatus();
+            List<String> effectiveDate = tariffMapper.getUniqueEffectiveDate();
+            List<String> lastModifiedDate = tariffMapper.getUniqueModifiedDate();
+
+            UniqueTariffId uniqueTariffId = new UniqueTariffId();
+            uniqueTariffId.setTariffName(tariffName);
+            uniqueTariffId.setTariffIndex(tariffIndex);
+            uniqueTariffId.setTariffType(tariffType);
+            uniqueTariffId.setBandCode(bandCode);
+            uniqueTariffId.setTariffRate(tariffRate);
+            uniqueTariffId.setStatus(state);
+            uniqueTariffId.setEffectiveDate(effectiveDate);
+            uniqueTariffId.setLastModifiedDate(lastModifiedDate);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("responsecode", status.getSuccessCode());
+            response.put("responsedesc", "Unique tariff identifiers " + status.getDesc());
+            response.put("responsedata", uniqueTariffId);
+
+            return response;
+        } catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> bulkApproveTariff(BulkApprovalRequest request) {
+        AuditLog auditNotificationDTO = new AuditLog();
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (isOperatorExist == null || !isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
+            String s = capitalizeFirstLetter(request.getApproveStatus());
+            if (!"Approved".equalsIgnoreCase(s)) {
+                return ResponseMap.response(
+                        this.status.getUpdateCode(),
+                        request.getApproveStatus() + " value not accepted, try [approved]",
+                        ""
+                );
+            }
+
+
+//            if(s.equalsIgnoreCase("approved")) {
+                for(Long id : request.getTariffIds()) {
+                    tariffMapper.approveTariff(id, s);
+
+                    Tariff tariff = tariffMapper.getTariffById(id);
+                    if(tariff == null) {
+                        String desc = s+ "Tariff [" + id + "] does not exist ";
+                        auditNotificationDTO.setCreator(isOperatorExist);
+                        auditNotificationDTO.setDescription(desc);
+                        auditNotificationDTO.setType("tariff");
+                        auditNotificationDTO.setCreatedTariff(null);
+                        auditRepository.save(auditNotificationDTO);
+                        continue;
+                    }
+                    handleAddCache(tariff);
+                    String desc = s + " Tariff [" + tariff.getName() + "]";
+                    isOperatorExist.setPasswordEncrypt("");
+                    auditNotificationDTO.setCreator(isOperatorExist);
+                    auditNotificationDTO.setDescription(desc);
+                    auditNotificationDTO.setType("tariff");
+                    auditNotificationDTO.setCreatedTariff(tariff);
+                    auditRepository.save(auditNotificationDTO);
+                }
+                return ResponseMap.response(status.getSuccessCode(), tariffName + " " + s +" Successfully", "");
+//            }
+//            return ResponseMap.response(status.getUpdateCode(), request.getApproveStatus() + " value not accepted try [approved]", "");
+
+        } catch (Exception exception) {
+            log.error("Error occurred while bulk approving tariff(s): {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+
+    }
+
+
+    private void validateAuthenticatedOperator() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = (authentication != null) ? authentication.getName() : "Unknown";
+        Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+        if (isOperatorExist == null || !isOperatorExist.isUstate()) {
+            throw new LockedException("User is blocked");
+        }
+    }
+
+    public static String capitalizeFirstLetter(String input) {
+        if (input == null || input.isEmpty()) return input;
+        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
+    }
+
+
+
+    private void handleAddCache(Tariff tariff) {
+        tariffCache.remove(tariff.getName());
+        for (String key : auditCache.keySet()) {
+            if (key.startsWith("grid_flex_audit_log_page_")) {
+                auditCache.remove(key);
+            }
+        }
+        for (String key : tariffCache.keySet()) {
+            if (key.startsWith("tariffs_")) {
+                tariffCache.remove(key);
+            }
+        }
+        tariffCache.put(tariff.getId().toString(), tariff);  // Cache updated or deleted entity
+    }
+}
+
+
 
 //    @Override
 //    public Map<String, Object> getFilterTariffs(String tariffName, String tariffIndex, String tariffType, String bandCode, Boolean state, String effectiveDate, String approveStatus) {
@@ -377,71 +516,3 @@ public class TariffServiceImpl implements TariffService {
 //        tariffCache.put(cacheKey, response);
 //        return ResponseMap.response(status.getSuccessCode(), tariffName + "s " + status.getDesc(), response);
 //    }
-
-
-    @Override
-    public Map<String, Object> getUniqueTariffId() {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        try {
-            validateAuthenticatedOperator();
-
-            List<String> tariffName = tariffMapper.getUniqueTariffName();
-            List<String> tariffIndex = tariffMapper.getUniqueTariffIndex();
-            List<String> tariffType = tariffMapper.getUniqueTariffType();
-            List<String> bandCode = tariffMapper.getUniqueBandCode();
-            List<String> tariffRate = tariffMapper.getUniqueTariffRate();
-            List<Boolean> state = tariffMapper.getUniqueStatus();
-            List<String> effectiveDate = tariffMapper.getUniqueEffectiveDate();
-            List<String> lastModifiedDate = tariffMapper.getUniqueModifiedDate();
-
-            UniqueTariffId uniqueTariffId = new UniqueTariffId();
-            uniqueTariffId.setTariffName(tariffName);
-            uniqueTariffId.setTariffIndex(tariffIndex);
-            uniqueTariffId.setTariffType(tariffType);
-            uniqueTariffId.setBandCode(bandCode);
-            uniqueTariffId.setTariffRate(tariffRate);
-            uniqueTariffId.setStatus(state);
-            uniqueTariffId.setEffectiveDate(effectiveDate);
-            uniqueTariffId.setLastModifiedDate(lastModifiedDate);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("responsecode", status.getSuccessCode());
-            response.put("responsedesc", "Unique tariff identifiers " + status.getDesc());
-            response.put("responsedata", uniqueTariffId);
-
-            return response;
-        } catch (Exception exception) {
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-
-    private void validateAuthenticatedOperator() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = (authentication != null) ? authentication.getName() : "Unknown";
-        Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-        if (isOperatorExist == null || !isOperatorExist.isUstate()) {
-            throw new LockedException("User is blocked");
-        }
-    }
-
-    private void handleAddCache(Tariff tariff) {
-        tariffCache.remove(tariff.getName());
-        for (String key : auditCache.keySet()) {
-            if (key.startsWith("grid_flex_audit_log_page_")) {
-                auditCache.remove(key);
-            }
-        }
-        for (String key : tariffCache.keySet()) {
-            if (key.startsWith("tariffs_")) {
-                tariffCache.remove(key);
-            }
-        }
-        tariffCache.put(tariff.getId().toString(), tariff);  // Cache updated or deleted entity
-    }
-}
