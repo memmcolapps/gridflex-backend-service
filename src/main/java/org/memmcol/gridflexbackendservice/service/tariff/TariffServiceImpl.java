@@ -258,7 +258,6 @@ public class TariffServiceImpl implements TariffService {
             // Ideally, this should be a dynamic query in the mapper layer
             List<Tariff> allTariffs = tariffMapper.GetTariffs();
 
-            System.out.println(">>>>>>>>>>lllllllllll:::::::::: "+tariffName);
             List<Tariff> filteredTariffs = allTariffs.stream()
                     .filter(t -> tariffName == null || tariffName.isEmpty() || t.getName().equalsIgnoreCase(tariffName))
                     .filter(t -> tariffIndex == null || tariffIndex.isEmpty() || Objects.equals(t.getTariff_index(), parseLongOrNull(tariffIndex)))
