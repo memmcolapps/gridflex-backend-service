@@ -4,15 +4,18 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Group {
+public class Group implements Serializable {
 
     private Long id;
 
-    private String name;
+    private String title;
+
+    private String module_access;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date created_at;
@@ -33,12 +36,20 @@ public class Group {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getModule_access() {
+        return module_access;
+    }
+
+    public void setModule_access(String module_access) {
+        this.module_access = module_access;
     }
 
     public Date getCreated_at() {
