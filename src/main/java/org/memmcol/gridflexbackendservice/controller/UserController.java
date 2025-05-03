@@ -1,8 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.model.Tariff;
 import org.memmcol.gridflexbackendservice.model.UserModel;
-import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.service.user.UserService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;

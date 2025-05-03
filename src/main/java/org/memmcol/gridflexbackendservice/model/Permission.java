@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Permission {
-
+public class Permission implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long id;
 
     private String name;// e.g., "READ_DASHBOARD"
