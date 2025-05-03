@@ -18,12 +18,12 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> getUsers(UserModel user) {
+    public Map<String, Object> getUsers(int page, int size) {
         return Map.of();
     }
 
     @Override
-    public Map<String, Object> getUser(UserModel user) {
+    public Map<String, Object> getUser(int userId) {
         return Map.of();
     }
 

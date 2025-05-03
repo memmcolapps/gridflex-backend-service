@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
+@RequestMapping("/user/service")
 public class UserController {
 
     @Autowired
@@ -41,10 +42,13 @@ public class UserController {
     }
 
 
-    @GetMapping("/all-user")
-    public ResponseEntity<?> getUsers(@RequestBody UserModel user) {
+    @GetMapping("/all-users")
+    public ResponseEntity<?> getUsers(
+            @RequestParam(value = "page", required = false) int page,
+            @RequestParam(value = "size", required = false) int size
+    ) {
         try {
-            Map<String, Object> result = service.getUsers(user);
+            Map<String, Object> result = service.getUsers(page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -52,9 +56,9 @@ public class UserController {
     }
 
     @GetMapping("/single-user")
-    public ResponseEntity<?> getUser(@RequestBody UserModel user) {
+    public ResponseEntity<?> getUser(@RequestParam int userId) {
         try {
-            Map<String, Object> result = service.getUser(user);
+            Map<String, Object> result = service.getUser(userId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

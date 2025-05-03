@@ -9,9 +9,9 @@ public interface UserService {
 
     Map<String, Object> updateUser(UserModel user);
 
-    Map<String, Object> getUsers(UserModel user);
+    Map<String, Object> getUsers(int page, int size);
 
-    Map<String, Object> getUser(UserModel user);
+    Map<String, Object> getUser(int userId);
 
     Map<String, Object> changeState(String status);
 }
