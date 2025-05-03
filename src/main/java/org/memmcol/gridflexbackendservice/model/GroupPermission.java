@@ -6,6 +6,9 @@ import java.io.Serializable;
 
 @Data
 public class GroupPermission implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Long groupId;
     private Long permissionId;
 
