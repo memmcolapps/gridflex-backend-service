@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -15,17 +16,17 @@ public class Group implements Serializable {
 
     private String title;
 
-    private String module_access;
+//    private List<String> moduleAccess;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date created_at;
+    private Date createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updated_at;
+    private Date updatedAt;
 
     public Group() {
-        this.created_at = new Date();
-        this.updated_at = new Date();
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
     }
 
     public Long getId() {
@@ -44,28 +45,28 @@ public class Group implements Serializable {
         this.title = title;
     }
 
-    public String getModule_access() {
-        return module_access;
+//    public List<String> getModuleAccess() {
+//        return moduleAccess;
+//    }
+//
+//    public void setModuleAccess(List<String> moduleAccess) {
+//        this.moduleAccess = moduleAccess;
+//    }
+
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setModule_access(String module_access) {
-        this.module_access = module_access;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public Date getCreated_at() {
-        return created_at;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setCreated_at(Date created_at) {
-        this.created_at = created_at;
-    }
-
-    public Date getUpdated_at() {
-        return updated_at;
-    }
-
-    public void setUpdated_at(Date updated_at) {
-        this.updated_at = updated_at;
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
 

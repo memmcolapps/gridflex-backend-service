@@ -5,18 +5,18 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class OperatorGroup implements Serializable {
+public class UserGroup implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private Long operatorId;
+    private Long userId;
     private Long groupId;
 
-    public Long getOperatorId() {
-        return operatorId;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setOperatorId(Long operatorId) {
-        this.operatorId = operatorId;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Long getGroupId() {

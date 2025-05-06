@@ -1,20 +1,17 @@
 package org.memmcol.gridflexbackendservice.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Permission implements Serializable {
+public class SubModule implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
     private String name;
-    private Long subModuleId;
+    private Long moduleId;
 
     public Long getId() {
         return id;
@@ -32,12 +29,11 @@ public class Permission implements Serializable {
         this.name = name;
     }
 
-    public Long getSubModuleId() {
-        return subModuleId;
+    public Long getModuleId() {
+        return moduleId;
     }
 
-    public void setSubModuleId(Long subModuleId) {
-        this.subModuleId = subModuleId;
+    public void setModuleId(Long moduleId) {
+        this.moduleId = moduleId;
     }
 }
-

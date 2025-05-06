@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.CreateGroupRequest;
+import org.memmcol.gridflexbackendservice.model.CreateUserRequest;
 import org.memmcol.gridflexbackendservice.model.UserModel;
 import org.memmcol.gridflexbackendservice.service.user.UserService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -20,9 +22,9 @@ public class UserController {
     private GlobalExceptionHandler exception;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createUser(@RequestBody UserModel user) {
+    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
         try {
-            Map<String, Object> result = service.createUser(user);
+            Map<String, Object> result = service.createUser(request);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -54,7 +56,7 @@ public class UserController {
     }
 
     @GetMapping("/single-user")
-    public ResponseEntity<?> getUser(@RequestParam int userId) {
+    public ResponseEntity<?> getUser(@RequestParam Long userId) {
         try {
             Map<String, Object> result = service.getUser(userId);
             return ResponseEntity.ok(result);
@@ -72,6 +74,36 @@ public class UserController {
             return handleException(e);
         }
     }
+
+    @PostMapping("/create/group-permission")
+    public ResponseEntity<?> createGroupPermission(@RequestBody CreateGroupRequest request) {
+        try {
+            Map<String, Object> result = service.createGroupPermission(request);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/groups")
+    public ResponseEntity<?> getGroup() {
+        try {
+            Map<String, Object> result = service.getGroups();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+//    @PostMapping("/")
+//    public ResponseEntity<?> createPermission(@RequestBody UserModel user) {
+//        try {
+//            Map<String, Object> result = service.createUser(user);
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {

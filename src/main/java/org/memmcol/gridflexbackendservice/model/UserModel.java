@@ -5,13 +5,14 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Date;
 
 @Data
 public class UserModel implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
-    private String id;
+    private Long id;
 
     private String firstname;
 
@@ -21,23 +22,31 @@ public class UserModel implements Serializable {
 
     private Long hierarchyId;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date created_at;
+    private Boolean status;
+
+    private Boolean active;
+
+    private Timestamp lastActive;
+
+    private String password;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updated_at;
+    private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date updatedAt;
 
     public UserModel() {
-        this.created_at = new Date();
-        this.updated_at = new Date();
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
     }
 
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -73,19 +82,52 @@ public class UserModel implements Serializable {
         this.hierarchyId = hierarchyId;
     }
 
-    public Date getCreated_at() {
-        return created_at;
+
+    public Boolean getStatus() {
+        return status;
     }
 
-    public void setCreated_at(Date created_at) {
-        this.created_at = created_at;
+    public void setStatus(Boolean status) {
+        this.status = status;
     }
 
-    public Date getUpdated_at() {
-        return updated_at;
+    public Boolean getActive() {
+        return active;
     }
 
-    public void setUpdated_at(Date updated_at) {
-        this.updated_at = updated_at;
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public Timestamp getLastActive() {
+        return lastActive;
+    }
+
+    public void setLastActive(Timestamp lastActive) {
+        this.lastActive = lastActive;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
