@@ -3,29 +3,30 @@ package org.memmcol.gridflexbackendservice.model;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 public class GroupPermission implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Long groupId;
-    private Long permissionId;
+    private Group group;
+    private List<Permission> permissions;
 
-    public Long getGroupId() {
-        return groupId;
+    public Group getGroup() {
+        return group;
     }
 
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
+    public void setGroup(Group group) {
+        this.group = group;
     }
 
-    public Long getPermissionId() {
-        return permissionId;
+    public List<Permission> getPermissions() {
+        return permissions;
     }
 
-    public void setPermissionId(Long permissionId) {
-        this.permissionId = permissionId;
+    public void setPermissions(List<Permission> permissions) {
+        this.permissions = permissions;
     }
 }
 

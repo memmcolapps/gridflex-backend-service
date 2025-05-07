@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateUser(@RequestBody UserModel user) {
+    public ResponseEntity<?> updateUser(@RequestBody CreateUserRequest user) {
         try {
             Map<String, Object> result = service.updateUser(user);
             return ResponseEntity.ok(result);
@@ -44,11 +44,15 @@ public class UserController {
 
     @GetMapping("/all-users")
     public ResponseEntity<?> getUsers(
-            @RequestParam(value = "page", required = false) int page,
-            @RequestParam(value = "size", required = false) int size
+//            @RequestParam(value = "page", required = false) int page,
+//            @RequestParam(value = "size", required = false) int size
+            @RequestParam(value = "email", required = false, defaultValue = "") String email,
+            @RequestParam(value = "permission", required = false, defaultValue = "") String permission,
+            @RequestParam(value = "dateAdded", required = false, defaultValue = "") String dateAdded,
+            @RequestParam(value = "lastActive", required = false, defaultValue = "") Boolean lastActive
     ) {
         try {
-            Map<String, Object> result = service.getUsers(page, size);
+            Map<String, Object> result = service.getUsers(email, permission, dateAdded, lastActive);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -66,9 +70,9 @@ public class UserController {
     }
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> changeState(@RequestParam String status) {
+    public ResponseEntity<?> changeState(@RequestParam Long userId, @RequestParam Boolean status) {
         try {
-            Map<String, Object> result = service.changeState(status);
+            Map<String, Object> result = service.changeState(userId, status);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -19,6 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -71,7 +74,7 @@ public class UserServiceImpl implements  UserService {
             }
 
             // Insert into operators
-            userMapper.insertOperator(operator);
+            userMapper.insertUser(operator);
 
             // Insert group assignments
             if (request.getGroupIds() != null) {
@@ -99,25 +102,121 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> updateUser(UserModel user) {
-        return Map.of();
+    public Map<String, Object> updateUser(CreateUserRequest request) {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+            UserModel operator = request.getUser();
+            operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
+            System.out.println("user id >> : " + operator.getId());
+            // check if operator exist
+            UserModel isOperator = userMapper.findById(operator.getId());
+            if (isOperator == null){
+                return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+            }
+
+            // check if groupId exist
+            List<Long> isGroupIds = userMapper.checkGroupId(request.getGroupIds());
+
+            if (isGroupIds.size() != request.getGroupIds().size()) {
+                return ResponseMap.response(status.getNotFoundCode(), "One or more group IDs " + status.getNotFoundDesc(), "");
+                //throw new IllegalArgumentException("One or more group IDs are invalid.");
+            }
+
+            // Insert into operators
+            userMapper.updateUser(operator);
+
+            System.out.println("user id: " + operator.getId());
+
+            // Insert group assignments
+            if (request.getGroupIds() != null) {
+                for (Long groupId : request.getGroupIds()) {
+                    userMapper.updateUserToGroup(operator.getId(), groupId);
+                }
+            }
+//            handleAddCache(operator);
+//            auditNotificationDTO.setCreator(isOperatorExist);
+//            auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
+//            auditNotificationDTO.setType("tariff");
+//            auditNotificationDTO.setCreatedTariff(tariffByName);
+//            auditRepository.save(auditNotificationDTO);
+
+            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
     }
 
     @Override
-    public Map<String, Object> getUsers(int page, int size) {
-        return Map.of();
+    public Map<String, Object> getUsers(String email, String permission, String dateAdded, Boolean lastActive) {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+            // Build cache key (optional)
+            StringBuilder cacheKeyBuilder = new StringBuilder("users");
+            if (email != null && !email.isEmpty()) cacheKeyBuilder.append("_email_").append(email);
+            if (permission != null && !permission.isEmpty()) cacheKeyBuilder.append("_perm_").append(permission);
+            if (dateAdded != null) cacheKeyBuilder.append("_to_").append(dateAdded);
+            if (lastActive != null) cacheKeyBuilder.append("_active_").append(lastActive);
+            String cacheKey = cacheKeyBuilder.toString();
+
+            // Optional cache logic
+            // Object cachedUsers = userCache.get(cacheKey);
+            // if (cachedUsers != null) {
+            //     return ResponseMap.response(status.getSuccessCode(), "Cached users " + status.getDesc(), cachedUsers);
+            // }
+
+            List<UserDTO> allUsers = userMapper.findAllUsersWithGroupsAndPermissions();
+
+            List<UserDTO> filteredUsers = allUsers.stream()
+                    .filter(user -> email == null || email.isEmpty() || user.getUser().getEmail().equalsIgnoreCase(email))
+                    .filter(user -> {
+                        if (permission == null || permission.isEmpty()) return true;
+                        return user.getGroups().stream()
+                                .flatMap(group -> group.getModules().stream())
+                                .flatMap(module -> module.getSubModules().stream())
+                                .flatMap(sub -> sub.getPermissions().stream())
+                                .anyMatch(perm -> perm.getName().equalsIgnoreCase(permission));
+                    })
+                    .filter(user -> {
+                        if (dateAdded == null || dateAdded.isEmpty()) return true;
+                        try {
+                            LocalDate dateFilter = LocalDate.parse(dateAdded);
+                            LocalDate createdDate = user.getUser().getCreatedAt()
+                                    .toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate();
+                            return !createdDate.isBefore(dateFilter);
+                        } catch (DateTimeParseException e) {
+                            log.warn("Invalid date format for dateAdded: {}", dateAdded);
+                            return true;
+                        }
+                    })
+
+                    .filter(user -> lastActive == null || user.getUser().getActive().equals(lastActive))
+                    .collect(Collectors.toList());
+
+            // userCache.put(cacheKey, filteredUsers);
+            return ResponseMap.response(status.getSuccessCode(), "Filtered users " + status.getDesc(), filteredUsers);
+
+        } catch (Exception e) {
+            log.error("Error filtering users: {}", e.getMessage(), e);
+            exceptionErrorLogs.setDescription("Error occurred while filtering users");
+            exceptionErrorLogs.setError_message(e.getMessage());
+            exceptionErrorLogs.setError(e.toString());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw e;
+        }
     }
+
 
     @Override
     public Map<String, Object> getUser(Long userId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            String username = (authentication != null) ? authentication.getName() : "Unknown";
-//            UserModel user = userMapper.findByUsername(username);
-//            if (!user.getStatus()) {
-//                throw new LockedException("User is blocked");
-//            }
 
             UserModel user = userMapper.findById(userId);
             if (user == null) {
@@ -171,8 +270,17 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> changeState(String status) {
-        return Map.of();
+    public Map<String, Object> changeState(Long userId, Boolean state) {
+        // check if operator exist
+        UserModel isOperator = userMapper.findById(userId);
+        if (isOperator == null){
+            return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+        }
+        int isStatus = userMapper.changeStatus(userId, state);
+        if(isStatus != 1) {
+            return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
+        }
+        return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
     }
 
 
@@ -220,9 +328,46 @@ public class UserServiceImpl implements  UserService {
         try {
             List<Group> groups = userMapper.getGroups();
             if (groups == null) {
-                return ResponseMap.response(status.getNotFoundCode(), "group " + status.getNotFoundDesc(), "");
+                return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");
             }
-            return ResponseMap.response(status.getSuccessCode(),  "groups " + status.getDesc(), groups);
+
+            List<GroupPermission> groupDTOs = groups.stream().map(group -> {
+                GroupPermission groupDTO = new GroupPermission();
+                groupDTO.setGroup(group);
+
+                List<Permission> permissions = userMapper.findPermissionsByGroup(group.getId());
+                permissions.forEach(permission -> {
+                    permission.setSubModuleId(0L);
+                });
+                groupDTO.setPermissions(permissions);
+
+//                List<Module> modules = userMapper.findModulesByGroupId(group.getId());
+//
+//                List<ModuleWithSubModules> moduleDTOs = modules.stream().map(module -> {
+//                    ModuleWithSubModules moduleDTO = new ModuleWithSubModules();
+//                    moduleDTO.setModule(module);
+//
+//                    List<SubModule> subModules = userMapper.findSubModulesByModuleId(module.getId());
+
+//                    List<SubModuleWithPermissions> subDTOs = subModules.stream().map(sub -> {
+//                        SubModuleWithPermissions subDTO = new SubModuleWithPermissions();
+//                        subDTO.setSubModule(sub);
+//
+//                        List<Permission> permissions = userMapper.findPermissionsByGroupAndSubModule(group.getId(), sub.getId());
+//                        subDTO.setPermissions(permissions);
+
+//                        return subDTO;
+//                    }).collect(Collectors.toList());
+//
+//                    moduleDTO.setSubModules(subDTOs);
+//                    return moduleDTO;
+//                }).collect(Collectors.toList());
+
+//                groupDTO.setModules(moduleDTOs);
+                return groupDTO;
+            }).collect(Collectors.toList());
+
+            return ResponseMap.response(status.getSuccessCode(),  "Group Permission" + status.getDesc(), groupDTOs);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -233,6 +378,62 @@ public class UserServiceImpl implements  UserService {
         }
 
     }
+
+//
+//    @Override
+//    public Map<String, Object> getFilteredUsers(
+//            String email,
+//            String permission,
+//            String dateAddedTo) {
+//
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        try {
+//            // Optional caching (implement your own if needed)
+//            StringBuilder cacheKeyBuilder = new StringBuilder("users");
+//            if (email != null && !email.isEmpty()) cacheKeyBuilder.append("_email_").append(email);
+//            if (permission != null && !permission.isEmpty()) cacheKeyBuilder.append("_perm_").append(permission);
+//            if (dateAddedFrom != null) cacheKeyBuilder.append("_from_").append(dateAddedFrom);
+//            if (dateAddedTo != null) cacheKeyBuilder.append("_to_").append(dateAddedTo);
+//            String cacheKey = cacheKeyBuilder.toString();
+//
+//            Object cachedUsers = userCache.get(cacheKey);
+//            if (cachedUsers != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached users " + status.getDesc(), cachedUsers);
+//            }
+//
+//            // Ideally fetch all users with minimal join
+//            List<UserModel> allUsers = userMapper.findAllUsersWithGroupsAndPermissions();
+//
+//            List<UserModel> filteredUsers = allUsers.stream()
+//                    .filter(user -> email == null || email.isEmpty() || user.getEmail().equalsIgnoreCase(email))
+//                    .filter(user -> {
+//                        if (permission == null || permission.isEmpty()) return true;
+//                        return user.getGroups().stream()
+//                                .flatMap(group -> group.getModules().stream())
+//                                .flatMap(module -> module.getSubModules().stream())
+//                                .flatMap(sub -> sub.getPermissions().stream())
+//                                .anyMatch(perm -> perm.getName().equalsIgnoreCase(permission));
+//                    })
+//                    .filter(user -> {
+//                        if (dateAddedFrom != null && user.getCreatedAt().toLocalDate().isBefore(dateAddedFrom)) return false;
+//                        if (dateAddedTo != null && user.getCreatedAt().toLocalDate().isAfter(dateAddedTo)) return false;
+//                        return true;
+//                    })
+//                    .collect(Collectors.toList());
+//
+//            userCache.put(cacheKey, filteredUsers);
+//            return ResponseMap.response(status.getSuccessCode(), "Filtered users " + status.getDesc(), filteredUsers);
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while filtering users: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to filter users");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
+
 
 
 //    private void handleAddCache(UserModel operator) {
