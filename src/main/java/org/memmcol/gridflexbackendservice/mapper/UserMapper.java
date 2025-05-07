@@ -28,9 +28,9 @@ public interface UserMapper {
             hierarchy_id = #{hierarchyId}, 
             last_active =  #{lastActive}, 
             password = #{password}, 
-            updated_at = #{updatedAt}
+            updated_at = #{updatedAt} WHERE id = #{id}
     """)
-//    @Options(useGeneratedKeys = true, keyProperty = "id")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateUser(UserModel operator);
 
     @Insert("""
@@ -265,6 +265,9 @@ public interface UserMapper {
 
     @Update("UPDATE users SET status = #{state} WHERE id = #{userId}")
     int changeStatus(Long userId, Boolean state);
+
+    @Select("SELECT * FROM users")
+    List<UserModel> findAllUsers();
 
 //    @Insert("INSERT INTO user_groups(user_id, group_id) VALUES(#{userId}, #{groupId})")
 //    void assignUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId);

@@ -2,8 +2,8 @@ package org.memmcol.gridflexbackendservice.service.user;
 
 import org.memmcol.gridflexbackendservice.model.CreateGroupRequest;
 import org.memmcol.gridflexbackendservice.model.CreateUserRequest;
-import org.memmcol.gridflexbackendservice.model.UserModel;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public interface UserService {
@@ -19,5 +19,5 @@ public interface UserService {
 
     Map<String, Object> getGroups();
 
-    Map<String, Object> getUsers(String email, String permission, String dateAdded, Boolean lastActive);
+    Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size);
 }

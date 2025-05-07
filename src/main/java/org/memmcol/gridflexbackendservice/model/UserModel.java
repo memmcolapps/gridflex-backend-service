@@ -26,7 +26,7 @@ public class UserModel implements Serializable {
 
     private Boolean active;
 
-    private Timestamp lastActive;
+    private String lastActive;
 
     private String password;
 
@@ -99,11 +99,11 @@ public class UserModel implements Serializable {
         this.active = active;
     }
 
-    public Timestamp getLastActive() {
+    public String getLastActive() {
         return lastActive;
     }
 
-    public void setLastActive(Timestamp lastActive) {
+    public void setLastActive(String lastActive) {
         this.lastActive = lastActive;
     }
 

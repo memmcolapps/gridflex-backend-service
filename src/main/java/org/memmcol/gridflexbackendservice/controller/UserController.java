@@ -6,9 +6,12 @@ import org.memmcol.gridflexbackendservice.model.UserModel;
 import org.memmcol.gridflexbackendservice.service.user.UserService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -44,15 +47,19 @@ public class UserController {
 
     @GetMapping("/all-users")
     public ResponseEntity<?> getUsers(
-//            @RequestParam(value = "page", required = false) int page,
-//            @RequestParam(value = "size", required = false) int size
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "firstname", required = false, defaultValue = "") String firstname,
+            @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
             @RequestParam(value = "email", required = false, defaultValue = "") String email,
             @RequestParam(value = "permission", required = false, defaultValue = "") String permission,
             @RequestParam(value = "dateAdded", required = false, defaultValue = "") String dateAdded,
-            @RequestParam(value = "lastActive", required = false, defaultValue = "") Boolean lastActive
+            @RequestParam(required = false, defaultValue = "") String lastActive
+
+//            @RequestParam(value = "lastActive", required = false, defaultValue = "") Timestamp lastActive
     ) {
         try {
-            Map<String, Object> result = service.getUsers(email, permission, dateAdded, lastActive);
+            Map<String, Object> result = service.getUsers(firstname, lastname, email, permission, dateAdded, lastActive, page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -98,16 +105,6 @@ public class UserController {
             return handleException(e);
         }
     }
-
-//    @PostMapping("/")
-//    public ResponseEntity<?> createPermission(@RequestBody UserModel user) {
-//        try {
-//            Map<String, Object> result = service.createUser(user);
-//            return ResponseEntity.ok(result);
-//        } catch (GlobalExceptionHandler.SQLServerException e) {
-//            return handleException(e);
-//        }
-//    }
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {

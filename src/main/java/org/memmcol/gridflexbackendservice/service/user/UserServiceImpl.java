@@ -19,12 +19,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Transactional
 @Service
@@ -55,7 +58,15 @@ public class UserServiceImpl implements  UserService {
     @Override
     public Map<String, Object> createUser(CreateUserRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        AuditLog auditNotificationDTO = new AuditLog();
         try {
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
 
@@ -82,16 +93,17 @@ public class UserServiceImpl implements  UserService {
                     userMapper.assignUserToGroup(operator.getId(), groupId);
                 }
             }
+            UserModel user = userMapper.findById(request.getUser().getId());
 //            handleAddCache(operator);
-//            auditNotificationDTO.setCreator(isOperatorExist);
-//            auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
-//            auditNotificationDTO.setType("tariff");
-//            auditNotificationDTO.setCreatedTariff(tariffByName);
-//            auditRepository.save(auditNotificationDTO);
+            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setDescription("Created User [" + user.getEmail() + "]");
+            auditNotificationDTO.setType("user");
+            auditNotificationDTO.setCreatedOperator(user);
+            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while creating user [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -104,10 +116,17 @@ public class UserServiceImpl implements  UserService {
     @Override
     public Map<String, Object> updateUser(CreateUserRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        AuditLog auditNotificationDTO = new AuditLog();
         try {
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
-            System.out.println("user id >> : " + operator.getId());
             // check if operator exist
             UserModel isOperator = userMapper.findById(operator.getId());
             if (isOperator == null){
@@ -133,16 +152,17 @@ public class UserServiceImpl implements  UserService {
                     userMapper.updateUserToGroup(operator.getId(), groupId);
                 }
             }
+          UserModel user = userMapper.findById(request.getUser().getId());
 //            handleAddCache(operator);
-//            auditNotificationDTO.setCreator(isOperatorExist);
-//            auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
-//            auditNotificationDTO.setType("tariff");
-//            auditNotificationDTO.setCreatedTariff(tariffByName);
-//            auditRepository.save(auditNotificationDTO);
+            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setDescription("Updated User [" + user.getEmail() + "]");
+            auditNotificationDTO.setType("user");
+            auditNotificationDTO.setCreatedOperator(user);
+            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -152,66 +172,131 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> getUsers(String email, String permission, String dateAdded, Boolean lastActive) {
+    public Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            // Build cache key (optional)
-            StringBuilder cacheKeyBuilder = new StringBuilder("users");
-            if (email != null && !email.isEmpty()) cacheKeyBuilder.append("_email_").append(email);
-            if (permission != null && !permission.isEmpty()) cacheKeyBuilder.append("_perm_").append(permission);
-            if (dateAdded != null) cacheKeyBuilder.append("_to_").append(dateAdded);
-            if (lastActive != null) cacheKeyBuilder.append("_active_").append(lastActive);
-            String cacheKey = cacheKeyBuilder.toString();
+            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
 
-            // Optional cache logic
-            // Object cachedUsers = userCache.get(cacheKey);
-            // if (cachedUsers != null) {
-            //     return ResponseMap.response(status.getSuccessCode(), "Cached users " + status.getDesc(), cachedUsers);
-            // }
+            // Apply filtering
+            Stream<UserModel> userStream = users.stream();
 
-            List<UserDTO> allUsers = userMapper.findAllUsersWithGroupsAndPermissions();
+            if (firstname != null && !firstname.isEmpty()) {
+                userStream = userStream.filter(u -> u.getFirstname() != null && u.getFirstname().equalsIgnoreCase(firstname));
+            }
 
-            List<UserDTO> filteredUsers = allUsers.stream()
-                    .filter(user -> email == null || email.isEmpty() || user.getUser().getEmail().equalsIgnoreCase(email))
-                    .filter(user -> {
-                        if (permission == null || permission.isEmpty()) return true;
-                        return user.getGroups().stream()
-                                .flatMap(group -> group.getModules().stream())
-                                .flatMap(module -> module.getSubModules().stream())
-                                .flatMap(sub -> sub.getPermissions().stream())
-                                .anyMatch(perm -> perm.getName().equalsIgnoreCase(permission));
-                    })
-                    .filter(user -> {
-                        if (dateAdded == null || dateAdded.isEmpty()) return true;
-                        try {
-                            LocalDate dateFilter = LocalDate.parse(dateAdded);
-                            LocalDate createdDate = user.getUser().getCreatedAt()
-                                    .toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate();
-                            return !createdDate.isBefore(dateFilter);
-                        } catch (DateTimeParseException e) {
-                            log.warn("Invalid date format for dateAdded: {}", dateAdded);
-                            return true;
-                        }
-                    })
+            if (lastname != null && !lastname.isEmpty()) {
+                userStream = userStream.filter(u -> u.getLastname() != null && u.getLastname().equalsIgnoreCase(lastname));
+            }
 
-                    .filter(user -> lastActive == null || user.getUser().getActive().equals(lastActive))
-                    .collect(Collectors.toList());
+            if (email != null && !email.isEmpty()) {
+                userStream = userStream.filter(u -> u.getEmail() != null && u.getEmail().equalsIgnoreCase(email));
+            }
 
-            // userCache.put(cacheKey, filteredUsers);
-            return ResponseMap.response(status.getSuccessCode(), "Filtered users " + status.getDesc(), filteredUsers);
+            if (dateAdded != null && !dateAdded.isEmpty()) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                LocalDate date = LocalDate.parse(dateAdded, formatter);
+                userStream = userStream.filter(u -> {
+                    if (u.getCreatedAt() == null) return false;
+                    return !u.getCreatedAt()
+                            .toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                            .isBefore(date);
+                });
+            }
 
-        } catch (Exception e) {
-            log.error("Error filtering users: {}", e.getMessage(), e);
+            if (lastActive != null && !lastActive.isEmpty()) {
+                userStream = userStream.filter(u -> {
+                    if (u.getLastActive() == null) return false;
+                    return u.getLastActive().toString().contains(lastActive); // adjust if it's a date match
+                });
+            }
+
+            List<UserModel> filteredUsers = userStream.toList();
+
+            // Pagination logic
+            int totalUsers = filteredUsers.size();
+            List<UserModel> paginatedUsers;
+            if (size == 0) {
+                paginatedUsers = filteredUsers; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalUsers);
+                int toIndex = Math.min(fromIndex + size, totalUsers);
+                paginatedUsers = filteredUsers.subList(fromIndex, toIndex);
+            }
+
+            List<UserDTO> userDTOs = new ArrayList<>();
+
+            for (UserModel user : paginatedUsers) {
+                List<Group> groups = userMapper.findGroupsByUserId(user.getId());
+
+                List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
+                    GroupWithPermissionsDTO groupDTO = new GroupWithPermissionsDTO();
+                    groupDTO.setGroup(group);
+
+                    List<Module> modules = userMapper.findModulesByGroupId(group.getId());
+
+                    List<ModuleWithSubModules> moduleDTOs = modules.stream().map(module -> {
+                        ModuleWithSubModules moduleDTO = new ModuleWithSubModules();
+                        moduleDTO.setModule(module);
+
+                        List<SubModule> subModules = userMapper.findSubModulesByModuleId(module.getId());
+
+                        List<SubModuleWithPermissions> subDTOs = subModules.stream().map(sub -> {
+                            SubModuleWithPermissions subDTO = new SubModuleWithPermissions();
+                            subDTO.setSubModule(sub);
+
+                            List<Permission> permissions = userMapper.findPermissionsByUserAndSubModule(user.getId(), sub.getId());
+                            subDTO.setPermissions(permissions);
+                            return subDTO;
+                        }).collect(Collectors.toList());
+
+                        moduleDTO.setSubModules(subDTOs);
+                        return moduleDTO;
+                    }).collect(Collectors.toList());
+
+                    groupDTO.setModules(moduleDTOs);
+                    return groupDTO;
+                }).collect(Collectors.toList());
+
+                // Filter by permission at the end
+                if (permission != null && !permission.isEmpty()) {
+                    boolean hasPermission = groupDTOs.stream()
+                            .flatMap(g -> g.getModules().stream())
+                            .flatMap(m -> m.getSubModules().stream())
+                            .flatMap(s -> s.getPermissions().stream())
+                            .anyMatch(p -> p.getName().equalsIgnoreCase(permission));
+
+                    if (!hasPermission) continue;
+                }
+
+                user.setPassword(""); // Remove sensitive data
+
+                UserDTO dto = new UserDTO();
+                dto.setUser(user);
+                dto.setGroups(groupDTOs);
+                userDTOs.add(dto);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", userDTOs);
+            response.put("totalData", totalUsers);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) userDTOs.size() / size));
+
+            return ResponseMap.response(status.getSuccessCode(), userName + "s " + status.getDesc(), response);
+
+        } catch (Exception exception) {
+            log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while filtering users");
-            exceptionErrorLogs.setError_message(e.getMessage());
-            exceptionErrorLogs.setError(e.toString());
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception.toString());
             exceptionAuditRepository.save(exceptionErrorLogs);
-            throw e;
+            throw exception;
         }
     }
-
 
     @Override
     public Map<String, Object> getUser(Long userId) {
@@ -260,7 +345,7 @@ public class UserServiceImpl implements  UserService {
             response.setGroups(groupDTOs);
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), response);
         } catch (Exception exception) {
-            log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -271,22 +356,56 @@ public class UserServiceImpl implements  UserService {
 
     @Override
     public Map<String, Object> changeState(Long userId, Boolean state) {
-        // check if operator exist
-        UserModel isOperator = userMapper.findById(userId);
-        if (isOperator == null){
-            return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        AuditLog auditNotificationDTO = new AuditLog();
+        try {
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
+            // check if operator exist
+            UserModel isOperator = userMapper.findById(userId);
+            if (isOperator == null) {
+                return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+            }
+            int isStatus = userMapper.changeStatus(userId, state);
+            if (isStatus != 1) {
+                return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
+            }
+            String desc = state ? "Activated" : "Deactivated" + " User [" + isOperator.getEmail() + "]";
+            UserModel user = userMapper.findById(userId);
+//            handleAddCache(operator);
+            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setType("user");
+            auditNotificationDTO.setCreatedOperator(user);
+            auditRepository.save(auditNotificationDTO);
+            return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
+        } catch (Exception exception) {
+            log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
         }
-        int isStatus = userMapper.changeStatus(userId, state);
-        if(isStatus != 1) {
-            return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
-        }
-        return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
     }
 
 
     public Map<String, Object> createGroupPermission(CreateGroupRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        AuditLog auditNotificationDTO = new AuditLog();
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+            if (!isOperatorExist.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
+
             Group group = request.getGroup();
             userMapper.insertGroup(group);
 
@@ -306,13 +425,14 @@ public class UserServiceImpl implements  UserService {
                     }
                 }
             }
-
-//            for (Long userId : request.getUserIds()) {
-//                userMapper.assignUserToGroup(userId, group.getId());
-//            }
+            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setDescription("Created group [" + group.getTitle() + "]");
+            auditNotificationDTO.setType("group");
+//            auditNotificationDTO.setCreatedOperator(user);
+            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(),  request.getGroup().getTitle() + " Group " + status.getRegDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
+            log.error("Error occurred while creating group [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
