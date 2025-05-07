@@ -22,7 +22,9 @@ public class AuditLog implements Serializable {
 
     private String type;
 
-    private UserModel createdOperator;
+    private Operator createdOperator;
+
+    private UserModel createdUser;
 
     private Band createdBand;
 
@@ -75,12 +77,20 @@ public class AuditLog implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public UserModel getCreatedOperator() {
+    public Operator getCreatedOperator() {
         return createdOperator;
     }
 
-    public void setCreatedOperator(UserModel createdOperator) {
+    public void setCreatedOperator(Operator createdOperator) {
         this.createdOperator = createdOperator;
+    }
+
+    public UserModel getCreatedUser() {
+        return createdUser;
+    }
+
+    public void setCreatedUser(UserModel createdUser) {
+        this.createdUser = createdUser;
     }
 
     public Band getCreatedBand() {

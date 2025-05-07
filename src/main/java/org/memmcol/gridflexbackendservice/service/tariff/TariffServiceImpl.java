@@ -416,7 +416,7 @@ public class TariffServiceImpl implements TariffService {
             }
         }
         for (String key : tariffCache.keySet()) {
-            if (key.startsWith("tariffs_")) {
+            if (key.startsWith("tariffs")) {
                 tariffCache.remove(key);
             }
         }

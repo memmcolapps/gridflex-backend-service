@@ -2,10 +2,12 @@ package org.memmcol.gridflexbackendservice.model;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class UserDTO {
+public class UserDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     private UserModel user;
     private List<GroupWithPermissionsDTO> groups;
 

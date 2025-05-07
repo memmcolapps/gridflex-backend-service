@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.user;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.*;
@@ -12,6 +14,7 @@ import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,6 +58,15 @@ public class UserServiceImpl implements  UserService {
 
     private String userName = "User";
 
+    private final IMap<String, Object> userCache;
+
+    private final IMap<String, Object> auditCache;
+
+    public UserServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
+        this.userCache = hazelcastInstance.getMap("user-Cache");
+        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+    }
+
     @Override
     public Map<String, Object> createUser(CreateUserRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -94,11 +106,11 @@ public class UserServiceImpl implements  UserService {
                 }
             }
             UserModel user = userMapper.findById(request.getUser().getId());
-//            handleAddCache(operator);
+            handleAddCache(user);
             auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription("Created User [" + user.getEmail() + "]");
             auditNotificationDTO.setType("user");
-            auditNotificationDTO.setCreatedOperator(user);
+            auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
@@ -153,11 +165,11 @@ public class UserServiceImpl implements  UserService {
                 }
             }
           UserModel user = userMapper.findById(request.getUser().getId());
-//            handleAddCache(operator);
+            handleAddCache(user);
             auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription("Updated User [" + user.getEmail() + "]");
             auditNotificationDTO.setType("user");
-            auditNotificationDTO.setCreatedOperator(user);
+            auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
@@ -175,6 +187,26 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+
+            // Build a unique cache key
+            StringBuilder cacheKeyBuilder = new StringBuilder("users");
+            if (firstname != null && !firstname.isEmpty()) cacheKeyBuilder.append("_firstname_").append(firstname);
+            if (lastname != null && !lastname.isEmpty()) cacheKeyBuilder.append("_lastname_").append(lastname);
+            if (email != null && !email.isEmpty()) cacheKeyBuilder.append("_email_").append(email);
+            if (permission != null && !permission.isEmpty()) cacheKeyBuilder.append("_permission_").append(permission);
+            if (dateAdded != null && !dateAdded.isEmpty()) cacheKeyBuilder.append("_dateAdded_").append(dateAdded);
+            if (lastActive != null && !lastActive.isEmpty()) cacheKeyBuilder.append("_lastActive_").append(lastActive);
+            cacheKeyBuilder.append("_page_").append(page);
+            cacheKeyBuilder.append("_size_").append(size);
+
+            String cacheKey = cacheKeyBuilder.toString();
+
+            // Return from cache if available
+            Object cachedUser = userCache.get(cacheKey);
+            if (cachedUser != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
+            }
+
             List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
 
             // Apply filtering
@@ -286,6 +318,8 @@ public class UserServiceImpl implements  UserService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) userDTOs.size() / size));
 
+            userCache.put(cacheKey, response);
+
             return ResponseMap.response(status.getSuccessCode(), userName + "s " + status.getDesc(), response);
 
         } catch (Exception exception) {
@@ -303,9 +337,22 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            Operator isUser = operatorMapper.findByAuthEmail(username);//operatorMapper.GetOperator(username);
+            if (!isUser.isUstate()) {
+                throw new LockedException("User is blocked");
+            }
+
+            Object cachedOperator = userCache.get(userId.toString());
+
+            if (cachedOperator != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedOperator);
+            }
+
             UserModel user = userMapper.findById(userId);
             if (user == null) {
-                throw new RuntimeException("User not found");
+               return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), cachedOperator);
             }
 
             List<Group> groups = userMapper.findGroupsByUserId(userId);
@@ -377,11 +424,11 @@ public class UserServiceImpl implements  UserService {
             }
             String desc = state ? "Activated" : "Deactivated" + " User [" + isOperator.getEmail() + "]";
             UserModel user = userMapper.findById(userId);
-//            handleAddCache(operator);
+            handleAddCache(user);
             auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("user");
-            auditNotificationDTO.setCreatedOperator(user);
+            auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
         } catch (Exception exception) {
@@ -499,6 +546,21 @@ public class UserServiceImpl implements  UserService {
 
     }
 
+    private void handleAddCache(UserModel user) {
+        userCache.remove(user.getId().toString());
+        for (String key : auditCache.keySet()) {
+            if (key.startsWith("grid_flex_audit_log_page_")) {
+                auditCache.remove(key);
+            }
+        }
+        for (String key : userCache.keySet()) {
+            if (key.startsWith("users")) {
+                userCache.remove(key);
+            }
+        }
+        userCache.put(user.getId().toString(), user);  // Cache updated or deleted entity
+    }
+
 //
 //    @Override
 //    public Map<String, Object> getFilteredUsers(
@@ -552,22 +614,5 @@ public class UserServiceImpl implements  UserService {
 //            exceptionAuditRepository.save(exceptionErrorLogs);
 //            throw exception;
 //        }
-//    }
-
-
-
-//    private void handleAddCache(UserModel operator) {
-//        tariffCache.remove(operator.getEmail());
-//        for (String key : auditCache.keySet()) {
-//            if (key.startsWith("grid_flex_audit_log_page_")) {
-//                auditCache.remove(key);
-//            }
-//        }
-//        for (String key : tariffCache.keySet()) {
-//            if (key.startsWith("tariffs_")) {
-//                tariffCache.remove(key);
-//            }
-//        }
-//        tariffCache.put(tariff.getId().toString(), tariff);  // Cache updated or deleted entity
 //    }
 }
