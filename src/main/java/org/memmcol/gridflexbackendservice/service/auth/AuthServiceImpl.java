@@ -3,9 +3,7 @@ package org.memmcol.gridflexbackendservice.service.auth;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
-import org.memmcol.gridflexbackendservice.model.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.Operator;
-import org.memmcol.gridflexbackendservice.model.AuditLog;
+import org.memmcol.gridflexbackendservice.model.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -71,14 +69,14 @@ public class AuthServiceImpl implements AuthService {
 	public Map<String, Object> logout(String token, int expirySeconds, String username) {
 		AuditLog auditNotificationDTO = new AuditLog();
 		try {
-			Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
+			UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 			if (isOperatorExist == null) {
 				return ResponseMap.response(status.getNotFoundCode(), user + status.getNotFoundDesc(), "");
 			}
-			isOperatorExist.setPasswordEncrypt("");
+			isOperatorExist.getUser().setPassword("");
 			operatorMapper.updateLogoutState(username);
 			blacklistToken(token, expirySeconds);
-			auditNotificationDTO.setCreator(isOperatorExist);
+			auditNotificationDTO.setCreator(isOperatorExist.getUser());
 			auditNotificationDTO.setDescription(username + " Logged out");
 			auditNotificationDTO.setType("auth");
 			removeFromCache();
@@ -99,21 +97,20 @@ public class AuthServiceImpl implements AuthService {
 
 
 	public Map<String, Object> handleForgetPassword(String username, String password) {
-
 		AuditLog AuditLog = new AuditLog();
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		try {
 			String email = (authentication != null) ? authentication.getName() : "Unknown";
-			Operator isUser = operatorMapper.GetOperator(email);
-			if (!isUser.isUstate()) {
+			UserDTO isUser = operatorMapper.findAuthByUserEmail(email);
+			if (!isUser.getUser().getStatus()) {
 				throw new LockedException("User is blocked");
 			}
 
-			Operator isOperator = operatorMapper.GetOperator(username);
+			UserDTO isOperator = operatorMapper.findAuthByUserEmail(username);
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}
-			if(!Objects.equals(isUser.getEmail(), isOperator.getEmail())){
+			if(!Objects.equals(isUser.getUser().getEmail(), isOperator.getUser().getEmail())){
 				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
 			}
 			if (!verifiedUsers.containsKey(username)) {
@@ -124,14 +121,14 @@ public class AuthServiceImpl implements AuthService {
 			if (passwordChangeResult == 0) {
 				return ResponseMap.response(status.getBlockCode(), user + " " + status.getBlockFailureDesc(), "");
 			}
-			isOperator.setPasswordEncrypt("");
-			isUser.setPasswordEncrypt("");
+			isOperator.getUser().setPassword("");
+			isUser.getUser().setPassword("");
 			// Remove OTP verification from cache after successful password reset
 			verifiedUsers.remove(username);
 //			handleCacheUpdate(isOperator);
-			AuditLog.setCreator(isUser);
-			AuditLog.setCreatedOperator(isOperator);
-			AuditLog.setDescription(isOperator.getEmail() + " Reset password");
+			AuditLog.setCreator(isUser.getUser());
+			AuditLog.setCreatedUser(isOperator.getUser());
+			AuditLog.setDescription(isOperator.getUser().getEmail() + " Reset password");
 			AuditLog.setType("operator");
 			auditRepository.save(AuditLog);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");

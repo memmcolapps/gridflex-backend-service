@@ -16,13 +16,13 @@ public class AuditLog implements Serializable {
     @Id
     private String id;
 
-    private Operator creator;
+    private UserModel creator;
 
     private String description;
 
     private String type;
 
-    private Operator createdOperator;
+//    private Operator createdOperator;
 
     private UserModel createdUser;
 
@@ -45,11 +45,11 @@ public class AuditLog implements Serializable {
         this.id = id;
     }
 
-    public Operator getCreator() {
+    public UserModel getCreator() {
         return creator;
     }
 
-    public void setCreator(Operator creator) {
+    public void setCreator(UserModel creator) {
         this.creator = creator;
     }
 
@@ -75,14 +75,6 @@ public class AuditLog implements Serializable {
 
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public Operator getCreatedOperator() {
-        return createdOperator;
-    }
-
-    public void setCreatedOperator(Operator createdOperator) {
-        this.createdOperator = createdOperator;
     }
 
     public UserModel getCreatedUser() {

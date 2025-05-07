@@ -75,8 +75,8 @@ public class UserServiceImpl implements  UserService {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (!isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
             UserModel operator = request.getUser();
@@ -107,7 +107,7 @@ public class UserServiceImpl implements  UserService {
             }
             UserModel user = userMapper.findById(request.getUser().getId());
             handleAddCache(user);
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(isOperatorExist.getUser());
             auditNotificationDTO.setDescription("Created User [" + user.getEmail() + "]");
             auditNotificationDTO.setType("user");
             auditNotificationDTO.setCreatedUser(user);
@@ -130,11 +130,10 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (!isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
             UserModel operator = request.getUser();
@@ -166,7 +165,7 @@ public class UserServiceImpl implements  UserService {
             }
           UserModel user = userMapper.findById(request.getUser().getId());
             handleAddCache(user);
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(isOperatorExist.getUser());
             auditNotificationDTO.setDescription("Updated User [" + user.getEmail() + "]");
             auditNotificationDTO.setType("user");
             auditNotificationDTO.setCreatedUser(user);
@@ -336,23 +335,22 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getUser(Long userId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isUser = operatorMapper.findByAuthEmail(username);//operatorMapper.GetOperator(username);
-            if (!isUser.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
 
-            Object cachedOperator = userCache.get(userId.toString());
+            Object cachedUser = userCache.get(userId.toString());
 
-            if (cachedOperator != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedOperator);
+            if (cachedUser != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedUser);
             }
 
             UserModel user = userMapper.findById(userId);
             if (user == null) {
-               return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), cachedOperator);
+               return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
             }
 
             List<Group> groups = userMapper.findGroupsByUserId(userId);
@@ -406,11 +404,10 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (!isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
             // check if operator exist
@@ -425,7 +422,7 @@ public class UserServiceImpl implements  UserService {
             String desc = state ? "Activated" : "Deactivated" + " User [" + isOperator.getEmail() + "]";
             UserModel user = userMapper.findById(userId);
             handleAddCache(user);
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(isOperatorExist.getUser());
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("user");
             auditNotificationDTO.setCreatedUser(user);
@@ -448,8 +445,8 @@ public class UserServiceImpl implements  UserService {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (!isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
 
@@ -472,7 +469,7 @@ public class UserServiceImpl implements  UserService {
                     }
                 }
             }
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(isOperatorExist.getUser());
             auditNotificationDTO.setDescription("Created group [" + group.getTitle() + "]");
             auditNotificationDTO.setType("group");
 //            auditNotificationDTO.setCreatedOperator(user);

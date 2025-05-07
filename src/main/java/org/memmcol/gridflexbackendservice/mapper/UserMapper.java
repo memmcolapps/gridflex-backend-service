@@ -215,54 +215,6 @@ public interface UserMapper {
     List<Group> getGroups();
 
 
-    @Select("SELECT " +
-            "u.id AS user_id, u.firstname, u.lastname u.email, u.status, u.active, u.last_active, u.created_at, u.updated_at," +
-            "g.id AS group_id, g.title AS group_name, " +
-            "m.id AS module_id, m.name AS module_name, " +
-            "sm.id AS submodule_id, sm.name AS submodule_name, " +
-            "p.id AS permission_id, p.name AS permission_name " +
-            "FROM users u " +
-            "LEFT JOIN user_groups ug ON u.id = ug.user_id " +
-            "LEFT JOIN groups g ON ug.group_id = g.id " +
-            "LEFT JOIN group_modules gm ON g.id = gm.group_id " +
-            "LEFT JOIN modules m ON gm.module_id = m.id " +
-            "LEFT JOIN sub_modules sm ON m.id = sm.module_id " +
-            "LEFT JOIN permissions p ON sm.id = p.sub_module_id " +
-            "ORDER BY u.id")
-    @Results(id = "UserWithGroupsMap", value = {
-            @Result(property = "id", column = "user_id"),
-            @Result(property = "name", column = "user_name"),
-            @Result(property = "email", column = "email"),
-            @Result(property = "status", column = "status"),
-            @Result(property = "active", column = "active"),
-            @Result(property = "lastActive", column = "last_active"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "groups", javaType = List.class, column = "group_id",
-                    many = @Many(select = "mapGroups"))
-    })
-    List<UserDTO> findAllUsersWithGroupsAndPermissions();
-
-    @Select("SELECT " +
-            "g.id AS group_id, g.title AS group_name, " +
-            "m.id AS module_id, m.name AS module_name, " +
-            "sm.id AS submodule_id, sm.name AS submodule_name, " +
-            "p.id AS permission_id, p.name AS permission_name " +
-            "FROM groups g " +
-            "LEFT JOIN group_modules gm ON g.id = gm.group_id " +
-            "LEFT JOIN modules m ON gm.module_id = m.id " +
-            "LEFT JOIN sub_modules sm ON m.id = sm.module_id " +
-            "LEFT JOIN permissions p ON sm.id = p.sub_module_id " +
-            "WHERE g.id = #{groupId}")
-    @Results(id = "GroupWithPermissionsMap", value = {
-            @Result(property = "id", column = "group_id"),
-            @Result(property = "name", column = "group_name"),
-
-            @Result(property = "modules", javaType = List.class, column = "module_id",
-                    many = @Many(select = "mapModules"))
-    })
-    Group mapGroups(Long groupId);
-
     @Update("UPDATE users SET status = #{state} WHERE id = #{userId}")
     int changeStatus(Long userId, Boolean state);
 
@@ -272,6 +224,59 @@ public interface UserMapper {
 //    @Insert("INSERT INTO user_groups(user_id, group_id) VALUES(#{userId}, #{groupId})")
 //    void assignUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId);
 }
+
+
+//
+//    @Select("SELECT " +
+//            "u.id AS user_id, u.firstname, u.lastname u.email, u.status, u.active, u.last_active, u.created_at, u.updated_at," +
+//            "g.id AS group_id, g.title AS group_name, " +
+//            "m.id AS module_id, m.name AS module_name, " +
+//            "sm.id AS submodule_id, sm.name AS submodule_name, " +
+//            "p.id AS permission_id, p.name AS permission_name " +
+//            "FROM users u " +
+//            "LEFT JOIN user_groups ug ON u.id = ug.user_id " +
+//            "LEFT JOIN groups g ON ug.group_id = g.id " +
+//            "LEFT JOIN group_modules gm ON g.id = gm.group_id " +
+//            "LEFT JOIN modules m ON gm.module_id = m.id " +
+//            "LEFT JOIN sub_modules sm ON m.id = sm.module_id " +
+//            "LEFT JOIN permissions p ON sm.id = p.sub_module_id " +
+//            "ORDER BY u.id")
+//    @Results(id = "UserWithGroupsMap", value = {
+//            @Result(property = "id", column = "user_id"),
+//            @Result(property = "name", column = "user_name"),
+//            @Result(property = "email", column = "email"),
+//            @Result(property = "status", column = "status"),
+//            @Result(property = "active", column = "active"),
+//            @Result(property = "lastActive", column = "last_active"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "groups", javaType = List.class, column = "group_id",
+//                    many = @Many(select = "mapGroups"))
+//    })
+//    List<UserDTO> findAllUsersWithGroupsAndPermissions();
+//
+//    @Select("SELECT " +
+//            "g.id AS group_id, g.title AS group_name, " +
+//            "m.id AS module_id, m.name AS module_name, " +
+//            "sm.id AS submodule_id, sm.name AS submodule_name, " +
+//            "p.id AS permission_id, p.name AS permission_name " +
+//            "FROM groups g " +
+//            "LEFT JOIN group_modules gm ON g.id = gm.group_id " +
+//            "LEFT JOIN modules m ON gm.module_id = m.id " +
+//            "LEFT JOIN sub_modules sm ON m.id = sm.module_id " +
+//            "LEFT JOIN permissions p ON sm.id = p.sub_module_id " +
+//            "WHERE g.id = #{groupId}")
+//    @Results(id = "GroupWithPermissionsMap", value = {
+//            @Result(property = "id", column = "group_id"),
+//            @Result(property = "name", column = "group_name"),
+//
+//            @Result(property = "modules", javaType = List.class, column = "module_id",
+//                    many = @Many(select = "mapModules"))
+//    })
+//    Group mapGroups(Long groupId);
+
+
+
 
 //@Select("SELECT * FROM groups WHERE title =#{title}")
 //Group findGroupById(String title);

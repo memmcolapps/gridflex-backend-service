@@ -66,8 +66,8 @@ public class TariffServiceImpl implements TariffService {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (!isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
             Tariff isExist = tariffMapper.getTariff(tariff.getName());
@@ -85,9 +85,9 @@ public class TariffServiceImpl implements TariffService {
                 return ResponseMap.response(status.getRegCode(), tariffName + " " + status.getRegFailureDesc(), "");
             }
             Tariff tariffByName = tariffMapper.getTariff(tariff.getName());
-            isOperatorExist.setPasswordEncrypt("");
+            isOperatorExist.getUser().setPassword("");
             handleAddCache(tariffByName);
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(isOperatorExist.getUser());
             auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariffByName);
@@ -112,8 +112,8 @@ public class TariffServiceImpl implements TariffService {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (!isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
             Tariff tariffById = tariffMapper.getTariffById(tariffId);
@@ -142,8 +142,8 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariff = tariffMapper.getTariffById(tariffById.getId());
             handleAddCache(tariffById);
-            isOperatorExist.setPasswordEncrypt("");
-            auditNotificationDTO.setCreator(isOperatorExist);
+            isOperatorExist.getUser().setPassword("");
+            auditNotificationDTO.setCreator(isOperatorExist.getUser());
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariff);
@@ -339,8 +339,8 @@ public class TariffServiceImpl implements TariffService {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = (authentication != null) ? authentication.getName() : "Unknown";
-            Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-            if (isOperatorExist == null || !isOperatorExist.isUstate()) {
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            if (!isOperatorExist.getUser().getStatus()) {
                 throw new LockedException("User is blocked");
             }
             String s = capitalizeFirstLetter(request.getApproveStatus());
@@ -360,7 +360,7 @@ public class TariffServiceImpl implements TariffService {
                     Tariff tariff = tariffMapper.getTariffById(id);
                     if(tariff == null) {
                         String desc = s+ "Tariff [" + id + "] does not exist ";
-                        auditNotificationDTO.setCreator(isOperatorExist);
+                        auditNotificationDTO.setCreator(isOperatorExist.getUser());
                         auditNotificationDTO.setDescription(desc);
                         auditNotificationDTO.setType("tariff");
                         auditNotificationDTO.setCreatedTariff(null);
@@ -369,8 +369,8 @@ public class TariffServiceImpl implements TariffService {
                     }
                     handleAddCache(tariff);
                     String desc = s + " Tariff [" + tariff.getName() + "]";
-                    isOperatorExist.setPasswordEncrypt("");
-                    auditNotificationDTO.setCreator(isOperatorExist);
+                    isOperatorExist.getUser().setPassword("");
+                    auditNotificationDTO.setCreator(isOperatorExist.getUser());
                     auditNotificationDTO.setDescription(desc);
                     auditNotificationDTO.setType("tariff");
                     auditNotificationDTO.setCreatedTariff(tariff);
@@ -395,8 +395,8 @@ public class TariffServiceImpl implements TariffService {
     private void validateAuthenticatedOperator() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = (authentication != null) ? authentication.getName() : "Unknown";
-        Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-        if (isOperatorExist == null || !isOperatorExist.isUstate()) {
+        UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+        if (!isOperatorExist.getUser().getStatus()) {
             throw new LockedException("User is blocked");
         }
     }

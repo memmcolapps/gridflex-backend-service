@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.AuditLog;
 import org.memmcol.gridflexbackendservice.model.Operator;
+import org.memmcol.gridflexbackendservice.model.UserDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -29,6 +30,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +42,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	 private static final Logger log = LoggerFactory.getLogger(CustomAuthenticationFilter.class);
 	 private AuthenticationManager authenticationManager;
 //	@Autowired
-	private AuthMapper operatorMapper;
+	private AuthMapper authMapper;
 
 	private AuditRepository auditRepository;
 
@@ -58,10 +60,10 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	public CustomAuthenticationFilter(
 			AuthenticationManager authenticationManager,
-			AuthMapper operatorMapper,
+			AuthMapper authMapper,
 			AuditRepository auditRepository, HazelcastInstance hazelcastInstance) {
 		this.authenticationManager = authenticationManager;
-		this.operatorMapper = operatorMapper;
+		this.authMapper = authMapper;
 		this.auditRepository = auditRepository;
 		this.auditCache = hazelcastInstance.getMap("audit-Cache");
 		this.authCache = hazelcastInstance.getMap("auth-Cache");
@@ -74,13 +76,13 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		String password = request.getParameter("password");
 
 		// Fetch user details before authentication
-		Operator user = operatorMapper.findByAuthEmail(username);
+		UserDTO user = authMapper.findAuthByUserEmail(username);
 		if (user == null) {
 			throw new UsernameNotFoundException("User not found");
 		}
 
 		// Determine if user is admin or regular user
-		boolean isAdmin = user.isPermission();
+		boolean isAdmin = user.getUser().getStatus();
 		String requiredHeaderKey = isAdmin ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
 		String requiredHeaderValue = isAdmin ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 
@@ -107,21 +109,18 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			Authentication authentication) throws IOException, ServletException {
 		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
 		AuditLog auditNotificationDTO = new AuditLog();
-		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes()); //Encrypt/Sign the token
+		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
+
 		String access_token = JWT.create()
 				.withSubject(user.getUsername())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 30 days expiration
-				// .withExpiresAt(new Date(System.currentTimeMillis() + 30 * 60 * 1000))
-				.withIssuer(request.getRequestURL().toString())
+				.withExpiresAt(new Date(System.currentTimeMillis() + 10 * 60 * 1000))
 				.withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
 				.sign(algorithm);
 
-		//response.setHeader("Authorization", "Bearer " + "123456"); // Add the JWT to the header
-
-		Operator operator = operatorMapper.findByAuthEmail(user.getUsername());
-		operator.setPasswordEncrypt("");
-		auditNotificationDTO.setCreator(operator);
-		auditNotificationDTO.setDescription(operator.getEmail()+" Logged in");
+		UserDTO userDTO = authMapper.findAuthByUserEmail(user.getUsername());
+		userDTO.getUser().setPassword("");
+		auditNotificationDTO.setCreator(userDTO.getUser());
+		auditNotificationDTO.setDescription(userDTO.getUser().getEmail()+" Logged in");
 		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {
@@ -134,7 +133,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		Map<String, Object> token = new HashMap<>();
 		resp.put("responsecode", "000");
 		resp.put("responsedesc", "Authentication Successful");
-		token.put("user_info", operator);
+		token.put("user_info", userDTO.getUser());
 		token.put("access_token", access_token);
 		resp.put("responsedata", token);
 
@@ -167,3 +166,15 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 }
 
+//Encrypt/Sign the token
+//		String access_token = JWT.create()
+//				.withSubject(user.getUsername())
+//				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 30 days expiration
+//				// .withExpiresAt(new Date(System.currentTimeMillis() + 30 * 60 * 1000))
+//				.withIssuer(request.getRequestURL().toString())
+//				.withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+//				.sign(algorithm);
+
+
+//		Operator operator = operatorMapper.findByAuthEmail(user.getUsername());
+//		operator.setPasswordEncrypt("");
