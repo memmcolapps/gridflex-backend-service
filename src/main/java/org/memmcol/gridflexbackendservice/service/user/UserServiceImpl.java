@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,13 +73,20 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
 
@@ -131,11 +139,19 @@ public class UserServiceImpl implements  UserService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
             // check if operator exist
@@ -186,6 +202,19 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
+                throw new LockedException("User is blocked");
+            }
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("users");
@@ -335,12 +364,20 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getUser(Long userId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            String username = (authentication != null) ? authentication.getName() : "Unknown";
-//            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-//            if (!isOperatorExist.getUser().getStatus()) {
-//                throw new LockedException("User is blocked");
-//            }
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
+                throw new LockedException("User is blocked");
+            }
 
             Object cachedUser = userCache.get(userId.toString());
 
@@ -405,11 +442,19 @@ public class UserServiceImpl implements  UserService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             // check if operator exist
             UserModel isOperator = userMapper.findById(userId);
             if (isOperator == null) {
@@ -444,11 +489,19 @@ public class UserServiceImpl implements  UserService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
 
             Group group = request.getGroup();
             userMapper.insertGroup(group);
@@ -490,6 +543,20 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getGroups() {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
+                throw new LockedException("User is blocked");
+            }
+
             List<Group> groups = userMapper.getGroups();
             if (groups == null) {
                 return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");

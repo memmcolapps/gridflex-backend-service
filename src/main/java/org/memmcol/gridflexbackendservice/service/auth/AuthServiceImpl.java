@@ -98,19 +98,27 @@ public class AuthServiceImpl implements AuthService {
 
 	public Map<String, Object> handleForgetPassword(String username, String password) {
 		AuditLog AuditLog = new AuditLog();
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		try {
-			String email = (authentication != null) ? authentication.getName() : "Unknown";
-			UserDTO isUser = operatorMapper.findAuthByUserEmail(email);
-			if (!isUser.getUser().getStatus()) {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			String isUser = "Unknown";
+
+			if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+				CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+				isUser = principal.getUsername();  // or principal.getEmail() if you named it that way
+			}
+
+			UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(isUser);
+
+			if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
 				throw new LockedException("User is blocked");
 			}
+
 
 			UserDTO isOperator = operatorMapper.findAuthByUserEmail(username);
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}
-			if(!Objects.equals(isUser.getUser().getEmail(), isOperator.getUser().getEmail())){
+			if(!Objects.equals(isOperatorExist.getUser().getEmail(), isOperator.getUser().getEmail())){
 				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
 			}
 			if (!verifiedUsers.containsKey(username)) {
@@ -122,11 +130,11 @@ public class AuthServiceImpl implements AuthService {
 				return ResponseMap.response(status.getBlockCode(), user + " " + status.getBlockFailureDesc(), "");
 			}
 			isOperator.getUser().setPassword("");
-			isUser.getUser().setPassword("");
+			isOperatorExist.getUser().setPassword("");
 			// Remove OTP verification from cache after successful password reset
 			verifiedUsers.remove(username);
 //			handleCacheUpdate(isOperator);
-			AuditLog.setCreator(isUser.getUser());
+			AuditLog.setCreator(isOperatorExist.getUser());
 			AuditLog.setCreatedUser(isOperator.getUser());
 			AuditLog.setDescription(isOperator.getUser().getEmail() + " Reset password");
 			AuditLog.setType("operator");

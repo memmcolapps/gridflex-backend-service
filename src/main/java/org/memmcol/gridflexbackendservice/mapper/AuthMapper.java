@@ -34,8 +34,8 @@ public interface AuthMapper {
 //    })
 //    Operator findByAuthEmail(String email);
 
-    @Select("SELECT RoleId, OperatorRole FROM Roles WHERE RoleId IN (SELECT RoleId FROM Operators_TB WHERE RoleId = #{roleId})")
-    List<Role> getRolesByOperatorEmail(Long roleId);
+//    @Select("SELECT RoleId, OperatorRole FROM Roles WHERE RoleId IN (SELECT RoleId FROM Operators_TB WHERE RoleId = #{roleId})")
+//    List<Role> getRolesByOperatorEmail(Long roleId);
 
     @Select("""
     WITH RECURSIVE RecursiveHierarchy AS (
@@ -80,36 +80,9 @@ public interface AuthMapper {
     @Update("UPDATE Operators_TB SET Active = false WHERE Email = #{email}")
     void updateLogoutState(String email);
 
-    @Select("SELECT o.Id, o.Firstname, o.Lastname, o.Email, o.Contact, o.Created_at, o.Updated_at, o.RoleId, o.Hierarchy, o.Ustate, o.Permission, o.Active, r.OperatorRole " +
-            "FROM Operators_TB o " +
-            "INNER JOIN Roles r ON o.RoleId = r.RoleId " +
-            "LEFT JOIN Organization_TB h ON o.Hierarchy = h.id " +
-            "WHERE o.Email = #{email}")
-    @Results({
-            @Result(property = "id", column = "Id"),
-            @Result(property = "firstname", column = "Firstname"),
-            @Result(property = "lastname", column = "Lastname"),
-            @Result(property = "email", column = "Email"),
-            @Result(property = "contact", column = "Contact"),
-            @Result(property = "ustate", column = "Ustate"),
-            @Result(property = "permission", column = "Permission"),
-            @Result(property = "active", column = "Active"),
-            @Result(property = "roleId", column = "RoleId"),
-            @Result(property = "hierarchy", column = "Hierarchy"),
-            @Result(property = "roles", column = "RoleId",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getRolesByOperatorEmail")),
-            @Result(property = "nodes", column = "Email",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById")),
-            @Result(property = "createdAt", column = "CreatedAt"),
-            @Result(property = "updatedAt", column = "UpdatedAt"),
-    })
-    Operator GetOperator(String email);
 
     @Update("UPDATE Operators_TB SET PasswordEncrypt = #{password} WHERE Email = #{email}")
     int resetPassword(String operator, String encode);
-
-
-
 
 
     @Select("SELECT * FROM users WHERE email = #{email}")
@@ -169,6 +142,34 @@ public interface AuthMapper {
 
 }
 
+
+
+//    @Select("SELECT o.Id, o.Firstname, o.Lastname, o.Email, o.Contact, o.Created_at, o.Updated_at, o.RoleId, o.Hierarchy, o.Ustate, o.Permission, o.Active, r.OperatorRole " +
+//            "FROM Operators_TB o " +
+//            "INNER JOIN Roles r ON o.RoleId = r.RoleId " +
+//            "LEFT JOIN Organization_TB h ON o.Hierarchy = h.id " +
+//            "WHERE o.Email = #{email}")
+//    @Results({
+//            @Result(property = "id", column = "Id"),
+//            @Result(property = "firstname", column = "Firstname"),
+//            @Result(property = "lastname", column = "Lastname"),
+//            @Result(property = "email", column = "Email"),
+//            @Result(property = "contact", column = "Contact"),
+//            @Result(property = "ustate", column = "Ustate"),
+//            @Result(property = "permission", column = "Permission"),
+//            @Result(property = "active", column = "Active"),
+//            @Result(property = "roleId", column = "RoleId"),
+//            @Result(property = "hierarchy", column = "Hierarchy"),
+//            @Result(property = "roles", column = "RoleId",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getRolesByOperatorEmail")),
+//            @Result(property = "nodes", column = "Email",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById")),
+//            @Result(property = "createdAt", column = "CreatedAt"),
+//            @Result(property = "updatedAt", column = "UpdatedAt"),
+//    })
+//    Operator GetOperator(String email);
+
+///
 
 
 //    @Select("WITH RecursiveHierarchy AS( " +

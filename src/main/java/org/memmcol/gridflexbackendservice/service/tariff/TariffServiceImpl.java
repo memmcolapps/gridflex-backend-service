@@ -65,11 +65,19 @@ public class TariffServiceImpl implements TariffService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             Tariff isExist = tariffMapper.getTariff(tariff.getName());
             if (isExist != null) {
                 return ResponseMap.response(status.getExistCode(), tariffName + " " + status.getExistDesc(), "");
@@ -111,11 +119,19 @@ public class TariffServiceImpl implements TariffService {
         String desc = "";
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             Tariff tariffById = tariffMapper.getTariffById(tariffId);
             if(tariffById == null) {
                 return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
@@ -234,7 +250,19 @@ public class TariffServiceImpl implements TariffService {
 
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-//            validateAuthenticatedOperator();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
+                throw new LockedException("User is blocked");
+            }
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("tariffs");
@@ -295,7 +323,20 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> getUniqueTariffId() {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            validateAuthenticatedOperator();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
+                throw new LockedException("User is blocked");
+            }
+
 
             List<String> tariffName = tariffMapper.getUniqueTariffName();
             List<String> tariffIndex = tariffMapper.getUniqueTariffIndex();
@@ -338,11 +379,19 @@ public class TariffServiceImpl implements TariffService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             String s = capitalizeFirstLetter(request.getApproveStatus());
             if (!"Approved".equalsIgnoreCase(s)) {
                 return ResponseMap.response(
@@ -391,15 +440,6 @@ public class TariffServiceImpl implements TariffService {
 
     }
 
-
-    private void validateAuthenticatedOperator() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = (authentication != null) ? authentication.getName() : "Unknown";
-        UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-        if (!isOperatorExist.getUser().getStatus()) {
-            throw new LockedException("User is blocked");
-        }
-    }
 
     public static String capitalizeFirstLetter(String input) {
         if (input == null || input.isEmpty()) return input;

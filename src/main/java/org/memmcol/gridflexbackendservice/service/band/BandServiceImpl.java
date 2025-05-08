@@ -57,11 +57,19 @@ public class BandServiceImpl implements BandService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist != null) {
                 return ResponseMap.response(status.getExistCode(), bandName + " " + status.getExistDesc(), "");
@@ -96,11 +104,19 @@ public class BandServiceImpl implements BandService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist == null) {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
@@ -138,11 +154,19 @@ public class BandServiceImpl implements BandService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             Band bandById = bandMapper.getBandById(bandId);
             if(bandById == null) {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
@@ -175,12 +199,20 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> getBands() {
         try {
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            String username = (authentication != null) ? authentication.getName() : "Unknown";
-//            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-//            if (!isOperatorExist.getUser().getStatus()) {
-//                throw new LockedException("User is blocked");
-//            }
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
+            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
+                throw new LockedException("User is blocked");
+            }
+
             String cacheKey = "bands_";
             Object cachedBand = bandCache.get(cacheKey);
 
@@ -208,11 +240,19 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> getBand(Long bandId) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
+            String username = "Unknown";
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            }
+
             UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
+
+            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
                 throw new LockedException("User is blocked");
             }
+
             Object cachedBand = bandCache.get(bandId.toString());
 
             if (cachedBand != null) {

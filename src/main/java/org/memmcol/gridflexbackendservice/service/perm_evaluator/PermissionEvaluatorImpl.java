@@ -15,14 +15,12 @@ import java.util.Map;
 public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     private static final Map<String, List<String>> SUBMODULE_URI_MAP = Map.of(
-//            "User List", List.of("/user/service/single-user", "/user/service/all-users"),
-//            "Role Assignment", List.of("/roles/assign", "/roles/view"),
 
-                "Data Management", List.of("/band/service/create", "band/service/update", "band/service/change-state",
+            "Data Management", List.of("/band/service/create", "band/service/update", "band/service/change-state",
                     "band/service/all-band",  "band/service/single-band", "tariff/service/single-tariff", "tariff/service/all-tariff",
                     "tariff/service/create", "tariff/service/change-state", "tariff/service/bulk-approve"),
-//
-                "Band Management", List.of("/band/service/create", "band/service/update", "band/service/change-state",
+
+            "Band Management", List.of("/band/service/create", "band/service/update", "band/service/change-state",
                     "band/service/all-band",  "band/service/single-band"),
 
             "Tariff", List.of("tariff/service/single-tariff", "tariff/service/all-tariff",
@@ -37,6 +35,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/user/service/groups",  "/user/service/create/group-permission")
     );
 
+//            "User List", List.of("/user/service/single-user", "/user/service/all-users"),
+//            "Role Assignment", List.of("/roles/assign", "/roles/view"),
 
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {
@@ -84,7 +84,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                         System.out.println("permissions: " + permissions);
                         System.out.println("requestUri: " + requestUri);
 
-                        List<String> mappedUris = SUBMODULE_URI_MAP.get(submoduleName);
+                        List<String> mappedUris = SUBMODULE_URI_MAP.get(moduleName);
                         if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains)) {
                             for (String perm : permissions) {
                                 if (List.of("view", "edit", "approve", "disable").contains(perm)) {
@@ -94,23 +94,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                                 }
                             }
                         }
-
-//                        List<String> mappedUris = SUBMODULE_URI_MAP.get(submoduleName);
-//                        if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains) && permissions.contains("view")) {
-//                            System.out.println("permissions>>>>>> : " + submodule.get("permissions"));
-//                        }
-//                        if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains) && permissions.contains("edit")) {
-//                            System.out.println("permissions>>>>>> : " + submodule.get("permissions"));
-//                        }
-//
-//                        if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains) && permissions.contains("approve")) {
-//                            System.out.println("permissions>>>>>> : " + submodule.get("permissions"));
-//                        }
-//
-//                        if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains) && permissions.contains("disable")) {
-//                            System.out.println("permissions>>>>>> : " + submodule.get("permissions"));
-//                        }
-//                        return true;
                     }
                 }
             }

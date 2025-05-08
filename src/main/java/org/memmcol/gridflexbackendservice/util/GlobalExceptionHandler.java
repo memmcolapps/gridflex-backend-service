@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -310,6 +311,16 @@ public class GlobalExceptionHandler {
 		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
+
+	@ExceptionHandler(UsernameNotFoundException.class)
+	public ResponseEntity<?> handleUsernameNotFoundException(LockedException ex) {
+		String msg = "User not found";
+		errorMessage.put("responsecode", "123");
+		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsedata", "");
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+	}
+
 
 	@SuppressWarnings("serial")
 	@ResponseStatus(HttpStatus.NOT_FOUND)
