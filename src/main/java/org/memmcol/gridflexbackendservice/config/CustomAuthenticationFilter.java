@@ -15,6 +15,7 @@ import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.AuditLog;
 import org.memmcol.gridflexbackendservice.model.Operator;
 import org.memmcol.gridflexbackendservice.model.UserDTO;
+import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -24,16 +25,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -107,17 +106,26 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authentication) throws IOException, ServletException {
-		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal(); // use the provided authentication
+
+//		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
 		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
 
+		ObjectMapper mapper = new ObjectMapper();
+		List<Map<String, Object>> permissionTree = mapper.readValue(userDetails.getPermissionTreeJson(), List.class);
+
 		String access_token = JWT.create()
-				.withSubject(user.getUsername())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 10 * 60 * 1000))
-				.withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+				.withSubject(userDetails.getUsername())
+				.withClaim("roles", userDetails.getAuthorities().stream()
+						.map(GrantedAuthority::getAuthority)
+						.collect(Collectors.toList()))
+				.withClaim("permission_tree", permissionTree) // your structured JSON
+				.withIssuedAt(new Date())
+				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24 hours
 				.sign(algorithm);
 
-		UserDTO userDTO = authMapper.findAuthByUserEmail(user.getUsername());
+		UserDTO userDTO = authMapper.findAuthByUserEmail(userDetails.getUsername());
 		userDTO.getUser().setPassword("");
 		auditNotificationDTO.setCreator(userDTO.getUser());
 		auditNotificationDTO.setDescription(userDTO.getUser().getEmail()+" Logged in");
@@ -134,6 +142,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		resp.put("responsecode", "000");
 		resp.put("responsedesc", "Authentication Successful");
 		token.put("user_info", userDTO.getUser());
+		token.put("groups", permissionTree);
 		token.put("access_token", access_token);
 		resp.put("responsedata", token);
 
@@ -165,6 +174,14 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	}
 
 }
+
+
+//		String access_token = JWT.create()
+//				.withSubject(user.getUsername())
+//				.withExpiresAt(new Date(System.currentTimeMillis() + 10 * 60 * 1000))
+//				.withClaim("permissions", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+//				.sign(algorithm);
+
 
 //Encrypt/Sign the token
 //		String access_token = JWT.create()

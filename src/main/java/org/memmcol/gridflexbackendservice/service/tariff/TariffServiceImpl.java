@@ -234,7 +234,7 @@ public class TariffServiceImpl implements TariffService {
 
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            validateAuthenticatedOperator();
+//            validateAuthenticatedOperator();
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("tariffs");

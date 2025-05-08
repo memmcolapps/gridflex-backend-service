@@ -335,12 +335,12 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getUser(Long userId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
-                throw new LockedException("User is blocked");
-            }
+//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//            String username = (authentication != null) ? authentication.getName() : "Unknown";
+//            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//            if (!isOperatorExist.getUser().getStatus()) {
+//                throw new LockedException("User is blocked");
+//            }
 
             Object cachedUser = userCache.get(userId.toString());
 

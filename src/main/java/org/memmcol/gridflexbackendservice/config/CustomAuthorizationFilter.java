@@ -12,10 +12,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.memmcol.gridflexbackendservice.model.ExceptionErrorLogs;
+//import org.memmcol.gridflexbackendservice.model.CustomUserPrincipal;
+import org.memmcol.gridflexbackendservice.model.CustomUserPrincipal;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -86,16 +86,30 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 					DecodedJWT decodedJWT = verifier.verify(token);
 
 					String username = decodedJWT.getSubject();
+
+					// Decode roles correctly
 					String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
 					Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
 							.map(SimpleGrantedAuthority::new)
 							.collect(Collectors.toList());
 
-					UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-							username, null, authorities
-					);
-					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+					// Optionally: Parse permission_tree JSON (if needed)
+					String permissionTreeJson = decodedJWT.getClaim("permission_tree").toString();
+					// Dummy authority list; you can add real ones if needed
+//					List<GrantedAuthority> authorities = List.of();
+					// Store `permissionTree` somewhere if needed (e.g., in SecurityContext or thread-local)
+					// Add a custom Authentication object with permissions
+					CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
+					UsernamePasswordAuthenticationToken authToken =
+							new UsernamePasswordAuthenticationToken(principal, null, authorities);
+					SecurityContextHolder.getContext().setAuthentication(authToken);
 
+//					// Authenticate user
+//					UsernamePasswordAuthenticationToken authenticationToken =
+//							new UsernamePasswordAuthenticationToken(username, null, authorities);
+//					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+					// Continue filter chain
 					filterChain.doFilter(request, response);
 
 				} catch (JWTVerificationException exception) {
@@ -122,3 +136,56 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 	}
 }
 
+
+//					String token = authorizationHeader.substring("Bearer ".length());
+//					Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
+//					JWTVerifier verifier = JWT.require(algorithm).build();
+//					DecodedJWT decodedJWT = verifier.verify(token);
+//
+//					String username = decodedJWT.getSubject();
+//					String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+//					Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
+//							.map(SimpleGrantedAuthority::new)
+//							.collect(Collectors.toList());
+//
+//					// Decode permission_tree
+//					String permissionTreeJson = decodedJWT.getClaim("permission_tree").asString();
+//					if (permissionTreeJson != null) {
+//						// Convert the permission tree to a map or a list (e.g., TreeMap, HashMap, etc.)
+//						Map<String, Object> permissionTree = new ObjectMapper().readValue(permissionTreeJson, Map.class);
+//
+//						// Check if the user has permission for the current path
+//						if (!permissionEvaluator.hasPermissionForPath(permissionTree, path)) {
+//							handleException(response, new Exception("Permission Denied"), "Permission Denied", HttpServletResponse.SC_FORBIDDEN);
+//							return;
+//						}
+//					}
+//
+//					// Store `permissionTree` somewhere if needed (e.g., in SecurityContext or thread-local)
+//					CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
+//					UsernamePasswordAuthenticationToken authToken =
+//							new UsernamePasswordAuthenticationToken(principal, null, authorities);
+//					SecurityContextHolder.getContext().setAuthentication(authToken);
+//
+//					// Continue filter chain
+//					filterChain.doFilter(request, response);
+
+
+///
+//					String token = authorizationHeader.substring("Bearer ".length());
+//					Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
+//					JWTVerifier verifier = JWT.require(algorithm).build();
+//					DecodedJWT decodedJWT = verifier.verify(token);
+//
+//					String username = decodedJWT.getSubject();
+//					String[] roles = decodedJWT.getClaim("permission_tree").asArray(String.class);
+//					Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
+//							.map(SimpleGrantedAuthority::new)
+//							.collect(Collectors.toList());
+//
+//					UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+//							username, null, authorities
+//					);
+//					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+//
+//					filterChain.doFilter(request, response);

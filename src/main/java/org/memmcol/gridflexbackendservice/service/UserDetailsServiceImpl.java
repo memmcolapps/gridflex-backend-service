@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
@@ -18,15 +20,17 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
 
 @Component
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
 	private static final Logger log = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
-
 	private final AuthMapper authMapper;
 	private final ResponseProperties status;
+	private final ObjectMapper mapper = new ObjectMapper();
 
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -35,11 +39,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		if (userDTO == null || userDTO.getUser() == null) {
 			throw new UsernameNotFoundException("User " + status.getNotFoundDesc());
 		}
-		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getUser().getEmail());
-		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getGroup().getTitle());
-		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getModules().get(0).getModule().getName());
-		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getModules().get(0).getSubModules().get(0).getSubModule().getName());
-		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getModules().get(0).getSubModules().get(0).getPermissions().get(0).getName());
+
 		UserModel user = userDTO.getUser();
 
 		if (!user.getStatus()) {
@@ -50,34 +50,129 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		log.info("User found in the database: {}", user.getEmail());
 		authMapper.updateLoginState(email);
 
-		// Convert group/module/submodule/permissions into GrantedAuthorities
 		Set<GrantedAuthority> authorities = new HashSet<>();
+		List<Map<String, Object>> groupModulePermissionTree = new ArrayList<>();
 
 		if (userDTO.getGroups() != null) {
 			for (GroupWithPermissionsDTO groupDTO : userDTO.getGroups()) {
-				System.out.println("Get groups with permission: "+groupDTO.getGroup().getTitle());
+				Map<String, Object> groupMap = new HashMap<>();
+				groupMap.put("group", groupDTO.getGroup().getTitle());
+
+				List<Map<String, Object>> modulesList = new ArrayList<>();
 				if (groupDTO.getModules() != null) {
 					for (ModuleWithSubModules moduleDTO : groupDTO.getModules()) {
-						System.out.println("module with submodule: "+moduleDTO.getModule().getName());
+						Map<String, Object> moduleMap = new HashMap<>();
+						moduleMap.put("module", moduleDTO.getModule().getName());
+
+						List<Map<String, Object>> submodulesList = new ArrayList<>();
 						if (moduleDTO.getSubModules() != null) {
 							for (SubModuleWithPermissions subDTO : moduleDTO.getSubModules()) {
-								System.out.println("submodule with permission: "+subDTO.getSubModule().getName());
-								if (subDTO.getPermissions() != null) {
-									for (Permission permission : subDTO.getPermissions()) {
-										System.out.println("permission: "+permission.getName());
-										authorities.add(new SimpleGrantedAuthority(permission.getName()));
-									}
-								}
+								Map<String, Object> submoduleMap = new HashMap<>();
+								submoduleMap.put("submodule", subDTO.getSubModule().getName());
+
+								List<String> permissionNames = subDTO.getPermissions().stream()
+										.map(permission -> {
+											authorities.add(new SimpleGrantedAuthority(permission.getName()));
+											return permission.getName();
+										})
+										.collect(Collectors.toList());
+
+								submoduleMap.put("permissions", permissionNames);
+								submodulesList.add(submoduleMap);
 							}
 						}
+
+						moduleMap.put("submodules", submodulesList);
+						modulesList.add(moduleMap);
 					}
 				}
+
+				groupMap.put("modules", modulesList);
+				groupModulePermissionTree.add(groupMap);
 			}
 		}
 
-		return new User(user.getEmail(), user.getPassword(), authorities);
+		String permissionsJson = "";
+		try {
+			permissionsJson = mapper.writeValueAsString(groupModulePermissionTree);
+			log.debug("User Permission Tree JSON: {}", permissionsJson);
+		} catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+			log.error("Error serializing permissions JSON", e);
+            throw new RuntimeException(e);
+        }
+
+        return new CustomUserDetails(
+				user.getEmail(),
+				user.getPassword(),
+				authorities,
+				permissionsJson
+		);
 	}
 }
+
+
+
+
+
+
+
+//
+//@Component
+//@RequiredArgsConstructor
+//public class UserDetailsServiceImpl implements UserDetailsService {
+//
+//	private static final Logger log = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
+//
+//	private final AuthMapper authMapper;
+//	private final ResponseProperties status;
+//
+//	@Override
+//	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+//		UserDTO userDTO = authMapper.findAuthByUserEmail(email);
+//
+//		if (userDTO == null || userDTO.getUser() == null) {
+//			throw new UsernameNotFoundException("User " + status.getNotFoundDesc());
+//		}
+//		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getUser().getEmail());
+//		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getGroup().getTitle());
+//		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getModules().get(0).getModule().getName());
+//		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getModules().get(0).getSubModules().get(0).getSubModule().getName());
+//		System.out.println(">>>>>>>>>>>>>>>>>>>:: "+userDTO.getGroups().get(0).getModules().get(0).getSubModules().get(0).getPermissions().get(0).getName());
+//		UserModel user = userDTO.getUser();
+//
+//		if (!user.getStatus()) {
+//			log.info("User is blocked: {}", user.getStatus());
+//			throw new LockedException("User is disabled");
+//		}
+//
+//		log.info("User found in the database: {}", user.getEmail());
+//		authMapper.updateLoginState(email);
+//
+//		// Convert group/module/submodule/permissions into GrantedAuthorities
+//		Set<GrantedAuthority> authorities = new HashSet<>();
+//
+//		if (userDTO.getGroups() != null) {
+//			for (GroupWithPermissionsDTO groupDTO : userDTO.getGroups()) {
+//				if (groupDTO.getModules() != null) {
+//					for (ModuleWithSubModules moduleDTO : groupDTO.getModules()) {
+//						if (moduleDTO.getSubModules() != null) {
+//							for (SubModuleWithPermissions subDTO : moduleDTO.getSubModules()) {
+//								if (subDTO.getPermissions() != null) {
+//									for (Permission permission : subDTO.getPermissions()) {
+//										System.out.println("permissions: "+permission.getName());
+//										authorities.add(new SimpleGrantedAuthority(permission.getName()));
+//									}
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//
+//		return new User(user.getEmail(), user.getPassword(), authorities);
+//	}
+//}
 
 
 

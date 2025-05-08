@@ -8,10 +8,9 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -44,7 +43,7 @@ public class UserController {
         }
     }
 
-
+    @PreAuthorize("@permissionEvaluator.hasPermission(authentication, 'User List', 'view')")
     @GetMapping("/all-users")
     public ResponseEntity<?> getUsers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,

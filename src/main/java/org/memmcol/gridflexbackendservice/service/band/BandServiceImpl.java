@@ -175,12 +175,12 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> getBands() {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = (authentication != null) ? authentication.getName() : "Unknown";
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-            if (!isOperatorExist.getUser().getStatus()) {
-                throw new LockedException("User is blocked");
-            }
+//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//            String username = (authentication != null) ? authentication.getName() : "Unknown";
+//            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//            if (!isOperatorExist.getUser().getStatus()) {
+//                throw new LockedException("User is blocked");
+//            }
             String cacheKey = "bands_";
             Object cachedBand = bandCache.get(cacheKey);
 
