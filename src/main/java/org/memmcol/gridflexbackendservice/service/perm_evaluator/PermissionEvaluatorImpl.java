@@ -16,6 +16,12 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     private static final Map<String, List<String>> SUBMODULE_URI_MAP = Map.of(
 
+                "Full Access", List.of("/band/service/create", "band/service/update", "band/service/change-state",
+                    "band/service/all-band",  "band/service/single-band", "tariff/service/single-tariff", "tariff/service/all-tariff",
+                    "tariff/service/create", "tariff/service/change-state", "tariff/service/bulk-approve","/user/service/single-user",
+                    "/user/service/all-users", "/user/service/change-state", "/user/service/update",  "/user/service/create",
+                    "/user/service/groups",  "/user/service/create/group-permission"),
+
             "Data Management", List.of("/band/service/create", "band/service/update", "band/service/change-state",
                     "band/service/all-band",  "band/service/single-band", "tariff/service/single-tariff", "tariff/service/all-tariff",
                     "tariff/service/create", "tariff/service/change-state", "tariff/service/bulk-approve"),
