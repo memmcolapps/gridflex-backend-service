@@ -89,10 +89,10 @@ public class  SecurityConfig {
 				.requestMatchers("/auth/service/login/**", "/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
 						"/auth/service/forget-password/**"
 				).permitAll()
-				.requestMatchers("/band/service/create", "band/service/update", "band/service/change-state",
-						"band/service/all-band",  "band/service/single-band", "tariff/service/single-tariff",
-						"tariff/service/all-tariff", "tariff/service/create", "tariff/service/change-state",
-						"tariff/service/bulk-approve","/user/service/single-user", "/user/service/all-users",
+				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
+						"/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff",
+						"/tariff/service/all-tariff", "/tariff/service/create", "/tariff/service/change-state",
+						"/tariff/service/bulk-approve","/user/service/single-user", "/user/service/all-users",
 						"/user/service/change-state", "/user/service/update",  "/user/service/create",
 						"/user/service/groups",  "/user/service/create/group-permission").access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier
