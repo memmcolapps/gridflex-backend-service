@@ -53,6 +53,9 @@ public class  SecurityConfig {
 	@Autowired
 	private ExceptionAuditRepository exceptionAuditRepository;
 
+	@Autowired
+	private CustomAccessDeniedHandler customAccessDeniedHandler;
+
 	private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
 	public void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -113,6 +116,8 @@ public class  SecurityConfig {
 					return new AuthorizationDecision(false);
 				})
 				.anyRequest().authenticated()
+		).exceptionHandling(ex -> ex
+				.accessDeniedHandler(customAccessDeniedHandler)
 		);
 
 

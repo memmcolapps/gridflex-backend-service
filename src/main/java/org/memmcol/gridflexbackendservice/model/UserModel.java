@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 
@@ -9,6 +10,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserModel implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
@@ -55,7 +57,7 @@ public class UserModel implements Serializable {
     }
 
     public void setFirstname(String firstname) {
-        this.firstname = firstname;
+        this.firstname = firstname.trim().toLowerCase();;
     }
 
     public String getLastname() {
@@ -63,7 +65,7 @@ public class UserModel implements Serializable {
     }
 
     public void setLastname(String lastname) {
-        this.lastname = lastname;
+        this.lastname = lastname.trim().toLowerCase();;
     }
 
     public String getEmail() {
@@ -71,7 +73,7 @@ public class UserModel implements Serializable {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email.trim().toLowerCase();
     }
 
     public Long getHierarchyId() {
@@ -104,7 +106,7 @@ public class UserModel implements Serializable {
     }
 
     public void setLastActive(String lastActive) {
-        this.lastActive = lastActive;
+        this.lastActive = lastActive.trim();
     }
 
     public Date getCreatedAt() {
@@ -128,6 +130,6 @@ public class UserModel implements Serializable {
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        this.password = password.trim();
     }
 }

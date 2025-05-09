@@ -502,7 +502,6 @@ public class UserServiceImpl implements  UserService {
                 throw new LockedException("User is blocked");
             }
 
-
             Group group = request.getGroup();
             userMapper.insertGroup(group);
 

@@ -43,7 +43,7 @@ public class UserController {
         }
     }
 
-    @PreAuthorize("@permissionEvaluator.hasPermission(authentication, 'User List', 'view')")
+//    @PreAuthorize("@permissionEvaluator.hasPermission(authentication, 'User List', 'view')")
     @GetMapping("/all-users")
     public ResponseEntity<?> getUsers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,

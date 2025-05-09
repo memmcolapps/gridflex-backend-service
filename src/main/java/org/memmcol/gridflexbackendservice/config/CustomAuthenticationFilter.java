@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.AuditLog;
-import org.memmcol.gridflexbackendservice.model.Operator;
 import org.memmcol.gridflexbackendservice.model.UserDTO;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
 import org.slf4j.Logger;
@@ -25,8 +24,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -47,9 +44,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	private IMap<String, Boolean> auditCache;
 
-	private IMap<String, Boolean> authCache;
+//	private IMap<String, Boolean> authCache;
 
-//	private HazelcastInstance hazelcastInstance;
 	// Define the required headers
 	private static final String ADMIN_HEADER_KEY = "custom";
 	private static final String ADMIN_HEADER_VALUE = "ab@#1cD3fG!mNXyZ$%Kl78&OH@beeb$"; // Change this to a secure value
@@ -65,7 +61,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		this.authMapper = authMapper;
 		this.auditRepository = auditRepository;
 		this.auditCache = hazelcastInstance.getMap("audit-Cache");
-		this.authCache = hazelcastInstance.getMap("auth-Cache");
+//		this.authCache = hazelcastInstance.getMap("auth-Cache");
 	}
 
 	@Override
@@ -75,15 +71,18 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		String password = request.getParameter("password");
 
 		// Fetch user details before authentication
-		UserDTO user = authMapper.findAuthByUserEmail(username);
+		UserDTO user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
 		if (user == null) {
 			throw new UsernameNotFoundException("User not found");
 		}
 
+		String isSuperAdmin = user.getGroups().get(0).getModules().get(0).getModule().getName();
+		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
+		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 		// Determine if user is admin or regular user
-		boolean isAdmin = user.getUser().getStatus();
-		String requiredHeaderKey = isAdmin ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
-		String requiredHeaderValue = isAdmin ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
+//		boolean isAdmin = user.getUser().getStatus();
+//		String requiredHeaderKey = isAdmin ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
+//		String requiredHeaderValue = isAdmin ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 
 		// Validate the required header
 		String headerValue = request.getHeader(requiredHeaderKey);
@@ -92,7 +91,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		}
 
 		// Dynamically set service URL
-		if (isAdmin) {
+		if (isSuperAdmin.equalsIgnoreCase("Full Access")) {
 			setFilterProcessesUrl("/auth/service/admin/login");
 		} else {
 			setFilterProcessesUrl("/auth/service/login");

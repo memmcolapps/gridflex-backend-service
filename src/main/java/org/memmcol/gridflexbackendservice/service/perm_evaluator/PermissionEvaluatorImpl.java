@@ -3,10 +3,13 @@ package org.memmcol.gridflexbackendservice.service.perm_evaluator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.memmcol.gridflexbackendservice.model.CustomUserPrincipal;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,27 +19,27 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     private static final Map<String, List<String>> SUBMODULE_URI_MAP = Map.of(
 
-            "Full Access", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
+            "full access", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single-user",
                     "/user/service/all-users", "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission"),
 
-            "Data Management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
+            "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve"),
 
-            "Band Management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
+            "band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band"),
 
-            "Tariff", List.of("/tariff/service/single-tariff", "/tariff/service/all-tariff",
+            "tariff", List.of("/tariff/service/single-tariff", "/tariff/service/all-tariff",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve"),
 
-            "User Management", List.of("/user/service/single-user", "/user/service/all-users",
+            "user management", List.of("/user/service/single-user", "/user/service/all-users",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission"),
 
-            "Users", List.of("/user/service/single-user", "/user/service/all-users",
+            "users", List.of("/user/service/single-user", "/user/service/all-users",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission")
     );
@@ -89,13 +92,14 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                         System.out.println("submoduleName: " + submoduleName);
                         System.out.println("permissions: " + permissions);
                         System.out.println("requestUri: " + requestUri);
-
-                        List<String> mappedUris = SUBMODULE_URI_MAP.get(moduleName);
+//                        String normalizedSubmoduleName = submoduleName.replaceAll("\\s+", "").toLowerCase();
+                        List<String> mappedUris = SUBMODULE_URI_MAP.get(submoduleName.toLowerCase());
                         if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains)) {
                             for (String perm : permissions) {
-                                if (List.of("view", "edit", "approve", "disable").contains(perm)) {
+                                if (List.of("view", "edit", "approve", "disable")
+                                        .stream().anyMatch(p -> p.equalsIgnoreCase(perm))) {
+
                                     System.out.println("Matched permission: " + perm);
-                                    // Do something specific based on matched permission
                                     return true;
                                 }
                             }
@@ -103,7 +107,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     }
                 }
             }
-            return false; // No matching permission found
+                return false; // No matching permission found
     }
 }
 
