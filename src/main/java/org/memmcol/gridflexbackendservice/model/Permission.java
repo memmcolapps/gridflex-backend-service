@@ -13,8 +13,11 @@ public class Permission implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
-    private String name;
-    private Long subModuleId;
+    private Long orgId;
+    private Boolean view;
+    private Boolean edit;
+    private Boolean approve;
+    private Boolean disable;
 
     public Long getId() {
         return id;
@@ -24,20 +27,45 @@ public class Permission implements Serializable {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public Long getOrgId() {
+        return orgId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setOrgId(Long orgId) {
+        this.orgId = orgId;
     }
 
-    public Long getSubModuleId() {
-        return subModuleId;
+    public Boolean getView() {
+        return view;
     }
 
-    public void setSubModuleId(Long subModuleId) {
-        this.subModuleId = subModuleId;
+    public void setView(Boolean view) {
+        this.view = view;
     }
+
+    public Boolean getEdit() {
+        return edit;
+    }
+
+    public void setEdit(Boolean edit) {
+        this.edit = edit;
+    }
+
+    public Boolean getApprove() {
+        return approve;
+    }
+
+    public void setApprove(Boolean approve) {
+        this.approve = approve;
+    }
+
+    public Boolean getDisable() {
+        return disable;
+    }
+
+    public void setDisable(Boolean disable) {
+        this.disable = disable;
+    }
+
 }
 

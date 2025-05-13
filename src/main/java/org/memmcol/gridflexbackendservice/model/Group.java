@@ -14,7 +14,9 @@ public class Group implements Serializable {
 
     private Long id;
 
-    private String title;
+    private String groupTitle;
+
+    private Long orgId;
 
 //    private List<String> moduleAccess;
 
@@ -37,15 +39,23 @@ public class Group implements Serializable {
         this.id = id;
     }
 
-    public String getTitle() {
-        return title;
+    public String getGroupTitle() {
+        return groupTitle;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setGroupTitle(String groupTitle) {
+        this.groupTitle = groupTitle;
     }
 
-//    public List<String> getModuleAccess() {
+    public Long getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(Long orgId) {
+        this.orgId = orgId;
+    }
+
+    //    public List<String> getModuleAccess() {
 //        return moduleAccess;
 //    }
 //

@@ -69,14 +69,14 @@ public class AuthServiceImpl implements AuthService {
 	public Map<String, Object> logout(String token, int expirySeconds, String username) {
 		AuditLog auditNotificationDTO = new AuditLog();
 		try {
-			UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 			if (isOperatorExist == null) {
 				return ResponseMap.response(status.getNotFoundCode(), user + status.getNotFoundDesc(), "");
 			}
-			isOperatorExist.getUser().setPassword("");
+			isOperatorExist.setPassword("");
 			operatorMapper.updateLogoutState(username);
 			blacklistToken(token, expirySeconds);
-			auditNotificationDTO.setCreator(isOperatorExist.getUser());
+			auditNotificationDTO.setCreator(isOperatorExist);
 			auditNotificationDTO.setDescription(username + " Logged out");
 			auditNotificationDTO.setType("auth");
 			removeFromCache();
@@ -107,18 +107,18 @@ public class AuthServiceImpl implements AuthService {
 				isUser = principal.getUsername();  // or principal.getEmail() if you named it that way
 			}
 
-			UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(isUser);
+			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(isUser);
 
-			if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-				throw new LockedException("User is blocked");
+			if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+				throw new LockedException("User is disabled");
 			}
 
 
-			UserDTO isOperator = operatorMapper.findAuthByUserEmail(username);
+			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}
-			if(!Objects.equals(isOperatorExist.getUser().getEmail(), isOperator.getUser().getEmail())){
+			if(!Objects.equals(isOperatorExist.getEmail(), isOperator.getEmail())){
 				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
 			}
 			if (!verifiedUsers.containsKey(username)) {
@@ -129,14 +129,14 @@ public class AuthServiceImpl implements AuthService {
 			if (passwordChangeResult == 0) {
 				return ResponseMap.response(status.getBlockCode(), user + " " + status.getBlockFailureDesc(), "");
 			}
-			isOperator.getUser().setPassword("");
-			isOperatorExist.getUser().setPassword("");
+			isOperator.setPassword("");
+			isOperatorExist.setPassword("");
 			// Remove OTP verification from cache after successful password reset
 			verifiedUsers.remove(username);
 //			handleCacheUpdate(isOperator);
-			AuditLog.setCreator(isOperatorExist.getUser());
-			AuditLog.setCreatedUser(isOperator.getUser());
-			AuditLog.setDescription(isOperator.getUser().getEmail() + " Reset password");
+			AuditLog.setCreator(isOperatorExist);
+			AuditLog.setCreatedUser(isOperator);
+			AuditLog.setDescription(isOperator.getEmail() + " Reset password");
 			AuditLog.setType("operator");
 			auditRepository.save(AuditLog);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");

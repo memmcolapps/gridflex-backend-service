@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.util;
 
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
@@ -165,7 +166,16 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException ex) {
 		String msg = "Resources not found";
 		errorMessage.put("responsecode", "113");
-		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsedesc", ex.getMessage());
+		errorMessage.put("responsedata", "");
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+	}
+
+	@ExceptionHandler(NotFoundException.class)
+	public ResponseEntity<?> handleNotFoundException(NotFoundException ex) {
+//		String msg = "Not found";
+		errorMessage.put("responsecode", "060");
+		errorMessage.put("responsedesc", ex.getMessage());
 		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}
@@ -314,11 +324,37 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(UsernameNotFoundException.class)
 	public ResponseEntity<?> handleUsernameNotFoundException(LockedException ex) {
-		String msg = "User not found";
+//		String msg = "User not found";
 		errorMessage.put("responsecode", "123");
-		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsedesc", ex.getMessage());
 		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+	}
+
+//
+//	@ExceptionHandler(ResourceNotFoundException.class)
+//	public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
+//		String msg = "Not Found";
+//		errorMessage.put("responsecode", "123");
+//		errorMessage.put("responsedesc", msg);
+//		errorMessage.put("responsedata", "");
+//		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+//	}
+
+	@ExceptionHandler(ResourceAlreadyExistsException.class)
+	public ResponseEntity<?> handleAlreadyExists(ResourceAlreadyExistsException ex) {
+//		String msg = "Already exists";
+		errorMessage.put("responsecode", "050");
+		errorMessage.put("responsedesc", ex.getMessage());
+		errorMessage.put("responsedata", "");
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(errorMessage);
+	}
+
+	@ResponseStatus(HttpStatus.CONFLICT)
+	public static class ResourceAlreadyExistsException extends RuntimeException {
+		public ResourceAlreadyExistsException(String message) {
+			super(message);
+		}
 	}
 
 
@@ -358,6 +394,12 @@ public class GlobalExceptionHandler {
 	@ResponseStatus(HttpStatus.FORBIDDEN)
 	public class SQLServerException extends RuntimeException {
 		public SQLServerException(String message) {
+			super(message);
+		}
+	}
+
+	public static class NotFoundException extends RuntimeException {
+		public NotFoundException(String message) {
 			super(message);
 		}
 	}

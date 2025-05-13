@@ -7,7 +7,7 @@ public class CreateUserRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private UserModel user;
-    private List<Long> groupIds;
+    private Long groupId;
 
     public UserModel getUser() {
         return user;
@@ -17,11 +17,11 @@ public class CreateUserRequest implements Serializable {
         this.user = user;
     }
 
-    public List<Long> getGroupIds() {
-        return groupIds;
+    public Long getGroupId() {
+        return groupId;
     }
 
-    public void setGroupIds(List<Long> groupIds) {
-        this.groupIds = groupIds;
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
     }
 }

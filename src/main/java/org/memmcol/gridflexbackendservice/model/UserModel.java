@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -31,6 +32,14 @@ public class UserModel implements Serializable {
     private String lastActive;
 
     private String password;
+
+    private Long orgId;
+
+    private GroupWithPermissionsDTO groups;
+
+    private Organization business;
+
+    private OrganizationNode nodes;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -131,5 +140,37 @@ public class UserModel implements Serializable {
 
     public void setPassword(String password) {
         this.password = password.trim();
+    }
+
+    public GroupWithPermissionsDTO getGroups() {
+        return groups;
+    }
+
+    public void setGroups(GroupWithPermissionsDTO groups) {
+        this.groups = groups;
+    }
+
+    public Long getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(Long orgId) {
+        this.orgId = orgId;
+    }
+
+    public Organization getBusiness() {
+        return business;
+    }
+
+    public void setBusiness(Organization business) {
+        this.business = business;
+    }
+
+    public OrganizationNode getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(OrganizationNode nodes) {
+        this.nodes = nodes;
     }
 }

@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.*;
 import org.memmcol.gridflexbackendservice.model.Module;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -11,35 +12,34 @@ public interface UserMapper {
 
     @Insert("""
         INSERT INTO users (
-            firstname, lastname, email, hierarchy_id, status, active, last_active, password, created_at, updated_at
+            firstname, lastname, email, hierarchy_id, status, active, last_active, password, org_id, created_at, updated_at
         ) VALUES (
-            #{firstname}, #{lastname}, #{email}, #{hierarchyId}, true, false, #{lastActive}, #{password}, #{createdAt}, #{updatedAt}
+            #{firstname}, #{lastname}, #{email}, #{hierarchyId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt}
         )
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertUser(UserModel operator);
-
 
     @Update("""
         UPDATE users 
         SET firstname = #{firstname}, 
             lastname = #{lastname}, 
             email = #{email}, 
-            hierarchy_id = #{hierarchyId}, 
-            last_active =  #{lastActive}, 
-            password = #{password}, 
+            hierarchy_id = #{hierarchyId},
+            password = #{password},
             updated_at = #{updatedAt} WHERE id = #{id}
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateUser(UserModel operator);
 
-    @Insert("""
-        INSERT INTO user_groups (user_id, group_id)
-        VALUES (#{userId}, #{groupId})
-    """)
-    void assignUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId);
 
     @Insert("""
+                INSERT INTO user_groups (user_id, group_id, org_id)
+                VALUES (#{userId}, #{groupId}, #{orgId})
+            """)
+    void assignUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId, @Param("orgId") Long orgId);
+//
+    @Update("""
         UPDATE user_groups SET group_id = #{groupId} WHERE user_id = #{userId}
     """)
     void updateUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId);
@@ -55,104 +55,138 @@ public interface UserMapper {
             @Result(property = "active", column = "active"),
             @Result(property = "firstname", column = "firstname"),
             @Result(property = "lastActive", column = "last_active"),
+            @Result(property = "orgId", column = "org_id"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
     UserModel findById(@Param("id") Long id);
 
+//    @Select("""
+//        SELECT g.id, g.title, g.org_id
+//        FROM groups g
+//        JOIN user_groups og ON og.group_id = g.id
+//        WHERE og.user_id = #{userId}
+//    """)
+//    List<Group> findGroupsByOperatorId(@Param("userId") Long operatorId);
+
+////    @Select("""
+////        SELECT p.name
+////        FROM permissions p
+////        JOIN group_permissions gp ON gp.permission_id = p.id
+////        WHERE gp.group_id = #{groupId}
+////    """)
+//    @Select("""
+//        SELECT p.id, p.view, p.edit, p.approve, p.disable, p.org_id, p.group_id FROM permissions p
+//        WHERE p.group_id = #{groupId}
+//    """)
+//    List<String> findPermissionsByGroupId(@Param("groupId") Long groupId);
+
+//    @Select({
+//            "<script>",
+//            "SELECT id FROM groups WHERE id IN ",
+//            "<foreach item='id' collection='groupIds' open='(' separator=',' close=')'>",
+//            "#{id}",
+//            "</foreach>",
+//            "</script>"
+//    })
     @Select("""
-        SELECT g.id, g.title
-        FROM groups g
-        JOIN user_groups og ON og.group_id = g.id
-        WHERE og.user_id = #{userId}
-    """)
-    List<Group> findGroupsByOperatorId(@Param("userId") Long operatorId);
+            SELECT id FROM groups WHERE id = #{groupId}
+            """)
+    Long checkGroupId(@Param("groupId") Long groupId);
 
     @Select("""
-        SELECT p.name
-        FROM permissions p
-        JOIN group_permissions gp ON gp.permission_id = p.id
-        WHERE gp.group_id = #{groupId}
-    """)
-    List<String> findPermissionsByGroupId(@Param("groupId") Long groupId);
+            SELECT * FROM groups WHERE title = #{groupTitle}
+            """)
+    String checkGroupName(@Param("groupTitle") String groupTitle);
 
-    @Select({
-            "<script>",
-            "SELECT id FROM groups WHERE id IN ",
-            "<foreach item='id' collection='groupIds' open='(' separator=',' close=')'>",
-            "#{id}",
-            "</foreach>",
-            "</script>"
-    })
-    List<Long> checkGroupId(@Param("groupIds") List<Long> groupIds);
+
+    @Select("""
+            SELECT DISTINCT org_id FROM groups WHERE org_id = #{orgId}
+            """)
+    String checkOrgId(@Param("orgId") Long orgId);
+
+
+    @Insert("""
+        INSERT INTO groups (title, created_at, updated_at, org_id)
+        VALUES (#{groupTitle}, #{createdAt}, #{updatedAt}, #{orgId})
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insertGroup(Group group);
+//    int insertGroup(String groupTitle, Date createdAt, Date updatedAt, Long orgId);
 
     @Insert("""
         INSERT INTO groups (title, created_at, updated_at)
         VALUES (#{title}, #{createdAt}, #{updatedAt})
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insertGroup(Group request);
+    Group getGroup(String groupTitle, Long orgId, Date createdAt, Date updatedAt);
 
     @Select("SELECT g.* FROM groups g " +
             "JOIN user_groups ug ON ug.group_id = g.id " +
             "WHERE ug.user_id = #{userId}")
-    List<Group> findGroupsByUserId(@Param("userId") Long userId);
+    Group findGroupsByUserId(@Param("userId") Long userId);
 
     @Select("""
         SELECT DISTINCT m.* 
         FROM modules m
         JOIN sub_modules sm ON sm.module_id = m.id
-        JOIN permissions p ON p.sub_module_id = sm.id
-        JOIN group_permissions gp ON gp.permission_id = p.id
-        WHERE gp.group_id = #{groupId}
+        WHERE m.group_id = #{groupId}
     """)
     List<Module> findModulesByGroupId(@Param("groupId") Long groupId);
 
-    @Select("SELECT id, name, module_id FROM sub_modules WHERE module_id = #{moduleId}")
+    @Select("SELECT id, name, access, org_id FROM sub_modules WHERE module_id = #{moduleId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "name", column = "name"),
-            @Result(property = "moduleId", column = "module_id")
+            @Result(property = "access", column = "access"),
+            @Result(property = "org_id", column = "org_id"),
     })
     List<SubModule> findSubModulesByModuleId(@Param("moduleId") Long moduleId);
 
+//    @Select("""
+//            SELECT p.id, p.sub_module_id, p.view, p.edit, p.approve, p.disable, p.org_id FROM permissions p
+//            JOIN user_groups ug ON ug.group_id = p.group_id
+//            WHERE ug.user_id = #{userId} AND p.sub_module_id = #{subModuleId}
+//            """)
+//    @Select("SELECT * FROM permissions p INNER JOIN group_permissions gp ON p.id = gp.permission_id WHERE gp.group_id = #{groupId}")
+//    @Results({
+//            @Result(property = "id", column = "id"),
+////            @Result(property = "subModuleId", column = "sub_module_id"),
+//            @Result(property = "view", column = "view"),
+//            @Result(property = "edit", column = "edit"),
+//            @Result(property = "approve", column = "approve"),
+//            @Result(property = "disable", column = "disable"),
+//            @Result(property = "org_id", column = "orgId"),
+//            @Result(property = "group_id", column = "groupId")
+//    })
+//    Permission findPermissionsByUserAndSubModule(@Param("groupId") Long groupId);
 
-
-    @Select("""
-            SELECT p.id, p.name, p.sub_module_id FROM permissions p
-            JOIN group_permissions gp ON gp.permission_id = p.id
-            JOIN user_groups ug ON ug.group_id = gp.group_id
-            WHERE ug.user_id = #{userId} AND p.sub_module_id = #{subModuleId}
-            """)
+//    @Select("""
+//            SELECT * FROM permissions p
+//            WHERE p.group_id = #{groupId}
+//            """)
+    @Select("SELECT * FROM permissions p INNER JOIN group_permissions gp ON p.id = gp.permission_id WHERE gp.group_id = #{groupId}")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "subModuleId", column = "sub_module_id")
+            @Result(property = "view", column = "view"),
+            @Result(property = "edit", column = "edit"),
+            @Result(property = "approve", column = "approve"),
+            @Result(property = "disable", column = "disable"),
+            @Result(property = "orgId", column = "org_id")
     })
-    List<Permission> findPermissionsByUserAndSubModule(@Param("userId") Long userId, @Param("subModuleId") Long subModuleId);
+    Permission findPermissionsByGroup(@Param("groupId") Long groupId);
 
-    @Select("""
-            SELECT p.id, p.name FROM permissions p
-            JOIN group_permissions gp ON gp.permission_id = p.id
-            WHERE gp.group_id = #{groupId}
-            """)
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "name", column = "name")
-    })
-    List<Permission> findPermissionsByGroup(@Param("groupId") Long groupId);
-
-    @Select("""
-            SELECT p.id, p.name, p.sub_module_id FROM permissions p
-            JOIN group_permissions gp ON gp.permission_id = p.id
-            WHERE gp.group_id = #{groupId} AND p.sub_module_id = #{subModuleId}
-            """)
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "subModuleId", column = "sub_module_id")
-    })
-    List<Permission> findPermissionsByGroupAndSubModule(@Param("groupId") Long groupId, @Param("subModuleId") Long subModuleId);
+//    @Select("""
+//            SELECT p.id, p.name, p.sub_module_id FROM permissions p
+//            JOIN group_permissions gp ON gp.permission_id = p.id
+//            WHERE gp.group_id = #{groupId} AND p.sub_module_id = #{subModuleId}
+//            """)
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "name", column = "name"),
+//            @Result(property = "subModuleId", column = "sub_module_id")
+//    })
+//    Permission findPermissionsByGroupAndSubModule(@Param("groupId") Long groupId, @Param("subModuleId") Long subModuleId);
 
     ///
 //    @Select("""
@@ -196,22 +230,30 @@ public interface UserMapper {
 //    List<SubModuleDTO> getSubModulesByModuleIdAndGroupId(@Param("moduleId") Long moduleId, @Param("groupId") Long groupId);
 
 
-    @Insert("INSERT INTO modules(name) VALUES(#{name})")
+    @Insert("INSERT INTO modules(name, access, org_Id, group_id) VALUES(#{name}, #{access}, #{orgId}, #{groupId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertModule(Module module);
+//    void insertModule(String name, Boolean access, Long orgId, Long groupId);
 
-    @Insert("INSERT INTO permissions(name, sub_module_id) VALUES(#{name}, #{subModuleId})")
+    @Insert("INSERT INTO permissions(view, edit, approve, disable, org_id) VALUES(#{view}, #{edit}, #{approve}, #{disable}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void insertPermission(Permission p);
+    void insertPermission(Permission permission);
 
-    @Insert("INSERT INTO sub_modules(name, module_id) VALUES(#{name}, #{moduleId})")
+    @Insert("INSERT INTO sub_modules(name, module_id, access, org_id) VALUES(#{name}, #{moduleId}, #{access}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void insertSubModule(SubModule sm);
+    void insertSubModule(SubModule subModule);
+//    void insertSubModule(String subModuleName, Boolean access, Long mId, Long orgId);
+//    void insertSubModule(SubModule sm);
 
     @Insert("INSERT INTO group_permissions(group_id, permission_id) VALUES(#{groupId}, #{permissionId})")
     void assignPermissionToGroup(@Param("groupId") Long groupId, @Param("permissionId") Long permissionId);
 
     @Select("SELECT * FROM groups")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "groupTitle", column = "title"),
+            @Result(property = "orgId", column = "org_id")
+    })
     List<Group> getGroups();
 
 
@@ -220,6 +262,8 @@ public interface UserMapper {
 
     @Select("SELECT * FROM users")
     List<UserModel> findAllUsers();
+
+
 
 //    @Insert("INSERT INTO user_groups(user_id, group_id) VALUES(#{userId}, #{groupId})")
 //    void assignUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId);

@@ -53,6 +53,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                 return false;
             }
 
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 11");
             // Fetch the principal and check its type
             Object principal = authentication.getPrincipal();
             if (!(principal instanceof CustomUserPrincipal)) {
@@ -60,12 +61,12 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             }
 
             CustomUserPrincipal customUserPrincipal = (CustomUserPrincipal) principal;
-
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 11");
             // Get the permission tree (this is a JSON string from the JWT)
             String permissionTreeJson = customUserPrincipal.getPermissionTreeJson();
             ObjectMapper objectMapper = new ObjectMapper();
             List<Map<String, Object>> permissionTree;
-
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 11");
             try {
                 // Parse the permission tree JSON
                 permissionTree = objectMapper.readValue(permissionTreeJson, List.class);
@@ -73,29 +74,48 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                 e.printStackTrace();
                 return false; // Could not parse permission tree
             }
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 12");
             String requestUri = request.getRequestURI();
             for (Map<String, Object> group : permissionTree) {
                 List<Map<String, Object>> modules = (List<Map<String, Object>>) group.get("modules");
-                if (modules == null) continue;
+                Map<String, Object> groupPermissions = (Map<String, Object>) group.get("permissions");
 
+                if (modules == null || groupPermissions == null) continue;
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 12"+permi);
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 12:::: "+modules);
                 for (Map<String, Object> module : modules) {
+                    Map<String, Object> moduleInfo = (Map<String, Object>) module.get("module");
+                    if (moduleInfo == null || !Boolean.TRUE.equals(moduleInfo.get("access"))) continue;
+
+                    System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 13"+module);
+
                     List<Map<String, Object>> submodules = (List<Map<String, Object>>) module.get("submodules");
-                    String moduleName = (String) module.get("module");
+                    System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 13::"+submodules);
+                    String moduleName = (String) moduleInfo.get("name");
+
                     if (submodules == null) continue;
+                    System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 13");
 
                     for (Map<String, Object> submodule : submodules) {
-                        String submoduleName = (String) submodule.get("submodule");
-                        List<String> permissions = (List<String>) submodule.get("permissions");
+                        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 13+++::"+submodule);
+                        Map<String, Object> submoduleInfo = (Map<String, Object>) submodule.get("submodule");
+                        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 14::"+submoduleInfo);
+                        if (submoduleInfo == null || !Boolean.TRUE.equals(submoduleInfo.get("access"))) continue;
+                        String submoduleName = (String) submoduleInfo.get("name");
 
-                        if (submoduleName == null || permissions == null) continue;
+//                        String submoduleName = (String) submodule.get("submodule");
+//                        List<String> permissions = (List<String>) submodule.get("permissions");
+
+                        if (submoduleName == null) continue;
+                        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 15");
                         System.out.println("module: " + moduleName);
                         System.out.println("submoduleName: " + submoduleName);
-                        System.out.println("permissions: " + permissions);
+                        System.out.println("permissions: " + groupPermissions.keySet());
                         System.out.println("requestUri: " + requestUri);
 //                        String normalizedSubmoduleName = submoduleName.replaceAll("\\s+", "").toLowerCase();
                         List<String> mappedUris = SUBMODULE_URI_MAP.get(submoduleName.toLowerCase());
                         if (mappedUris != null && mappedUris.stream().anyMatch(requestUri::contains)) {
-                            for (String perm : permissions) {
+                            for (String perm : groupPermissions.keySet()) {
                                 if (List.of("view", "edit", "approve", "disable")
                                         .stream().anyMatch(p -> p.equalsIgnoreCase(perm))) {
 

@@ -8,6 +8,7 @@ import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
@@ -72,30 +73,33 @@ public class TariffServiceImpl implements TariffService {
                 username = principal.getUsername();  // or principal.getEmail() if you named it that way
             }
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
             Tariff isExist = tariffMapper.getTariff(tariff.getName());
             if (isExist != null) {
-                return ResponseMap.response(status.getExistCode(), tariffName + " " + status.getExistDesc(), "");
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getExistDesc());
+//                return ResponseMap.response(status.getExistCode(), tariffName + " " + status.getExistDesc(), "");
             }
             Band isBand = bandMapper.getBand(tariff.getBand());
             if (isBand == null) {
-                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+//                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
             tariff.setApprove_status("pending");
             tariff.setStatus(true);
             int result = tariffMapper.createTariff(tariff);
             if (result == 0) {
-                return ResponseMap.response(status.getRegCode(), tariffName + " " + status.getRegFailureDesc(), "");
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
+//                return ResponseMap.response(status.getRegCode(), tariffName + " " + status.getRegFailureDesc(), "");
             }
             Tariff tariffByName = tariffMapper.getTariff(tariff.getName());
-            isOperatorExist.getUser().setPassword("");
+            isOperatorExist.setPassword("");
             handleAddCache(tariffByName);
-            auditNotificationDTO.setCreator(isOperatorExist.getUser());
+            auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariffByName);
@@ -126,24 +130,27 @@ public class TariffServiceImpl implements TariffService {
                 username = principal.getUsername();  // or principal.getEmail() if you named it that way
             }
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
             Tariff tariffById = tariffMapper.getTariffById(tariffId);
             if(tariffById == null) {
-                return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
+//                return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
             }
 
             if(state != null && approveStatus != null) {
-                return ResponseMap.response(status.getUpdateCode(), "you can not perform two operations at the same time", "");
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("you can not perform two operations at the same time");
+//                return ResponseMap.response(status.getUpdateCode(), "you can not perform two operations at the same time", "");
             }
             if(approveStatus != null && (approveStatus.equalsIgnoreCase("pending") || approveStatus.equalsIgnoreCase("approved") || approveStatus.equalsIgnoreCase("rejected"))) {
                 result = tariffMapper.approveTariff(tariffId, approveStatus);
                 if (result == 0) {
-                    return ResponseMap.response(status.getUpdateCode(), tariffName +" "+ approveStatus + " "+ status.getUpdateFailureDesc(), "");
+                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + " "+ status.getUpdateFailureDesc());
+//                    return ResponseMap.response(status.getUpdateCode(), tariffName +" "+ approveStatus + " "+ status.getUpdateFailureDesc(), "");
                 }
                 desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + tariffById.getName() + "]";
             } else if (state != null) {
@@ -158,8 +165,8 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariff = tariffMapper.getTariffById(tariffById.getId());
             handleAddCache(tariffById);
-            isOperatorExist.getUser().setPassword("");
-            auditNotificationDTO.setCreator(isOperatorExist.getUser());
+            isOperatorExist.setPassword("");
+            auditNotificationDTO.setCreator(isOperatorExist);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariff);
@@ -258,10 +265,10 @@ public class TariffServiceImpl implements TariffService {
                 username = principal.getUsername();  // or principal.getEmail() if you named it that way
             }
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
             // Build a unique cache key
@@ -331,10 +338,10 @@ public class TariffServiceImpl implements TariffService {
                 username = principal.getUsername();  // or principal.getEmail() if you named it that way
             }
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
 
@@ -386,19 +393,20 @@ public class TariffServiceImpl implements TariffService {
                 username = principal.getUsername();  // or principal.getEmail() if you named it that way
             }
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
             String s = capitalizeFirstLetter(request.getApproveStatus());
             if (!"Approved".equalsIgnoreCase(s)) {
-                return ResponseMap.response(
-                        this.status.getUpdateCode(),
-                        request.getApproveStatus() + " value not accepted, try [approved]",
-                        ""
-                );
+                throw new GlobalExceptionHandler.NotFoundException(request.getApproveStatus() + " value not accepted, try [approved]");
+//                return ResponseMap.response(
+//                        this.status.getUpdateCode(),
+//                        request.getApproveStatus() + " value not accepted, try [approved]",
+//                        ""
+//                );
             }
 
 
@@ -409,7 +417,7 @@ public class TariffServiceImpl implements TariffService {
                     Tariff tariff = tariffMapper.getTariffById(id);
                     if(tariff == null) {
                         String desc = s+ "Tariff [" + id + "] does not exist ";
-                        auditNotificationDTO.setCreator(isOperatorExist.getUser());
+                        auditNotificationDTO.setCreator(isOperatorExist);
                         auditNotificationDTO.setDescription(desc);
                         auditNotificationDTO.setType("tariff");
                         auditNotificationDTO.setCreatedTariff(null);
@@ -418,8 +426,8 @@ public class TariffServiceImpl implements TariffService {
                     }
                     handleAddCache(tariff);
                     String desc = s + " Tariff [" + tariff.getName() + "]";
-                    isOperatorExist.getUser().setPassword("");
-                    auditNotificationDTO.setCreator(isOperatorExist.getUser());
+                    isOperatorExist.setPassword("");
+                    auditNotificationDTO.setCreator(isOperatorExist);
                     auditNotificationDTO.setDescription(desc);
                     auditNotificationDTO.setType("tariff");
                     auditNotificationDTO.setCreatedTariff(tariff);

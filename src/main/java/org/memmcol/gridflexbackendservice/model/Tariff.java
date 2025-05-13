@@ -33,6 +33,8 @@ public class Tariff implements Serializable {
 
     private String approve_status;
 
+    private Long org_id;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date created_at;
 
@@ -131,5 +133,13 @@ public class Tariff implements Serializable {
 
     public void setUpdated_at(Date updated_at) {
         this.updated_at = updated_at;
+    }
+
+    public Long getOrg_id() {
+        return org_id;
+    }
+
+    public void setOrg_id(Long org_id) {
+        this.org_id = org_id;
     }
 }

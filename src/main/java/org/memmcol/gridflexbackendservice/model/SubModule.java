@@ -11,6 +11,8 @@ public class SubModule implements Serializable {
 
     private Long id;
     private String name;
+    private Boolean access;
+    private Long orgId;
     private Long moduleId;
 
     public Long getId() {
@@ -29,7 +31,23 @@ public class SubModule implements Serializable {
         this.name = name;
     }
 
-    public Long getModuleId() {
+    public Boolean getAccess() {
+        return access;
+    }
+
+    public void setAccess(Boolean access) {
+        this.access = access;
+    }
+
+    public Long getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(Long orgId) {
+        this.orgId = orgId;
+    }
+
+        public Long getModuleId() {
         return moduleId;
     }
 

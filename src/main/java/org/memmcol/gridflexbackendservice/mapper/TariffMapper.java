@@ -12,8 +12,8 @@ import java.util.List;
 @Mapper
 public interface TariffMapper {
 
-    @Insert("INSERT INTO tariffs (name, tariff_index, tariff_type, tariff_rate, band, status, effective_date, approve_status, created_at, updated_at) " +
-            "VALUES (#{name,}, #{tariff_index}, #{tariff_type}, #{tariff_rate}, #{band}, #{status}, #{effective_date}, #{approve_status}, #{created_at}, #{updated_at})")
+    @Insert("INSERT INTO tariffs (name, tariff_index, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_at, updated_at) " +
+            "VALUES (#{name,}, #{tariff_index}, #{tariff_type}, #{tariff_rate}, #{band}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
     int createTariff(Tariff tariff);
 
     @Select("SELECT * FROM tariffs WHERE name = #{name}")

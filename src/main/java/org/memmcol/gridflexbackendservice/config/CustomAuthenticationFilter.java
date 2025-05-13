@@ -13,7 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.AuditLog;
-import org.memmcol.gridflexbackendservice.model.UserDTO;
+//import org.memmcol.gridflexbackendservice.model.UserDTO;
+import org.memmcol.gridflexbackendservice.model.UserModel;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,12 +72,12 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		String password = request.getParameter("password");
 
 		// Fetch user details before authentication
-		UserDTO user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
+		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
 		if (user == null) {
 			throw new UsernameNotFoundException("User not found");
 		}
 
-		String isSuperAdmin = user.getGroups().get(0).getModules().get(0).getModule().getName();
+		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
 		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
 		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 		// Determine if user is admin or regular user
@@ -124,10 +125,10 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24 hours
 				.sign(algorithm);
 
-		UserDTO userDTO = authMapper.findAuthByUserEmail(userDetails.getUsername());
-		userDTO.getUser().setPassword("");
-		auditNotificationDTO.setCreator(userDTO.getUser());
-		auditNotificationDTO.setDescription(userDTO.getUser().getEmail()+" Logged in");
+		UserModel userDTO = authMapper.findAuthByUserEmail(userDetails.getUsername());
+		userDTO.setPassword("");
+		auditNotificationDTO.setCreator(userDTO);
+		auditNotificationDTO.setDescription(userDTO.getEmail()+" Logged in");
 		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {
@@ -140,8 +141,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		Map<String, Object> token = new HashMap<>();
 		resp.put("responsecode", "000");
 		resp.put("responsedesc", "Authentication Successful");
-		token.put("user_info", userDTO.getUser());
-		token.put("groups", permissionTree);
+		token.put("user_info", userDTO);
+//		token.put("groups", permissionTree);
 		token.put("access_token", access_token);
 		resp.put("responsedata", token);
 

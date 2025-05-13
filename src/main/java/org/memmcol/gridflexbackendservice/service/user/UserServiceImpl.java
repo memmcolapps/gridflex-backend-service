@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.user;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.ws.rs.NotFoundException;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.*;
@@ -9,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.Module;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
@@ -73,49 +75,44 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
+            UserModel um = handleUserValidation();
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
             }
 
             UserModel operator = request.getUser();
-            operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
+            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             // check if operator exist
-            UserModel isOperator = userMapper.findById(request.getUser().getId());
+            UserModel isOperator = userMapper.findById(operator.getId());
             if (isOperator != null){
-                return ResponseMap.response(status.getExistCode(), userName + " " + status.getExistDesc(), "");
+                throw new LockedException(userName + " " + status.getExistDesc());
             }
 
             // check if groupId exist
-            List<Long> isGroupIds = userMapper.checkGroupId(request.getGroupIds());
+            Long isGroupId = userMapper.checkGroupId(request.getGroupId());
+            if (isGroupId == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+            }
 
-            if (isGroupIds.size() != request.getGroupIds().size()) {
-                return ResponseMap.response(status.getNotFoundCode(), "One or more group IDs " + status.getNotFoundDesc(), "");
-                //throw new IllegalArgumentException("One or more group IDs are invalid.");
+            String isOrgId = userMapper.checkOrgId(request.getUser().getOrgId());
+            if (isOrgId == null){
+                throw new GlobalExceptionHandler.NotFoundException("Organization " + status.getNotFoundDesc());
             }
 
             // Insert into operators
             userMapper.insertUser(operator);
+            Long userId = operator.getId();
+            System.out.println("userId: " + userId);
+            userMapper.assignUserToGroup(userId, request.getGroupId(), operator.getOrgId());
 
-            // Insert group assignments
-            if (request.getGroupIds() != null) {
-                for (Long groupId : request.getGroupIds()) {
-                    userMapper.assignUserToGroup(operator.getId(), groupId);
-                }
-            }
-            UserModel user = userMapper.findById(request.getUser().getId());
+            UserModel user = operatorMapper.findAuthByUserId(userId);
+            user.setPassword("");
+//                    userMapper.findById(operator.getId());
             handleAddCache(user);
-            auditNotificationDTO.setCreator(isOperatorExist.getUser());
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created User [" + user.getEmail() + "]");
             auditNotificationDTO.setType("user");
             auditNotificationDTO.setCreatedUser(user);
@@ -138,50 +135,36 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
             }
 
             UserModel operator = request.getUser();
-            operator.setPassword(passwordEncoder.encode(request.getUser().getPassword()));
+            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
             // check if operator exist
             UserModel isOperator = userMapper.findById(operator.getId());
             if (isOperator == null){
-                return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
             // check if groupId exist
-            List<Long> isGroupIds = userMapper.checkGroupId(request.getGroupIds());
-
-            if (isGroupIds.size() != request.getGroupIds().size()) {
-                return ResponseMap.response(status.getNotFoundCode(), "One or more group IDs " + status.getNotFoundDesc(), "");
-                //throw new IllegalArgumentException("One or more group IDs are invalid.");
+            Long isGroupId = userMapper.checkGroupId(request.getGroupId());
+            if (isGroupId == null){
+                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
 
             // Insert into operators
             userMapper.updateUser(operator);
+            Long userId = operator.getId();
+            userMapper.updateUserToGroup(userId, isGroupId);
 
-            System.out.println("user id: " + operator.getId());
-
-            // Insert group assignments
-            if (request.getGroupIds() != null) {
-                for (Long groupId : request.getGroupIds()) {
-                    userMapper.updateUserToGroup(operator.getId(), groupId);
-                }
-            }
-          UserModel user = userMapper.findById(request.getUser().getId());
+//          UserModel user = userMapper.findById(operator.getId());
+            UserModel user = operatorMapper.findAuthByUserId(userId);
+            user.setPassword("");
             handleAddCache(user);
-            auditNotificationDTO.setCreator(isOperatorExist.getUser());
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Updated User [" + user.getEmail() + "]");
             auditNotificationDTO.setType("user");
             auditNotificationDTO.setCreatedUser(user);
@@ -202,18 +185,11 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
+            UserModel um = handleUserValidation();
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
             // Build a unique cache key
@@ -235,8 +211,8 @@ public class UserServiceImpl implements  UserService {
                 return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
             }
 
-            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
-
+//            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
+            List<UserModel> users = operatorMapper.findAllUsers();
             // Apply filtering
             Stream<UserModel> userStream = users.stream();
 
@@ -285,68 +261,15 @@ public class UserServiceImpl implements  UserService {
                 paginatedUsers = filteredUsers.subList(fromIndex, toIndex);
             }
 
-            List<UserDTO> userDTOs = new ArrayList<>();
-
-            for (UserModel user : paginatedUsers) {
-                List<Group> groups = userMapper.findGroupsByUserId(user.getId());
-
-                List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
-                    GroupWithPermissionsDTO groupDTO = new GroupWithPermissionsDTO();
-                    groupDTO.setGroup(group);
-
-                    List<Module> modules = userMapper.findModulesByGroupId(group.getId());
-
-                    List<ModuleWithSubModules> moduleDTOs = modules.stream().map(module -> {
-                        ModuleWithSubModules moduleDTO = new ModuleWithSubModules();
-                        moduleDTO.setModule(module);
-
-                        List<SubModule> subModules = userMapper.findSubModulesByModuleId(module.getId());
-
-                        List<SubModuleWithPermissions> subDTOs = subModules.stream().map(sub -> {
-                            SubModuleWithPermissions subDTO = new SubModuleWithPermissions();
-                            subDTO.setSubModule(sub);
-
-                            List<Permission> permissions = userMapper.findPermissionsByUserAndSubModule(user.getId(), sub.getId());
-                            subDTO.setPermissions(permissions);
-                            return subDTO;
-                        }).collect(Collectors.toList());
-
-                        moduleDTO.setSubModules(subDTOs);
-                        return moduleDTO;
-                    }).collect(Collectors.toList());
-
-                    groupDTO.setModules(moduleDTOs);
-                    return groupDTO;
-                }).collect(Collectors.toList());
-
-                // Filter by permission at the end
-                if (permission != null && !permission.isEmpty()) {
-                    boolean hasPermission = groupDTOs.stream()
-                            .flatMap(g -> g.getModules().stream())
-                            .flatMap(m -> m.getSubModules().stream())
-                            .flatMap(s -> s.getPermissions().stream())
-                            .anyMatch(p -> p.getName().equalsIgnoreCase(permission));
-
-                    if (!hasPermission) continue;
-                }
-
-                user.setPassword(""); // Remove sensitive data
-
-                UserDTO dto = new UserDTO();
-                dto.setUser(user);
-                dto.setGroups(groupDTOs);
-                userDTOs.add(dto);
-            }
-
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
-            response.put("data", userDTOs);
+            response.put("data", paginatedUsers);
             response.put("totalData", totalUsers);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) userDTOs.size() / size));
+            response.put("totalPages", (int) Math.ceil((double) paginatedUsers.size() / size));
 
-            userCache.put(cacheKey, response);
+//            userCache.put(cacheKey, response);
 
             return ResponseMap.response(status.getSuccessCode(), userName + "s " + status.getDesc(), response);
 
@@ -365,18 +288,10 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
             }
 
             Object cachedUser = userCache.get(userId.toString());
@@ -387,45 +302,14 @@ public class UserServiceImpl implements  UserService {
 
             UserModel user = userMapper.findById(userId);
             if (user == null) {
-               return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
-            List<Group> groups = userMapper.findGroupsByUserId(userId);
-
-            List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
-                GroupWithPermissionsDTO groupDTO = new GroupWithPermissionsDTO();
-                groupDTO.setGroup(group);
-
-                List<Module> modules = userMapper.findModulesByGroupId(group.getId());
-
-                List<ModuleWithSubModules> moduleDTOs = modules.stream().map(module -> {
-                    ModuleWithSubModules moduleDTO = new ModuleWithSubModules();
-                    moduleDTO.setModule(module);
-
-                    List<SubModule> subModules = userMapper.findSubModulesByModuleId(module.getId());
-
-                    List<SubModuleWithPermissions> subDTOs = subModules.stream().map(sub -> {
-                        SubModuleWithPermissions subDTO = new SubModuleWithPermissions();
-                        subDTO.setSubModule(sub);
-
-                        List<Permission> permissions = userMapper.findPermissionsByUserAndSubModule(userId, sub.getId());
-                        subDTO.setPermissions(permissions);
-
-                        return subDTO;
-                    }).collect(Collectors.toList());
-
-                    moduleDTO.setSubModules(subDTOs);
-                    return moduleDTO;
-                }).collect(Collectors.toList());
-
-                groupDTO.setModules(moduleDTOs);
-                return groupDTO;
-            }).collect(Collectors.toList());
-            user.setPassword("");
-            UserDTO response = new UserDTO();
-            response.setUser(user);
-            response.setGroups(groupDTOs);
-            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), response);
+            /// Retrieve user data from database
+            UserModel userDTO = operatorMapper.findAuthByUserId(userId);
+            userDTO.setPassword("");
+            handleAddCache(userDTO);
+            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -441,33 +325,29 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
+            UserModel um = handleUserValidation();
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
             }
 
             // check if operator exist
             UserModel isOperator = userMapper.findById(userId);
             if (isOperator == null) {
-                return ResponseMap.response(status.getNotFoundCode(), userName + " " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
             int isStatus = userMapper.changeStatus(userId, state);
             if (isStatus != 1) {
-                return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getUpdateFailureDesc());
+//                return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
             }
             String desc = state ? "Activated" : "Deactivated" + " User [" + isOperator.getEmail() + "]";
-            UserModel user = userMapper.findById(userId);
+//            UserModel user = userMapper.findById(userId);
+            UserModel user = operatorMapper.findAuthByUserId(userId);
+            user.setPassword("");
             handleAddCache(user);
-            auditNotificationDTO.setCreator(isOperatorExist.getUser());
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("user");
             auditNotificationDTO.setCreatedUser(user);
@@ -488,45 +368,74 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            UserModel um = handleUserValidation();
+
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
             }
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+            Long orgId = request.getOrgId();
 
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            Group group = new Group();
+            group.setGroupTitle(request.getGroupTitle());
+            group.setCreatedAt(request.getCreatedAt());
+            group.setUpdatedAt(request.getUpdatedAt());
+            group.setOrgId(orgId);
+
+            /// Check if group already exist (No duplication title allowed)
+            String isGroupTitle = userMapper.checkGroupName(request.getGroupTitle());
+            if(isGroupTitle != null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Group title '" + request.getGroupTitle() + "' already exist.");
             }
 
-            Group group = request.getGroup();
-            userMapper.insertGroup(group);
+            /// Insert group and retrieve group ID
+            userMapper.insertGroup(group); // Automatically sets group.id
+            Long groupId = group.getId();
+
+            Permission permission = new Permission();
+            permission.setOrgId(orgId);
+            permission.setEdit(request.getPermission().getEdit());
+            permission.setApprove(request.getPermission().getApprove());
+            permission.setDisable(request.getPermission().getDisable());
+            permission.setView(request.getPermission().getView());
+
+            /// Insert permission
+            userMapper.insertPermission(permission);
 
             for (ModuleWithSubModules moduleWithSubs : request.getModules()) {
-                Module module = moduleWithSubs.getModule();
-                userMapper.insertModule(module);
+
+                Module module = new Module();
+                module.setName(moduleWithSubs.getName());
+                module.setAccess(moduleWithSubs.getAccess());
+                module.setOrgId(orgId);
+                module.setGroupId(groupId);
+
+                /// Create and insert module
+                userMapper.insertModule(module);  // ID will be set here
+                Long moduleId = module.getId();   // Auto-generated ID
 
                 for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
-                    SubModule sm = smwp.getSubModule();
-                    sm.setModuleId(module.getId());
-                    userMapper.insertSubModule(sm);
+                    SubModule subModule = new SubModule();
+                    subModule.setName(smwp.getName());
+                    subModule.setAccess(smwp.getAccess());
+                    subModule.setModuleId(moduleId);
+                    subModule.setOrgId(orgId);
 
-                    for (Permission p : smwp.getPermissions()) {
-                        p.setSubModuleId(sm.getId());
-                        userMapper.insertPermission(p);
-                        userMapper.assignPermissionToGroup(group.getId(), p.getId());
-                    }
+                    /// Create and insert submodule
+                    userMapper.insertSubModule(subModule);
                 }
             }
-            auditNotificationDTO.setCreator(isOperatorExist.getUser());
-            auditNotificationDTO.setDescription("Created group [" + group.getTitle() + "]");
+
+            /// Assign permission to the group created
+            userMapper.assignPermissionToGroup(groupId, permission.getId());
+
+            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setDescription("Created group [" + request.getGroupTitle() + "]");
             auditNotificationDTO.setType("group");
 //            auditNotificationDTO.setCreatedOperator(user);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(),  request.getGroup().getTitle() + " Group " + status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"'"+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating group [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -542,62 +451,33 @@ public class UserServiceImpl implements  UserService {
     public Map<String, Object> getGroups() {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
+            UserModel um = handleUserValidation();
 
-            UserDTO isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getUser().getStatus())) {
-                throw new LockedException("User is blocked");
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
             }
 
             List<Group> groups = userMapper.getGroups();
             if (groups == null) {
-                return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+//                return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");
             }
 
             List<GroupPermission> groupDTOs = groups.stream().map(group -> {
                 GroupPermission groupDTO = new GroupPermission();
-                groupDTO.setGroup(group);
+                groupDTO.setId(group.getId());
+                groupDTO.setGroupTitle(group.getGroupTitle());
+                groupDTO.setOrgId(group.getOrgId());
 
-                List<Permission> permissions = userMapper.findPermissionsByGroup(group.getId());
-                permissions.forEach(permission -> {
-                    permission.setSubModuleId(0L);
-                });
+                Permission permissions = userMapper.findPermissionsByGroup(group.getId());
+
                 groupDTO.setPermissions(permissions);
 
-//                List<Module> modules = userMapper.findModulesByGroupId(group.getId());
-//
-//                List<ModuleWithSubModules> moduleDTOs = modules.stream().map(module -> {
-//                    ModuleWithSubModules moduleDTO = new ModuleWithSubModules();
-//                    moduleDTO.setModule(module);
-//
-//                    List<SubModule> subModules = userMapper.findSubModulesByModuleId(module.getId());
-
-//                    List<SubModuleWithPermissions> subDTOs = subModules.stream().map(sub -> {
-//                        SubModuleWithPermissions subDTO = new SubModuleWithPermissions();
-//                        subDTO.setSubModule(sub);
-//
-//                        List<Permission> permissions = userMapper.findPermissionsByGroupAndSubModule(group.getId(), sub.getId());
-//                        subDTO.setPermissions(permissions);
-
-//                        return subDTO;
-//                    }).collect(Collectors.toList());
-//
-//                    moduleDTO.setSubModules(subDTOs);
-//                    return moduleDTO;
-//                }).collect(Collectors.toList());
-
-//                groupDTO.setModules(moduleDTOs);
                 return groupDTO;
             }).collect(Collectors.toList());
 
-            return ResponseMap.response(status.getSuccessCode(),  "Group Permission" + status.getDesc(), groupDTOs);
+            return ResponseMap.response(status.getSuccessCode(),  "Group Permission " + status.getDesc(), groupDTOs);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -607,6 +487,22 @@ public class UserServiceImpl implements  UserService {
             throw exception;
         }
 
+    }
+
+
+
+    UserModel handleUserValidation() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = "Unknown";
+
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+            username = principal.getUsername();  // or principal.getEmail() if you named it that way
+        }
+
+        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+        return isOperatorExist;
     }
 
     private void handleAddCache(UserModel user) {
