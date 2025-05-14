@@ -8,6 +8,7 @@ import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.tariff.UniqueTariffId;
@@ -72,17 +73,10 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
+            UserModel um = handleUserValidation();
 
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
@@ -104,9 +98,9 @@ public class TariffServiceImpl implements TariffService {
 //                return ResponseMap.response(status.getRegCode(), tariffName + " " + status.getRegFailureDesc(), "");
             }
             Tariff tariffByName = tariffMapper.getTariff(tariff.getName());
-            isOperatorExist.setPassword("");
+            um.setPassword("");
             handleAddCache(tariffByName);
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created Tariff [" + tariff.getName() + "]");
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariffByName);
@@ -129,17 +123,9 @@ public class TariffServiceImpl implements TariffService {
         int result;
         String desc = "";
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
@@ -172,8 +158,8 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariff = tariffMapper.getTariffById(tariffById.getId());
             handleAddCache(tariffById);
-            isOperatorExist.setPassword("");
-            auditNotificationDTO.setCreator(isOperatorExist);
+            um.setPassword("");
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType("tariff");
             auditNotificationDTO.setCreatedTariff(tariff);
@@ -265,17 +251,9 @@ public class TariffServiceImpl implements TariffService {
 
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
@@ -289,6 +267,8 @@ public class TariffServiceImpl implements TariffService {
             if (effectiveDate != null && !effectiveDate.isEmpty()) cacheKeyBuilder.append("_date_").append(effectiveDate);
             if (approveStatus != null && !approveStatus.isEmpty()) cacheKeyBuilder.append("_status_").append(approveStatus);
             if (state != null) cacheKeyBuilder.append("_state_").append(state);
+            cacheKeyBuilder.append("_page_").append(page);
+            cacheKeyBuilder.append("_size_").append(size);
 
             String cacheKey = cacheKeyBuilder.toString();
 
@@ -312,8 +292,28 @@ public class TariffServiceImpl implements TariffService {
                     .filter(t -> state == null || t.getStatus().equals(state))
                     .collect(Collectors.toList());
 
+
+            // Pagination logic
+            int totalTariffs = filteredTariffs.size();
+            List<Tariff> paginatedTariffs;
+            if (size == 0) {
+                paginatedTariffs = filteredTariffs; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalTariffs);
+                int toIndex = Math.min(fromIndex + size, totalTariffs);
+                paginatedTariffs = filteredTariffs.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedTariffs);
+            response.put("totalData", totalTariffs);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedTariffs.size() / size));
+
             tariffCache.put(cacheKey, filteredTariffs);
-            return ResponseMap.response(status.getSuccessCode(),  "Tariffs "+status.getDesc(), filteredTariffs);
+            return ResponseMap.response(status.getSuccessCode(),  "Tariffs "+status.getDesc(), response);
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
@@ -338,17 +338,9 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> getUniqueTariffId() {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
@@ -393,17 +385,9 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
@@ -425,7 +409,7 @@ public class TariffServiceImpl implements TariffService {
                     Tariff tariff = tariffMapper.getTariffById(id);
                     if(tariff == null) {
                         String desc = s+ "Tariff [" + id + "] does not exist ";
-                        auditNotificationDTO.setCreator(isOperatorExist);
+                        auditNotificationDTO.setCreator(um);
                         auditNotificationDTO.setDescription(desc);
                         auditNotificationDTO.setType("tariff");
                         auditNotificationDTO.setCreatedTariff(null);
@@ -434,8 +418,8 @@ public class TariffServiceImpl implements TariffService {
                     }
                     handleAddCache(tariff);
                     String desc = s + " Tariff [" + tariff.getName() + "]";
-                    isOperatorExist.setPassword("");
-                    auditNotificationDTO.setCreator(isOperatorExist);
+                    um.setPassword("");
+                    auditNotificationDTO.setCreator(um);
                     auditNotificationDTO.setDescription(desc);
                     auditNotificationDTO.setType("tariff");
                     auditNotificationDTO.setCreatedTariff(tariff);
@@ -462,6 +446,19 @@ public class TariffServiceImpl implements TariffService {
         return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
     }
 
+    UserModel handleUserValidation() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = "Unknown";
+
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+            username = principal.getUsername();  // or principal.getEmail() if you named it that way
+        }
+
+        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+        return isOperatorExist;
+    }
 
 
     private void handleAddCache(Tariff tariff) {
