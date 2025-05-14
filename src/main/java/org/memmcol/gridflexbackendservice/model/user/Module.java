@@ -1,11 +1,9 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.user;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
+
 @Data
 public class Module implements Serializable {
 

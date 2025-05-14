@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.tariff;
 
 import lombok.Data;
 

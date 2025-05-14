@@ -1,8 +1,7 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.tariff;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.List;

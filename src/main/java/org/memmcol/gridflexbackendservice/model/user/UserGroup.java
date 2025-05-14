@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.user;
 
 import lombok.Data;
 

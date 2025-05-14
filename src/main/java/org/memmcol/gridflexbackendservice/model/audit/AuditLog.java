@@ -1,7 +1,11 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.audit;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -20,9 +24,11 @@ public class AuditLog implements Serializable {
 
     private String description;
 
+    private String reason;
+
     private String type;
 
-//    private Operator createdOperator;
+    private Customer createdCustomer;
 
     private UserModel createdUser;
 
@@ -59,6 +65,14 @@ public class AuditLog implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public String getType() {
@@ -99,5 +113,13 @@ public class AuditLog implements Serializable {
 
     public void setCreatedTariff(Tariff createdTariff) {
         this.createdTariff = createdTariff;
+    }
+
+    public Customer getCreatedCustomer() {
+        return createdCustomer;
+    }
+
+    public void setCreatedCustomer(Customer createdCustomer) {
+        this.createdCustomer = createdCustomer;
     }
 }

@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

@@ -1,7 +1,7 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
-import org.memmcol.gridflexbackendservice.model.*;
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.user.*;
 
 import java.util.List;
 
@@ -165,7 +165,7 @@ public interface AuthMapper {
     UserModel findAuthByUserId(Long userId);
 
 
-    @Select("SELECT * FROM users")
+    @Select("SELECT * FROM users ORDER BY created_at DESC;")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),

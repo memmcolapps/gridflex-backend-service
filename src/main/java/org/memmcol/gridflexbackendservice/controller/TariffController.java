@@ -1,18 +1,13 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.model.Band;
-import org.memmcol.gridflexbackendservice.model.BulkApprovalRequest;
-import org.memmcol.gridflexbackendservice.model.Tariff;
-import org.memmcol.gridflexbackendservice.service.band.BandService;
+import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -51,6 +46,8 @@ public class TariffController {
 
     @GetMapping("/all-tariff")
     public ResponseEntity<?> filterTariff(
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "0") int size,
             @RequestParam(value = "tariffName", required = false, defaultValue = "") String tariffName,
             @RequestParam(value = "tariffIndex", required = false, defaultValue = "") String tariffIndex,
             @RequestParam(value = "tariffType", required = false, defaultValue = "") String tariffType,
@@ -61,7 +58,7 @@ public class TariffController {
             @RequestParam(value = "approveStatus", required = false, defaultValue = "") String approveStatus
     ) {
         try {
-            Map<String, Object> result = service.getFilterTariffs(tariffName, tariffIndex, tariffType, tariffRate, bandCode, status, effectiveDate, approveStatus);
+            Map<String, Object> result = service.getFilterTariffs(page, size, tariffName, tariffIndex, tariffType, tariffRate, bandCode, status, effectiveDate, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

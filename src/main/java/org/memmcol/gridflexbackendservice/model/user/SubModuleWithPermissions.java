@@ -1,9 +1,8 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.user;
 
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
 
 @Data
 public class SubModuleWithPermissions implements Serializable {

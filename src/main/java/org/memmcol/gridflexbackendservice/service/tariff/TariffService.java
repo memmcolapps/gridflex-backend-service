@@ -1,10 +1,8 @@
 package org.memmcol.gridflexbackendservice.service.tariff;
 
-import org.memmcol.gridflexbackendservice.model.BulkApprovalRequest;
-import org.memmcol.gridflexbackendservice.model.Tariff;
+import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 public interface TariffService {
@@ -14,7 +12,7 @@ public interface TariffService {
 
 //    Map<String, Object> getTariffs(int page, int size);
 
-    Map<String, Object> getFilterTariffs(String tariffName, String tariffIndex, String tariffType, String tariffRate, String bandCode, Boolean status, String effectiveDate, String approveStatus);
+    Map<String, Object> getFilterTariffs(int page, int size, String tariffName, String tariffIndex, String tariffType, String tariffRate, String bandCode, Boolean status, String effectiveDate, String approveStatus);
 
     Map<String, Object> getUniqueTariffId();
 

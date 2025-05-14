@@ -1,11 +1,9 @@
 package org.memmcol.gridflexbackendservice.service.user;
 
-import org.memmcol.gridflexbackendservice.model.CreateGroupRequest;
-//import org.memmcol.gridflexbackendservice.model.CreateUserRequest;
-import org.memmcol.gridflexbackendservice.model.CreateUserRequest;
-import org.memmcol.gridflexbackendservice.model.UserModel;
+import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
+//import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
+import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 public interface UserService {

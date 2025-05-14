@@ -1,20 +1,22 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.user;
+
+import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
 
-public class GroupWithPermissionsDTO implements Serializable {
+@Data
+public class GroupPermission implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
 //    private Group group;
+//    private Permission permissions;
+
     private Long id;
 
     private String groupTitle;
 
-    private String orgId;
-
-    private List<ModuleWithSubModules> modules;
+    private Long orgId;
 
     private Permission permissions;
 
@@ -26,6 +28,14 @@ public class GroupWithPermissionsDTO implements Serializable {
         this.id = id;
     }
 
+    public Long getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(Long orgId) {
+        this.orgId = orgId;
+    }
+
     public String getGroupTitle() {
         return groupTitle;
     }
@@ -34,30 +44,13 @@ public class GroupWithPermissionsDTO implements Serializable {
         this.groupTitle = groupTitle;
     }
 
-//    public Group getGroup() {
+    //    public Group getGroup() {
 //        return group;
 //    }
 //
 //    public void setGroup(Group group) {
 //        this.group = group;
 //    }
-
-
-    public String getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(String orgId) {
-        this.orgId = orgId;
-    }
-
-    public List<ModuleWithSubModules> getModules() {
-        return modules;
-    }
-
-    public void setModules(List<ModuleWithSubModules> modules) {
-        this.modules = modules;
-    }
 
     public Permission getPermissions() {
         return permissions;
@@ -66,13 +59,5 @@ public class GroupWithPermissionsDTO implements Serializable {
     public void setPermissions(Permission permissions) {
         this.permissions = permissions;
     }
-
-    //
-//    public List<Permission> getPermissions() {
-//        return permissions;
-//    }
-//
-//    public void setPermissions(List<Permission> permissions) {
-//        this.permissions = permissions;
-//    }
 }
+

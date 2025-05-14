@@ -5,7 +5,14 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
-import org.memmcol.gridflexbackendservice.model.*;
+import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.tariff.UniqueTariffId;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -246,6 +253,7 @@ public class TariffServiceImpl implements TariffService {
 
     @Override
     public Map<String, Object> getFilterTariffs(
+            int page, int size,
             String tariffName,
             String tariffIndex,
             String tariffType,

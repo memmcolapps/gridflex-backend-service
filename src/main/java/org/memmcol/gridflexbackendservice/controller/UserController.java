@@ -1,15 +1,12 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.model.CreateGroupRequest;
-//import org.memmcol.gridflexbackendservice.model.CreateUserRequest;
-import org.memmcol.gridflexbackendservice.model.CreateUserRequest;
-import org.memmcol.gridflexbackendservice.model.UserModel;
+import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
+//import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
+import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 import org.memmcol.gridflexbackendservice.service.user.UserService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

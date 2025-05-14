@@ -1,7 +1,6 @@
-package org.memmcol.gridflexbackendservice.model;
+package org.memmcol.gridflexbackendservice.model.user;
 
 import java.io.Serializable;
-import java.util.List;
 
 public class CreateUserRequest implements Serializable {
     private static final long serialVersionUID = 1L;

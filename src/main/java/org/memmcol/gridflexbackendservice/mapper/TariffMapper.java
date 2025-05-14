@@ -4,8 +4,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.memmcol.gridflexbackendservice.model.Band;
-import org.memmcol.gridflexbackendservice.model.Tariff;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.util.List;
 

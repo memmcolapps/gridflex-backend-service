@@ -2,14 +2,14 @@ package org.memmcol.gridflexbackendservice.service.user;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import jakarta.ws.rs.NotFoundException;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
-import org.memmcol.gridflexbackendservice.model.*;
-import org.memmcol.gridflexbackendservice.model.Module;
+import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.user.Module;
+import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
-import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
@@ -20,17 +20,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -86,7 +82,7 @@ public class UserServiceImpl implements  UserService {
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             // check if operator exist
-            UserModel isOperator = userMapper.findById(operator.getId());
+            UserModel isOperator = userMapper.findByEmail(operator.getId());
             if (isOperator != null){
                 throw new LockedException(userName + " " + status.getExistDesc());
             }
@@ -307,6 +303,7 @@ public class UserServiceImpl implements  UserService {
 
             /// Retrieve user data from database
             UserModel userDTO = operatorMapper.findAuthByUserId(userId);
+
             userDTO.setPassword("");
             handleAddCache(userDTO);
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);

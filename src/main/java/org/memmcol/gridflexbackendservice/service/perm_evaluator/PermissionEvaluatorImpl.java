@@ -3,13 +3,10 @@ package org.memmcol.gridflexbackendservice.service.perm_evaluator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.memmcol.gridflexbackendservice.model.CustomUserPrincipal;
-import org.springframework.http.MediaType;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,11 +20,13 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single-user",
                     "/user/service/all-users", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups",  "/user/service/create/group-permission"),
+                    "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update",
+                    "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
-                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve"),
+                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve", "/customer/service/create",
+                    "/customer/service/update", "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer"),
 
             "band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band"),
@@ -43,9 +42,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission")
     );
-
-//            "User List", List.of("/user/service/single-user", "/user/service/all-users"),
-//            "Role Assignment", List.of("/roles/assign", "/roles/view"),
 
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {

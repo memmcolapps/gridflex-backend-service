@@ -1,7 +1,7 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
-import org.memmcol.gridflexbackendservice.model.Band;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.band;
 
-import org.memmcol.gridflexbackendservice.model.Band;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 
 import java.util.Map;
 

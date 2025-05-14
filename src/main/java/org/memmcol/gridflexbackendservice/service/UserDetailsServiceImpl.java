@@ -3,7 +3,10 @@ package org.memmcol.gridflexbackendservice.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
-import org.memmcol.gridflexbackendservice.model.*;
+import org.memmcol.gridflexbackendservice.model.user.ModuleWithSubModules;
+import org.memmcol.gridflexbackendservice.model.user.Permission;
+import org.memmcol.gridflexbackendservice.model.user.SubModuleWithPermissions;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +53,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		Set<GrantedAuthority> authorities = new HashSet<>();
 		List<Map<String, Object>> groupModulePermissionTree = new ArrayList<>();
 
-				Map<String, Object> groupMap = new HashMap<>();
-				Map<String, Object> groupOrgmap = new HashMap<>();
-//				groupMap.put("group", userDTO.getGroups().getGroupTitle());
-				groupOrgmap.put("orgId", userDTO.getId());
-				groupOrgmap.put("groupTitle", userDTO.getGroups().getGroupTitle());
+		Map<String, Object> groupMap = new HashMap<>();
+		Map<String, Object> groupOrgmap = new HashMap<>();
+		groupOrgmap.put("orgId", userDTO.getId());
+		groupOrgmap.put("groupTitle", userDTO.getGroups().getGroupTitle());
 		groupMap.put("group", groupOrgmap);
 
 		// Handle Permissions
