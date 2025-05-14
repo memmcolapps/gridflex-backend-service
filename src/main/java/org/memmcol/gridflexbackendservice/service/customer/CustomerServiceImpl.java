@@ -2,6 +2,13 @@ package org.memmcol.gridflexbackendservice.service.customer;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
@@ -23,10 +30,13 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -320,6 +330,109 @@ public class CustomerServiceImpl implements CustomerService {
             throw exception;
         }
     }
+
+    @Override
+    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+        String filename = file.getOriginalFilename();
+
+        List<Customer> customers;
+        assert filename != null;
+        if (filename.endsWith(".csv")) {
+            customers = parseCSV(file);
+        } else if (filename.endsWith(".xlsx")) {
+            customers = parseExcel(file);
+        } else {
+            throw new IllegalArgumentException("Unsupported file type");
+        }
+        System.out.println("Uploading " + customers.size() + " customers");
+        customers.forEach(System.out::println);
+//        customerMapper.insertCustomers(customers);
+        try {
+            for (Customer customer : customers) {
+                customerMapper.insertCustomer(customer);
+            }
+            return ResponseMap.response(status.getSuccessCode(), customers.size() + " " + customerName + "s " + status.getRegDesc(), "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to insert customers: " + e.getMessage());
+        }
+
+    }
+
+    private List<Customer> parseCSV(MultipartFile file) throws IOException {
+        List<Customer> customers = new ArrayList<>();
+        Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+        Iterable<CSVRecord> records = CSVFormat.DEFAULT
+                .withFirstRecordAsHeader()
+                .parse(reader);
+
+        for (CSVRecord record : records) {
+            customers.add(buildCustomer(Long.valueOf(record.get("orgId")), record.get("firstname"),
+                    record.get("lastname"), record.get("accountNumber"), record.get("nin"),
+                    record.get("phoneNumber"), record.get("email"), record.get("state"),
+                    record.get("city"), record.get("houseNo"), record.get("streetName")));
+        }
+
+        return customers;
+    }
+
+    private List<Customer> parseExcel(MultipartFile file) throws IOException {
+        List<Customer> customers = new ArrayList<>();
+        Workbook workbook = new XSSFWorkbook(file.getInputStream());
+        Sheet sheet = workbook.getSheetAt(0);
+
+        Iterator<Row> rowIterator = sheet.iterator();
+        if (rowIterator.hasNext()) rowIterator.next(); // Skip header
+
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+
+            customers.add(buildCustomer(
+                    Long.valueOf(getCellValue(row.getCell(0))),
+                    getCellValue(row.getCell(1)),
+                    getCellValue(row.getCell(2)),
+                    getCellValue(row.getCell(3)),
+                    getCellValue(row.getCell(4)),
+                    getCellValue(row.getCell(5)),
+                    getCellValue(row.getCell(6)),
+                    getCellValue(row.getCell(7)),
+                    getCellValue(row.getCell(8)),
+                    getCellValue(row.getCell(9)),
+                    getCellValue(row.getCell(10))
+            ));
+        }
+
+        workbook.close();
+        return customers;
+    }
+
+    private Customer buildCustomer(Long orgId, String firstname, String lastname,
+                                   String accountNumber, String nin ,String phoneNumber, String email,
+                                   String state,  String city, String houseNo, String streetName) {
+        Customer c = new Customer();
+        c.setOrgId(orgId);
+        c.setFirstname(firstname);
+        c.setLastname(lastname);
+        c.setAccountNumber(accountNumber);
+        c.setNin(nin);
+        c.setPhoneNumber(phoneNumber);
+        c.setEmail(email);
+        c.setState(state);
+        c.setCity(city);
+        c.setHouseNo(houseNo);
+        c.setStreetName(streetName);
+        return c;
+    }
+
+    private String getCellValue(Cell cell) {
+        if (cell == null) return "";
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
+            default -> "";
+        };
+    }
+
 
     UserModel handleUserValidation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

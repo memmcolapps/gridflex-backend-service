@@ -48,4 +48,14 @@ public interface CustomerMapper {
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Customer> findAllCustomers();
+
+    @Insert({
+            "<script>",
+            "INSERT INTO customers (org_id, firstname, lastname, account_number, nin, phone_number, email, state, city, house_no, street_name, status, meter_number, meter_assigned, created_at, updated_at) VALUES ",
+            "<foreach collection='customers' item='c' separator=','>",
+            "(#{orgId}, #{firstname}, #{lastname}, #{accountNumber}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, false, #{meterNumber}, false, #{createdAt}, #{updatedAt}))",
+            "</foreach>",
+            "</script>"
+    })
+    void insertCustomers(List<Customer> customers);
 }

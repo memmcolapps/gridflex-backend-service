@@ -1,7 +1,9 @@
 package org.memmcol.gridflexbackendservice.service.customer;
 
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 
 public interface CustomerService {
@@ -16,4 +18,6 @@ public interface CustomerService {
     Map<String, Object> singleCustomer(String accountNumber);
 
     Map<String, Object> changeState(String accountNumber, Boolean status, String reason);
+
+    Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
 }

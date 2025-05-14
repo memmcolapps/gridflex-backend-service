@@ -6,7 +6,9 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 
 @RestController
@@ -74,6 +76,18 @@ public class CustomerController {
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
+        }
+    }
+
+    @PostMapping("/bulk-upload")
+    public ResponseEntity<?> bulkUpload(@RequestParam("file") MultipartFile file){
+        try {
+            Map<String, Object> result = service.bulkUpload(file);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

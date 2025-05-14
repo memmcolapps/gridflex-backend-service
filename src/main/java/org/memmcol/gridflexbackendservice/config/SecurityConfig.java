@@ -99,7 +99,7 @@ public class  SecurityConfig {
 						"/user/service/change-state", "/user/service/update",  "/user/service/create",
 						"/user/service/groups",  "/user/service/create/group-permission",
 						"/customer/service/create", "/customer/service/update", "/customer/service/change-state",
-						"/customer/service/all-customers",  "/customer/service/single-customer")
+						"/customer/service/all-customers",  "/customer/service/single-customer", "/customer/service/bulk-upload")
 				.access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier
 					Authentication authentication =  context.get();

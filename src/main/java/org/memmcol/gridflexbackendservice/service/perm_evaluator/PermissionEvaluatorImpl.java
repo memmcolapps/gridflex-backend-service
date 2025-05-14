@@ -21,12 +21,13 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single-user",
                     "/user/service/all-users", "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update",
-                    "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer"),
+                    "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer", "/customer/service/bulk-upload"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve", "/customer/service/create",
-                    "/customer/service/update", "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer"),
+                    "/customer/service/update", "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer",
+                    "/customer/service/bulk-upload"),
 
             "band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all-band",  "/band/service/single-band"),
