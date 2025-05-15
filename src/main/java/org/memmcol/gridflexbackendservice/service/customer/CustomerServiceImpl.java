@@ -82,11 +82,11 @@ public class CustomerServiceImpl implements CustomerService {
             if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disabled");
             }
-            // check if customer exist
-            Customer isCustomer = customerMapper.findByAccountNo(request.getAccountNumber());
-            if (isCustomer != null){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(customerName + " " + status.getExistDesc());
-            }
+//            // check if customer exist
+//            Customer isCustomer = customerMapper.findByAccountNo(request.getAccountNumber());
+//            if (isCustomer != null){
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(customerName + " " + status.getExistDesc());
+//            }
 
             // Insert into customer
             customerMapper.insertCustomer(request);
@@ -102,6 +102,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
+            exception.printStackTrace();
             exceptionErrorLogs.setDescription("Error occurred while trying to creating customer");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -121,12 +122,12 @@ public class CustomerServiceImpl implements CustomerService {
             if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disabled");
             }
-            System.out.println("Updating Customer [" + request.getAccountNumber() + "]");
-            // check if customer exist
-            Customer isCustomer = customerMapper.findByAccountNo(request.getAccountNumber());
-            if (isCustomer == null){
-                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
-            }
+//            System.out.println("Updating Customer [" + request.getAccountNumber() + "]");
+//            // check if customer exist
+//            Customer isCustomer = customerMapper.findByAccountNo(request.getAccountNumber());
+//            if (isCustomer == null){
+//                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
+//            }
 
             // Insert into customer
             customerMapper.updateCustomer(request);
@@ -143,6 +144,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
+            exception.printStackTrace();
             exceptionErrorLogs.setDescription("Error occurred while trying to creating customer");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -235,6 +237,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
+            exception.printStackTrace();
             exceptionErrorLogs.setDescription("Error occurred while filtering users");
             exceptionErrorLogs.setError_message(exception.getMessage());
             exceptionErrorLogs.setError(exception.toString());
@@ -270,6 +273,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), isCustomer);
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
+            exception.printStackTrace();
             exceptionErrorLogs.setDescription("Error occurred while trying to creating customer");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -334,7 +338,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
         String filename = file.getOriginalFilename();
-
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         List<Customer> customers;
         assert filename != null;
         if (filename.endsWith(".csv")) {
@@ -346,19 +350,72 @@ public class CustomerServiceImpl implements CustomerService {
         }
         System.out.println("Uploading " + customers.size() + " customers");
         customers.forEach(System.out::println);
-//        customerMapper.insertCustomers(customers);
-        try {
-            for (Customer customer : customers) {
+
+
+
+        List<String> failedRecords = new ArrayList<>();
+        List<String> fullErrors = new ArrayList<>();
+        int successCount = 0;
+
+        for (Customer customer : customers) {
+            try {
+
                 customerMapper.insertCustomer(customer);
+                successCount++;
             }
-            return ResponseMap.response(status.getSuccessCode(), customers.size() + " " + customerName + "s " + status.getRegDesc(), "");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to insert customers: " + e.getMessage());
+            catch (Exception exception) {
+                // Build a full identifier string from unique keys
+                String identifier = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
+                        customer.getAccountNumber(),
+                        customer.getEmail(),
+                        customer.getNin(),
+                        customer.getMeterNumber());
+
+                // Add to failed summary
+                failedRecords.add(identifier + " - " + exception.getMessage());
+
+                // Add full exception for audit
+                fullErrors.add(identifier + " - " + exception);
+
+                exception.printStackTrace();
+
+                // Log in system
+                log.error("Failed to upload customer [DATA]: {} | [ERROR]: {}", identifier, exception.getMessage(), exception);
+//                // Log a meaningful identifier of the customer
+//                String identifier = customer.getAccountNumber() != null
+//                        ? customer.getAccountNumber()
+//                        : customer.getFirstname() + " " + customer.getLastname();
+//                failedRecords.add(identifier + " - " + exception.getMessage());
+//
+//                exception.printStackTrace(); // Optional: keep logs for debugging
+//
+//                e.add(exception.toString());
+//                log.error("Error occurred while upload customer record [ACTION]: {}", exception.getMessage(), exception);
+            }
         }
+        if (!failedRecords.isEmpty()) {
+            exceptionErrorLogs.setDescription("Error occurred while trying to upload customer record");
+            exceptionErrorLogs.setError_message(String.join("; ", failedRecords));
+            exceptionErrorLogs.setError(fullErrors.toString());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+        }
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + customers.size() + " " + customerName + "s " + status.getRegDesc(),
+                failedRecords.isEmpty() ? "" : "Some records failed to upload. See error logs.");
+
 
     }
 
+    //        try {
+//            for (Customer customer : customers) {
+//                customerMapper.insertCustomer(customer);
+//            }
+//            return ResponseMap.response(status.getSuccessCode(), customers.size() + " " + customerName + "s " + status.getRegDesc(), "");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            throw new RuntimeException("Failed to insert customers: " + e.getMessage());
+//        }
     private List<Customer> parseCSV(MultipartFile file) throws IOException {
         List<Customer> customers = new ArrayList<>();
         Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
