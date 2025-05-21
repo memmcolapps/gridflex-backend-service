@@ -6,17 +6,18 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 public class Customer implements Serializable {
     static final long serialVersionUID = 1L;
 
     @Id
-    private Long id;
-    private Long orgId;
+    private UUID id;
+    private UUID orgId;
     private String firstname;
     private String lastname;
-    private String accountNumber;
+    private String customerId;
     private String nin;
     private String phoneNumber;
     private String email;
@@ -39,19 +40,19 @@ public class Customer implements Serializable {
         this.updatedAt = new Date();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public Long getOrgId() {
+    public UUID getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(Long orgId) {
+    public void setOrgId(UUID orgId) {
         this.orgId = orgId;
     }
 
@@ -71,12 +72,12 @@ public class Customer implements Serializable {
         this.lastname = lastname;
     }
 
-    public String getAccountNumber() {
-        return accountNumber;
+    public String getCustomerId() {
+        return customerId;
     }
 
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 
     public String getNin() {

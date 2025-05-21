@@ -4,6 +4,8 @@ package org.memmcol.gridflexbackendservice.model.audit;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.springframework.data.annotation.Id;
@@ -35,6 +37,18 @@ public class AuditLog implements Serializable {
     private Band createdBand;
 
     private Tariff createdTariff;
+
+    private BusinessHub businessHub;
+
+    private SubStation subStation;
+
+    private FeederLine feederLine;
+
+    private Transformer transformer;
+
+    private Region region;
+
+    private Meter createdMeter;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -121,5 +135,53 @@ public class AuditLog implements Serializable {
 
     public void setCreatedCustomer(Customer createdCustomer) {
         this.createdCustomer = createdCustomer;
+    }
+
+    public BusinessHub getBusinessHub() {
+        return businessHub;
+    }
+
+    public void setBusinessHub(BusinessHub businessHub) {
+        this.businessHub = businessHub;
+    }
+
+    public SubStation getSubStation() {
+        return subStation;
+    }
+
+    public void setSubStation(SubStation subStation) {
+        this.subStation = subStation;
+    }
+
+    public Region getRegion() {
+        return region;
+    }
+
+    public void setRegion(Region region) {
+        this.region = region;
+    }
+
+    public Transformer getTransformer() {
+        return transformer;
+    }
+
+    public void setTransformer(Transformer transformer) {
+        this.transformer = transformer;
+    }
+
+    public FeederLine getFeederLine() {
+        return feederLine;
+    }
+
+    public void setFeederLine(FeederLine feederLine) {
+        this.feederLine = feederLine;
+    }
+
+    public Meter getCreatedMeter() {
+        return createdMeter;
+    }
+
+    public void setCreatedMeter(Meter createdMeter) {
+        this.createdMeter = createdMeter;
     }
 }

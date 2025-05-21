@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.model.user;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Data
 public class GroupPermission implements Serializable {
@@ -12,27 +13,27 @@ public class GroupPermission implements Serializable {
 //    private Group group;
 //    private Permission permissions;
 
-    private Long id;
+    private UUID id;
+
+    private UUID orgId;
 
     private String groupTitle;
 
-    private Long orgId;
-
     private Permission permissions;
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public Long getOrgId() {
+    public UUID getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(Long orgId) {
+    public void setOrgId(UUID orgId) {
         this.orgId = orgId;
     }
 

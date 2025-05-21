@@ -22,10 +22,13 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+@Transactional
 @Service
 public class BandServiceImpl implements BandService {
     private static final Logger log = LoggerFactory.getLogger(BandServiceImpl.class);
@@ -60,34 +63,31 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> createBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
+
+//            String isOrgId = bandMapper.getOrgId(um.getOrgId());
+//            if (isOrgId == null) {
+//                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+//            }
 
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist != null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(bandName + " " + status.getExistDesc());
-//                return ResponseMap.response(status.getExistCode(), bandName + " " + status.getExistDesc(), "");
             }
+
+            band.setOrgId(um.getOrgId());
             int result = bandMapper.createBand(band);
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getRegFailureDesc());
-//                return ResponseMap.response(status.getRegCode(), bandName + " " + status.getRegFailureDesc(), "");
             }
             Band bandByName = bandMapper.getBand(band.getName());
-            isOperatorExist.setPassword("");
+            um.setPassword("");
             handleAddCache(bandByName);
-            auditNotificationDTO.setCreator(isOperatorExist);
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandByName);
@@ -109,37 +109,31 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> updateBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-                throw new LockedException("User is disable");
+            String isOrgId = bandMapper.getOrgId(um.getOrgId());
+            if (isOrgId == null) {
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
 
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist == null) {
                 return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
-            if(!isExist.getStatus()){
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " disabled");
-//                return ResponseMap.response(status.getDeleteCode(), bandName + " disabled", "");
-            }
+
+            band.setOrgId(um.getOrgId());
             int result = bandMapper.updateBand(band);
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateFailureDesc());
-//                return ResponseMap.response(status.getUpdateCode(), bandName + " " + status.getUpdateFailureDesc(), "");
             }
-            Band bandById = bandMapper.getBandById(band.getId());
+            Band bandById = bandMapper.getBandById(band.getId(), um.getOrgId());
             handleAddCache(bandById);
-            isOperatorExist.setPassword("");
-            auditNotificationDTO.setCreator(isOperatorExist);
+            um.setPassword("");
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Updated Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandById);
@@ -158,37 +152,32 @@ public class BandServiceImpl implements BandService {
     }
 
     @Override
-    public Map<String, Object> manageBandState(Long bandId, Boolean state) {
+    public Map<String, Object> manageBandState(UUID bandId, Boolean state) {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disable");
             }
 
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-                throw new LockedException("User is blocked");
+            String isOrgId = bandMapper.getOrgId(um.getOrgId());
+            if (isOrgId == null) {
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
 
-            Band bandById = bandMapper.getBandById(bandId);
+            Band bandById = bandMapper.getBandById(bandId, um.getOrgId());
             if(bandById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
-//                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
-            int result = bandMapper.disableBand(bandId, state);
+            int result = bandMapper.disableBand(bandId, state, um.getOrgId());
             if (result == 0) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
-//                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
-            Band band = bandMapper.getBandById(bandById.getId());
+            Band band = bandMapper.getBandById(bandId, um.getOrgId());
             handleAddCache(bandById);
-            isOperatorExist.setPassword("");
-            auditNotificationDTO.setCreator(isOperatorExist);
+            um.setPassword("");
+            auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Disabled Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(band);
@@ -209,21 +198,13 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> getBands() {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
-            String cacheKey = "bands_";
+            String cacheKey = "bands_"+um.getOrgId();
             Object cachedBand = bandCache.get(cacheKey);
 
             if (cachedBand != null) {
@@ -232,7 +213,6 @@ public class BandServiceImpl implements BandService {
             List<Band> result = bandMapper.fetchBands();
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
-//                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
             bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
@@ -248,19 +228,11 @@ public class BandServiceImpl implements BandService {
     }
 
     @Override
-    public Map<String, Object> getBand(Long bandId) {
+    public Map<String, Object> getBand(UUID bandId) {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = "Unknown";
+            UserModel um = handleUserValidation();
 
-            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-                username = principal.getUsername();  // or principal.getEmail() if you named it that way
-            }
-
-            UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-            if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disable");
             }
 
@@ -269,7 +241,7 @@ public class BandServiceImpl implements BandService {
             if (cachedBand != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + " " + status.getDesc(), cachedBand);
             }
-            Band result = bandMapper.getBandById(bandId);
+            Band result = bandMapper.getBandById(bandId, um.getOrgId());
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
 //                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
@@ -287,25 +259,34 @@ public class BandServiceImpl implements BandService {
     }
 
     private void handleAddCache(Band band) {
-        bandCache.remove(band.getName());
+        bandCache.remove(band.getId().toString()+"_"+band.getOrgId());
         for (String key : auditCache.keySet()) {
             if (key.startsWith("grid_flex_audit_log_page_")) {
                 auditCache.remove(key);
             }
         }
         for (String key : bandCache.keySet()) {
-            if (key.startsWith("bands_")) {
+            if (key.startsWith("bands_"+band.getOrgId())) {
                 bandCache.remove(key);
             }
         }
         bandCache.put(band.getId().toString(), band);  // Cache updated or deleted entity
     }
 
-    private void removeFromCache() {
-        for (String key : auditCache.keySet()) {
-            if (key.startsWith("grid_flex_audit_log_page_")) {
-                auditCache.remove(key);
-            }
+
+    UserModel handleUserValidation() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = "Unknown";
+
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+            username = principal.getUsername();  // or principal.getEmail() if you named it that way
         }
+
+        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+        return isOperatorExist;
     }
+
+
 }

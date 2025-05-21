@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/node/service")
@@ -133,17 +134,17 @@ public class NodeController {
     }
 
     @GetMapping("/single-node")
-    public ResponseEntity<Map<String, Object>> singleNodes(@RequestParam Long nodeId) {
+    public ResponseEntity<Map<String, Object>> singleNode(@RequestParam UUID nodeId) {
 
         try {
-            Map<String, Object> result =  nodeService.singleNodes(nodeId);
+            Map<String, Object> result =  nodeService.singleNode(nodeId);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
         }
-
     }
+
 
     @GetMapping("/all-nodes")
     public ResponseEntity<Map<String, Object>> fetchAllNodes() {
@@ -155,8 +156,9 @@ public class NodeController {
         } catch (SQLServerException e) {
             return handleException(e);
         }
-
     }
+
+
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {

@@ -63,6 +63,24 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 
+		config.addMapConfig(new MapConfig("node-Cache")
+//				.setTimeToLiveSeconds(86400)
+				.setMaxIdleSeconds(18000)
+				.setEvictionConfig(new EvictionConfig()
+						.setEvictionPolicy(EvictionPolicy.LRU)
+						.setMaxSizePolicy(MaxSizePolicy.PER_NODE)
+						.setSize(1000))
+				.setBackupCount(1));
+
+		config.addMapConfig(new MapConfig("meter-Cache")
+//				.setTimeToLiveSeconds(86400)
+				.setMaxIdleSeconds(18000)
+				.setEvictionConfig(new EvictionConfig()
+						.setEvictionPolicy(EvictionPolicy.LRU)
+						.setMaxSizePolicy(MaxSizePolicy.PER_NODE)
+						.setSize(1000))
+				.setBackupCount(1));
+
 		// Configure OTP Cache (Expires in 60 Seconds)
 		config.addMapConfig(new MapConfig("otp-Cache")
 				.setTimeToLiveSeconds(60)

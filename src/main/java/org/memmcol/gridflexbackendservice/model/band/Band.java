@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -15,7 +16,9 @@ public class Band implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    private Long id;
+    private UUID id;
+
+    private UUID orgId;
 
     private String name;
 
@@ -23,24 +26,31 @@ public class Band implements Serializable {
 
     private Boolean status;
 
-    private Long orgId;
-
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date created_at;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updated_at;
 
-    public Long getId() {
-        return id;
-    }
-
     public Band() {
         this.created_at = new Date();
         this.updated_at = new Date();
     }
-    public void setId(Long id) {
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
 
     public String getName() {
@@ -67,13 +77,6 @@ public class Band implements Serializable {
         this.status = status;
     }
 
-    public Long getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(Long orgId) {
-        this.orgId = orgId;
-    }
 
     public Date getCreated_at() {
         return created_at;

@@ -6,17 +6,18 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class CreateGroupRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Long id;
+    private UUID id;
 
     private String groupTitle;
 
-    private Long orgId;
+    private UUID orgId;
 
 //    private Group group;
 
@@ -35,19 +36,19 @@ public class CreateGroupRequest implements Serializable {
         this.updatedAt = new Date();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public Long getOrgId() {
+    public UUID getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(Long orgId) {
+    public void setOrgId(UUID orgId) {
         this.orgId = orgId;
     }
 

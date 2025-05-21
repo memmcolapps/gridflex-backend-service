@@ -82,31 +82,32 @@ public class UserServiceImpl implements  UserService {
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             // check if operator exist
-            UserModel isOperator = userMapper.findByEmail(operator.getId());
+            UserModel isOperator = userMapper.findByEmail(operator.getEmail(), um.getOrgId());
             if (isOperator != null){
                 throw new LockedException(userName + " " + status.getExistDesc());
             }
 
             // check if groupId exist
-            Long isGroupId = userMapper.checkGroupId(request.getGroupId());
-            if (isGroupId == 0){
+            UUID isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
+            if (isGroupId == null){
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
 
-            String isOrgId = userMapper.checkOrgId(request.getUser().getOrgId());
-            if (isOrgId == null){
-                throw new GlobalExceptionHandler.NotFoundException("Organization " + status.getNotFoundDesc());
-            }
+//            String isOrgId = userMapper.checkOrgId(request.getUser().getOrgId());
+//            if (isOrgId == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Organization " + status.getNotFoundDesc());
+//            }
+
+            operator.setOrgId(um.getOrgId());
 
             // Insert into operators
             userMapper.insertUser(operator);
-            Long userId = operator.getId();
+            UUID userId = operator.getId();
             System.out.println("userId: " + userId);
-            userMapper.assignUserToGroup(userId, request.getGroupId(), operator.getOrgId());
+            userMapper.assignUserToGroup(userId, request.getGroupId(), um.getOrgId());
 
-            UserModel user = operatorMapper.findAuthByUserId(userId);
+            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-//                    userMapper.findById(operator.getId());
             handleAddCache(user);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created User [" + user.getEmail() + "]");
@@ -140,24 +141,25 @@ public class UserServiceImpl implements  UserService {
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
             // check if operator exist
-            UserModel isOperator = userMapper.findById(operator.getId());
+            UserModel isOperator = userMapper.findById(operator.getId(), um.getOrgId());
             if (isOperator == null){
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
             // check if groupId exist
-            Long isGroupId = userMapper.checkGroupId(request.getGroupId());
+            UUID isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
             if (isGroupId == null){
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
 
+            operator.setOrgId(um.getOrgId());
+
             // Insert into operators
             userMapper.updateUser(operator);
-            Long userId = operator.getId();
-            userMapper.updateUserToGroup(userId, isGroupId);
+            UUID userId = operator.getId();
+            userMapper.updateUserToGroup(userId, isGroupId, um.getOrgId());
 
-//          UserModel user = userMapper.findById(operator.getId());
-            UserModel user = operatorMapper.findAuthByUserId(userId);
+            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
             handleAddCache(user);
             auditNotificationDTO.setCreator(um);
@@ -178,7 +180,9 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size) {
+    public Map<String, Object> getUsers(
+            String firstname, String lastname, String email, String permission,
+            String dateAdded, String lastActive, int page, int size) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -189,7 +193,7 @@ public class UserServiceImpl implements  UserService {
             }
 
             // Build a unique cache key
-            StringBuilder cacheKeyBuilder = new StringBuilder("users");
+            StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
             if (firstname != null && !firstname.isEmpty()) cacheKeyBuilder.append("_firstname_").append(firstname);
             if (lastname != null && !lastname.isEmpty()) cacheKeyBuilder.append("_lastname_").append(lastname);
             if (email != null && !email.isEmpty()) cacheKeyBuilder.append("_email_").append(email);
@@ -208,7 +212,7 @@ public class UserServiceImpl implements  UserService {
             }
 
 //            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
-            List<UserModel> users = operatorMapper.findAllUsers();
+            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId());
             // Apply filtering
             Stream<UserModel> userStream = users.stream();
 
@@ -280,7 +284,7 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> getUser(Long userId) {
+    public Map<String, Object> getUser(UUID userId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -290,19 +294,19 @@ public class UserServiceImpl implements  UserService {
                 throw new LockedException("User is disabled");
             }
 
-            Object cachedUser = userCache.get(userId.toString());
+            Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
 
             if (cachedUser != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedUser);
             }
 
-            UserModel user = userMapper.findById(userId);
+            UserModel user = userMapper.findById(userId, um.getOrgId());
             if (user == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
             /// Retrieve user data from database
-            UserModel userDTO = operatorMapper.findAuthByUserId(userId);
+            UserModel userDTO = operatorMapper.findAuthByUserId(userId, um.getOrgId());
 
             userDTO.setPassword("");
             handleAddCache(userDTO);
@@ -318,7 +322,7 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public Map<String, Object> changeState(Long userId, Boolean state) {
+    public Map<String, Object> changeState(UUID userId, Boolean state) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
@@ -330,7 +334,7 @@ public class UserServiceImpl implements  UserService {
             }
 
             // check if operator exist
-            UserModel isOperator = userMapper.findById(userId);
+            UserModel isOperator = userMapper.findById(userId, um.getOrgId());
             if (isOperator == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
@@ -341,7 +345,7 @@ public class UserServiceImpl implements  UserService {
             }
             String desc = state ? "Activated" : "Deactivated" + " User [" + isOperator.getEmail() + "]";
 //            UserModel user = userMapper.findById(userId);
-            UserModel user = operatorMapper.findAuthByUserId(userId);
+            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
             handleAddCache(user);
             auditNotificationDTO.setCreator(um);
@@ -372,7 +376,7 @@ public class UserServiceImpl implements  UserService {
                 throw new LockedException("User is disabled");
             }
 
-            Long orgId = request.getOrgId();
+            UUID orgId =  um.getOrgId();
 
             Group group = new Group();
             group.setGroupTitle(request.getGroupTitle());
@@ -388,7 +392,7 @@ public class UserServiceImpl implements  UserService {
 
             /// Insert group and retrieve group ID
             userMapper.insertGroup(group); // Automatically sets group.id
-            Long groupId = group.getId();
+            UUID groupId = group.getId();
 
             Permission permission = new Permission();
             permission.setOrgId(orgId);
@@ -410,7 +414,7 @@ public class UserServiceImpl implements  UserService {
 
                 /// Create and insert module
                 userMapper.insertModule(module);  // ID will be set here
-                Long moduleId = module.getId();   // Auto-generated ID
+                UUID moduleId = module.getId();   // Auto-generated ID
 
                 for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
                     SubModule subModule = new SubModule();
@@ -425,14 +429,14 @@ public class UserServiceImpl implements  UserService {
             }
 
             /// Assign permission to the group created
-            userMapper.assignPermissionToGroup(groupId, permission.getId());
+            userMapper.assignPermissionToGroup(groupId, permission.getId(), um.getOrgId());
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created group [" + request.getGroupTitle() + "]");
             auditNotificationDTO.setType("group");
 //            auditNotificationDTO.setCreatedOperator(user);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"'"+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating group [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -455,7 +459,7 @@ public class UserServiceImpl implements  UserService {
                 throw new LockedException("User is disabled");
             }
 
-            List<Group> groups = userMapper.getGroups();
+            List<Group> groups = userMapper.getGroups(um.getOrgId());
             if (groups == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
 //                return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");
@@ -467,7 +471,7 @@ public class UserServiceImpl implements  UserService {
                 groupDTO.setGroupTitle(group.getGroupTitle());
                 groupDTO.setOrgId(group.getOrgId());
 
-                Permission permissions = userMapper.findPermissionsByGroup(group.getId());
+                Permission permissions = userMapper.findPermissionsByGroup(group.getId(), um.getOrgId());
 
                 groupDTO.setPermissions(permissions);
 
@@ -503,18 +507,18 @@ public class UserServiceImpl implements  UserService {
     }
 
     private void handleAddCache(UserModel user) {
-        userCache.remove(user.getId().toString());
+        userCache.remove(user.getId().toString()+"_"+user.getOrgId());
         for (String key : auditCache.keySet()) {
             if (key.startsWith("grid_flex_audit_log_page_")) {
                 auditCache.remove(key);
             }
         }
         for (String key : userCache.keySet()) {
-            if (key.startsWith("users")) {
+            if (key.startsWith("users_"+user.getOrgId())) {
                 userCache.remove(key);
             }
         }
-        userCache.put(user.getId().toString(), user);  // Cache updated or deleted entity
+        userCache.put(user.getId().toString()+"_"+user.getOrgId(), user);  // Cache updated or deleted entity
     }
 
 //

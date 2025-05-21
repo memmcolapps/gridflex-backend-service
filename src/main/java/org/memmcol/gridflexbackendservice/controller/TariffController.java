@@ -6,9 +6,11 @@ import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/tariff/service")
@@ -64,27 +66,30 @@ public class TariffController {
             return handleException(e);
         }
     }
-
-    @GetMapping("/filter/unique-id")
-    public ResponseEntity<?> UniqueTariffId() {
-        try {
-            Map<String, Object> result = service.getUniqueTariffId();
-            return ResponseEntity.ok(result);
-        } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//
+//    @GetMapping("/filter/unique-id")
+//    public ResponseEntity<?> UniqueTariffId() {
+//        try {
+//            Map<String, Object> result = service.getUniqueTariffId();
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     @PatchMapping("/change-state")
     public ResponseEntity<?> manageTariffStatus(
-            @RequestParam (value = "tariffId", required = true) Long tariffId,
+            @RequestParam (value = "tariffId", required = true) UUID tariffId,
             @RequestParam (value = "status", required = false) Boolean status,
-            @RequestParam (value = "approveStatus", required = false) String approveStatus) {
+            @RequestParam (value = "approveStatus", required = false) String approveStatus
+            ) {
         try {
             Map<String, Object> result = service.manageTariffStatus(tariffId, status, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
+        } catch (MissingServletRequestParameterException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -6,16 +6,17 @@ import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 public class Region implements Serializable {
     static final long serialVersionUID = 1L;
     @Id
-    private Long id;
-    private Long orgId;
-    private Long nodeId;
-    private Long parentNodeId;
-    private Long regionId;
+    private UUID id;
+    private UUID orgId;
+    private UUID nodeId;
+    private UUID parentId;
+    private String regionId;
     private String name;
     private String phoneNo;
     private String email;
@@ -32,44 +33,44 @@ public class Region implements Serializable {
         this.updatedAt = new Date();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public Long getOrgId() {
+    public UUID getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(Long orgId) {
+    public void setOrgId(UUID orgId) {
         this.orgId = orgId;
     }
 
-    public Long getNodeId() {
+    public UUID getNodeId() {
         return nodeId;
     }
 
-    public void setNodeId(Long nodeId) {
+    public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
     }
 
-    public Long getParentNodeId() {
-        return parentNodeId;
-    }
-
-    public void setParentNodeId(Long parentNodeId) {
-        this.parentNodeId = parentNodeId;
-    }
-
-    public Long getRegionId() {
+    public String getRegionId() {
         return regionId;
     }
 
-    public void setRegionId(Long regionId) {
+    public void setRegionId(String regionId) {
         this.regionId = regionId;
+    }
+
+    public UUID getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(UUID parentId) {
+        this.parentId = parentId;
     }
 
     public String getName() {

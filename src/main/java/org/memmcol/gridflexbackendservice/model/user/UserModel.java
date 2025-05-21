@@ -2,26 +2,33 @@ package org.memmcol.gridflexbackendservice.model.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserModel implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
-    private Long id;
+    private UUID id;
+
+    private UUID orgId;
+
+    private UUID nodeId;
 
     private String firstname;
 
     private String lastname;
 
     private String email;
-
-    private Long hierarchyId;
 
     private Boolean status;
 
@@ -31,13 +38,11 @@ public class UserModel implements Serializable {
 
     private String password;
 
-    private Long orgId;
-
     private GroupWithPermissionsDTO groups;
 
     private Organization business;
 
-    private OrganizationNode nodes;
+    private List<Node> nodes;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -50,13 +55,20 @@ public class UserModel implements Serializable {
         this.updatedAt = new Date();
     }
 
-
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
 
     public String getFirstname() {
@@ -83,14 +95,13 @@ public class UserModel implements Serializable {
         this.email = email.trim().toLowerCase();
     }
 
-    public Long getHierarchyId() {
-        return hierarchyId;
+    public UUID getNodeId() {
+        return nodeId;
     }
 
-    public void setHierarchyId(Long hierarchyId) {
-        this.hierarchyId = hierarchyId;
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
     }
-
 
     public Boolean getStatus() {
         return status;
@@ -148,14 +159,6 @@ public class UserModel implements Serializable {
         this.groups = groups;
     }
 
-    public Long getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(Long orgId) {
-        this.orgId = orgId;
-    }
-
     public Organization getBusiness() {
         return business;
     }
@@ -164,11 +167,11 @@ public class UserModel implements Serializable {
         this.business = business;
     }
 
-    public OrganizationNode getNodes() {
+    public List<Node> getNodes() {
         return nodes;
     }
 
-    public void setNodes(OrganizationNode nodes) {
+    public void setNodes(List<Node> nodes) {
         this.nodes = nodes;
     }
 }

@@ -2,28 +2,37 @@ package org.memmcol.gridflexbackendservice.model.user;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 public class GroupWithPermissionsDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
 //    private Group group;
-    private Long id;
+    private UUID id;
+
+    private UUID orgId;
 
     private String groupTitle;
-
-    private String orgId;
 
     private List<ModuleWithSubModules> modules;
 
     private Permission permissions;
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
 
     public String getGroupTitle() {
@@ -34,22 +43,6 @@ public class GroupWithPermissionsDTO implements Serializable {
         this.groupTitle = groupTitle;
     }
 
-//    public Group getGroup() {
-//        return group;
-//    }
-//
-//    public void setGroup(Group group) {
-//        this.group = group;
-//    }
-
-
-    public String getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(String orgId) {
-        this.orgId = orgId;
-    }
 
     public List<ModuleWithSubModules> getModules() {
         return modules;
@@ -67,12 +60,4 @@ public class GroupWithPermissionsDTO implements Serializable {
         this.permissions = permissions;
     }
 
-    //
-//    public List<Permission> getPermissions() {
-//        return permissions;
-//    }
-//
-//    public void setPermissions(List<Permission> permissions) {
-//        this.permissions = permissions;
-//    }
 }

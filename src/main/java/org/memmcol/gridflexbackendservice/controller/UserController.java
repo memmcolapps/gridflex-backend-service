@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/user/service")
@@ -52,8 +53,6 @@ public class UserController {
             @RequestParam(value = "permission", required = false, defaultValue = "") String permission,
             @RequestParam(value = "dateAdded", required = false, defaultValue = "") String dateAdded,
             @RequestParam(required = false, defaultValue = "") String lastActive
-
-//            @RequestParam(value = "lastActive", required = false, defaultValue = "") Timestamp lastActive
     ) {
         try {
             Map<String, Object> result = service.getUsers(firstname, lastname, email, permission, dateAdded, lastActive, page, size);
@@ -64,7 +63,7 @@ public class UserController {
     }
 
     @GetMapping("/single-user")
-    public ResponseEntity<?> getUser(@RequestParam Long userId) {
+    public ResponseEntity<?> getUser(@RequestParam UUID userId) {
         try {
             Map<String, Object> result = service.getUser(userId);
             return ResponseEntity.ok(result);
@@ -74,7 +73,7 @@ public class UserController {
     }
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> changeState(@RequestParam Long userId, @RequestParam Boolean status) {
+    public ResponseEntity<?> changeState(@RequestParam UUID userId, @RequestParam Boolean status) {
         try {
             Map<String, Object> result = service.changeState(userId, status);
             return ResponseEntity.ok(result);

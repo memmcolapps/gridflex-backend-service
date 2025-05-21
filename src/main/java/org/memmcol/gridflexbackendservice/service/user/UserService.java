@@ -5,15 +5,16 @@ import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
 import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface UserService {
     Map<String, Object> createUser(CreateUserRequest request);
 
     Map<String, Object> updateUser(CreateUserRequest user);
 
-    Map<String, Object> getUser(Long userId);
+    Map<String, Object> getUser(UUID userId);
 
-    Map<String, Object> changeState(Long userId, Boolean status);
+    Map<String, Object> changeState(UUID userId, Boolean status);
 
     Map<String, Object> createGroupPermission(CreateGroupRequest request);
 

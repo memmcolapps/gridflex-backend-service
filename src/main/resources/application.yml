@@ -1,6 +1,10 @@
 server:
   port: 9080
 
+spring:
+  jackson:
+    default-property-inclusion: non_null
+
 #spring:
 #  application:
 #    name: authorization-service

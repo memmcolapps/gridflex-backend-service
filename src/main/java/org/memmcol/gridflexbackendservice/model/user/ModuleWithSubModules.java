@@ -4,29 +4,46 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class ModuleWithSubModules implements Serializable {
     private static final long serialVersionUID = 1L;
 //    private Module module;
-    private Long id;
+    private UUID id;
+
+    private UUID orgId;
 
     private String name;
 
-    private Long orgId;
-
     private Boolean access;
 
-    private Long groupId;
+    private UUID groupId;
 
     private List<SubModuleWithPermissions> subModules;
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
+    }
+
+    public UUID getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(UUID groupId) {
+        this.groupId = groupId;
     }
 
     public String getName() {
@@ -37,14 +54,6 @@ public class ModuleWithSubModules implements Serializable {
         this.name = name;
     }
 
-    public Long getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(Long orgId) {
-        this.orgId = orgId;
-    }
-
     public void setAccess(Boolean access) {
         this.access = access;
     }
@@ -53,21 +62,6 @@ public class ModuleWithSubModules implements Serializable {
         return access;
     }
 
-    public Long getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
-    }
-
-    //    public Module getModule() {
-//        return module;
-//    }
-//
-//    public void setModule(Module module) {
-//        this.module = module;
-//    }
 
     public List<SubModuleWithPermissions> getSubModules() {
         return subModules;

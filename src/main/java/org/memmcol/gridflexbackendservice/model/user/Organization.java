@@ -6,12 +6,13 @@ import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 public class Organization implements Serializable {
     static final long serialVersionUID = 1L;
     @Id
-    private String id;
+    private UUID id;
 
     private String businessName;
 
@@ -27,8 +28,6 @@ public class Organization implements Serializable {
 
     private String email;
 
-    private String buid;
-
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
@@ -40,11 +39,11 @@ public class Organization implements Serializable {
         this.updatedAt = new Date();
     }
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -102,14 +101,6 @@ public class Organization implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getBuid() {
-        return buid;
-    }
-
-    public void setBuid(String buid) {
-        this.buid = buid;
     }
 
     public Date getCreatedAt() {

@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -15,9 +16,11 @@ public class Tariff implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    private Long id;
+    private UUID id;
 
     private String name;
+
+    private UUID org_id;
 
     private Long tariff_index;
 
@@ -33,8 +36,6 @@ public class Tariff implements Serializable {
 
     private String approve_status;
 
-    private Long org_id;
-
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date created_at;
 
@@ -46,12 +47,20 @@ public class Tariff implements Serializable {
         this.updated_at = new Date();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrg_id() {
+        return org_id;
+    }
+
+    public void setOrg_id(UUID org_id) {
+        this.org_id = org_id;
     }
 
     public String getName() {
@@ -133,13 +142,5 @@ public class Tariff implements Serializable {
 
     public void setUpdated_at(Date updated_at) {
         this.updated_at = updated_at;
-    }
-
-    public Long getOrg_id() {
-        return org_id;
-    }
-
-    public void setOrg_id(Long org_id) {
-        this.org_id = org_id;
     }
 }

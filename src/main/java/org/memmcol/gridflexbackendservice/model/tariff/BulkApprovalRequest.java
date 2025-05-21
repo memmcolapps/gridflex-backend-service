@@ -3,17 +3,18 @@ package org.memmcol.gridflexbackendservice.model.tariff;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class BulkApprovalRequest {
-    private List<Long> tariffIds;
+    private List<UUID> tariffIds;
     private String approveStatus;
 
-    public List<Long> getTariffIds() {
+    public List<UUID> getTariffIds() {
         return tariffIds;
     }
 
-    public void setTariffIds(List<Long> tariffIds) {
+    public void setTariffIds(List<UUID> tariffIds) {
         this.tariffIds = tariffIds;
     }
 

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/band/service")
@@ -51,7 +52,7 @@ public class BandController {
     }
 
     @GetMapping("/single-band")
-    public ResponseEntity<?> getSingleBand(@RequestParam Long bandId) {
+    public ResponseEntity<?> getSingleBand(@RequestParam UUID bandId) {
         try {
             Map<String, Object> result = service.getBand(bandId);
             return ResponseEntity.ok(result);
@@ -62,7 +63,7 @@ public class BandController {
 
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> manageBandState(@RequestParam Long bandId, @RequestParam Boolean status) {
+    public ResponseEntity<?> manageBandState(@RequestParam UUID bandId, @RequestParam Boolean status) {
         try {
             Map<String, Object> result = service.manageBandState(bandId, status);
             return ResponseEntity.ok(result);

@@ -8,21 +8,7 @@ import java.util.List;
 
 public class UserWithGroupsAndPermissionsDTO implements Serializable {
     private static final long serialVersionUID = 1L;
-//    private Long userId;
-//
-//    private String firstname;
-//
-//    private String lastname;
-//
-//    private String email;
-//
-//    private Long hierarchyId;
-//
-//    private Boolean status;
-//
-//    private Boolean active;
-//
-//    private Timestamp lastActive;
+
 
     private UserModel user;
 

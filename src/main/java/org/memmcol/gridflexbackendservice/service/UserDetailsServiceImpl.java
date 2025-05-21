@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,8 +27,9 @@ import java.util.*;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
 	private static final Logger log = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
-	private final AuthMapper authMapper;
-	private final ResponseProperties status;
+	@Autowired
+	private AuthMapper authMapper;
+	@Autowired private ResponseProperties status;
 	private final ObjectMapper mapper = new ObjectMapper();
 
 	@Override

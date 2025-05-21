@@ -1,27 +1,34 @@
 package org.memmcol.gridflexbackendservice.model.node;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
-@Data
-public class BusinessHub implements Serializable {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class NodeInfo implements Serializable {
     static final long serialVersionUID = 1L;
     @Id
     private UUID id;
-    private UUID nodeId;
-    private String bhubId;
     private UUID orgId;
+    private UUID nodeId;
     private UUID parentId;
+    private String regionId;
     private String name;
     private String phoneNo;
     private String email;
     private String contactPerson;
     private String address;
+    private String bhubId;
+    private String serialNo;
+    private Boolean status;
+    private String voltage;
+    private String description;
+    private String latitude;
+    private String longitude;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -29,7 +36,7 @@ public class BusinessHub implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;
 
-    public BusinessHub() {
+    public NodeInfo() {
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -42,22 +49,6 @@ public class BusinessHub implements Serializable {
         this.id = id;
     }
 
-    public UUID getNodeId() {
-        return nodeId;
-    }
-
-    public void setNodeId(UUID nodeId) {
-        this.nodeId = nodeId;
-    }
-
-    public String getBhubId() {
-        return bhubId;
-    }
-
-    public void setBhubId(String bhubId) {
-        this.bhubId = bhubId;
-    }
-
     public UUID getOrgId() {
         return orgId;
     }
@@ -66,12 +57,28 @@ public class BusinessHub implements Serializable {
         this.orgId = orgId;
     }
 
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
     public UUID getParentId() {
         return parentId;
     }
 
     public void setParentId(UUID parentId) {
         this.parentId = parentId;
+    }
+
+    public String getRegionId() {
+        return regionId;
+    }
+
+    public void setRegionId(String regionId) {
+        this.regionId = regionId;
     }
 
     public String getName() {
@@ -106,6 +113,70 @@ public class BusinessHub implements Serializable {
         this.contactPerson = contactPerson;
     }
 
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getBhubId() {
+        return bhubId;
+    }
+
+    public void setBhubId(String bhubId) {
+        this.bhubId = bhubId;
+    }
+
+    public String getSerialNo() {
+        return serialNo;
+    }
+
+    public void setSerialNo(String serialNo) {
+        this.serialNo = serialNo;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    public String getVoltage() {
+        return voltage;
+    }
+
+    public void setVoltage(String voltage) {
+        this.voltage = voltage;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(String latitude) {
+        this.latitude = latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(String longitude) {
+        this.longitude = longitude;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -120,13 +191,5 @@ public class BusinessHub implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/customer/service")
@@ -60,9 +61,9 @@ public class CustomerController {
     }
 
     @GetMapping("/single-customer")
-    public ResponseEntity<?> singleCustomer(@RequestParam String accountNumber) {
+    public ResponseEntity<?> singleCustomer(@RequestParam UUID customerId) {
         try {
-            Map<String, Object> result = service.singleCustomer(accountNumber);
+            Map<String, Object> result = service.singleCustomer(customerId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -70,9 +71,9 @@ public class CustomerController {
     }
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> changeState(@RequestParam String accountNumber, @RequestParam Boolean status, @RequestParam String reason){
+    public ResponseEntity<?> changeState(@RequestParam UUID customerId, @RequestParam Boolean status, @RequestParam String reason){
         try {
-            Map<String, Object> result = service.changeState(accountNumber, status, reason);
+            Map<String, Object> result = service.changeState(customerId, status, reason);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -6,16 +6,17 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Group implements Serializable {
 
-    private Long id;
+    private UUID id;
+
+    private UUID orgId;
 
     private String groupTitle;
-
-    private Long orgId;
 
 //    private List<String> moduleAccess;
 
@@ -30,11 +31,11 @@ public class Group implements Serializable {
         this.updatedAt = new Date();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -46,21 +47,13 @@ public class Group implements Serializable {
         this.groupTitle = groupTitle;
     }
 
-    public Long getOrgId() {
+    public UUID getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(Long orgId) {
+    public void setOrgId(UUID orgId) {
         this.orgId = orgId;
     }
-
-    //    public List<String> getModuleAccess() {
-//        return moduleAccess;
-//    }
-//
-//    public void setModuleAccess(List<String> moduleAccess) {
-//        this.moduleAccess = moduleAccess;
-//    }
 
     public Date getCreatedAt() {
         return createdAt;

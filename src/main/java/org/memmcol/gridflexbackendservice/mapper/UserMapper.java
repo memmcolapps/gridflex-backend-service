@@ -9,15 +9,16 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Mapper
 public interface UserMapper {
 
     @Insert("""
         INSERT INTO users (
-            firstname, lastname, email, hierarchy_id, status, active, last_active, password, org_id, created_at, updated_at
+            firstname, lastname, email, node_id, status, active, last_active, password, org_id, created_at, updated_at
         ) VALUES (
-            #{firstname}, #{lastname}, #{email}, #{hierarchyId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt}
+            #{firstname}, #{lastname}, #{email}, #{nodeId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt}
         )
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -28,9 +29,9 @@ public interface UserMapper {
         SET firstname = #{firstname}, 
             lastname = #{lastname}, 
             email = #{email}, 
-            hierarchy_id = #{hierarchyId},
+            node_id = #{nodeId},
             password = #{password},
-            updated_at = #{updatedAt} WHERE id = #{id}
+            updated_at = #{updatedAt} WHERE id = #{id} AND org_id = #{orgId}
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateUser(UserModel operator);
@@ -40,20 +41,20 @@ public interface UserMapper {
                 INSERT INTO user_groups (user_id, group_id, org_id)
                 VALUES (#{userId}, #{groupId}, #{orgId})
             """)
-    void assignUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId, @Param("orgId") Long orgId);
+    void assignUserToGroup(@Param("userId") UUID userId, @Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
     @Update("""
-        UPDATE user_groups SET group_id = #{groupId} WHERE user_id = #{userId}
+        UPDATE user_groups SET group_id = #{groupId} WHERE user_id = #{userId} AND org_id = #{orgId}
     """)
-    void updateUserToGroup(@Param("userId") Long userId, @Param("groupId") Long groupId);
+    void updateUserToGroup(@Param("userId") UUID userId, @Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
-    @Select("SELECT * FROM users WHERE id = #{id}")
+    @Select("SELECT * FROM users WHERE id = CAST(#{id} AS UUID)  AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "firstname", column = "firstname"),
             @Result(property = "lastname", column = "lastname"),
             @Result(property = "email", column = "email"),
-            @Result(property = "hierarchyId", column = "hierarchy_id"),
+            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "status", column = "status"),
             @Result(property = "active", column = "active"),
             @Result(property = "firstname", column = "firstname"),
@@ -62,15 +63,15 @@ public interface UserMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
-    UserModel findById(@Param("id") Long id);
+    UserModel findById(@Param("id") UUID id, UUID orgId);
 
-    @Select("SELECT * FROM users WHERE email = #{email}")
+    @Select("SELECT * FROM users WHERE email = #{email} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "firstname", column = "firstname"),
             @Result(property = "lastname", column = "lastname"),
             @Result(property = "email", column = "email"),
-            @Result(property = "hierarchyId", column = "hierarchy_id"),
+            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "status", column = "status"),
             @Result(property = "active", column = "active"),
             @Result(property = "firstname", column = "firstname"),
@@ -79,12 +80,12 @@ public interface UserMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
-    UserModel findByEmail(@Param("email") Long email);
+    UserModel findByEmail(@Param("email") String email, @Param("orgId") UUID orgId);
 
     @Select("""
-            SELECT id FROM groups WHERE id = #{groupId}
+            SELECT id FROM groups WHERE id = #{groupId} AND org_id = #{orgId}
             """)
-    Long checkGroupId(@Param("groupId") Long groupId);
+    UUID checkGroupId(@Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
     @Select("""
             SELECT * FROM groups WHERE title = #{groupTitle}
@@ -93,9 +94,9 @@ public interface UserMapper {
 
 
     @Select("""
-            SELECT DISTINCT org_id FROM groups WHERE org_id = #{orgId}
+            SELECT DISTINCT org_id FROM groups WHERE org_id = CAST(#{orgId} AS UUID)
             """)
-    String checkOrgId(@Param("orgId") Long orgId);
+    String checkOrgId(@Param("orgId") UUID orgId);
 
 
     @Insert("""
@@ -110,31 +111,32 @@ public interface UserMapper {
         VALUES (#{title}, #{createdAt}, #{updatedAt})
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    Group getGroup(String groupTitle, Long orgId, Date createdAt, Date updatedAt);
+    Group getGroup(String groupTitle, UUID orgId, Date createdAt, Date updatedAt);
 
     @Select("SELECT g.* FROM groups g " +
             "JOIN user_groups ug ON ug.group_id = g.id " +
-            "WHERE ug.user_id = #{userId}")
-    Group findGroupsByUserId(@Param("userId") Long userId);
+            "WHERE ug.user_id = CAST(#{userId} AS UUID)")
+    Group findGroupsByUserId(@Param("userId") UUID userId);
 
     @Select("""
         SELECT DISTINCT m.* 
         FROM modules m
-        JOIN sub_modules sm ON sm.module_id = m.id
+        JOIN submodules sm ON sm.module_id = m.id
         WHERE m.group_id = #{groupId}
     """)
-    List<Module> findModulesByGroupId(@Param("groupId") Long groupId);
+    List<Module> findModulesByGroupId(@Param("groupId") UUID groupId);
 
-    @Select("SELECT id, name, access, org_id FROM sub_modules WHERE module_id = #{moduleId}")
+    @Select("SELECT id, name, access, org_id FROM submodules WHERE module_id = CAST(#{moduleId} AS UUID)")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "name", column = "name"),
             @Result(property = "access", column = "access"),
             @Result(property = "org_id", column = "org_id"),
     })
-    List<SubModule> findSubModulesByModuleId(@Param("moduleId") Long moduleId);
+    List<SubModule> findSubModulesByModuleId(@Param("moduleId") UUID moduleId);
 
-    @Select("SELECT * FROM permissions p INNER JOIN group_permissions gp ON p.id = gp.permission_id WHERE gp.group_id = #{groupId}")
+    @Select("SELECT * FROM permissions p INNER JOIN group_permissions gp ON p.id = gp.permission_id " +
+            "WHERE gp.group_id = #{groupId} AND gp.org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "view", column = "view"),
@@ -143,7 +145,7 @@ public interface UserMapper {
             @Result(property = "disable", column = "disable"),
             @Result(property = "orgId", column = "org_id")
     })
-    Permission findPermissionsByGroup(@Param("groupId") Long groupId);
+    Permission findPermissionsByGroup(@Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
     @Insert("INSERT INTO modules(name, access, org_Id, group_id) VALUES(#{name}, #{access}, #{orgId}, #{groupId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -153,27 +155,30 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertPermission(Permission permission);
 
-    @Insert("INSERT INTO sub_modules(name, module_id, access, org_id) VALUES(#{name}, #{moduleId}, #{access}, #{orgId})")
+    @Insert("INSERT INTO submodules(name, module_id, access, org_id) VALUES(#{name}, #{moduleId}, #{access}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertSubModule(SubModule subModule);
 
-    @Insert("INSERT INTO group_permissions(group_id, permission_id) VALUES(#{groupId}, #{permissionId})")
-    void assignPermissionToGroup(@Param("groupId") Long groupId, @Param("permissionId") Long permissionId);
+    @Insert("INSERT INTO group_permissions(group_id, permission_id, org_id) VALUES(#{groupId}, #{permissionId}, #{orgId})")
+    void assignPermissionToGroup(@Param("groupId") UUID groupId, @Param("permissionId") UUID permissionId,  @Param("orgId") UUID orgId);
 
-    @Select("SELECT * FROM groups")
+    @Select("SELECT * FROM groups WHERE org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "groupTitle", column = "title"),
             @Result(property = "orgId", column = "org_id")
     })
-    List<Group> getGroups();
+    List<Group> getGroups(UUID orgId);
 
 
-    @Update("UPDATE users SET status = #{state} WHERE id = #{userId}")
-    int changeStatus(Long userId, Boolean state);
+    @Update("UPDATE users SET status = #{state} WHERE id = CAST(#{userId} AS UUID)")
+    int changeStatus(UUID userId, Boolean state);
 
-    @Select("SELECT * FROM users")
-    List<UserModel> findAllUsers();
+    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
+    String getOrgId(UUID orgId);
+
+//    @Select("SELECT * FROM users")
+//    List<UserModel> findAllUsers();
 
 }
 

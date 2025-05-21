@@ -1,12 +1,13 @@
 package org.memmcol.gridflexbackendservice.model.user;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 public class CreateUserRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private UserModel user;
-    private Long groupId;
+    private UUID groupId;
 
     public UserModel getUser() {
         return user;
@@ -16,11 +17,11 @@ public class CreateUserRequest implements Serializable {
         this.user = user;
     }
 
-    public Long getGroupId() {
+    public UUID getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(Long groupId) {
+    public void setGroupId(UUID groupId) {
         this.groupId = groupId;
     }
 }

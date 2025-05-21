@@ -2,19 +2,21 @@ package org.memmcol.gridflexbackendservice.service.tariff;
 
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface TariffService {
     Map<String, Object> createTariff(Tariff tariff);
 
-    Map<String, Object> manageTariffStatus(Long tariffId, Boolean status, String approveStatus);
+    Map<String, Object> manageTariffStatus(UUID tariffId, Boolean status, String approveStatus) throws MissingServletRequestParameterException;
 
 //    Map<String, Object> getTariffs(int page, int size);
 
     Map<String, Object> getFilterTariffs(int page, int size, String tariffName, String tariffIndex, String tariffType, String tariffRate, String bandCode, Boolean status, String effectiveDate, String approveStatus);
 
-    Map<String, Object> getUniqueTariffId();
+//    Map<String, Object> getUniqueTariffId();
 
     Map<String, Object> bulkApproveTariff(BulkApprovalRequest request);
 }

@@ -4,32 +4,33 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Permission implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private Long id;
-    private Long orgId;
+    private UUID id;
+    private UUID orgId;
     private Boolean view;
     private Boolean edit;
     private Boolean approve;
     private Boolean disable;
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public Long getOrgId() {
+    public UUID getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(Long orgId) {
+    public void setOrgId(UUID orgId) {
         this.orgId = orgId;
     }
 

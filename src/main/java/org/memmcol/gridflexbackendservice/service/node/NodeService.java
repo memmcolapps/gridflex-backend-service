@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.node;
 import org.memmcol.gridflexbackendservice.model.node.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface NodeService {
 
@@ -26,7 +27,7 @@ public interface NodeService {
 
     Map<String, Object> updateTransformerNode(Transformer request);
 
-    Map<String, Object> singleNodes(Long nodeId);
+    Map<String, Object> singleNode(UUID nodeId);
 
     Map<String, Object> getAllNodes();
 }

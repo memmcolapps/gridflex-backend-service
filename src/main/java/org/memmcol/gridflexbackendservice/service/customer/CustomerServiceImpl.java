@@ -30,15 +30,18 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
+@Transactional
 @Service
 public class CustomerServiceImpl implements CustomerService {
 
@@ -88,10 +91,18 @@ public class CustomerServiceImpl implements CustomerService {
 //                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(customerName + " " + status.getExistDesc());
 //            }
 
+            // Generate unique customer ID using 13-digit timestamp
+            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
+            request.setCustomerId(uniqueCustomerId);
+
+            request.setOrgId(um.getOrgId());
             // Insert into customer
             customerMapper.insertCustomer(request);
 
-            Customer customer = customerMapper.findByAccountNo(request.getAccountNumber());
+            UUID id = request.getId();
+            System.out.println("id: " + id);
+
+            Customer customer = customerMapper.findById(id, um.getOrgId());
             handleAddCache(customer);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created Customer [" + customer.getEmail() + "]");
@@ -129,10 +140,12 @@ public class CustomerServiceImpl implements CustomerService {
 //                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
 //            }
 
+            request.setOrgId(um.getOrgId());
             // Insert into customer
             customerMapper.updateCustomer(request);
-
-            Customer customer = customerMapper.findByAccountNo(request.getAccountNumber());
+//            UUID id = request.getId();
+//            System.out.println("id: " + id);
+            Customer customer = customerMapper.findById(request.getId(), um.getOrgId());
 
             handleAddCache(customer);
             auditNotificationDTO.setCreator(um);
@@ -154,7 +167,9 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Map<String, Object> allCustomers(int page, int size, String firstname, String lastname, String meterNumber, String accountNumber, Boolean meterAssigned) {
+    public Map<String, Object> allCustomers(
+            int page, int size, String firstname, String lastname, String meterNumber,
+            String customerId, Boolean meterAssigned) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -165,11 +180,11 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             // Build a unique cache key
-            StringBuilder cacheKeyBuilder = new StringBuilder("customers");
+            StringBuilder cacheKeyBuilder = new StringBuilder("customers_"+um.getOrgId());
             if (firstname != null && !firstname.isEmpty()) cacheKeyBuilder.append("_firstname_").append(firstname);
             if (lastname != null && !lastname.isEmpty()) cacheKeyBuilder.append("_lastname_").append(lastname);
             if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
-            if (accountNumber != null && !accountNumber.isEmpty()) cacheKeyBuilder.append("_accountNumber_").append(accountNumber);
+            if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
 //            if (address != null && !address.isEmpty()) cacheKeyBuilder.append("_address_").append(address);
 //            if (state != null && !state.isEmpty()) cacheKeyBuilder.append("_state_").append(state);
             if (meterAssigned != null) cacheKeyBuilder.append("_st_").append(meterAssigned);
@@ -184,7 +199,7 @@ public class CustomerServiceImpl implements CustomerService {
                 return ResponseMap.response(status.getSuccessCode(), "Cached Customers " + status.getDesc(), cachedCustomer);
             }
 
-            List<Customer> customers = customerMapper.findAllCustomers();
+            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId());
 
             // Apply filtering
             Stream<Customer> userStream = customers.stream();
@@ -201,8 +216,8 @@ public class CustomerServiceImpl implements CustomerService {
                 userStream = userStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
             }
 
-            if (accountNumber != null && !accountNumber.isEmpty()) {
-                userStream = userStream.filter(u -> u.getAccountNumber() != null && u.getAccountNumber().equalsIgnoreCase(accountNumber));
+            if (customerId != null && !customerId.isEmpty()) {
+                userStream = userStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
             }
 
             if (meterAssigned != null) {
@@ -247,7 +262,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Map<String, Object> singleCustomer(String accountNumber) {
+    public Map<String, Object> singleCustomer(UUID customerId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -257,13 +272,13 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new LockedException("User is disabled");
             }
 
-            Object cachedUser = customerCache.get(accountNumber);
+            Object cachedUser = customerCache.get(customerId.toString()+"_"+um.getOrgId());
 
             if (cachedUser != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + customerName + " " + status.getDesc(), cachedUser);
             }
             // check if customer exist
-            Customer isCustomer = customerMapper.findByAccountNo(accountNumber);
+            Customer isCustomer = customerMapper.findById(customerId, um.getOrgId());
             if (isCustomer == null){
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
             }
@@ -283,7 +298,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Map<String, Object> changeState(String accountNumber, Boolean state, String reason) {
+    public Map<String, Object> changeState(UUID customerId, Boolean state, String reason) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
@@ -295,12 +310,12 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             // check if customer exist
-            Customer isCustomer = customerMapper.findByAccountNo(accountNumber);
+            Customer isCustomer = customerMapper.findById(customerId, um.getOrgId());
             if (isCustomer == null){
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
             }
 
-            int isStatus = customerMapper.changeStatus(accountNumber, state);
+            int isStatus = customerMapper.changeStatus(customerId, state, um.getOrgId());
             if (isStatus != 1) {
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getUpdateFailureDesc());
             }
@@ -315,7 +330,7 @@ public class CustomerServiceImpl implements CustomerService {
 //            map.put("reason", reason);
 //            reasonMap.put("status", map);
 
-            Customer customer = customerMapper.findByAccountNo(accountNumber);
+            Customer customer = customerMapper.findById(customerId, um.getOrgId());
 
             handleAddCache(customer);
             auditNotificationDTO.setCreator(um);
@@ -366,7 +381,7 @@ public class CustomerServiceImpl implements CustomerService {
             catch (Exception exception) {
                 // Build a full identifier string from unique keys
                 String identifier = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
-                        customer.getAccountNumber(),
+                        customer.getCustomerId(),
                         customer.getEmail(),
                         customer.getNin(),
                         customer.getMeterNumber());
@@ -424,8 +439,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .parse(reader);
 
         for (CSVRecord record : records) {
-            customers.add(buildCustomer(Long.valueOf(record.get("orgId")), record.get("firstname"),
-                    record.get("lastname"), record.get("accountNumber"), record.get("nin"),
+            customers.add(buildCustomer(UUID.fromString(record.get("orgId")), record.get("firstname"),
+                    record.get("lastname"), record.get("customerId"), record.get("nin"),
                     record.get("phoneNumber"), record.get("email"), record.get("state"),
                     record.get("city"), record.get("houseNo"), record.get("streetName")));
         }
@@ -445,7 +460,7 @@ public class CustomerServiceImpl implements CustomerService {
             Row row = rowIterator.next();
 
             customers.add(buildCustomer(
-                    Long.valueOf(getCellValue(row.getCell(0))),
+                    UUID.fromString(getCellValue(row.getCell(0))),
                     getCellValue(row.getCell(1)),
                     getCellValue(row.getCell(2)),
                     getCellValue(row.getCell(3)),
@@ -463,14 +478,14 @@ public class CustomerServiceImpl implements CustomerService {
         return customers;
     }
 
-    private Customer buildCustomer(Long orgId, String firstname, String lastname,
-                                   String accountNumber, String nin ,String phoneNumber, String email,
+    private Customer buildCustomer(UUID orgId, String firstname, String lastname,
+                                   String customerId, String nin ,String phoneNumber, String email,
                                    String state,  String city, String houseNo, String streetName) {
         Customer c = new Customer();
         c.setOrgId(orgId);
         c.setFirstname(firstname);
         c.setLastname(lastname);
-        c.setAccountNumber(accountNumber);
+        c.setCustomerId(customerId);
         c.setNin(nin);
         c.setPhoneNumber(phoneNumber);
         c.setEmail(email);
@@ -506,17 +521,17 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private void handleAddCache(Customer customer) {
-        customerCache.remove(customer.getAccountNumber());
+        customerCache.remove(customer.getId().toString()+"_"+customer.getOrgId());
         for (String key : auditCache.keySet()) {
             if (key.startsWith("grid_flex_audit_log_page_")) {
                 auditCache.remove(key);
             }
         }
         for (String key : customerCache.keySet()) {
-            if (key.startsWith("customers")) {
+            if (key.startsWith("customers_"+customer.getOrgId())) {
                 customerCache.remove(key);
             }
         }
-        customerCache.put(customer.getAccountNumber(), customer);  // Cache updated or deleted entity
+        customerCache.put(customer.getId().toString(), customer);  // Cache updated or deleted entity
     }
 }

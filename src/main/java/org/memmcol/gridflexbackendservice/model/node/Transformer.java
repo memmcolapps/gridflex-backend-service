@@ -6,20 +6,23 @@ import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Data
 public class Transformer implements Serializable {
     static final long serialVersionUID = 1L;
     @Id
-    private Long id;
-    private Long nodeId;
+    private UUID id;
+    private UUID nodeId;
+    private UUID orgId;
+    private UUID parentId;
     private String name;
     private String serialNo;
     private String phoneNo;
     private String email;
     private String contactPerson;
     private String address;
-    private String status;
+    private Boolean status;
     private String voltage;
     private String latitude;
     private String longitude;
@@ -35,20 +38,36 @@ public class Transformer implements Serializable {
         this.updatedAt = new Date();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public Long getNodeId() {
+    public UUID getNodeId() {
         return nodeId;
     }
 
-    public void setNodeId(Long nodeId) {
+    public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
+    }
+
+    public UUID getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(UUID parentId) {
+        this.parentId = parentId;
     }
 
     public String getName() {
@@ -99,11 +118,11 @@ public class Transformer implements Serializable {
         this.address = address;
     }
 
-    public String getStatus() {
+    public Boolean getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Boolean status) {
         this.status = status;
     }
 

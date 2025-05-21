@@ -3,22 +3,39 @@ package org.memmcol.gridflexbackendservice.model.user;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Data
 public class SubModuleWithPermissions implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Long id;
+    private UUID id;
+    private UUID orgId;
     private String name;
     private Boolean access;
-    private Long orgId;
-    private Long moduleId;
+    private UUID moduleId;
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
+    }
+
+    public UUID getModuleId() {
+        return moduleId;
+    }
+
+    public void setModuleId(UUID moduleId) {
+        this.moduleId = moduleId;
     }
 
     public String getName() {
@@ -37,39 +54,4 @@ public class SubModuleWithPermissions implements Serializable {
         this.access = access;
     }
 
-    public Long getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(Long orgId) {
-        this.orgId = orgId;
-    }
-
-    public Long getModuleId() {
-        return moduleId;
-    }
-
-    public void setModuleId(Long moduleId) {
-        this.moduleId = moduleId;
-    }
-    //    private SubModule subModule;
-//    private List<Permission> permissions;
-
-
-
-//    public SubModule getSubModule() {
-//        return subModule;
-//    }
-//
-//    public void setSubModule(SubModule subModule) {
-//        this.subModule = subModule;
-//    }
-
-//    public List<Permission> getPermissions() {
-//        return permissions;
-//    }
-//
-//    public void setPermissions(List<Permission> permissions) {
-//        this.permissions = permissions;
-//    }
 }
