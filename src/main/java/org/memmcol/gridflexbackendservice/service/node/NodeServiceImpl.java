@@ -91,7 +91,7 @@ public class NodeServiceImpl implements NodeService {
             UUID id = request.getId();
 
             BusinessHub businessHub = nodeMapper.getBusinessNode(id);
-
+//            handleAddCache(node);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + businessHub.getName() + "]");
             auditNotificationDTO.setType("businessHub");
@@ -475,15 +475,15 @@ public class NodeServiceImpl implements NodeService {
                 throw new LockedException("User is disabled");
             }
 
-            Object cachedUser = nodeCache.get(nodeId.toString()+"_"+um.getOrgId());
-
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached Node " + " " + status.getDesc(), cachedUser);
-            }
+//            Object cachedUser = nodeCache.get(nodeId.toString()+"_"+um.getOrgId());
+//
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached Node " + " " + status.getDesc(), cachedUser);
+//            }
 
             Node node =  nodeMapper.getSingleNode(nodeId, um.getOrgId());
 
-            handleAddCache(node);
+//            handleAddCache(node);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), node);
         } catch (Exception exception) {
@@ -506,17 +506,17 @@ public class NodeServiceImpl implements NodeService {
             if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disabled");
             }
-            StringBuilder cacheKeyBuilder = new StringBuilder("nodes_"+um.getOrgId());
-            String cacheKey = cacheKeyBuilder.toString();
+//            StringBuilder cacheKeyBuilder = new StringBuilder("nodes_"+um.getOrgId());
+//            String cacheKey = cacheKeyBuilder.toString();
 
             // Return from cache if available
-            Object cachedNode = nodeCache.get(cacheKey);
-            if (cachedNode != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached Nodes " + status.getDesc(), cachedNode);
-            }
+//            Object cachedNode = nodeCache.get(cacheKey);
+//            if (cachedNode != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached Nodes " + status.getDesc(), cachedNode);
+//            }
 
             List<Node> node =  nodeMapper.getAllNode(um.getOrgId());
-            nodeCache.put(cacheKey, node);
+//            nodeCache.put(cacheKey, node);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), node);
         } catch (Exception exception) {
