@@ -532,6 +532,6 @@ public class CustomerServiceImpl implements CustomerService {
                 customerCache.remove(key);
             }
         }
-        customerCache.put(customer.getId().toString(), customer);  // Cache updated or deleted entity
+        customerCache.put(customer.getId().toString()+"_"+customer.getOrgId(), customer);  // Cache updated or deleted entity
     }
 }

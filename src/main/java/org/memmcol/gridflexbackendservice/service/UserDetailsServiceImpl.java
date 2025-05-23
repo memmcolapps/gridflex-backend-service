@@ -49,9 +49,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			throw new LockedException("User is disabled");
 		}
 
-		log.info("User found in the database: {}", userDTO.getEmail());
-		authMapper.updateLoginState(email);
-
 		Set<GrantedAuthority> authorities = new HashSet<>();
 		List<Map<String, Object>> groupModulePermissionTree = new ArrayList<>();
 
@@ -119,7 +116,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			log.error("Error serializing permissions JSON", e);
             throw new RuntimeException(e);
         }
-
+		log.info("User found in the database: {}", userDTO.getEmail());
+		authMapper.updateLoginState(email);
         return new CustomUserDetails(
 				userDTO.getEmail(),
 				userDTO.getPassword(),

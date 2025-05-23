@@ -122,7 +122,8 @@ public class BandServiceImpl implements BandService {
 
             Band isExist = bandMapper.getBand(band.getName());
             if (isExist == null) {
-                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+//                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
             }
 
             band.setOrgId(um.getOrgId());
@@ -270,7 +271,7 @@ public class BandServiceImpl implements BandService {
                 bandCache.remove(key);
             }
         }
-        bandCache.put(band.getId().toString(), band);  // Cache updated or deleted entity
+        bandCache.put(band.getId().toString()+"_"+band.getOrgId(), band);  // Cache updated or deleted entity
     }
 
 

@@ -477,7 +477,7 @@ public class TariffServiceImpl implements TariffService {
                 tariffCache.remove(key);
             }
         }
-        tariffCache.put(tariff.getId().toString(), tariff);  // Cache updated or deleted entity
+        tariffCache.put(tariff.getId().toString()+"_"+tariff.getOrg_id(), tariff);  // Cache updated or deleted entity
     }
 }
 

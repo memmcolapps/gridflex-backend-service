@@ -98,7 +98,7 @@ public interface NodeMapper {
 
     @Select("""
         SELECT
-            id,
+            id, region_id, NULL AS bhub_id,
             node_id, name,
             NULL AS serial_no, 
             phone_number, email, contact_person, address, 
@@ -108,28 +108,28 @@ public interface NodeMapper {
         WHERE node_id = #{id}
         UNION
         SELECT
-            id,
+            id, NULL AS region_id, NULL AS bhub_id,
             node_id, name, serial_no, phone_number, email, contact_person,
             address, status, voltage, latitude, longitude, description, created_at, updated_at
         FROM substations
         WHERE node_id = #{id}
         UNION
         SELECT
-            id,
+            id, NULL AS region_id, NULL AS bhub_id,
             node_id, name, serial_no, phone_number, email, contact_person,
             address, status, voltage, latitude, longitude, description, created_at, updated_at
         FROM transformers
         WHERE node_id = #{id}
         UNION
         SELECT
-            id,
+            id, NULL AS region_id, NULL AS bhub_id,
             node_id, name, serial_no, phone_number, email, contact_person,
             address, status, voltage, NULL AS latitude, NULL AS longitude, description, created_at, updated_at
         FROM feeder_lines
         WHERE node_id = #{id}
         UNION
         SELECT
-            id,
+            id, NULL AS region_id, bhub_id,
             node_id, name, NULL AS serial_no, 
             phone_number, email, contact_person, address, 
             NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description, 
@@ -137,6 +137,17 @@ public interface NodeMapper {
         FROM business_hubs
         WHERE node_id = #{id}
         """)
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "bhubId", column = "bhub_id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "serialNo", column = "serial_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
     NodeInfo getHierarchyById(UUID nodeId);
 
     @Select("SELECT * FROM nodes WHERE org_id = #{orgId}")
