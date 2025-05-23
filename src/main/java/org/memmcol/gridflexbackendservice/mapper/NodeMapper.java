@@ -9,10 +9,20 @@ import java.util.UUID;
 @Mapper
 public interface NodeMapper {
 
-    @Insert("INSERT INTO regions (org_id, node_id, region_id, name, phone_number, email, contact_person, address, created_at, updated_at) " +
-            "VALUES (#{orgId}, #{nodeId}, #{regionId}, #{name}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO region_bhub_service_centers (org_id, node_id, region_id, name, phone_number, email, contact_person, address, type, created_at, updated_at) " +
+            "VALUES (#{orgId}, #{nodeId}, #{regionId}, #{name}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{type}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void createRegion(Region request);
+    void createRegionBhubServiceCenter(RegionBhubServiceCenter request);
+
+//    @Insert("INSERT INTO region_bhub_service_centers (node_id, bhub_id, org_id, name, email, contact_person, phone_number, address, type, created_at, updated_at) " +
+//            "VALUES (#{nodeId}, #{bhubId}, #{orgId}, #{name}, #{email}, #{contactPerson}, #{phoneNo}, #{address}, #{type}, #{createdAt}, #{createdAt})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void createBusinessHub(RegionBhubServiceCenter request);
+//
+//    @Insert("INSERT INTO region_bhub_service_centers (node_id, bhub_id, org_id, name, email, contact_person, phone_number, address, type, created_at, updated_at) " +
+//            "VALUES (#{nodeId}, #{bhubId}, #{orgId}, #{name}, #{email}, #{contactPerson}, #{phoneNo}, #{address}, #{type}, #{createdAt}, #{createdAt})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void createServiceCenter(RegionBhubServiceCenter request);
 
     @Insert("INSERT INTO nodes (name, parent_id, org_id) VALUES (#{name}, #{parentId}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -22,71 +32,78 @@ public interface NodeMapper {
     @Select("SELECT * FROM nodes WHERE id = #{parentNodeId} LIMIT 1")
     Node isNodeExist(UUID parentNodeId);
 
-    @Select("SELECT * FROM nodes WHERE name = #{name}")
-    Node getNode(String name);
+//    @Select("SELECT * FROM nodes WHERE name = #{name}")
+//    Node getNode(String name);
 
-    @Insert("INSERT INTO business_hubs (node_id, bhub_id, org_id, name, email, contact_person, phone_number, address, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{bhubId}, #{orgId}, #{name}, #{email}, #{contactPerson}, #{phoneNo}, #{address}, #{createdAt}, #{createdAt})")
+
+    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, created_at, updated_at) " +
+            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{type}, #{longitude}, #{description}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void createBusinessHub(BusinessHub request);
+    void createSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
-    @Insert("INSERT INTO substations (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, description, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{description}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void createSubStation(SubStation request);
+//    @Insert("INSERT INTO feeder_lines (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, type, description, created_at, updated_at) " +
+//            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{type}, #{description}, #{createdAt}, #{updatedAt})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void createFeederLine(SubStationTransformerFeederLine request);
+//
+//    @Insert("INSERT INTO transformers (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, created_at, updated_at) " +
+//            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{createdAt}, #{updatedAt})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void createTransformer(SubStationTransformerFeederLine request);
+//
+//    @Select("SELECT * FROM region_bhub_service_centers WHERE id = #{id}")
+//    RegionBhubServiceCenter getBusinessNode(UUID id);
 
-    @Insert("INSERT INTO feeder_lines (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, description, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{description}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void createFeederLine(FeederLine request);
-
-    @Insert("INSERT INTO transformers (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, description, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{description}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void createTransformer(Transformer request);
-
-    @Select("SELECT * FROM business_hubs WHERE id = #{id}")
-    BusinessHub getBusinessNode(UUID id);
-
-    @Select("SELECT * FROM substations WHERE id = #{id}")
-    SubStation getSubStationNode(UUID id);
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE id = #{id}")
+    SubStationTransformerFeederLine getSubStationTransformerFeederLine(UUID id);
 
     @Select("SELECT * FROM feeder_lines WHERE id = #{id}")
-    FeederLine getFeederLineNode(UUID id);
+    SubStationTransformerFeederLine getFeederLineNode(UUID id);
 
-    @Select("SELECT * FROM regions WHERE id = #{id}")
-    Region getRegionNode(UUID id);
+    @Select("SELECT * FROM region_bhub_service_centers WHERE id = #{id}")
+    RegionBhubServiceCenter getRegionBhubServiceCenter(UUID id);
 
-    @Select("SELECT * FROM transformers WHERE id = #{id}")
-    Transformer getTransformerNode(UUID id);
+//    @Select("SELECT * FROM region_bhub_service_centers WHERE id = #{id}")
+//    RegionBhubServiceCenter getServiceCenterNode(UUID id);
+//
+//    @Select("SELECT * FROM transformers WHERE id = #{id}")
+//    SubStationTransformerFeederLine getTransformerNode(UUID id);
 
 
-    @Update("UPDATE business_hubs SET bhub_id = #{bhubId}, name = #{name}, email = #{email}, contact_person = #{contactPerson}, " +
-            "phone_number = #{phoneNo}, address = #{address}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void updateBusinessHub(BusinessHub request);
+//    @Update("UPDATE business_hubs SET bhub_id = #{bhubId}, name = #{name}, email = #{email}, contact_person = #{contactPerson}, " +
+//            "phone_number = #{phoneNo}, address = #{address}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void updateBusinessHub(RegionBhubServiceCenter request);
 
-    @Update("UPDATE substations SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, contact_person = #{contactPerson}, " +
-            "address = #{address}, status = #{status}, voltage = #{voltage}, latitude = #{latitude}, longitude = #{longitude}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void updateSubstation(SubStation request);
+//    @Update("UPDATE substations SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, contact_person = #{contactPerson}, " +
+//            "address = #{address}, status = #{status}, voltage = #{voltage}, latitude = #{latitude}, longitude = #{longitude}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void updateSubstation(SubStationTransformerFeederLine request);
 
-    @Update("UPDATE feeder_lines SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, contact_person = #{contactPerson}, " +
-            "address = #{address}, status = #{status}, voltage = #{voltage}, description = #{description}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void updateFeederLine(FeederLine request);
+//    @Update("UPDATE feeder_lines SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, contact_person = #{contactPerson}, " +
+//            "address = #{address}, status = #{status}, voltage = #{voltage}, description = #{description}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void updateFeederLine(FeederLine request);
 
     @Update("UPDATE regions SET region_id = #{regionId}, name = #{name}, phone_number = #{phoneNo}, email = #{email}, contact_person = #{contactPerson}, " +
             "address = #{address}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void updateRegionNode(Region request);
+    void updateRegionNode(RegionBhubServiceCenter request);
 
     @Update("UPDATE transformers SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, address = #{address}, status = #{address}, " +
             "voltage = #{voltage}, latitude = #{latitude}, longitude = #{longitude}, updated_at = #{updatedAt} WHERE org_id = #{orgId}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void updateTransformerNode(Transformer request);
+    void updateTransformerNode(SubStationTransformerFeederLine request);
 
-    @Select("SELECT * FROM nodes WHERE id = #{nodeId} AND org_id = #{orgId}")
+//    @Select("SELECT * FROM nodes WHERE id = #{nodeId} AND org_id = #{orgId}")
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeInfo", column = "id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.NodeMapper.getHierarchyById"))
+//    })
+    @Select("SELECT * FROM nodes WHERE org_id = #{orgId} AND (id = #{nodeId} OR parent_id = #{nodeId} OR parent_id IN (SELECT id FROM nodes WHERE parent_id = #{nodeId}))")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "parentId", column = "parent_id"),
@@ -94,48 +111,49 @@ public interface NodeMapper {
             @Result(property = "nodeInfo", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.NodeMapper.getHierarchyById"))
     })
-    Node getSingleNode(UUID nodeId, UUID orgId);
+    List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
+//    @Select("""
+//        WITH RECURSIVE node_tree AS (
+//            SELECT *
+//            FROM nodes
+//            WHERE id = #{nodeId} AND org_id = #{orgId}
+//
+//            UNION ALL
+//
+//            SELECT n.*
+//            FROM nodes n
+//            INNER JOIN node_tree nt ON n.parent_id = nt.id
+//            WHERE n.org_id = #{orgId}
+//        )
+//        SELECT * FROM node_tree;
+//    """)
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeInfo", column = "id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.NodeMapper.getHierarchyById"))
+//    })
+//List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
+
+//    List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
 
     @Select("""
         SELECT
-            id, region_id, NULL AS bhub_id,
-            node_id, name,
-            NULL AS serial_no, 
-            phone_number, email, contact_person, address, 
+            id, region_id,
+            node_id, name, 
+            NULL AS serial_no, phone_number, email, contact_person, address, 
             NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
-            created_at, updated_at
-        FROM regions
-        WHERE node_id = #{id}
+            created_at, updated_at, type
+        FROM region_bhub_service_centers
+        WHERE node_id = #{nodeId}
         UNION
         SELECT
-            id, NULL AS region_id, NULL AS bhub_id,
-            node_id, name, serial_no, phone_number, email, contact_person,
-            address, status, voltage, latitude, longitude, description, created_at, updated_at
-        FROM substations
-        WHERE node_id = #{id}
-        UNION
-        SELECT
-            id, NULL AS region_id, NULL AS bhub_id,
-            node_id, name, serial_no, phone_number, email, contact_person,
-            address, status, voltage, latitude, longitude, description, created_at, updated_at
-        FROM transformers
-        WHERE node_id = #{id}
-        UNION
-        SELECT
-            id, NULL AS region_id, NULL AS bhub_id,
-            node_id, name, serial_no, phone_number, email, contact_person,
-            address, status, voltage, NULL AS latitude, NULL AS longitude, description, created_at, updated_at
-        FROM feeder_lines
-        WHERE node_id = #{id}
-        UNION
-        SELECT
-            id, NULL AS region_id, bhub_id,
-            node_id, name, NULL AS serial_no, 
-            phone_number, email, contact_person, address, 
-            NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description, 
-            created_at, updated_at
-        FROM business_hubs
-        WHERE node_id = #{id}
+            id, NULL AS region_id, 
+            node_id, name, type, serial_no, phone_number, email, contact_person,
+            address, status, voltage, latitude, longitude, description, created_at, updated_at, type
+        FROM substation_trans_feeder_lines
+        WHERE node_id = #{nodeId}
         """)
     @Results({
             @Result(property = "nodeId", column = "node_id"),
@@ -159,4 +177,60 @@ public interface NodeMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.NodeMapper.getHierarchyById"))
     })
     List<Node> getAllNode(UUID orgId);
+
+    @Update("UPDATE region_bhub_service_centers SET name = #{name}, phone_number = #{phoneNo}, email = #{email}, " +
+            "contact_person = #{contactPerson}, address = #{address}, updated_at = #{updatedAt} ")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateRegionBhubServiceCenter(RegionBhubServiceCenter request);
+
+    @Update("UPDATE nodes SET name = #{name} WHERE id = #{nodeId}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateNode(Node node);
+
+    @Update("UPDATE substation_trans_feeder_lines SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, " +
+            "contact_person = #{contactPerson}, address = #{address}, status = #{status}, voltage = #{voltage}, latitude =  #{latitude}, " +
+            "longitude = #{longitude}, description = #{description}, updated_at = #{updatedAt} ")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 }
+//    @Select("""
+//        SELECT
+//            id, region_id, NULL AS bhub_id,
+//            node_id, name,
+//            NULL AS serial_no,
+//            phone_number, email, contact_person, address,
+//            NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
+//            created_at, updated_at
+//        FROM region_bhub_service_centers
+//        WHERE node_id = #{id}
+//        UNION
+//        SELECT
+//            id, NULL AS region_id, NULL AS bhub_id,
+//            node_id, name, serial_no, phone_number, email, contact_person,
+//            address, status, voltage, latitude, longitude, description, created_at, updated_at
+//        FROM substations
+//        WHERE node_id = #{id}
+//        UNION
+//        SELECT
+//            id, NULL AS region_id, NULL AS bhub_id,
+//            node_id, name, serial_no, phone_number, email, contact_person,
+//            address, status, voltage, latitude, longitude, description, created_at, updated_at
+//        FROM transformers
+//        WHERE node_id = #{id}
+//        UNION
+//        SELECT
+//            id, NULL AS region_id, NULL AS bhub_id,
+//            node_id, name, serial_no, phone_number, email, contact_person,
+//            address, status, voltage, NULL AS latitude, NULL AS longitude, description, created_at, updated_at
+//        FROM feeder_lines
+//        WHERE node_id = #{id}
+//        UNION
+//        SELECT
+//            id, NULL AS region_id, bhub_id,
+//            node_id, name, NULL AS serial_no,
+//            phone_number, email, contact_person, address,
+//            NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
+//            created_at, updated_at
+//        FROM business_hubs
+//        WHERE node_id = #{id}
+//        """)

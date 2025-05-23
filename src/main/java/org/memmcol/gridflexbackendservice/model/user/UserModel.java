@@ -42,7 +42,7 @@ public class UserModel implements Serializable {
 
     private Organization business;
 
-    private List<Node> nodes;
+    private Node nodes;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -167,11 +167,11 @@ public class UserModel implements Serializable {
         this.business = business;
     }
 
-    public List<Node> getNodes() {
+    public Node getNodes() {
         return nodes;
     }
 
-    public void setNodes(List<Node> nodes) {
+    public void setNodes(Node nodes) {
         this.nodes = nodes;
     }
 }

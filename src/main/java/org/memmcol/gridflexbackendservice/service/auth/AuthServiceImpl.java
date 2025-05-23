@@ -5,10 +5,12 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
@@ -25,6 +27,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
@@ -73,8 +76,11 @@ public class AuthServiceImpl implements AuthService {
 		AuditLog auditNotificationDTO = new AuditLog();
 		try {
 			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//			List<Node> nodes = operatorMapper.getNodeWithChildren(isOperatorExist.getNodeId(), isOperatorExist.getOrgId());
+//			isOperatorExist.setNodes(nodes);
 			if (isOperatorExist == null) {
-				return ResponseMap.response(status.getNotFoundCode(), user + status.getNotFoundDesc(), "");
+				throw new GlobalExceptionHandler.NotFoundException(user + status.getNotFoundDesc());
+//				return ResponseMap.response(status.getNotFoundCode(), user + status.getNotFoundDesc(), "");
 			}
 			isOperatorExist.setPassword("");
 			operatorMapper.updateLogoutState(username);
@@ -118,6 +124,8 @@ public class AuthServiceImpl implements AuthService {
 
 
 			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
+//			List<Node> nodes = operatorMapper.getNodeWithChildren(isOperator.getNodeId(), isOperator.getOrgId());
+//			isOperator.setNodes(nodes);
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}

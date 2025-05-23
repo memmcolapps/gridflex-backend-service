@@ -7,27 +7,15 @@ import java.util.UUID;
 
 public interface NodeService {
 
-    Map<String, Object> createBusinessHubNode(BusinessHub request);
-
-    Map<String, Object> createSubStationNode(SubStation request);
-
-    Map<String, Object> createFeederLineNode(FeederLine request);
-
-    Map<String, Object> createRegionNode(Region request);
-
-    Map<String, Object> createTransformerNode(Transformer request);
-
-    Map<String, Object> updateBusinessHubNode(BusinessHub request);
-
-    Map<String, Object> updateSubStationNode(SubStation request);
-
-    Map<String, Object> updateFeederLineNode(FeederLine request);
-
-    Map<String, Object> updateRegionNode(Region request);
-
-    Map<String, Object> updateTransformerNode(Transformer request);
-
     Map<String, Object> singleNode(UUID nodeId);
 
     Map<String, Object> getAllNodes();
+
+    Map<String, Object> createRegionBhubServiceCenterNode(RegionBhubServiceCenter request);
+
+    Map<String, Object> createSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request);
+
+    Map<String, Object> updateRegionBhubServiceCenterNode(RegionBhubServiceCenter request);
+
+    Map<String, Object> updateSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request);
 }

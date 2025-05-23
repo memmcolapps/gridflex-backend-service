@@ -22,7 +22,7 @@ public class NodeInfo implements Serializable {
     private String email;
     private String contactPerson;
     private String address;
-    private String bhubId;
+    private String type;
     private String serialNo;
     private Boolean status;
     private String voltage;
@@ -121,12 +121,12 @@ public class NodeInfo implements Serializable {
         this.address = address;
     }
 
-    public String getBhubId() {
-        return bhubId;
+    public String gettype() {
+        return type;
     }
 
-    public void setBhubId(String bhubId) {
-        this.bhubId = bhubId;
+    public void settype(String type) {
+        this.type = type;
     }
 
     public String getSerialNo() {

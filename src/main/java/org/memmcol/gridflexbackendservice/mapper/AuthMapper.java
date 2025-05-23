@@ -49,98 +49,100 @@ public interface AuthMapper {
 //            @Result(property = "orgId", column = "org_id"),
 //    })
 //    List<Node> getHierarchyById(String email);
+///------------------------------------------------------
+//    @Select("""
+//    WITH RECURSIVE RecursiveHierarchy AS (
+//        SELECT
+//            n.id,
+//            n.name,
+//            n.parent_id,
+//            n.org_id,
+//            'Current' AS hierarchyDirection
+//        FROM nodes n
+//        WHERE n.id = (
+//            SELECT u.node_id
+//            FROM users u
+//            WHERE u.email = #{email}
+//        )
+//
+//        UNION ALL
+//
+//        SELECT
+//            n.id,
+//            n.name,
+//            n.parent_id,
+//            n.org_id,
+//            CASE
+//                WHEN n.id = rh.parent_id THEN 'Up'
+//                WHEN n.parent_id = rh.id THEN 'Down'
+//            END AS hierarchyDirection
+//        FROM nodes n
+//        JOIN RecursiveHierarchy rh
+//            ON n.id = rh.parent_id OR n.parent_id = rh.id
+//        WHERE NOT (
+//            (rh.hierarchyDirection = 'Down' AND n.id = rh.parent_id) OR
+//            (rh.hierarchyDirection = 'Up' AND n.parent_id = rh.id)
+//        )
+//    )
+//
+//
+//    SELECT
+//            rh.id AS node_id,
+//           rh.name AS node_name,
+//           rh.parent_id AS parent_id,
+//           rh.org_id AS node_org_id,
+//
+//           r.id AS region_id,
+//
+//           t.serial_no AS transformer_serial,
+//           t.status AS transformer_status,
+//           t.voltage AS transformer_voltage,
+//           t.description AS transformer_description,
+//           t.latitude AS transformer_latitude,
+//           t.longitude AS transformer_longitude,
+//
+//           COALESCE(t.address, r.address, s.address, f.address, b.address) AS address,
+//           COALESCE(t.email, r.email, s.email, f.email, b.email) AS email,
+//           COALESCE(t.contact_person, r.contact_person, s.contact_person, f.contact_person, b.contact_person) AS contact_person,
+//           COALESCE(t.phone_number, r.phone_number, s.phone_number, f.phone_number, b.phone_number) AS phone_no,
+//           COALESCE(t.created_at, r.created_at, s.created_at, f.created_at, b.created_at) AS created_at,
+//           COALESCE(t.updated_at, r.updated_at, s.updated_at, f.updated_at, b.updated_at) AS updated_at,
+//
+//           b.id AS business_hub_id
+//
+//    FROM RecursiveHierarchy rh
+//    LEFT JOIN regions r ON rh.id = r.node_id
+//    LEFT JOIN transformers t ON rh.id = t.node_id
+//    LEFT JOIN substations s ON rh.id = s.node_id
+//    LEFT JOIN business_hubs b ON rh.id = b.node_id
+//    LEFT JOIN feeder_lines f ON rh.id = f.node_id;
+//    """)
+//    @Results({
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "name", column = "node_name"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "orgId", column = "node_org_id"),
+//
+//            @Result(property = "regionId", column = "region_id"),
+//            @Result(property = "serialNo", column = "transformer_serial"),
+//            @Result(property = "status", column = "transformer_status"),
+//            @Result(property = "voltage", column = "transformer_voltage"),
+//            @Result(property = "description", column = "transformer_description"),
+//            @Result(property = "latitude", column = "transformer_latitude"),
+//            @Result(property = "longitude", column = "transformer_longitude"),
+//
+//            @Result(property = "address", column = "address"),
+//            @Result(property = "email", column = "email"),
+//            @Result(property = "contactPerson", column = "contact_person"),
+//            @Result(property = "phoneNo", column = "phone_no"),
+//
+//            @Result(property = "bhubId", column = "business_hub_id"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//    })
+//    List<NodeInfo> getHierarchyById(String email);
 
-    @Select("""
-    WITH RECURSIVE RecursiveHierarchy AS (
-        SELECT
-            n.id,
-            n.name,
-            n.parent_id,
-            n.org_id,
-            'Current' AS hierarchyDirection
-        FROM nodes n
-        WHERE n.id = (
-            SELECT u.node_id
-            FROM users u
-            WHERE u.email = #{email}
-        )
-
-        UNION ALL
-
-        SELECT
-            n.id,
-            n.name,
-            n.parent_id,
-            n.org_id,
-            CASE
-                WHEN n.id = rh.parent_id THEN 'Up'
-                WHEN n.parent_id = rh.id THEN 'Down'
-            END AS hierarchyDirection
-        FROM nodes n
-        JOIN RecursiveHierarchy rh
-            ON n.id = rh.parent_id OR n.parent_id = rh.id
-        WHERE NOT (
-            (rh.hierarchyDirection = 'Down' AND n.id = rh.parent_id) OR
-            (rh.hierarchyDirection = 'Up' AND n.parent_id = rh.id)
-        )
-    )
-
-
-    SELECT
-            rh.id AS node_id,
-           rh.name AS node_name,
-           rh.parent_id AS parent_id,
-           rh.org_id AS node_org_id,
-       
-           r.id AS region_id,
-       
-           t.serial_no AS transformer_serial,
-           t.status AS transformer_status,
-           t.voltage AS transformer_voltage,
-           t.description AS transformer_description,
-           t.latitude AS transformer_latitude,
-           t.longitude AS transformer_longitude,
-       
-           COALESCE(t.address, r.address, s.address, f.address, b.address) AS address,
-           COALESCE(t.email, r.email, s.email, f.email, b.email) AS email,
-           COALESCE(t.contact_person, r.contact_person, s.contact_person, f.contact_person, b.contact_person) AS contact_person,
-           COALESCE(t.phone_number, r.phone_number, s.phone_number, f.phone_number, b.phone_number) AS phone_no,
-           COALESCE(t.created_at, r.created_at, s.created_at, f.created_at, b.created_at) AS created_at,
-           COALESCE(t.updated_at, r.updated_at, s.updated_at, f.updated_at, b.updated_at) AS updated_at,
-       
-           b.id AS business_hub_id
-    
-    FROM RecursiveHierarchy rh
-    LEFT JOIN regions r ON rh.id = r.node_id
-    LEFT JOIN transformers t ON rh.id = t.node_id
-    LEFT JOIN substations s ON rh.id = s.node_id
-    LEFT JOIN business_hubs b ON rh.id = b.node_id
-    LEFT JOIN feeder_lines f ON rh.id = f.node_id;
-    """)
-    @Results({
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "name", column = "node_name"),
-            @Result(property = "parentId", column = "parent_id"),
-            @Result(property = "orgId", column = "node_org_id"),
-
-            @Result(property = "regionId", column = "region_id"),
-            @Result(property = "serialNo", column = "transformer_serial"),
-            @Result(property = "status", column = "transformer_status"),
-            @Result(property = "voltage", column = "transformer_voltage"),
-            @Result(property = "description", column = "transformer_description"),
-            @Result(property = "latitude", column = "transformer_latitude"),
-            @Result(property = "longitude", column = "transformer_longitude"),
-
-            @Result(property = "address", column = "address"),
-            @Result(property = "email", column = "email"),
-            @Result(property = "contactPerson", column = "contact_person"),
-            @Result(property = "phoneNo", column = "phone_no"),
-
-            @Result(property = "bhubId", column = "business_hub_id"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-    })
-    List<NodeInfo> getHierarchyById(String email);
+    ///-----------------------------------------------------
 //      rh.*, r.*, t.*, s.*, b.*, f.*
 //    rh.id AS node_id,
 //    rh.name AS node_name,
@@ -166,6 +168,72 @@ public interface AuthMapper {
 //    private String longitude;
 //    private String description;
 
+    ///-------------------------------------------------------
+
+
+
+    @Select("""
+        SELECT
+            id, region_id,
+            node_id, name, 
+            NULL AS serial_no, phone_number, email, contact_person, address, 
+            NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
+            created_at, updated_at, type
+        FROM region_bhub_service_centers
+        WHERE node_id = #{nodeId}
+        UNION
+        SELECT
+            id, NULL AS region_id, 
+            node_id, name, type, serial_no, phone_number, email, contact_person,
+            address, status, voltage, latitude, longitude, description, created_at, updated_at, type
+        FROM substation_trans_feeder_lines
+        WHERE node_id = #{nodeId}
+        """)
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "serialNo", column = "serial_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    NodeInfo getHierarchyById(UUID nodeId);
+
+    @Select("SELECT * FROM nodes WHERE org_id = #{orgId} AND (id = #{nodeId} OR parent_id = #{nodeId} OR parent_id IN (SELECT id FROM nodes WHERE parent_id = #{nodeId}))")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeInfo", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.NodeMapper.getHierarchyById"))
+    })
+    List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
+
+    @Select("SELECT * FROM users WHERE email = #{email}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "firstname", column = "firstname"),
+            @Result(property = "lastname", column = "lastname"),
+            @Result(property = "email", column = "email"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "status", column = "status"),
+            @Result(property = "active", column = "active"),
+            @Result(property = "password", column = "password"),
+            @Result(property = "lastActive", column = "last_active"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "business", column = "org_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getOrganizationById")),
+            @Result(property = "groups", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
+//            @Result(property = "nodes", column = "{nodeId=node_id, orgId=org_id}",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getNodeWithChildren"))
+    })
+    UserModel findAuthByUserEmail(String email);
+
     @Select("""
     SELECT * FROM organizations WHERE id = #{orgId}
     """)
@@ -186,28 +254,8 @@ public interface AuthMapper {
     int resetPassword(String operator, String encode);
 
 
-    @Select("SELECT * FROM users WHERE email = #{email}")
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "firstname", column = "firstname"),
-            @Result(property = "lastname", column = "lastname"),
-            @Result(property = "email", column = "email"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "status", column = "status"),
-            @Result(property = "active", column = "active"),
-            @Result(property = "password", column = "password"),
-            @Result(property = "lastActive", column = "last_active"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "business", column = "org_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getOrganizationById")),
-            @Result(property = "groups", column = "id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-            @Result(property = "nodes", column = "email",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
-    })
-    UserModel findAuthByUserEmail(String email);
+
+
 
     @Select("SELECT * FROM groups g INNER JOIN user_groups ug ON g.id = ug.group_id WHERE ug.user_id = #{userId}")
     @Results({
@@ -276,8 +324,8 @@ public interface AuthMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-            @Result(property = "nodes", column = "email",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
+//            @Result(property = "nodes", column = "node_id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
     })
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     UserModel findAuthByUserId(UUID userId, UUID orgId);
@@ -299,8 +347,8 @@ public interface AuthMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-            @Result(property = "nodes", column = "email",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
+//            @Result(property = "nodes", column = "node_id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
     })
     List<UserModel> findAllUsers(UUID orgId);
 

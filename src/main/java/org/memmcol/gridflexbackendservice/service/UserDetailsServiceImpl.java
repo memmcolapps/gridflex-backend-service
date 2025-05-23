@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.ModuleWithSubModules;
 import org.memmcol.gridflexbackendservice.model.user.Permission;
 import org.memmcol.gridflexbackendservice.model.user.SubModuleWithPermissions;
@@ -35,7 +36,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		UserModel userDTO = authMapper.findAuthByUserEmail(email);
-
+//		List<Node> nodes = authMapper.getNodeWithChildren(userDTO.getNodeId(), userDTO.getOrgId());
+//		userDTO.setNodes(nodes);
 		if (userDTO == null) {
 			throw new UsernameNotFoundException("User " + status.getNotFoundDesc());
 		}

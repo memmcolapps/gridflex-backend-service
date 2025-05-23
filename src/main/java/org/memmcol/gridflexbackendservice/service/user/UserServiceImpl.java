@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.Module;
 import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -210,11 +211,40 @@ public class UserServiceImpl implements  UserService {
             if (cachedUser != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
             }
-
+            List<UserModel> enrichedUsers = new ArrayList<>();
 //            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
             List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId());
+
+            for (UserModel user : users) {
+                /// Retrieve user data from database
+                UserModel userDTO = operatorMapper.findAuthByUserId(user.getId(), um.getOrgId());
+
+                userDTO.setPassword("");
+                List<Node> nodes = operatorMapper.getNodeWithChildren(userDTO.getNodeId(), um.getOrgId());
+
+                Map<UUID, Node> nodeMap = new HashMap<>();
+                Node root = null;
+
+                for (Node node : nodes) {
+                    node.setNodesTree(new ArrayList<>());
+                    nodeMap.put(node.getId(), node);
+                }
+
+                for (Node node : nodes) {
+                    if (node.getId().equals(user.getNodeId())) {
+                        root = node; // this is the node we're querying for
+                    }
+                    if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+                        Node parent = nodeMap.get(node.getParentId());
+                        parent.getNodesTree().add(node);
+                    }
+                }
+                userDTO.setNodes(root);
+                enrichedUsers.add(userDTO); // store the enriched user
+            }
+
             // Apply filtering
-            Stream<UserModel> userStream = users.stream();
+            Stream<UserModel> userStream = enrichedUsers.stream();
 
             if (firstname != null && !firstname.isEmpty()) {
                 userStream = userStream.filter(u -> u.getFirstname() != null && u.getFirstname().equalsIgnoreCase(firstname));
@@ -309,7 +339,30 @@ public class UserServiceImpl implements  UserService {
             UserModel userDTO = operatorMapper.findAuthByUserId(userId, um.getOrgId());
 
             userDTO.setPassword("");
+            List<Node> nodes = operatorMapper.getNodeWithChildren(userDTO.getNodeId(), um.getOrgId());
+
+            Map<UUID, Node> nodeMap = new HashMap<>();
+            Node root = null;
+
+            for (Node node : nodes) {
+                node.setNodesTree(new ArrayList<>());
+                nodeMap.put(node.getId(), node);
+            }
+
+            for (Node node : nodes) {
+                if (node.getId().equals(user.getNodeId())) {
+                    root = node; // this is the node we're querying for
+                }
+                if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+                    Node parent = nodeMap.get(node.getParentId());
+                    parent.getNodesTree().add(node);
+                }
+            }
+            userDTO.setNodes(root);
+
             handleAddCache(userDTO);
+
+
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage().trim(), exception);

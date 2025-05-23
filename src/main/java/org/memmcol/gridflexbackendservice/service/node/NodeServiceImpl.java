@@ -7,7 +7,6 @@ import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -26,9 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Transactional
 @Service
@@ -63,12 +60,17 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @Override
-    public Map<String, Object> createBusinessHubNode(BusinessHub request) {
+    public Map<String, Object> createRegionBhubServiceCenterNode(RegionBhubServiceCenter request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
+        RegionBhubServiceCenter regionBhubServiceCenter;
+        UUID id;
         try {
-
             UserModel um = handleUserValidation();
+
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
+            }
 
             Node node = new Node();
             node.setName(request.getName());
@@ -78,7 +80,7 @@ public class NodeServiceImpl implements NodeService {
             Node nd = nodeMapper.isNodeExist(request.getParentId());
 
             if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
             nodeMapper.createNode(node);
 
@@ -86,19 +88,42 @@ public class NodeServiceImpl implements NodeService {
 
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
-            nodeMapper.createBusinessHub(request);
 
-            UUID id = request.getId();
+            if(request.getType().equalsIgnoreCase("region")){
+                nodeMapper.createRegionBhubServiceCenter(request);
+                id = request.getId();
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+            } else if(request.getType().equalsIgnoreCase("businesshub")){
+                nodeMapper.createRegionBhubServiceCenter(request);
+                id = request.getId();
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+            } else if(request.getType().equalsIgnoreCase("servicecenter")){
+                nodeMapper.createRegionBhubServiceCenter(request);
+                id = request.getId();
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+            }
 
-            BusinessHub businessHub = nodeMapper.getBusinessNode(id);
-//            handleAddCache(node);
+            for (String key : auditCache.keySet()) {
+                if (key.startsWith("grid_flex_audit_log_page_")) {
+                    auditCache.remove(key);
+                }
+            }
+            for (String key : nodeCache.keySet()) {
+                if (key.startsWith("nodes_"+node.getOrgId())) {
+                    nodeCache.remove(key);
+                }
+            }
+
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + businessHub.getName() + "]");
-            auditNotificationDTO.setType("businessHub");
-            auditNotificationDTO.setBusinessHub(businessHub);
+            auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
+            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("servicecenter") ? "servicecenter" : "businesshub");
+            auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getRegDesc(), "");
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -110,12 +135,17 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @Override
-    public Map<String, Object> createSubStationNode(SubStation request) {
+    public Map<String, Object> createSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
+        SubStationTransformerFeederLine subStationTransformerFeederLine;
+        UUID id;
         try {
-
             UserModel um = handleUserValidation();
+
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
+            }
 
             Node node = new Node();
             node.setName(request.getName());
@@ -125,28 +155,50 @@ public class NodeServiceImpl implements NodeService {
             Node nd = nodeMapper.isNodeExist(request.getParentId());
 
             if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
-
             nodeMapper.createNode(node);
 
             UUID nodeId = node.getId();
 
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
-            nodeMapper.createSubStation(request);
 
-            UUID id = request.getId();
+            if(request.getType().equalsIgnoreCase("transformer")){
+                nodeMapper.createSubStationTransformerFeederLine(request);
+                id = request.getId();
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+            } else if(request.getType().equalsIgnoreCase("feederline")){
+                nodeMapper.createSubStationTransformerFeederLine(request);
+                id = request.getId();
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+            } else if(request.getType().equalsIgnoreCase("substation")){
+                nodeMapper.createSubStationTransformerFeederLine(request);
+                id = request.getId();
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+            }
 
-            SubStation subStation = nodeMapper.getSubStationNode(id);
+            for (String key : auditCache.keySet()) {
+                if (key.startsWith("grid_flex_audit_log_page_")) {
+                    auditCache.remove(key);
+                }
+            }
+            for (String key : nodeCache.keySet()) {
+                if (key.startsWith("nodes_"+node.getOrgId())) {
+                    nodeCache.remove(key);
+                }
+            }
 
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + subStation.getName() + "]");
-            auditNotificationDTO.setType("substation");
-            auditNotificationDTO.setSubStation(subStation);
+            auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
+            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feederline") ? "feederline" : "substation");
+            auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getRegDesc(), "");
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -158,14 +210,20 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @Override
-    public Map<String, Object> createFeederLineNode(FeederLine request) {
+    public Map<String, Object> updateRegionBhubServiceCenterNode(RegionBhubServiceCenter request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
+        RegionBhubServiceCenter regionBhubServiceCenter;
+        UUID id;
         try {
-
             UserModel um = handleUserValidation();
 
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
+            }
+
             Node node = new Node();
+            node.setId(request.getNodeId());
             node.setName(request.getName());
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
@@ -173,28 +231,50 @@ public class NodeServiceImpl implements NodeService {
             Node nd = nodeMapper.isNodeExist(request.getParentId());
 
             if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
+            nodeMapper.updateNode(node);
 
-            nodeMapper.createNode(node);
-//            assert nd != null;
             UUID nodeId = node.getId();
 
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
-            nodeMapper.createFeederLine(request);
 
-            UUID id = request.getId();
+            if(request.getType().equalsIgnoreCase("region")){
+                nodeMapper.updateRegionBhubServiceCenter(request);
+                id = request.getId();
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+            } else if(request.getType().equalsIgnoreCase("businesshub")){
+                nodeMapper.updateRegionBhubServiceCenter(request);
+                id = request.getId();
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+            } else if(request.getType().equalsIgnoreCase("servicecenter")){
+                nodeMapper.updateRegionBhubServiceCenter(request);
+                id = request.getId();
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+            }
 
-            FeederLine feederLine = nodeMapper.getFeederLineNode(id);
+            for (String key : auditCache.keySet()) {
+                if (key.startsWith("grid_flex_audit_log_page_")) {
+                    auditCache.remove(key);
+                }
+            }
+            for (String key : nodeCache.keySet()) {
+                if (key.startsWith("nodes_"+node.getOrgId())) {
+                    nodeCache.remove(key);
+                }
+            }
 
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + feederLine.getName() + "]");
-            auditNotificationDTO.setType("feederLine");
-            auditNotificationDTO.setFeederLine(feederLine);
+            auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
+            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("servicecenter") ? "servicecenter" : "businesshub");
+            auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getRegDesc(), "");
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -206,14 +286,20 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @Override
-    public Map<String, Object> createRegionNode(Region request) {
+    public Map<String, Object> updateSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
+        SubStationTransformerFeederLine subStationTransformerFeederLine;
+        UUID id;
         try {
-
             UserModel um = handleUserValidation();
 
+            if (!Boolean.TRUE.equals(um.getStatus())) {
+                throw new LockedException("User is disabled");
+            }
+
             Node node = new Node();
+            node.setId(request.getNodeId());
             node.setName(request.getName());
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
@@ -221,241 +307,52 @@ public class NodeServiceImpl implements NodeService {
             Node nd = nodeMapper.isNodeExist(request.getParentId());
 
             if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
-
-            nodeMapper.createNode(node);
-
-            UUID nodeId = node.getId();
-            request.setNodeId(nodeId);
-            request.setOrgId(um.getOrgId());
-            nodeMapper.createRegion(request);
-
-            UUID id = request.getId();
-
-            Region region = nodeMapper.getRegionNode(id);
-
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + region.getName() + "]");
-            auditNotificationDTO.setType("region");
-            auditNotificationDTO.setRegion(region);
-            auditRepository.save(auditNotificationDTO);
-
-
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ region.getName() +"' "+ status.getRegDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-
-    }
-
-    @Override
-    public Map<String, Object> createTransformerNode(Transformer request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            Node node = new Node();
-            node.setName(request.getName());
-            node.setOrgId(um.getOrgId());
-            node.setParentId(request.getParentId());
-
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
-
-            if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("parent node not found");
-            }
-
-            nodeMapper.createNode(node);
+            nodeMapper.updateNode(node);
 
             UUID nodeId = node.getId();
 
             request.setNodeId(nodeId);
-
             request.setOrgId(um.getOrgId());
 
-            nodeMapper.createTransformer(request);
+            if(request.getType().equalsIgnoreCase("transformer")){
+                nodeMapper.updateSubStationTransformerFeederLine(request);
+                id = request.getId();
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+            } else if(request.getType().equalsIgnoreCase("feederline")){
+                nodeMapper.updateSubStationTransformerFeederLine(request);
+                id = request.getId();
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+            } else if(request.getType().equalsIgnoreCase("substation")){
+                nodeMapper.updateSubStationTransformerFeederLine(request);
+                id = request.getId();
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+            }
 
-            UUID id = request.getId();
-
-            Transformer transformer = nodeMapper.getTransformerNode(id);
+            for (String key : auditCache.keySet()) {
+                if (key.startsWith("grid_flex_audit_log_page_")) {
+                    auditCache.remove(key);
+                }
+            }
+            for (String key : nodeCache.keySet()) {
+                if (key.startsWith("nodes_"+node.getOrgId())) {
+                    nodeCache.remove(key);
+                }
+            }
 
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + transformer.getName() + "]");
-            auditNotificationDTO.setType("transformer");
-            auditNotificationDTO.setTransformer(transformer);
+            auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
+            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feederline") ? "feederline" : "substation");
+            auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getRegDesc(), "");
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> updateBusinessHubNode(BusinessHub request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            request.setOrgId(um.getOrgId());
-            nodeMapper.updateBusinessHub(request);
-
-            UUID id = request.getId();
-
-            BusinessHub businessHub = nodeMapper.getBusinessNode(id);
-
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated node [" + businessHub.getName() + "]");
-            auditNotificationDTO.setType("businessHub");
-            auditNotificationDTO.setBusinessHub(businessHub);
-            auditRepository.save(auditNotificationDTO);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> updateSubStationNode(SubStation request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            request.setOrgId(um.getOrgId());
-            nodeMapper.updateSubstation(request);
-
-            UUID id = request.getId();
-
-            SubStation subStation = nodeMapper.getSubStationNode(id);
-
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated node [" + subStation.getName() + "]");
-            auditNotificationDTO.setType("substation");
-            auditNotificationDTO.setSubStation(subStation);
-            auditRepository.save(auditNotificationDTO);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> updateFeederLineNode(FeederLine request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            request.setOrgId(um.getOrgId());
-            nodeMapper.updateFeederLine(request);
-
-            UUID id = request.getId();
-
-            FeederLine feederLine = nodeMapper.getFeederLineNode(id);
-
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated node [" + feederLine.getName() + "]");
-            auditNotificationDTO.setType("feederLine");
-            auditNotificationDTO.setFeederLine(feederLine);
-            auditRepository.save(auditNotificationDTO);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> updateRegionNode(Region request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            request.setOrgId(um.getOrgId());
-            nodeMapper.updateRegionNode(request);
-
-            UUID id = request.getId();
-
-            Region region = nodeMapper.getRegionNode(id);
-
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated node [" + region.getName() + "]");
-            auditNotificationDTO.setType("region");
-            auditNotificationDTO.setRegion(region);
-            auditRepository.save(auditNotificationDTO);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> updateTransformerNode(Transformer request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            request.setOrgId(um.getOrgId());
-            nodeMapper.updateTransformerNode(request);
-
-            UUID id = request.getId();
-
-            Transformer transformer = nodeMapper.getTransformerNode(id);
-
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated node [" + transformer.getName() + "]");
-            auditNotificationDTO.setType("transformer");
-            auditNotificationDTO.setTransformer(transformer);
-            auditRepository.save(auditNotificationDTO);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -467,28 +364,47 @@ public class NodeServiceImpl implements NodeService {
     @Override
     public Map<String, Object> singleNode(UUID nodeId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-
             UserModel um = handleUserValidation();
             if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disabled");
             }
-
-//            Object cachedUser = nodeCache.get(nodeId.toString()+"_"+um.getOrgId());
 //
-//            if (cachedUser != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached Node " + " " + status.getDesc(), cachedUser);
-//            }
+            Object cachedUser = nodeCache.get(nodeId.toString() + "_" + um.getOrgId());
+            if (cachedUser != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached Node " + status.getDesc(), cachedUser);
+            }
 
-            Node node =  nodeMapper.getSingleNode(nodeId, um.getOrgId());
+            List<Node> flatList = nodeMapper.getNodeWithChildren(nodeId, um.getOrgId());
+            if (flatList == null || flatList.isEmpty()) {
+                return ResponseMap.response(status.getSuccessCode(), "No nodes found", "");
+            }
 
-//            handleAddCache(node);
+            Map<UUID, Node> nodeMap = new HashMap<>();
+            Node root = null;
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), node);
+            for (Node node : flatList) {
+                node.setNodesTree(new ArrayList<>());
+                nodeMap.put(node.getId(), node);
+            }
+
+            for (Node node : flatList) {
+                if (node.getId().equals(nodeId)) {
+                    root = node; // this is the node we're querying for
+                }
+                if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+                    Node parent = nodeMap.get(node.getParentId());
+                    parent.getNodesTree().add(node);
+                }
+            }
+
+            assert root != null;
+            handleAddCache(root);
+            return ResponseMap.response(status.getSuccessCode(), "Node " + status.getDesc(), root);
+
         } catch (Exception exception) {
-            log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+            log.error("Error occurred while fetching node [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to fetch single node with children");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
@@ -506,19 +422,44 @@ public class NodeServiceImpl implements NodeService {
             if (!Boolean.TRUE.equals(um.getStatus())) {
                 throw new LockedException("User is disabled");
             }
-//            StringBuilder cacheKeyBuilder = new StringBuilder("nodes_"+um.getOrgId());
-//            String cacheKey = cacheKeyBuilder.toString();
+            StringBuilder cacheKeyBuilder = new StringBuilder("nodes_"+um.getOrgId());
+            String cacheKey = cacheKeyBuilder.toString();
 
-            // Return from cache if available
-//            Object cachedNode = nodeCache.get(cacheKey);
-//            if (cachedNode != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached Nodes " + status.getDesc(), cachedNode);
-//            }
+//             Return from cache if available
+            Object cachedNode = nodeCache.get(cacheKey);
+            if (cachedNode != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached Nodes " + status.getDesc(), cachedNode);
+            }
 
-            List<Node> node =  nodeMapper.getAllNode(um.getOrgId());
-//            nodeCache.put(cacheKey, node);
+            List<Node> flatList =  nodeMapper.getAllNode(um.getOrgId());
+            if(flatList == null || flatList.isEmpty()){
+                return ResponseMap.response(status.getSuccessCode(), status.getDesc(), flatList);
+            }
+            Map<UUID, Node> nodeMap = new HashMap<>();
+            List<Node> roots = new ArrayList<>();
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), node);
+            // Map nodes by ID
+            for (Node node : flatList) {
+                nodeMap.put(node.getId(), node);
+                node.setNodesTree(new ArrayList<>()); // Initialize children list
+            }
+
+            // Reconstruct the tree
+            for (Node node : flatList) {
+                if (node.getParentId() == null) {
+                    roots.add(node); // Add root nodes to the list
+                } else {
+                    Node parent = nodeMap.get(node.getParentId());
+                    if (parent != null) {
+                        parent.getNodesTree().add(node); // Add as a child to the parent
+                    }
+                }
+            }
+
+
+            nodeCache.put(cacheKey, roots);
+
+            return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), roots);
         } catch (Exception exception) {
             log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -528,7 +469,6 @@ public class NodeServiceImpl implements NodeService {
             throw exception;
         }
     }
-
 
     UserModel handleUserValidation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -560,3 +500,288 @@ public class NodeServiceImpl implements NodeService {
     }
 
 }
+
+
+
+//    public Map<String, Object> createBusinessHubNode(RegionBhubServiceCenter request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            Node node = new Node();
+//            node.setName(request.getName());
+//            node.setOrgId(um.getOrgId());
+//            node.setParentId(request.getParentId());
+//
+//            Node nd = nodeMapper.isNodeExist(request.getParentId());
+//
+//            if(nd == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+//            }
+//            nodeMapper.createNode(node);
+//
+//            UUID nodeId = node.getId();
+//
+//            request.setNodeId(nodeId);
+//            request.setOrgId(um.getOrgId());
+//            nodeMapper.createBusinessHub(request);
+//
+//            UUID id = request.getId();
+//
+//            RegionBhubServiceCenter businessHub = nodeMapper.getBusinessNode(id);
+////            handleAddCache(node);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Created node [" + businessHub.getName() + "]");
+//            auditNotificationDTO.setType("businessHub");
+//            auditNotificationDTO.setRegionBhubServiceCenter(businessHub);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ businessHub.getName() +"' "+ status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
+
+//    public Map<String, Object> createRegionNode(RegionBhubServiceCenter request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            Node node = new Node();
+//            node.setName(request.getName());
+//            node.setOrgId(um.getOrgId());
+//            node.setParentId(request.getParentId());
+//
+//            Node nd = nodeMapper.isNodeExist(request.getParentId());
+//
+//            if(nd == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+//            }
+//
+//            nodeMapper.createNode(node);
+//
+//            UUID nodeId = node.getId();
+//            request.setNodeId(nodeId);
+//            request.setOrgId(um.getOrgId());
+//            nodeMapper.createRegion(request);
+//
+//            UUID id = request.getId();
+//
+//            RegionBhubServiceCenter region = nodeMapper.getRegionNode(id);
+//
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Created node [" + region.getName() + "]");
+//            auditNotificationDTO.setType("region");
+//            auditNotificationDTO.setRegionBhubServiceCenter(region);
+//            auditRepository.save(auditNotificationDTO);
+//
+//
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ region.getName() +"' "+ status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//
+//    }
+//
+//    public Map<String, Object> createServiceCenterNode(RegionBhubServiceCenter request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            Node node = new Node();
+//            node.setName(request.getName());
+//            node.setOrgId(um.getOrgId());
+//            node.setParentId(request.getParentId());
+//
+//            Node nd = nodeMapper.isNodeExist(request.getParentId());
+//
+//            if(nd == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+//            }
+//
+//            nodeMapper.createNode(node);
+//
+//            UUID nodeId = node.getId();
+//            request.setNodeId(nodeId);
+//            request.setOrgId(um.getOrgId());
+//            nodeMapper.createRegion(request);
+//
+//            UUID id = request.getId();
+//
+//            RegionBhubServiceCenter serviceCenter = nodeMapper.getRegionNode(id);
+//
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Created node [" + serviceCenter.getName() + "]");
+//            auditNotificationDTO.setType("region");
+//            auditNotificationDTO.setRegionBhubServiceCenter(serviceCenter);
+//            auditRepository.save(auditNotificationDTO);
+//
+//
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ serviceCenter.getName() +"' "+ status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//
+//    }
+
+//    public Map<String, Object> createSubStationNode(SubStationTransformerFeederLine request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            Node node = new Node();
+//            node.setName(request.getName());
+//            node.setOrgId(um.getOrgId());
+//            node.setParentId(request.getParentId());
+//
+//            Node nd = nodeMapper.isNodeExist(request.getParentId());
+//
+//            if(nd == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+//            }
+//
+//            nodeMapper.createNode(node);
+//
+//            UUID nodeId = node.getId();
+//
+//            request.setNodeId(nodeId);
+//            request.setOrgId(um.getOrgId());
+//            nodeMapper.createSubStation(request);
+//
+//            UUID id = request.getId();
+//
+//            SubStationTransformerFeederLine subStation = nodeMapper.getSubStationNode(id);
+//
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Created node [" + subStation.getName() + "]");
+//            auditNotificationDTO.setType("substation");
+//            auditNotificationDTO.setSubStationTransformerFeederLine(subStation);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStation.getName() +"' "+ status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
+//
+//    public Map<String, Object> createFeederLineNode(SubStationTransformerFeederLine request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            Node node = new Node();
+//            node.setName(request.getName());
+//            node.setOrgId(um.getOrgId());
+//            node.setParentId(request.getParentId());
+//
+//            Node nd = nodeMapper.isNodeExist(request.getParentId());
+//
+//            if(nd == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("parent node does not exist");
+//            }
+//
+//            nodeMapper.createNode(node);
+////            assert nd != null;
+//            UUID nodeId = node.getId();
+//
+//            request.setNodeId(nodeId);
+//            request.setOrgId(um.getOrgId());
+//            nodeMapper.createFeederLine(request);
+//
+//            UUID id = request.getId();
+//
+//            SubStationTransformerFeederLine feederLine = nodeMapper.getFeederLineNode(id);
+//
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Created node [" + feederLine.getName() + "]");
+//            auditNotificationDTO.setType("feederLine");
+//            auditNotificationDTO.setSubStationTransformerFeederLine(feederLine);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ feederLine.getName() +"' "+ status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
+//
+//    public Map<String, Object> createTransformerNode(SubStationTransformerFeederLine request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            Node node = new Node();
+//            node.setName(request.getName());
+//            node.setOrgId(um.getOrgId());
+//            node.setParentId(request.getParentId());
+//
+//            Node nd = nodeMapper.isNodeExist(request.getParentId());
+//
+//            if(nd == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("parent node not found");
+//            }
+//
+//            nodeMapper.createNode(node);
+//
+//            UUID nodeId = node.getId();
+//
+//            request.setNodeId(nodeId);
+//
+//            request.setOrgId(um.getOrgId());
+//
+//            nodeMapper.createTransformer(request);
+//
+//            UUID id = request.getId();
+//
+//            SubStationTransformerFeederLine transformer = nodeMapper.getTransformerNode(id);
+//
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Created node [" + transformer.getName() + "]");
+//            auditNotificationDTO.setType("transformer");
+//            auditNotificationDTO.setSubStationTransformerFeederLine(transformer);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ transformer.getName() +"' "+ status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }

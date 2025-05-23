@@ -120,11 +120,11 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
 
-            Band isExist = bandMapper.getBand(band.getName());
-            if (isExist == null) {
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
-//                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
-            }
+//            Band isExist = bandMapper.getBand(band.getName());
+//            if (isExist == null) {
+//                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+////                return ResponseMap.response(status.getNotFoundCode(), bandName + " " + status.getNotFoundDesc(), "");
+//            }
 
             band.setOrgId(um.getOrgId());
             int result = bandMapper.updateBand(band);

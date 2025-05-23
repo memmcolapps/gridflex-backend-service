@@ -14,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 //import org.memmcol.gridflexbackendservice.model.UserDTO;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
+import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -73,9 +75,32 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 		// Fetch user details before authentication
 		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
-		if (user == null) {
-			throw new UsernameNotFoundException("User not found");
-		}
+//		List<Node> nodes = authMapper.getNodeWithChildren(user.getNodeId(), user.getOrgId());
+////		if (nodes == null || nodes.isEmpty()) {
+////			return ResponseMap.response(status.getSuccessCode(), "No nodes found", "");
+////		}
+//
+//		Map<UUID, Node> nodeMap = new HashMap<>();
+//		Node root = null;
+//
+//		for (Node node : nodes) {
+//			node.setNodesTree(new ArrayList<>());
+//			nodeMap.put(node.getId(), node);
+//		}
+//
+//		for (Node node : nodes) {
+//			if (node.getId().equals(user.getNodeId())) {
+//				root = node; // this is the node we're querying for
+//			}
+//			if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+//				Node parent = nodeMap.get(node.getParentId());
+//				parent.getNodesTree().add(node);
+//			}
+//		}
+//		user.setNod(root);
+//		if (user == null) {
+//			throw new UsernameNotFoundException("User not found");
+//		}
 
 		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
 		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
@@ -125,10 +150,30 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24 hours
 				.sign(algorithm);
 
-		UserModel userDTO = authMapper.findAuthByUserEmail(userDetails.getUsername());
-		userDTO.setPassword("");
-		auditNotificationDTO.setCreator(userDTO);
-		auditNotificationDTO.setDescription(userDTO.getEmail()+" Logged in");
+		UserModel user = authMapper.findAuthByUserEmail(userDetails.getUsername());
+		List<Node> nodes = authMapper.getNodeWithChildren(user.getNodeId(), user.getOrgId());
+
+		Map<UUID, Node> nodeMap = new HashMap<>();
+		Node root = null;
+
+		for (Node node : nodes) {
+			node.setNodesTree(new ArrayList<>());
+			nodeMap.put(node.getId(), node);
+		}
+
+		for (Node node : nodes) {
+			if (node.getId().equals(user.getNodeId())) {
+				root = node; // this is the node we're querying for
+			}
+			if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+				Node parent = nodeMap.get(node.getParentId());
+				parent.getNodesTree().add(node);
+			}
+		}
+		user.setNodes(root);
+		user.setPassword("");
+		auditNotificationDTO.setCreator(user);
+		auditNotificationDTO.setDescription(user.getEmail()+" Logged in");
 		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {
@@ -141,7 +186,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		Map<String, Object> token = new HashMap<>();
 		resp.put("responsecode", "000");
 		resp.put("responsedesc", "Authentication Successful");
-		token.put("user_info", userDTO);
+		token.put("user_info", user);
 //		token.put("groups", permissionTree);
 		token.put("access_token", access_token);
 		resp.put("responsedata", token);

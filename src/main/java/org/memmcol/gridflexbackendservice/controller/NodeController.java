@@ -6,7 +6,6 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,54 +21,10 @@ public class NodeController {
     @Autowired private GlobalExceptionHandler exception;
 
 
-    @PostMapping("/create/business-hub")
-    public ResponseEntity<Map<String, Object>> createBusinessHubNode(@RequestBody BusinessHub request) {
+    @PostMapping("/create/node/region-bhub-serving-center")
+    public ResponseEntity<Map<String, Object>> createRegionBhubServiceCenterNode(@RequestBody RegionBhubServiceCenter request) {
         try {
-            Map<String, Object> result = nodeService.createBusinessHubNode(request);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @PostMapping("/create/substation")
-    public ResponseEntity<Map<String, Object>> createSubStationNode(@RequestBody SubStation request) {
-        try {
-            Map<String, Object> result = nodeService.createSubStationNode(request);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @PostMapping("/create/feeder-line")
-    public ResponseEntity<Map<String, Object>> createFeederLineNode(@RequestBody FeederLine request) {
-        try {
-            Map<String, Object> result = nodeService.createFeederLineNode(request);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @PostMapping("/create/region")
-    public ResponseEntity<Map<String, Object>> createRegionNode(@RequestBody Region request) {
-        try {
-            Map<String, Object> result = nodeService.createRegionNode(request);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @PostMapping("/create/transformer")
-    public ResponseEntity<Map<String, Object>> createTransformerNode(@RequestBody Transformer request) {
-        try {
-            Map<String, Object> result = nodeService.createTransformerNode(request);
+            Map<String, Object> result = nodeService.createRegionBhubServiceCenterNode(request);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
@@ -78,10 +33,10 @@ public class NodeController {
     }
 
 
-    @PostMapping("/update/business-hub")
-    public ResponseEntity<Map<String, Object>> updateBusinessHubNode(@RequestBody BusinessHub request) {
+    @PostMapping("/update/node/region-bhub-service-center")
+    public ResponseEntity<Map<String, Object>> updateRegionBhubServiceCenterNode(@RequestBody RegionBhubServiceCenter request) {
         try {
-            Map<String, Object> result = nodeService.updateBusinessHubNode(request);
+            Map<String, Object> result = nodeService.updateRegionBhubServiceCenterNode(request);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
@@ -89,10 +44,11 @@ public class NodeController {
         }
     }
 
-    @PostMapping("/update/substation")
-    public ResponseEntity<Map<String, Object>> updateSubStationNode(@RequestBody SubStation request) {
+
+    @PostMapping("/create/node/substation-transformer-feeder-line")
+    public ResponseEntity<Map<String, Object>> createSubStationFeederLineTransformerNode(@RequestBody SubStationTransformerFeederLine request) {
         try {
-            Map<String, Object> result = nodeService.updateSubStationNode(request);
+            Map<String, Object> result = nodeService.createSubStationFeederLineTransformerNode(request);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
@@ -100,32 +56,11 @@ public class NodeController {
         }
     }
 
-    @PostMapping("/update/feeder-line")
-    public ResponseEntity<Map<String, Object>> updateFeederLineNode(@RequestBody FeederLine request) {
+
+    @PostMapping("/update/node/substation-transformer-feeder-line")
+    public ResponseEntity<Map<String, Object>> updateSubStationFeederLineTransformerNode(@RequestBody SubStationTransformerFeederLine request) {
         try {
-            Map<String, Object> result = nodeService.updateFeederLineNode(request);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @PostMapping("/update/region")
-    public ResponseEntity<Map<String, Object>> updateRegionNode(@RequestBody Region request) {
-        try {
-            Map<String, Object> result = nodeService.updateRegionNode(request);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @PostMapping("/update/transformer")
-    public ResponseEntity<Map<String, Object>> updateTransformerNode(@RequestBody Transformer request) {
-        try {
-            Map<String, Object> result = nodeService.updateTransformerNode(request);
+            Map<String, Object> result = nodeService.updateSubStationFeederLineTransformerNode(request);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {

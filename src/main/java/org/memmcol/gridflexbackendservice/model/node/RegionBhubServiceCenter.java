@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Data
-public class Region implements Serializable {
+public class RegionBhubServiceCenter implements Serializable {
     static final long serialVersionUID = 1L;
     @Id
     private UUID id;
@@ -22,13 +22,14 @@ public class Region implements Serializable {
     private String email;
     private String contactPerson;
     private String address;
+    private String type;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;
 
-    public Region() {
+    public RegionBhubServiceCenter() {
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -127,5 +128,13 @@ public class Region implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

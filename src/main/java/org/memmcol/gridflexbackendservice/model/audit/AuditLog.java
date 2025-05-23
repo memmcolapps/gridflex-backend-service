@@ -38,15 +38,9 @@ public class AuditLog implements Serializable {
 
     private Tariff createdTariff;
 
-    private BusinessHub businessHub;
+    private SubStationTransformerFeederLine subStationTransformerFeederLine;
 
-    private SubStation subStation;
-
-    private FeederLine feederLine;
-
-    private Transformer transformer;
-
-    private Region region;
+    private RegionBhubServiceCenter regionBhubServiceCenter;
 
     private Meter createdMeter;
 
@@ -137,44 +131,20 @@ public class AuditLog implements Serializable {
         this.createdCustomer = createdCustomer;
     }
 
-    public BusinessHub getBusinessHub() {
-        return businessHub;
+    public SubStationTransformerFeederLine getSubStationTransformerFeederLine() {
+        return subStationTransformerFeederLine;
     }
 
-    public void setBusinessHub(BusinessHub businessHub) {
-        this.businessHub = businessHub;
+    public void setSubStationTransformerFeederLine(SubStationTransformerFeederLine subStationTransformerFeederLine) {
+        this.subStationTransformerFeederLine = subStationTransformerFeederLine;
     }
 
-    public SubStation getSubStation() {
-        return subStation;
+    public RegionBhubServiceCenter getRegionBhubServiceCenter() {
+        return regionBhubServiceCenter;
     }
 
-    public void setSubStation(SubStation subStation) {
-        this.subStation = subStation;
-    }
-
-    public Region getRegion() {
-        return region;
-    }
-
-    public void setRegion(Region region) {
-        this.region = region;
-    }
-
-    public Transformer getTransformer() {
-        return transformer;
-    }
-
-    public void setTransformer(Transformer transformer) {
-        this.transformer = transformer;
-    }
-
-    public FeederLine getFeederLine() {
-        return feederLine;
-    }
-
-    public void setFeederLine(FeederLine feederLine) {
-        this.feederLine = feederLine;
+    public void setRegionBhubServiceCenter(RegionBhubServiceCenter regionBhubServiceCenter) {
+        this.regionBhubServiceCenter = regionBhubServiceCenter;
     }
 
     public Meter getCreatedMeter() {
@@ -184,4 +154,6 @@ public class AuditLog implements Serializable {
     public void setCreatedMeter(Meter createdMeter) {
         this.createdMeter = createdMeter;
     }
+
+
 }

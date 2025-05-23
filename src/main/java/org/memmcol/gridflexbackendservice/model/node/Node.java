@@ -3,6 +3,8 @@ package org.memmcol.gridflexbackendservice.model.node;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,6 +17,7 @@ public class Node implements Serializable {
     private String name;
     private UUID parentId;
     private NodeInfo nodeInfo;
+    private List<Node> nodesTree = new ArrayList<>();
 
     public UUID getId() {
         return id;
@@ -54,5 +57,13 @@ public class Node implements Serializable {
 
     public void setNodeInfo(NodeInfo nodeInfo) {
         this.nodeInfo = nodeInfo;
+    }
+
+    public List<Node> getNodesTree() {
+        return nodesTree;
+    }
+
+    public void setNodesTree(List<Node> nodesTree) {
+        this.nodesTree = nodesTree;
     }
 }
