@@ -93,11 +93,11 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("businesshub")){
+            } else if(request.getType().equalsIgnoreCase("business hub")){
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("servicecenter")){
+            } else if(request.getType().equalsIgnoreCase("service center")){
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
@@ -118,7 +118,7 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
-            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("servicecenter") ? "servicecenter" : "businesshub");
+            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub");
             auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
             auditRepository.save(auditNotificationDTO);
 
@@ -168,7 +168,7 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.createSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-            } else if(request.getType().equalsIgnoreCase("feederline")){
+            } else if(request.getType().equalsIgnoreCase("feeder line")){
                 nodeMapper.createSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
@@ -193,7 +193,7 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
-            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feederline") ? "feederline" : "substation");
+            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feeder line") ? "feeder line" : "substation");
             auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
             auditRepository.save(auditNotificationDTO);
 
@@ -228,10 +228,10 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
+            Node nd = nodeMapper.isNodeExist(request.getNodeId());
 
             if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
+                throw new GlobalExceptionHandler.NotFoundException("Node does not exist");
             }
             nodeMapper.updateNode(node);
 
@@ -244,11 +244,11 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("businesshub")){
+            } else if(request.getType().equalsIgnoreCase("business hub")){
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("servicecenter")){
+            } else if(request.getType().equalsIgnoreCase("service center")){
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
@@ -269,11 +269,11 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
-            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("servicecenter") ? "servicecenter" : "businesshub");
+            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub");
             auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getUpdateDesc(), "");
 //            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -304,7 +304,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
+            Node nd = nodeMapper.isNodeExist(request.getNodeId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
@@ -320,7 +320,7 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.updateSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-            } else if(request.getType().equalsIgnoreCase("feederline")){
+            } else if(request.getType().equalsIgnoreCase("feeder line")){
                 nodeMapper.updateSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
@@ -345,11 +345,11 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
-            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feederline") ? "feederline" : "substation");
+            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feeder line") ? "feeder line" : "substation");
             auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getUpdateDesc(), "");
 //            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);

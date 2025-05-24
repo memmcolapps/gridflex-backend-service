@@ -184,7 +184,7 @@ public interface AuthMapper {
         UNION
         SELECT
             id, NULL AS region_id, 
-            node_id, name, type, serial_no, phone_number, email, contact_person,
+            node_id, name, serial_no, phone_number, email, contact_person,
             address, status, voltage, latitude, longitude, description, created_at, updated_at, type
         FROM substation_trans_feeder_lines
         WHERE node_id = #{nodeId}

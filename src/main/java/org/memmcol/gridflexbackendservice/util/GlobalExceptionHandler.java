@@ -189,7 +189,7 @@ public class GlobalExceptionHandler {
 		ex.printStackTrace();
 		String msg = "Not found";
 		errorMessage.put("responsecode", "060");
-		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsedesc", ex.getMessage().contains("Node") ? ex.getMessage() : msg);
 		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}

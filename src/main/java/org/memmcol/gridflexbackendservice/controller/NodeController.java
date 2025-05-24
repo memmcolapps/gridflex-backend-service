@@ -21,7 +21,7 @@ public class NodeController {
     @Autowired private GlobalExceptionHandler exception;
 
 
-    @PostMapping("/create/node/region-bhub-serving-center")
+    @PostMapping("/create/node/region-bhub-service-center")
     public ResponseEntity<Map<String, Object>> createRegionBhubServiceCenterNode(@RequestBody RegionBhubServiceCenter request) {
         try {
             Map<String, Object> result = nodeService.createRegionBhubServiceCenterNode(request);
@@ -33,7 +33,7 @@ public class NodeController {
     }
 
 
-    @PostMapping("/update/node/region-bhub-service-center")
+    @PutMapping("/update/node/region-bhub-service-center")
     public ResponseEntity<Map<String, Object>> updateRegionBhubServiceCenterNode(@RequestBody RegionBhubServiceCenter request) {
         try {
             Map<String, Object> result = nodeService.updateRegionBhubServiceCenterNode(request);
@@ -57,7 +57,7 @@ public class NodeController {
     }
 
 
-    @PostMapping("/update/node/substation-transformer-feeder-line")
+    @PutMapping("/update/node/substation-transformer-feeder-line")
     public ResponseEntity<Map<String, Object>> updateSubStationFeederLineTransformerNode(@RequestBody SubStationTransformerFeederLine request) {
         try {
             Map<String, Object> result = nodeService.updateSubStationFeederLineTransformerNode(request);

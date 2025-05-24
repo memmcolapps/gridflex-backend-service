@@ -42,10 +42,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			throw new UsernameNotFoundException("User " + status.getNotFoundDesc());
 		}
 
-		System.out.println("User " + userDTO.getEmail());
-		System.out.println("User " + userDTO.getGroups().getPermissions().getOrgId());
-//		UserModel user = userDTO;
-
 		if (!userDTO.getStatus()) {
 			log.info("User is blocked: {}", userDTO.getStatus());
 			throw new LockedException("User is disabled");
