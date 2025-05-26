@@ -45,9 +45,9 @@ public class MeterController {
     }
 
     @GetMapping("/all-meters")
-    public ResponseEntity<?> getAllMeters(@RequestParam(required = true) UUID orgId) {
+    public ResponseEntity<?> getAllMeters() {
         try {
-            Map<String, Object> result = service.getAllMeters(orgId);
+            Map<String, Object> result = service.getAllMeters();
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -55,45 +55,9 @@ public class MeterController {
     }
 
     @GetMapping("/single-meters")
-    public ResponseEntity<?> getAllMeters(@RequestParam(required = true) UUID orgId, @RequestParam(required = true) UUID meterId) {
+    public ResponseEntity<?> getAllMeters(@RequestParam(required = true) UUID meterId) {
         try {
-            Map<String, Object> result = service.getSingleMeter(orgId, meterId);
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-
-    @GetMapping("/all-feeder-lines")
-    public ResponseEntity<Map<String, Object>> fetchAllFeederLines(@RequestParam(required = true) UUID orgId) {
-
-        try {
-            Map<String, Object> result =  service.fetchAllFeederLines(orgId);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-    @GetMapping("/all-transformers")
-    public ResponseEntity<Map<String, Object>> fetchAllTransformers(@RequestParam(required = true) UUID orgId) {
-
-        try {
-            Map<String, Object> result =  service.fetchAllTransformers(orgId);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @GetMapping("/all-substations")
-    public ResponseEntity<Map<String, Object>> fetchAllSubstations(@RequestParam(required = true) UUID orgId) {
-
-        try {
-            Map<String, Object> result =  service.fetchAllSubstations(orgId);
-
+            Map<String, Object> result = service.getSingleMeter(meterId);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -102,20 +66,31 @@ public class MeterController {
 
     @PatchMapping("/change-status")
     public ResponseEntity<Map<String, Object>> changeStatus(
-            @RequestParam(required = true) UUID orgId,
             @RequestParam(required = true) UUID meterId,
             @RequestParam(required = true) Boolean status,
             @RequestParam (value = "approveStatus", required = false) String approveStatus
             ) {
 
         try {
-            Map<String, Object> result =  service.changeStatus(orgId, meterId, status, approveStatus);
+            Map<String, Object> result =  service.changeStatus(meterId, status, approveStatus);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
         } catch (MissingServletRequestParameterException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @GetMapping("/substations-transformers-feeder-line")
+    public ResponseEntity<Map<String, Object>> fetchAllSubstationsTransformersFeederLine() {
+
+        try {
+            Map<String, Object> result =  service.fetchAllSubstationsTransformersFeederLine();
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
         }
     }
 

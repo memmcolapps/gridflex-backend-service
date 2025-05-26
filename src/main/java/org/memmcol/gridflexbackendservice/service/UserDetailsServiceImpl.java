@@ -123,6 +123,20 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 				permissionsJson
 		);
 	}
+
+//	@Scheduled(fixedRate = 5 * 60 * 1000) // every 5 minutes
+//	public void refreshCache() {
+//		List<User> users = userMapper.findAllUsers();
+//
+//		IMap<Long, User> userCache = hazelcastInstance.getMap("yourCacheName");
+//		userCache.clear(); // optional: clear previous cache
+//
+//		for (User user : users) {
+//			userCache.put(user.getId(), user);
+//		}
+//
+//		System.out.println("Cache refreshed with latest data at: " + LocalDateTime.now());
+//	}
 }
 
 

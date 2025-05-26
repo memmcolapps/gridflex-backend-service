@@ -3,16 +3,12 @@ package org.memmcol.gridflexbackendservice.service.meter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
-import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
-import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
-//import org.memmcol.gridflexbackendservice.model.node.FeederLine;
-import org.memmcol.gridflexbackendservice.model.node.Node;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -32,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -76,9 +73,12 @@ public class MeterServiceImpl implements MeterService {
         try {
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
+            if(request.getManufacturer().isEmpty() || request.getManufacturer() == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Manufacturer not found");
             }
+            request.setApprovedStatus("pending");
+
+            request.setOrgId(um.getOrgId());
 
             mapperMapper.insertMeter(request);
 
@@ -142,24 +142,24 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
-    public Map<String, Object> getAllMeters(UUID orgId) {
+    public Map<String, Object> getAllMeters() {
         return Map.of();
     }
 
     @Override
-    public Map<String, Object> getSingleMeter(UUID orgId, UUID meterId) {
+    public Map<String, Object> getSingleMeter(UUID meterId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
-            handleUserValidation();
+            UserModel um = handleUserValidation();
 
-            Object cachedUser = meterCache.get(meterId.toString()+"_"+orgId);
+            Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
 
             if (cachedUser != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + meterName + " " + status.getDesc(), cachedUser);
             }
 
-            Meter meter = meterMapper.getMeter(orgId, meterId);
+            Meter meter = meterMapper.getMeter(um.getOrgId(), meterId);
 
             handleAddCache(meter);
 
@@ -174,68 +174,9 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    @Override
-    public Map<String, Object> fetchAllFeederLines(UUID orgId) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        try {
-
-            handleUserValidation();
-
-            List<String> feederLine = meterMapper.getAllFeederLines(orgId);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Feeder lines "+ status.getDesc(), feederLine);
-        } catch (Exception exception) {
-            log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetch transformer");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
 
     @Override
-    public Map<String, Object> fetchAllTransformers(UUID orgId) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        try {
-
-            handleUserValidation();
-
-            List<String> transformer = meterMapper.getAllTransformers(orgId);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Transformer s"+ status.getDesc(), transformer);
-        } catch (Exception exception) {
-            log.error("Error occurred while fetching transformers [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetch transformers");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> fetchAllSubstations(UUID orgId) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        try {
-
-            handleUserValidation();
-
-            List<String> substations = meterMapper.getAllSubstations(orgId);
-
-            return ResponseMap.response(status.getSuccessCode(),  "Substations "+ status.getDesc(), substations);
-        } catch (Exception exception) {
-            log.error("Error occurred while fetching substations [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching substations");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
-
-    @Override
-    public Map<String, Object> changeStatus(UUID orgId, UUID meterId, Boolean state, String approveStatus) throws MissingServletRequestParameterException {
+    public Map<String, Object> changeStatus(UUID meterId, Boolean state, String approveStatus) throws MissingServletRequestParameterException {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         int result;
@@ -248,7 +189,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new LockedException("User is disabled");
             }
 
-            Meter meterById = meterMapper.getMeter(orgId, meterId);
+            Meter meterById = meterMapper.getMeter(um.getOrgId(), meterId);
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
@@ -258,13 +199,13 @@ public class MeterServiceImpl implements MeterService {
             }
 
             if(approveStatus != null && (approveStatus.equalsIgnoreCase("pending") || approveStatus.equalsIgnoreCase("approved") || approveStatus.equalsIgnoreCase("rejected"))) {
-                result = meterMapper.approveMeter(meterId, approveStatus, orgId);
+                result = meterMapper.approveMeter(meterId, approveStatus, um.getOrgId());
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + " "+ status.getUpdateFailureDesc());
                 }
                 desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + meterById.getMeterNumber() + "]";
             } else if (state != null) {
-                result = meterMapper.disableMeter(meterId, state, orgId);
+                result = meterMapper.disableMeter(meterId, state, um.getOrgId());
                 if (result == 0) {
                     return ResponseMap.response(status.getUpdateCode(), meterName +" Activated or Deactivated "+ status.getUpdateFailureDesc(), "");
                 }
@@ -274,7 +215,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
 
-            Meter meter = meterMapper.findById(meterId, orgId);
+            Meter meter = meterMapper.findById(meterId, um.getOrgId());
 
             handleAddCache(meter);
             auditNotificationDTO.setCreator(um);
@@ -294,6 +235,33 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Override
+    public Map<String, Object> fetchAllSubstationsTransformersFeederLine() {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+
+            UserModel um = handleUserValidation();
+
+            List<SubStationTransformerFeederLine> subStationTransformerFeederLine = meterMapper.getSubStationTransformerFeederLine(um.getOrgId());
+            List<Manufacturer> manufacturers = meterMapper.getManufacturers(um.getOrgId());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("subStationTransformerFeederLines", subStationTransformerFeederLine);
+            response.put("manufacturers", manufacturers);
+
+//            handleAddCache(meter);
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), response);
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to fetch transformer");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+    }
+
 
     UserModel handleUserValidation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -305,6 +273,10 @@ public class MeterServiceImpl implements MeterService {
         }
 
         UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            throw new LockedException("User is disabled");
+        }
 
         return isOperatorExist;
     }

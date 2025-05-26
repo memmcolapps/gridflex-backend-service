@@ -1,7 +1,9 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,8 +12,11 @@ import java.util.UUID;
 public interface MeterMapper {
 
     @Insert("INSERT INTO meters " +
-            "(org_id, meter_number, sim_number, substation, feeder_line, transformer, meter_category, meter_class, manufacturer, credit_type, approve_status, status, cid, ct__ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_deno, multiplier, meter_rating, initial_reading, dial, latitude, longitude, created_at, updated_at) " +
-            "VALUES (orgId, meterNumber, simNumber, substation, feederLine, transformer, meterCategory, meterClass, manufacturer, creditType, 'pending', 'in-Stock', customerId, ctRatioNum, ctRatioDeno, voltRatioNum, voltRatioDeno, multiplier, meterRating, initialReading, dial, latitude, longitude, createdAt, updatedAt)")
+            "(org_id, meter_number, sim_number, substation, feeder_line, transformer, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
+            "ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, latitude, longitude, created_at, updated_at) " +
+            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{substation}, #{feederLine}, #{transformer}, #{meterCategory}, #{meterClass}, #{manufacturer}, #{meterType}, " +
+            "#{approvedStatus}, false, #{customerId}, #{ctRatioNum}, #{ctRatioDenom}, #{voltRatioNum}, #{voltRatioDenom}, #{multiplier}, #{meterRating}, #{initialReading}, " +
+            "#{dial}, #{latitude}, #{longitude}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertMeter(Meter request);
 
@@ -43,4 +48,28 @@ public interface MeterMapper {
 
     @Update("UPDATE meters SET status = #{state} WHERE org_id = #{orgId} AND id = #{meterId}")
     int disableMeter(UUID meterId, Boolean state, UUID orgId);
+
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE org_id = #{orgId}")
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "serialNo", column = "serial_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    List<SubStationTransformerFeederLine>  getSubStationTransformerFeederLine(UUID orgId);
+
+    @Select("SELECT * FROM manufacturers WHERE org_id = #{orgId}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "manufacturerId", column = "manufacturer_id"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "phoneNo", column = "phone_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    List<Manufacturer> getManufacturers(UUID orgId);
 }

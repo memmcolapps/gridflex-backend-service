@@ -85,7 +85,7 @@ public class UserServiceImpl implements  UserService {
             // check if operator exist
             UserModel isOperator = userMapper.findByEmail(operator.getEmail(), um.getOrgId());
             if (isOperator != null){
-                throw new LockedException(userName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getExistDesc());
             }
 
             // check if groupId exist
@@ -93,11 +93,6 @@ public class UserServiceImpl implements  UserService {
             if (isGroupId == null){
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
-
-//            String isOrgId = userMapper.checkOrgId(request.getUser().getOrgId());
-//            if (isOrgId == null){
-//                throw new GlobalExceptionHandler.NotFoundException("Organization " + status.getNotFoundDesc());
-//            }
 
             operator.setOrgId(um.getOrgId());
 

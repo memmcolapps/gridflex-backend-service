@@ -11,15 +11,11 @@ public interface MeterService {
 
     Map<String, Object> updateMeter(Meter request);
 
-    Map<String, Object> getAllMeters(UUID orgId);
+    Map<String, Object> getAllMeters();
 
-    Map<String, Object> getSingleMeter(UUID orgId, UUID meterId);
+    Map<String, Object> getSingleMeter(UUID meterId);
 
-    Map<String, Object> fetchAllFeederLines(UUID orgId);
+    Map<String, Object> changeStatus(UUID meterId, Boolean state, String approveStatus) throws MissingServletRequestParameterException;
 
-    Map<String, Object> fetchAllTransformers(UUID orgId);
-
-    Map<String, Object> fetchAllSubstations(UUID orgId);
-
-    Map<String, Object> changeStatus(UUID orgId, UUID meterId, Boolean state, String approveStatus) throws MissingServletRequestParameterException;
+    Map<String, Object> fetchAllSubstationsTransformersFeederLine();
 }

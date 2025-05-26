@@ -22,14 +22,14 @@ public class Meter implements Serializable {
     private String meterCategory;
     private String meterClass;
     private String manufacturer;
-    private String creditType;
-    private String approveStatus;
+    private String meterType;
+    private String approvedStatus;
     private Boolean status;
     private String customerId;
     private Long ctRatioNum;
-    private Long ctRatioDeno;
+    private Long ctRatioDenom;
     private Long voltRatioNum;
-    private Long voltRatioDeno;
+    private Long voltRatioDenom;
     private Long multiplier;
     private Long meterRating;
     private Long initialReading;
@@ -129,37 +129,20 @@ public class Meter implements Serializable {
         this.manufacturer = manufacturer;
     }
 
-    public String getCreditType() {
-        return creditType;
+    public String getMeterType() {
+        return meterType;
     }
 
-    public void setCreditType(String creditType) {
-        this.creditType = creditType;
+    public void setMeterType(String meterType) {
+        this.meterType = meterType;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
+    public String getApprovedStatus() {
+        return approvedStatus;
     }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-
-    public String getApproveStatus() {
-        return approveStatus;
-    }
-
-    public void setApproveStatus(String approveStatus) {
-        this.approveStatus = approveStatus;
+    public void setApprovedStatus(String approvedStatus) {
+        this.approvedStatus = approvedStatus;
     }
 
     public Boolean getStatus() {
@@ -186,14 +169,6 @@ public class Meter implements Serializable {
         this.ctRatioNum = ctRatioNum;
     }
 
-    public Long getCtRatioDeno() {
-        return ctRatioDeno;
-    }
-
-    public void setCtRatioDeno(Long ctRatioDeno) {
-        this.ctRatioDeno = ctRatioDeno;
-    }
-
     public Long getVoltRatioNum() {
         return voltRatioNum;
     }
@@ -202,12 +177,20 @@ public class Meter implements Serializable {
         this.voltRatioNum = voltRatioNum;
     }
 
-    public Long getVoltRatioDeno() {
-        return voltRatioDeno;
+    public Long getCtRatioDenom() {
+        return ctRatioDenom;
     }
 
-    public void setVoltRatioDeno(Long voltRatioDeno) {
-        this.voltRatioDeno = voltRatioDeno;
+    public void setCtRatioDenom(Long ctRatioDenom) {
+        this.ctRatioDenom = ctRatioDenom;
+    }
+
+    public Long getVoltRatioDenom() {
+        return voltRatioDenom;
+    }
+
+    public void setVoltRatioDenom(Long voltRatioDenom) {
+        this.voltRatioDenom = voltRatioDenom;
     }
 
     public Long getMultiplier() {
@@ -264,5 +247,21 @@ public class Meter implements Serializable {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
