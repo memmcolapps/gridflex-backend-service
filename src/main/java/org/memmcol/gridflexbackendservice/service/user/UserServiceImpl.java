@@ -254,7 +254,7 @@ public class UserServiceImpl implements  UserService {
             }
 
             if (dateAdded != null && !dateAdded.isEmpty()) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 LocalDate date = LocalDate.parse(dateAdded, formatter);
                 userStream = userStream.filter(u -> {
                     if (u.getCreatedAt() == null) return false;

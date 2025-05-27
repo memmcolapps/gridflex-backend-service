@@ -14,7 +14,7 @@ public interface CustomerService {
 
     Map<String, Object> updateCustomer(Customer request);
 
-    Map<String, Object> allCustomers(int page, int size, String firstname, String lastname, String meterNumber, String accountNumber, Boolean meterAssigned);
+    Map<String, Object> allCustomers(int page, int size, String firstname, String lastname, String meterNumber, String accountNumber, Boolean meterAssigned, String customerId);
 
     Map<String, Object> singleCustomer(UUID customerId);
 

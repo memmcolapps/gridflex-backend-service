@@ -169,7 +169,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Map<String, Object> allCustomers(
             int page, int size, String firstname, String lastname, String meterNumber,
-            String customerId, Boolean meterAssigned) {
+            String accountNumber, Boolean meterAssigned, String customerId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 

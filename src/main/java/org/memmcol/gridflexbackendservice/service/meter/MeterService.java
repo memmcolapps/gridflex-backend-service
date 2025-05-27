@@ -11,7 +11,7 @@ public interface MeterService {
 
     Map<String, Object> updateMeter(Meter request);
 
-    Map<String, Object> getAllMeters();
+    Map<String, Object> getAllMeters(int page, int size, String meterNumber, String simNo, String manufacturer, String meterClass, String category, String approvedStatus, Boolean status, String createdAt);
 
     Map<String, Object> getSingleMeter(UUID meterId);
 

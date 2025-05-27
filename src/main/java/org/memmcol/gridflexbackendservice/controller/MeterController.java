@@ -45,16 +45,27 @@ public class MeterController {
     }
 
     @GetMapping("/all-meters")
-    public ResponseEntity<?> getAllMeters() {
+    public ResponseEntity<?> getAllMeters(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
+            @RequestParam(value = "simNo", required = false, defaultValue = "") String simNo,
+            @RequestParam(value = "manufacturer", required = false, defaultValue = "") String manufacturer,
+            @RequestParam(value = "meterClass", required = false, defaultValue = "") String meterClass,
+            @RequestParam(value = "category", required = false, defaultValue = "") String category,
+            @RequestParam(value = "approvedStatus", required = false, defaultValue = "") String approvedStatus,
+            @RequestParam(value = "status", required = false, defaultValue = "") Boolean status,
+            @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt
+    ) {
         try {
-            Map<String, Object> result = service.getAllMeters();
+            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterClass, category, approvedStatus, status, createdAt);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
         }
     }
 
-    @GetMapping("/single-meters")
+    @GetMapping("/single-meter")
     public ResponseEntity<?> getAllMeters(@RequestParam(required = true) UUID meterId) {
         try {
             Map<String, Object> result = service.getSingleMeter(meterId);
@@ -93,10 +104,6 @@ public class MeterController {
             return handleException(e);
         }
     }
-
-
-
-
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);

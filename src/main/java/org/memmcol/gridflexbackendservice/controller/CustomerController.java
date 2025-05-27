@@ -50,10 +50,11 @@ public class CustomerController {
             @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
-            @RequestParam(value = "meterAssigned", required = false, defaultValue = "") Boolean meterAssigned
+            @RequestParam(value = "meterAssigned", required = false, defaultValue = "") Boolean meterAssigned,
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, meterNumber, accountNumber, meterAssigned);
+            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, meterNumber, accountNumber, meterAssigned, customerId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

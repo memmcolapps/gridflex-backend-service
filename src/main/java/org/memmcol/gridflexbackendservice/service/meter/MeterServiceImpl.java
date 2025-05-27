@@ -8,6 +8,7 @@ import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -28,10 +29,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Stream;
 
 @Transactional
 @Service
@@ -111,25 +113,21 @@ public class MeterServiceImpl implements MeterService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
+            request.setOrgId(um.getOrgId());
             mapperMapper.updateMeter(request);
 
 //            UUID meterId = request.getId();
 //            System.out.println("id: " + meterId);
 
-            Meter meter = meterMapper.findById(request.getId(), request.getOrgId());
-            handleAddCache(meter);
+            Meter meter = meterMapper.findById(request.getId(), um.getOrgId());
+//            handleAddCache(meter);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Updated Meter [" + meter.getMeterNumber() + "]");
             auditNotificationDTO.setType("meter");
             auditNotificationDTO.setCreatedMeter(meter);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
             exception.printStackTrace();
@@ -142,8 +140,116 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
-    public Map<String, Object> getAllMeters() {
-        return Map.of();
+    public Map<String, Object> getAllMeters(
+            int page, int size, String meterNumber, String simNo, String manufacturer,
+            String meterClass, String category, String approvedStatus, Boolean state, String createdAt) {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+
+            UserModel um = handleUserValidation();
+
+            // Build a unique cache key
+            StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
+            if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
+            if (simNo != null && !simNo.isEmpty()) cacheKeyBuilder.append("_simNo_").append(simNo);
+            if (manufacturer != null && !manufacturer.isEmpty()) cacheKeyBuilder.append("_manufacturer_").append(manufacturer);
+            if (meterClass != null && !meterClass.isEmpty()) cacheKeyBuilder.append("_meterClass_").append(meterClass);
+            if (category != null && !category.isEmpty()) cacheKeyBuilder.append("_category_").append(category);
+            if (approvedStatus != null && !approvedStatus.isEmpty()) cacheKeyBuilder.append("_approvedStatus_").append(approvedStatus);
+            if (createdAt != null && !createdAt.isEmpty()) cacheKeyBuilder.append("_createdAt_").append(createdAt);
+            if (state != null) cacheKeyBuilder.append("_state_").append(state);
+            cacheKeyBuilder.append("_page_").append(page);
+            cacheKeyBuilder.append("_size_").append(size);
+
+            String cacheKey = cacheKeyBuilder.toString();
+
+            // Return from cache if available
+            Object cachedUser = meterCache.get(cacheKey);
+            if (cachedUser != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
+            }
+
+             // Fetch all users
+            List<Meter> meters = meterMapper.getMeters(um.getOrgId());
+
+            // Apply filtering
+            Stream<Meter> meterStream = meters.stream();
+
+            if (meterNumber != null && !meterNumber.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
+            }
+
+            if (simNo != null && !simNo.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getSimNumber() != null && u.getSimNumber().equalsIgnoreCase(simNo));
+            }
+
+            if (manufacturer != null && !manufacturer.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getManufacturer() != null && u.getManufacturer().equalsIgnoreCase(manufacturer));
+            }
+
+
+            if (meterClass != null && !meterClass.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getMeterClass() != null && u.getMeterClass().equalsIgnoreCase(meterClass));
+            }
+
+            if (category != null && !category.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getMeterCategory() != null && u.getMeterCategory().equalsIgnoreCase(category));
+            }
+
+            if (approvedStatus != null && !approvedStatus.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getApprovedStatus() != null && u.getApprovedStatus().equalsIgnoreCase(approvedStatus));
+            }
+
+            if (state != null) {
+                meterStream = meterStream.filter(u -> u.getStatus() != null && u.getStatus());
+            }
+
+            if (createdAt != null && !createdAt.isEmpty()) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDate date = LocalDate.parse(createdAt, formatter);
+                meterStream = meterStream.filter(u -> {
+                    if (u.getCreatedAt() == null) return false;
+                    return !u.getCreatedAt()
+                            .toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                            .isBefore(date);
+                });
+            }
+
+            List<Meter> filteredMeters = meterStream.toList();
+
+            // Pagination logic
+            int totalMeters = filteredMeters.size();
+            List<Meter> paginatedMeters;
+            if (size == 0) {
+                paginatedMeters = filteredMeters; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalMeters);
+                int toIndex = Math.min(fromIndex + size, totalMeters);
+                paginatedMeters = filteredMeters.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedMeters);
+            response.put("totalData", totalMeters);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedMeters.size() / size));
+
+//            userCache.put(cacheKey, response);
+
+            return ResponseMap.response(status.getSuccessCode(), meterName + "s " + status.getDesc(), response);
+
+        } catch (Exception exception) {
+            log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while filtering users");
+            exceptionErrorLogs.setError_message(exception.getMessage());
+            exceptionErrorLogs.setError(exception.toString());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
     }
 
     @Override
@@ -161,7 +267,7 @@ public class MeterServiceImpl implements MeterService {
 
             Meter meter = meterMapper.getMeter(um.getOrgId(), meterId);
 
-            handleAddCache(meter);
+//            handleAddCache(meter);
 
             return ResponseMap.response(status.getSuccessCode(),  meterName + " " + status.getDesc(), meter);
         } catch (Exception exception) {
@@ -184,10 +290,6 @@ public class MeterServiceImpl implements MeterService {
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
 
             Meter meterById = meterMapper.getMeter(um.getOrgId(), meterId);
             if(meterById == null) {
