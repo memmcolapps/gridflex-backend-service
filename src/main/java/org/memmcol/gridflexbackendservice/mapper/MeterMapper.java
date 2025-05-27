@@ -22,6 +22,26 @@ public interface MeterMapper {
     void insertMeter(Meter request);
 
     @Select("SELECT * FROM meters WHERE id = #{meterId} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "feederLine", column = "feeder_line"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "approvedStatus", column = "approve_status"),
+            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
+            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
+            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
+            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+            @Result(property = "meterRating", column = "meter_rating"),
+            @Result(property = "initialReading", column = "initial_reading"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "customer", column = "customer_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId"))
+    })
     Meter findById(UUID meterId, UUID orgId);
 
     @Update("UPDATE meters " +
@@ -65,10 +85,10 @@ public interface MeterMapper {
             @Result(property = "meterAssigned", column = "meter_assigned"),
             @Result(property = "meterNumber", column = "meter_number")
     })
-    Customer getByCustomerId(UUID customerId);
+    Customer getByCustomerId(String customerId);
 
 
-    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId}")
+    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} ORDER BY m.created_at DESC")
     @Results({
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -129,4 +149,26 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Manufacturer> getManufacturers(UUID orgId);
+
+
+    @Select("SELECT * FROM customers WHERE customer_id = #{customerId} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "phoneNumber", column = "phone_number"),
+            @Result(property = "streetName", column = "street_name"),
+            @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterAssigned", column = "meter_assigned"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Customer findByCustomerId(String customerId, UUID orgId);
+
+    @Update("UPDATE meters SET account_number = #{accountNumber}, customer_id = #{customerId} WHERE id = #{meterId}")
+    void assignedMeterToCustomer(String accountNumber, UUID orgId, UUID meterId, String customerId);
+
+    @Update("UPDATE customers SET meter_assigned = #{meterAssigned}, tariff = #{tariff} WHERE id = #{customerId}")
+    void updateCustomer(Boolean meterAssigned, String tariff, UUID customerId);
 }

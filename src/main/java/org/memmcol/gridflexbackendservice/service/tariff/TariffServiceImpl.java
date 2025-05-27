@@ -316,7 +316,7 @@ public class TariffServiceImpl implements TariffService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedTariffs.size() / size));
 
-            tariffCache.put(cacheKey, filteredTariffs);
+            tariffCache.put(cacheKey, response);
             return ResponseMap.response(status.getSuccessCode(),  "Tariffs "+status.getDesc(), response);
 
         } catch (Exception exception) {

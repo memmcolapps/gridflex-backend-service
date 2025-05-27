@@ -62,9 +62,11 @@ public class CustomerController {
     }
 
     @GetMapping("/single-customer")
-    public ResponseEntity<?> singleCustomer(@RequestParam UUID customerId) {
+    public ResponseEntity<?> singleCustomer(
+            @RequestParam(value = "id", required = true) UUID id
+            ) {
         try {
-            Map<String, Object> result = service.singleCustomer(customerId);
+            Map<String, Object> result = service.singleCustomer(id);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

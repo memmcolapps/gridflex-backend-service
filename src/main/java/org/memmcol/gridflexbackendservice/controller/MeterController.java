@@ -1,6 +1,8 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.meter.BulkApproveMeter;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.customer.CustomerService;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
@@ -78,18 +80,27 @@ public class MeterController {
     @PatchMapping("/change-status")
     public ResponseEntity<Map<String, Object>> changeStatus(
             @RequestParam(required = true) UUID meterId,
-            @RequestParam(required = true) Boolean status,
-            @RequestParam (value = "approveStatus", required = false) String approveStatus
+            @RequestParam(value = "status", required = false) Boolean status,
+            @RequestParam (value = "approvedStatus", required = false) String approvedStatus
             ) {
-
         try {
-            Map<String, Object> result =  service.changeStatus(meterId, status, approveStatus);
+            Map<String, Object> result =  service.changeStatus(meterId, status, approvedStatus);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
         } catch (MissingServletRequestParameterException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @PatchMapping("/bulk-approve")
+    public ResponseEntity<?> bulkApproveMeter(@RequestBody BulkApproveMeter request) {
+        try {
+            Map<String, Object> result = service.bulkApproveMeter(request);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
         }
     }
 
@@ -101,6 +112,34 @@ public class MeterController {
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/assign-meter")
+    public ResponseEntity<Map<String, Object>> AssignMeter(
+            @RequestParam UUID cId,
+            @RequestParam UUID meterId,
+            @RequestParam String customerId,
+            @RequestParam String accountNumber,
+            @RequestParam String tariff) {
+        try {
+            Map<String, Object> result =  service.assignMeterToCustomer(accountNumber, tariff, customerId, meterId, cId);
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/single-customer")
+    public ResponseEntity<?> singleCustomer(
+            @RequestParam(value = "customerId", required = true) String customerId
+    ) {
+        try {
+            Map<String, Object> result = service.singleCustomer(customerId);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
     }

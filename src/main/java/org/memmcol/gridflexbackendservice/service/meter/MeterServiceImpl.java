@@ -4,12 +4,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
+import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
+import org.memmcol.gridflexbackendservice.model.meter.BulkApproveMeter;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -51,6 +55,9 @@ public class MeterServiceImpl implements MeterService {
 
     @Autowired
     private MeterMapper mapperMapper;
+
+    @Autowired
+    private TariffMapper tariffMapper;
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
@@ -305,13 +312,13 @@ public class MeterServiceImpl implements MeterService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + " "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + meterById.getMeterNumber() + "]";
+                desc = capitalizeFirstLetter(approveStatus) +" Meter [" + meterById.getMeterNumber() + "]";
             } else if (state != null) {
                 result = meterMapper.disableMeter(meterId, state, um.getOrgId());
                 if (result == 0) {
                     return ResponseMap.response(status.getUpdateCode(), meterName +" Activated or Deactivated "+ status.getUpdateFailureDesc(), "");
                 }
-                desc = state ? "Assigned" : "In-Stock" + " User [" + meterById.getMeterNumber() + "]";
+                desc = state ? "Assigned" : "In-Stock" + " Meter [" + meterById.getMeterNumber() + "]";
             } else {
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", "approveStatus or status");
             }
@@ -319,14 +326,18 @@ public class MeterServiceImpl implements MeterService {
 
             Meter meter = meterMapper.findById(meterId, um.getOrgId());
 
-            handleAddCache(meter);
+//            handleAddCache(meter);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
 //            auditNotificationDTO.setReason(reason);
             auditNotificationDTO.setType("meter");
             auditNotificationDTO.setCreatedMeter(meter);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
+            if(state != null) {
+                return ResponseMap.response(status.getSuccessCode(), meter.getMeterNumber() + " Meter " + (meter.getStatus() ? "Assigned Successfully" : "In-Stock Successfully"), "");
+            } else {
+                return ResponseMap.response(status.getSuccessCode(), meter.getMeterNumber() + " Meter " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
+            }
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -357,6 +368,117 @@ public class MeterServiceImpl implements MeterService {
         } catch (Exception exception) {
             log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetch transformer");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> bulkApproveMeter(BulkApproveMeter request) {
+        AuditLog auditNotificationDTO = new AuditLog();
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+            UserModel um = handleUserValidation();
+
+            String s = capitalizeFirstLetter(request.getApproveStatus());
+            if (!"Approved".equalsIgnoreCase(s)) {
+                throw new GlobalExceptionHandler.NotFoundException(request.getApproveStatus() + " value not accepted, try [approved]");
+            }
+
+            for(UUID id : request.getMeterIds()) {
+                meterMapper.approveMeter(id, s, um.getOrgId());
+
+                Meter meter = meterMapper.getMeter(um.getOrgId(), id);
+                if(meter == null) {
+                    String desc = s+ "Meter [" + id + "] does not exist ";
+                    auditNotificationDTO.setCreator(um);
+                    auditNotificationDTO.setDescription(desc);
+                    auditNotificationDTO.setType("meter");
+                    auditNotificationDTO.setCreatedMeter(null);
+                    auditRepository.save(auditNotificationDTO);
+                    continue;
+                }
+//                handleAddCache(tariff);
+                String desc = s + " Meter [" + meter.getMeterNumber() + "]";
+                um.setPassword("");
+                auditNotificationDTO.setCreator(um);
+                auditNotificationDTO.setDescription(desc);
+                auditNotificationDTO.setType("meter");
+                auditNotificationDTO.setCreatedMeter(meter);
+                auditRepository.save(auditNotificationDTO);
+            }
+            return ResponseMap.response(status.getSuccessCode(), meterName + " " + s +" Successfully", "");
+
+        } catch (Exception exception) {
+            log.error("Error occurred while bulk approving meter(s): {}", exception.getMessage(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to approving meter");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+
+    }
+
+    @Override
+    public Map<String, Object> singleCustomer(String customerId) {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+
+            UserModel um = handleUserValidation();
+
+//            Object cachedUser = customerCache.get(id.toString()+"_"+um.getOrgId());
+//
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + customerName + " " + status.getDesc(), cachedUser);
+//            }
+            // check if customer exist
+            Customer isCustomer = meterMapper.findByCustomerId(customerId, um.getOrgId());
+            if (isCustomer == null){
+                throw new GlobalExceptionHandler.NotFoundException("Customer " + status.getNotFoundDesc());
+            }
+
+            List<Tariff> allTariffs = tariffMapper.GetTariffs(um.getOrgId());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer", isCustomer);
+            response.put("tariffs", allTariffs);
+
+//            handleAddCache(isCustomer);
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), response);
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching customer [ACTION]: {}", exception.getMessage(), exception);
+            exception.printStackTrace();
+            exceptionErrorLogs.setDescription("Error occurred while trying to fetching customer");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> assignMeterToCustomer(String accountNumber, String tariff, String customerId, UUID meterId, UUID cId) {
+        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        try {
+
+            UserModel um = handleUserValidation();
+
+            meterMapper.assignedMeterToCustomer(accountNumber, um.getOrgId(), meterId, customerId);
+
+            Boolean meterAssigned = true;
+            meterMapper.updateCustomer(meterAssigned, tariff, cId);
+
+//            handleAddCache(isCustomer);
+
+            return ResponseMap.response(status.getSuccessCode(), "Meter Assigned Successfully", "");
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching customer [ACTION]: {}", exception.getMessage(), exception);
+            exception.printStackTrace();
+            exceptionErrorLogs.setDescription("Error occurred while trying to fetching customer");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);

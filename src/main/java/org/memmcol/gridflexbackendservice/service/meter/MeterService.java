@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.meter;
 
+import org.memmcol.gridflexbackendservice.model.meter.BulkApproveMeter;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
@@ -15,7 +16,13 @@ public interface MeterService {
 
     Map<String, Object> getSingleMeter(UUID meterId);
 
-    Map<String, Object> changeStatus(UUID meterId, Boolean state, String approveStatus) throws MissingServletRequestParameterException;
+    Map<String, Object> changeStatus(UUID meterId, Boolean state, String approvedStatus) throws MissingServletRequestParameterException;
 
     Map<String, Object> fetchAllSubstationsTransformersFeederLine();
+
+    Map<String, Object> bulkApproveMeter(BulkApproveMeter request);
+
+    Map<String, Object> singleCustomer(String customerId);
+
+    Map<String, Object> assignMeterToCustomer(String accountNumber, String tariff, String customerId, UUID meterId, UUID cId);
 }

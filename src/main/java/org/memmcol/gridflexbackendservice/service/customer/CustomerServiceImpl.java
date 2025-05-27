@@ -262,7 +262,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Map<String, Object> singleCustomer(UUID customerId) {
+    public Map<String, Object> singleCustomer(UUID id) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -272,15 +272,15 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new LockedException("User is disabled");
             }
 
-            Object cachedUser = customerCache.get(customerId.toString()+"_"+um.getOrgId());
+            Object cachedUser = customerCache.get(id.toString()+"_"+um.getOrgId());
 
             if (cachedUser != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + customerName + " " + status.getDesc(), cachedUser);
             }
             // check if customer exist
-            Customer isCustomer = customerMapper.findById(customerId, um.getOrgId());
+            Customer isCustomer = customerMapper.findById(id, um.getOrgId());
             if (isCustomer == null){
-                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
             }
 
             handleAddCache(isCustomer);

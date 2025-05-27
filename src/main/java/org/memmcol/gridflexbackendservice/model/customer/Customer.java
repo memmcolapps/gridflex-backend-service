@@ -3,9 +3,11 @@ package org.memmcol.gridflexbackendservice.model.customer;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -28,6 +30,7 @@ public class Customer implements Serializable {
     private Boolean status;
     private Boolean meterAssigned;
     private String meterNumber;
+    private List<Meter> meter;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -174,5 +177,13 @@ public class Customer implements Serializable {
 
     public void setMeterNumber(String meterNumber) {
         this.meterNumber = meterNumber;
+    }
+
+    public List<Meter> getMeter() {
+        return meter;
+    }
+
+    public void setMeter(List<Meter> meter) {
+        this.meter = meter;
     }
 }
