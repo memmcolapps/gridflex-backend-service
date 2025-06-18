@@ -30,6 +30,8 @@ public class UserModel implements Serializable {
 
     private String email;
 
+    private String phoneNumber;
+
     private Boolean status;
 
     private Boolean active;
@@ -71,12 +73,20 @@ public class UserModel implements Serializable {
         this.orgId = orgId;
     }
 
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
     public String getFirstname() {
         return firstname;
     }
 
     public void setFirstname(String firstname) {
-        this.firstname = firstname.trim().toLowerCase();;
+        this.firstname = firstname;
     }
 
     public String getLastname() {
@@ -84,7 +94,7 @@ public class UserModel implements Serializable {
     }
 
     public void setLastname(String lastname) {
-        this.lastname = lastname.trim().toLowerCase();;
+        this.lastname = lastname;
     }
 
     public String getEmail() {
@@ -92,15 +102,15 @@ public class UserModel implements Serializable {
     }
 
     public void setEmail(String email) {
-        this.email = email.trim().toLowerCase();
+        this.email = email;
     }
 
-    public UUID getNodeId() {
-        return nodeId;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public void setNodeId(UUID nodeId) {
-        this.nodeId = nodeId;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public Boolean getStatus() {
@@ -124,23 +134,7 @@ public class UserModel implements Serializable {
     }
 
     public void setLastActive(String lastActive) {
-        this.lastActive = lastActive.trim();
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
+        this.lastActive = lastActive;
     }
 
     public String getPassword() {
@@ -148,7 +142,7 @@ public class UserModel implements Serializable {
     }
 
     public void setPassword(String password) {
-        this.password = password.trim();
+        this.password = password;
     }
 
     public GroupWithPermissionsDTO getGroups() {
@@ -173,5 +167,21 @@ public class UserModel implements Serializable {
 
     public void setNodes(Node nodes) {
         this.nodes = nodes;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

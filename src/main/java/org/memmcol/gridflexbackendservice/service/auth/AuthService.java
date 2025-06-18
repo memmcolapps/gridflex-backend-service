@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.auth;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface AuthService {
 
@@ -11,4 +12,6 @@ public interface AuthService {
 	Map<String, Object> generateOtp(String username);
 
 	Map<String, Object> verifyOtp(String username, String otp, String password, String retypePassword);
+
+    Map<String, Object> profile(UUID userId);
 }

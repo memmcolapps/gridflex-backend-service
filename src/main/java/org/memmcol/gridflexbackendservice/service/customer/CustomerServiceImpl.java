@@ -100,7 +100,6 @@ public class CustomerServiceImpl implements CustomerService {
             customerMapper.insertCustomer(request);
 
             UUID id = request.getId();
-            System.out.println("id: " + id);
 
             Customer customer = customerMapper.findById(id, um.getOrgId());
             handleAddCache(customer);

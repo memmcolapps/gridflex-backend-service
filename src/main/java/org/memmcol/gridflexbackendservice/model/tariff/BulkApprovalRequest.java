@@ -8,7 +8,8 @@ import java.util.UUID;
 @Data
 public class BulkApprovalRequest {
     private List<UUID> tariffIds;
-    private String approveStatus;
+//    private Tariff tariff;
+//    private String approveStatus;
 
     public List<UUID> getTariffIds() {
         return tariffIds;
@@ -18,11 +19,19 @@ public class BulkApprovalRequest {
         this.tariffIds = tariffIds;
     }
 
-    public String getApproveStatus() {
-        return approveStatus;
-    }
+//    public Tariff getTariff() {
+//        return tariff;
+//    }
+//
+//    public void setTariff(Tariff tariff) {
+//        this.tariff = tariff;
+//    }
 
-    public void setApproveStatus(String approveStatus) {
-        this.approveStatus = approveStatus;
-    }
+    //    public String getApproveStatus() {
+//        return approveStatus;
+//    }
+//
+//    public void setApproveStatus(String approveStatus) {
+//        this.approveStatus = approveStatus;
+//    }
 }

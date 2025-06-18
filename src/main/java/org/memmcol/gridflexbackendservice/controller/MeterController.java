@@ -1,12 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.model.meter.BulkApproveMeter;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
-import org.memmcol.gridflexbackendservice.service.customer.CustomerService;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
-import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +31,16 @@ public class MeterController {
         }
     }
 
+//    @PostMapping("/create/virtual")
+//    public ResponseEntity<?> createVirtualMeter(@RequestBody Meter meter) {
+//        try {
+//            Map<String, Object> result = service.createVirtualMeter(meter);
+//            return ResponseEntity.ok(result);
+//        } catch (SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
+
     @PutMapping("/update")
     public ResponseEntity<?> createUpdate(@RequestBody Meter meter) {
         try {
@@ -55,12 +60,11 @@ public class MeterController {
             @RequestParam(value = "manufacturer", required = false, defaultValue = "") String manufacturer,
             @RequestParam(value = "meterClass", required = false, defaultValue = "") String meterClass,
             @RequestParam(value = "category", required = false, defaultValue = "") String category,
-            @RequestParam(value = "approvedStatus", required = false, defaultValue = "") String approvedStatus,
-            @RequestParam(value = "status", required = false, defaultValue = "") Boolean status,
+            @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterClass, category, approvedStatus, status, createdAt);
+            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterClass, category, status, createdAt);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -80,11 +84,11 @@ public class MeterController {
     @PatchMapping("/change-status")
     public ResponseEntity<Map<String, Object>> changeStatus(
             @RequestParam(required = true) UUID meterId,
-            @RequestParam(value = "status", required = false) Boolean status,
-            @RequestParam (value = "approvedStatus", required = false) String approvedStatus
+            @RequestParam(value = "status", required = true) String status,
+            @RequestParam(value = "reason", required = true) String reason
             ) {
         try {
-            Map<String, Object> result =  service.changeStatus(meterId, status, approvedStatus);
+            Map<String, Object> result =  service.changeStatus(meterId, status, reason);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
@@ -94,21 +98,21 @@ public class MeterController {
         }
     }
 
-    @PatchMapping("/bulk-approve")
-    public ResponseEntity<?> bulkApproveMeter(@RequestBody BulkApproveMeter request) {
-        try {
-            Map<String, Object> result = service.bulkApproveMeter(request);
-            return ResponseEntity.ok(result);
-        } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @PatchMapping("/bulk-approve")
+//    public ResponseEntity<?> bulkApproveMeter(@RequestBody BulkApproveMeter request) {
+//        try {
+//            Map<String, Object> result = service.bulkApproveMeter(request);
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
-    @GetMapping("/substations-transformers-feeder-line")
-    public ResponseEntity<Map<String, Object>> fetchAllSubstationsTransformersFeederLine() {
+    @GetMapping("/manufacturers")
+    public ResponseEntity<Map<String, Object>> getManufacturers() {
 
         try {
-            Map<String, Object> result =  service.fetchAllSubstationsTransformersFeederLine();
+            Map<String, Object> result =  service.getManufacturers();
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
@@ -122,9 +126,12 @@ public class MeterController {
             @RequestParam UUID meterId,
             @RequestParam String customerId,
             @RequestParam String accountNumber,
-            @RequestParam String tariff) {
+            @RequestParam String tariff,
+            @RequestParam String feederLine,
+            @RequestParam String transformer,
+            @RequestParam String substation) {
         try {
-            Map<String, Object> result =  service.assignMeterToCustomer(accountNumber, tariff, customerId, meterId, cId);
+            Map<String, Object> result =  service.assignMeterToCustomer(accountNumber, tariff, customerId, meterId, cId, feederLine, transformer, substation);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
@@ -138,6 +145,19 @@ public class MeterController {
     ) {
         try {
             Map<String, Object> result = service.singleCustomer(customerId);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PatchMapping("/allocate-meter")
+    public ResponseEntity<?> allocatedMeter(
+            @RequestParam(value = "meterId", required = true) UUID meterId,
+            @RequestParam(value = "nodeId", required = true) UUID nodeId
+    ) {
+        try {
+            Map<String, Object> result = service.allocateMeter(meterId, nodeId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,59 +33,56 @@ public class TariffController {
         }
     }
 
+    @PutMapping("/update")
+    public ResponseEntity<?> updateTariff(@RequestBody Tariff tariff) {
+        try {
+            Map<String, Object> result = service.updateTariff(tariff);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
 
-//    @GetMapping("/all-tariff")
-//    public ResponseEntity<?> getAllTariff(
-//            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-//            @RequestParam(value = "size", required = false, defaultValue = "0") int size
-//            ) {
-//        try {
-//            Map<String, Object> result = service.getTariffs(page, size);
-//            return ResponseEntity.ok(result);
-//        } catch (GlobalExceptionHandler.SQLServerException e) {
-//            return handleException(e);
-//        }
-//    }
+    @GetMapping("/single-tariff")
+    public ResponseEntity<?> getTariff(
+            @RequestParam(value = "id", required = false) UUID id,
+            @RequestParam(value = "tariffVersionId", required = false) UUID tariffVersionId) {
+        try {
+            Map<String, Object> result = service.getTariff(id, tariffVersionId);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
 
     @GetMapping("/all-tariff")
     public ResponseEntity<?> filterTariff(
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "0") int size,
             @RequestParam(value = "tariffName", required = false, defaultValue = "") String tariffName,
-            @RequestParam(value = "tariffIndex", required = false, defaultValue = "") String tariffIndex,
+            @RequestParam(value = "tariffId", required = false, defaultValue = "") String tariffId,
             @RequestParam(value = "tariffType", required = false, defaultValue = "") String tariffType,
             @RequestParam(value = "tariffRate", required = false, defaultValue = "") String tariffRate,
             @RequestParam(value = "bandCode", required = false, defaultValue = "") String bandCode,
             @RequestParam(value = "status", required = false, defaultValue = "") Boolean status,
             @RequestParam(value = "effectiveDate", required = false, defaultValue = "") String effectiveDate,
-            @RequestParam(value = "approveStatus", required = false, defaultValue = "") String approveStatus
+            @RequestParam(value = "approveStatus", required = false, defaultValue = "") String approveStatus,
+            @RequestParam(value = "type", required = false, defaultValue = "") String type
     ) {
         try {
-            Map<String, Object> result = service.getFilterTariffs(page, size, tariffName, tariffIndex, tariffType, tariffRate, bandCode, status, effectiveDate, approveStatus);
+            Map<String, Object> result = service.getFilterTariffs(page, size, tariffName, tariffId, tariffType, tariffRate, bandCode, status, effectiveDate, approveStatus, type);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
     }
-//
-//    @GetMapping("/filter/unique-id")
-//    public ResponseEntity<?> UniqueTariffId() {
-//        try {
-//            Map<String, Object> result = service.getUniqueTariffId();
-//            return ResponseEntity.ok(result);
-//        } catch (GlobalExceptionHandler.SQLServerException e) {
-//            return handleException(e);
-//        }
-//    }
 
-    @PatchMapping("/change-state")
+    @PatchMapping("/approve")
     public ResponseEntity<?> manageTariffStatus(
-            @RequestParam (value = "tariffId", required = true) UUID tariffId,
-            @RequestParam (value = "status", required = false) Boolean status,
-            @RequestParam (value = "approveStatus", required = false) String approveStatus
-            ) {
+            @RequestParam (value = "tId", required = true) UUID tId,
+            @RequestParam (value = "approveStatus", required = false) String approveStatus) {
         try {
-            Map<String, Object> result = service.manageTariffStatus(tariffId, status, approveStatus);
+            Map<String, Object> result = service.manageTariffStatus(tId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -94,9 +92,9 @@ public class TariffController {
     }
 
     @PatchMapping("/bulk-approve")
-    public ResponseEntity<?> bulkApproveTariff(@RequestBody BulkApprovalRequest request) {
+    public ResponseEntity<?> bulkApproveTariff(@RequestBody BulkApprovalRequest tariffIds) {
         try {
-            Map<String, Object> result = service.bulkApproveTariff(request);
+            Map<String, Object> result = service.bulkApproveTariff(tariffIds);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

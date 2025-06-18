@@ -294,7 +294,7 @@ public class UserServiceImpl implements  UserService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedUsers.size() / size));
 
-//            userCache.put(cacheKey, response);
+            userCache.put(cacheKey, response);
 
             return ResponseMap.response(status.getSuccessCode(), userName + "s " + status.getDesc(), response);
 

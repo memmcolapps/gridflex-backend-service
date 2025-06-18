@@ -68,10 +68,6 @@ public class NodeServiceImpl implements NodeService {
         try {
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             Node node = new Node();
             node.setName(request.getName());
             node.setOrgId(um.getOrgId());
@@ -89,32 +85,29 @@ public class NodeServiceImpl implements NodeService {
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
 
-            if(request.getType().equalsIgnoreCase("region")){
-                nodeMapper.createRegionBhubServiceCenter(request);
-                id = request.getId();
-                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("business hub")){
-                nodeMapper.createRegionBhubServiceCenter(request);
-                id = request.getId();
-                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("service center")){
+            if(request.getType().equalsIgnoreCase("region") ||
+                    request.getType().equalsIgnoreCase("business hub") ||
+                    request.getType().equalsIgnoreCase("service center")){
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
+//            else if(request.getType().equalsIgnoreCase("business hub")){
+//                nodeMapper.createRegionBhubServiceCenter(request);
+//                id = request.getId();
+//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+//            } else if(request.getType().equalsIgnoreCase("service center")){
+//                nodeMapper.createRegionBhubServiceCenter(request);
+//                id = request.getId();
+//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+//            }
 
-            for (String key : auditCache.keySet()) {
-                if (key.startsWith("grid_flex_audit_log_page_")) {
-                    auditCache.remove(key);
-                }
-            }
-            for (String key : nodeCache.keySet()) {
-                if (key.startsWith("nodes_"+node.getOrgId())) {
-                    nodeCache.remove(key);
-                }
-            }
+            handleClearCache(node);
+
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
@@ -143,10 +136,6 @@ public class NodeServiceImpl implements NodeService {
         try {
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             Node node = new Node();
             node.setName(request.getName());
             node.setOrgId(um.getOrgId());
@@ -164,32 +153,28 @@ public class NodeServiceImpl implements NodeService {
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
 
-            if(request.getType().equalsIgnoreCase("transformer")){
-                nodeMapper.createSubStationTransformerFeederLine(request);
-                id = request.getId();
-                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-            } else if(request.getType().equalsIgnoreCase("feeder line")){
-                nodeMapper.createSubStationTransformerFeederLine(request);
-                id = request.getId();
-                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-            } else if(request.getType().equalsIgnoreCase("substation")){
+            if(request.getType().equalsIgnoreCase("transformer") ||
+                    request.getType().equalsIgnoreCase("feeder line") ||
+                    request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.createSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
+//            else if(request.getType().equalsIgnoreCase("feeder line")){
+//                nodeMapper.createSubStationTransformerFeederLine(request);
+//                id = request.getId();
+//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+//            } else if(request.getType().equalsIgnoreCase("substation")){
+//                nodeMapper.createSubStationTransformerFeederLine(request);
+//                id = request.getId();
+//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+//            }
 
-            for (String key : auditCache.keySet()) {
-                if (key.startsWith("grid_flex_audit_log_page_")) {
-                    auditCache.remove(key);
-                }
-            }
-            for (String key : nodeCache.keySet()) {
-                if (key.startsWith("nodes_"+node.getOrgId())) {
-                    nodeCache.remove(key);
-                }
-            }
+            handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
@@ -218,10 +203,6 @@ public class NodeServiceImpl implements NodeService {
         try {
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             Node node = new Node();
             node.setId(request.getNodeId());
             node.setName(request.getName());
@@ -240,32 +221,28 @@ public class NodeServiceImpl implements NodeService {
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
 
-            if(request.getType().equalsIgnoreCase("region")){
+            if(request.getType().equalsIgnoreCase("region") ||
+                    request.getType().equalsIgnoreCase("business hub") ||
+                    request.getType().equalsIgnoreCase("service center")) {
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("business hub")){
-                nodeMapper.updateRegionBhubServiceCenter(request);
-                id = request.getId();
-                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else if(request.getType().equalsIgnoreCase("service center")){
-                nodeMapper.updateRegionBhubServiceCenter(request);
-                id = request.getId();
-                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-            } else {
+            }  else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
+//            else if(request.getType().equalsIgnoreCase("business hub")){
+//                nodeMapper.updateRegionBhubServiceCenter(request);
+//                id = request.getId();
+//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+//            } else if(request.getType().equalsIgnoreCase("service center")){
+//                nodeMapper.updateRegionBhubServiceCenter(request);
+//                id = request.getId();
+//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+//            }
 
-            for (String key : auditCache.keySet()) {
-                if (key.startsWith("grid_flex_audit_log_page_")) {
-                    auditCache.remove(key);
-                }
-            }
-            for (String key : nodeCache.keySet()) {
-                if (key.startsWith("nodes_"+node.getOrgId())) {
-                    nodeCache.remove(key);
-                }
-            }
+            handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
@@ -294,10 +271,6 @@ public class NodeServiceImpl implements NodeService {
         try {
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             Node node = new Node();
             node.setId(request.getNodeId());
             node.setName(request.getName());
@@ -316,15 +289,9 @@ public class NodeServiceImpl implements NodeService {
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
 
-            if(request.getType().equalsIgnoreCase("transformer")){
-                nodeMapper.updateSubStationTransformerFeederLine(request);
-                id = request.getId();
-                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-            } else if(request.getType().equalsIgnoreCase("feeder line")){
-                nodeMapper.updateSubStationTransformerFeederLine(request);
-                id = request.getId();
-                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-            } else if(request.getType().equalsIgnoreCase("substation")){
+            if(request.getType().equalsIgnoreCase("transformer") ||
+                    request.getType().equalsIgnoreCase("feeder line") ||
+                    request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.updateSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
@@ -332,16 +299,19 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
 
-            for (String key : auditCache.keySet()) {
-                if (key.startsWith("grid_flex_audit_log_page_")) {
-                    auditCache.remove(key);
-                }
-            }
-            for (String key : nodeCache.keySet()) {
-                if (key.startsWith("nodes_"+node.getOrgId())) {
-                    nodeCache.remove(key);
-                }
-            }
+//            else if(request.getType().equalsIgnoreCase("feeder line")){
+//                nodeMapper.updateSubStationTransformerFeederLine(request);
+//                id = request.getId();
+//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+//            } else if(request.getType().equalsIgnoreCase("substation")){
+//                nodeMapper.updateSubStationTransformerFeederLine(request);
+//                id = request.getId();
+//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+//            }
+
+            handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
@@ -481,6 +451,10 @@ public class NodeServiceImpl implements NodeService {
 
         UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
+        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            throw new LockedException("User is disabled");
+        }
+
         return isOperatorExist;
     }
 
@@ -497,6 +471,19 @@ public class NodeServiceImpl implements NodeService {
             }
         }
         nodeCache.put(node.getId().toString(), node);  // Cache updated or deleted entity
+    }
+
+    private void handleClearCache(Node node) {
+        for (String key : auditCache.keySet()) {
+            if (key.startsWith("grid_flex_audit_log_page_")) {
+                auditCache.remove(key);
+            }
+        }
+        for (String key : nodeCache.keySet()) {
+            if (key.startsWith("nodes_"+node.getOrgId())) {
+                nodeCache.remove(key);
+            }
+        }
     }
 
 }

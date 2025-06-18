@@ -15,6 +15,7 @@ public class Meter implements Serializable {
     private UUID id;
     private UUID orgId;
     private String meterNumber;
+    private String accountNumber;
     private String simNumber;
     private String substation;
     private String feederLine;
@@ -23,8 +24,7 @@ public class Meter implements Serializable {
     private String meterClass;
     private String manufacturer;
     private String meterType;
-    private String approvedStatus;
-    private Boolean status;
+    private String status;
     private String customerId;
     private Long ctRatioNum;
     private Long ctRatioDenom;
@@ -71,6 +71,14 @@ public class Meter implements Serializable {
 
     public void setMeterNumber(String meterNumber) {
         this.meterNumber = meterNumber;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
     }
 
     public String getSimNumber() {
@@ -137,19 +145,11 @@ public class Meter implements Serializable {
         this.meterType = meterType;
     }
 
-    public String getApprovedStatus() {
-        return approvedStatus;
-    }
-
-    public void setApprovedStatus(String approvedStatus) {
-        this.approvedStatus = approvedStatus;
-    }
-
-    public Boolean getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(Boolean status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

@@ -5,10 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.memmcol.gridflexbackendservice.service.auth.AuthService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
@@ -16,6 +13,7 @@ import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth/service")
@@ -64,6 +62,16 @@ public class AuthController {
         try {
         Map<String, Object> result = service.verifyOtp(username, otp, password, retype_password);
         return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> profile(@RequestParam UUID userId) {
+        try {
+            Map<String, Object> result = service.profile(userId);
+            return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
         }

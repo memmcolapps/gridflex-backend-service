@@ -22,7 +22,15 @@ public class Tariff implements Serializable {
 
     private UUID org_id;
 
-    private Long tariff_index;
+    private UUID created_by;
+
+    private UUID approved_by;
+
+    private String description;
+
+    private UUID t_id;
+
+    private String tariff_id;
 
     private String tariff_type;
 
@@ -71,13 +79,53 @@ public class Tariff implements Serializable {
         this.name = name;
     }
 
-    public Long getTariff_index() {
-        return tariff_index;
+    public String getTariff_id() {
+        return tariff_id;
     }
 
-    public void setTariff_index(Long tariff_index) {
-        this.tariff_index = tariff_index;
+    public void setTariff_id(String tariff_id) {
+        this.tariff_id = tariff_id;
     }
+
+    public UUID getT_id() {
+        return t_id;
+    }
+
+    public void setT_id(UUID t_id) {
+        this.t_id = t_id;
+    }
+
+    public UUID getCreated_by() {
+        return created_by;
+    }
+
+    public void setCreated_by(UUID created_by) {
+        this.created_by = created_by;
+    }
+
+    public UUID getApproved_by() {
+        return approved_by;
+    }
+
+    public void setApproved_by(UUID approved_by) {
+        this.approved_by = approved_by;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    //    public Long getTariff_index() {
+//        return tariff_index;
+//    }
+//
+//    public void setTariff_index(Long tariff_index) {
+//        this.tariff_index = tariff_index;
+//    }
 
     public String getTariff_type() {
         return tariff_type;

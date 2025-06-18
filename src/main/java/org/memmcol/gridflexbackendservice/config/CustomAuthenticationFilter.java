@@ -170,9 +170,9 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 				parent.getNodesTree().add(node);
 			}
 		}
+		auditNotificationDTO.setCreator(user);
 		user.setNodes(root);
 		user.setPassword("");
-		auditNotificationDTO.setCreator(user);
 		auditNotificationDTO.setDescription(user.getEmail()+" Logged in");
 		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
@@ -187,7 +187,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		resp.put("responsecode", "000");
 		resp.put("responsedesc", "Authentication Successful");
 		token.put("user_info", user);
-//		token.put("groups", permissionTree);
 		token.put("access_token", access_token);
 		resp.put("responsedata", token);
 

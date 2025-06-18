@@ -5,7 +5,6 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -27,10 +26,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Transactional
@@ -62,6 +58,8 @@ public class AuthServiceImpl implements AuthService {
 	private final IMap<String, Object> auditCache;
 	private final IMap<String, String> otpCache;
 	private final IMap<String, Boolean> verifiedUsers;
+    @Autowired
+    private AuthMapper authMapper;
 
 	public AuthServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
 		this.authCache = hazelcastInstance.getMap("auth-Cache");
@@ -165,9 +163,14 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	public Map<String, Object> generateOtp(String username) {
+		return handleGenerateOtp(username);
+	}
+
+	private Map<String, Object>  handleGenerateOtp(String username) {
 		String otp = String.format("%04d", random.nextInt(10000));
 
 		String emailServiceUrl = "http://localhost:8081/smarte/email/api/send";
+
 		try {
 			restTemplate.postForEntity(emailServiceUrl, Map.of(
 					"toAddress", username,
@@ -186,6 +189,34 @@ public class AuthServiceImpl implements AuthService {
 
 		otpCache.put(username, otp);
 		return ResponseMap.response(status.getSuccessCode(), "OTP generated and sent successfully", "");
+	}
+
+
+	@Override
+	public Map<String, Object> profile(UUID userId) {
+		try {
+
+			UserModel um = handleUserValidation();
+
+			if (!Boolean.TRUE.equals(um.getStatus())) {
+				throw new LockedException("User is disable");
+			}
+
+			handleGenerateOtp(um.getEmail());
+
+            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+			user.setPassword("");
+
+			return ResponseMap.response(status.getNotFoundCode(), "User " + status.getDesc(), user);
+		} catch (Exception exception){
+			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+			exceptionErrorLogs.setDescription("Error occurred while verifying OTP");
+			exceptionErrorLogs.setError_message(exception.getMessage().trim());
+			exceptionErrorLogs.setError(exception.toString().trim());
+			exceptionAuditRepository.save(exceptionErrorLogs);
+			throw exception;
+		}
 	}
 
 	public  Map<String, Object>  verifyOtp(String email, String otp, String password, String retypePassword) {
@@ -217,6 +248,20 @@ public class AuthServiceImpl implements AuthService {
 
 	private void blacklistToken(String token, int expirySeconds) {
 		authCache.put(token, true, expirySeconds, TimeUnit.SECONDS);
+	}
+
+	UserModel handleUserValidation() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String username = "Unknown";
+
+		if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+			CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+			username = principal.getUsername();  // or principal.getEmail() if you named it that way
+		}
+
+		UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+
+		return isOperatorExist;
 	}
 
 	private void removeFromCache() {
