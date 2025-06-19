@@ -79,8 +79,8 @@ public class TariffController {
 
     @PatchMapping("/approve")
     public ResponseEntity<?> manageTariffStatus(
-            @RequestParam (value = "tId", required = true) UUID tId,
-            @RequestParam (value = "approveStatus", required = false) String approveStatus) {
+            @RequestParam UUID tId,
+            @RequestParam String approveStatus) {
         try {
             Map<String, Object> result = service.manageTariffStatus(tId, approveStatus);
             return ResponseEntity.ok(result);

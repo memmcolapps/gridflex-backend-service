@@ -138,11 +138,11 @@ public class TariffServiceImpl implements TariffService {
                 tariff.setApproved_by(um.getId());
                 result = tariffMapper.approveTariffVersion(tariff, um.getId());
                 if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + " "+ status.getUpdateFailureDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
                 result = tariffMapper.approveTariff(tariff);
                 if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
                 desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + tariff.getName() + "]";
             }
@@ -437,7 +437,7 @@ public class TariffServiceImpl implements TariffService {
             String changeDescription = buildChangeDescription(isExist, tariff);
             tariff.setDescription(changeDescription);
 
-            tariff.setDescription("Tariff Edited");
+//            tariff.setDescription("Tariff Edited");
             result = tariffMapper.updateTariffVersion(tariff, um.getId(), um.getOrgId());
             if (result == 0) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getUpdateFailureDesc());

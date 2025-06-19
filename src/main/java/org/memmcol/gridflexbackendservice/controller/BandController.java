@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.service.band.BandService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -42,9 +43,11 @@ public class BandController {
     }
 
     @GetMapping("/all-band")
-    public ResponseEntity<?> getAllBands() {
+    public ResponseEntity<?> getAllBands(
+            @RequestParam(value = "type", required = false, defaultValue = "") String type
+    ) {
         try {
-            Map<String, Object> result = service.getBands();
+            Map<String, Object> result = service.getBands(type);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -62,13 +65,17 @@ public class BandController {
     }
 
 
-    @PatchMapping("/change-state")
-    public ResponseEntity<?> manageBandState(@RequestParam UUID bandId, @RequestParam Boolean status) {
+    @PatchMapping("/approve")
+    public ResponseEntity<?> manageBandState(
+            @RequestParam UUID bandId,
+            @RequestParam String approveStatus) {
         try {
-            Map<String, Object> result = service.manageBandState(bandId, status);
+            Map<String, Object> result = service.manageBandState(bandId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
+        } catch (MissingServletRequestParameterException e) {
+            throw new RuntimeException(e);
         }
     }
 

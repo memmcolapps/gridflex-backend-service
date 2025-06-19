@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.band;
 
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.Map;
 import java.util.UUID;
@@ -10,9 +11,9 @@ public interface BandService {
 
     Map<String, Object> updateBand(Band band);
 
-    Map<String, Object> getBands();
+    Map<String, Object> getBands(String type);
 
-    Map<String, Object> manageBandState(UUID bandId, Boolean status);
+    Map<String, Object> manageBandState(UUID bandId, String approveStatus) throws MissingServletRequestParameterException;
 
     Map<String, Object> getBand(UUID bandId);
 }

@@ -20,21 +20,29 @@ public class Band implements Serializable {
 
     private UUID orgId;
 
+    private UUID bandId;
+
     private String name;
 
     private String hour;
 
-    private Boolean status;
+    private UUID createdBy;
+
+    private UUID approveBy;
+
+    private String approveStatus;
+
+    private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date created_at;
+    private Date createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updated_at;
+    private Date updatedAt;
 
     public Band() {
-        this.created_at = new Date();
-        this.updated_at = new Date();
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
     }
 
     public UUID getId() {
@@ -53,6 +61,14 @@ public class Band implements Serializable {
         this.orgId = orgId;
     }
 
+    public UUID getBandId() {
+        return bandId;
+    }
+
+    public void setBandId(UUID bandId) {
+        this.bandId = bandId;
+    }
+
     public String getName() {
         return name;
     }
@@ -69,28 +85,52 @@ public class Band implements Serializable {
         this.hour = hour;
     }
 
-    public Boolean getStatus() {
-        return status;
+
+    public UUID getCreatedBy() {
+        return createdBy;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setCreatedBy(UUID createdBy) {
+        this.createdBy = createdBy;
     }
 
-
-    public Date getCreated_at() {
-        return created_at;
+    public UUID getApproveBy() {
+        return approveBy;
     }
 
-    public void setCreated_at(Date created_at) {
-        this.created_at = created_at;
+    public void setApproveBy(UUID approveBy) {
+        this.approveBy = approveBy;
     }
 
-    public Date getUpdated_at() {
-        return updated_at;
+    public String getApproveStatus() {
+        return approveStatus;
     }
 
-    public void setUpdated_at(Date updated_at) {
-        this.updated_at = updated_at;
+    public void setApproveStatus(String approveStatus) {
+        this.approveStatus = approveStatus;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
