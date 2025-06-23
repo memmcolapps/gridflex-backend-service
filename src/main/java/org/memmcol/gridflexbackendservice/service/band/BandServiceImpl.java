@@ -4,6 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
+import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
@@ -53,13 +54,18 @@ public class BandServiceImpl implements BandService {
 
     private final IMap<String, Object> bandCache;
 
+    private final IMap<String, Object> tariffCache;
+
     private final IMap<String, Object> auditCache;
 
     private String bandName = "Band";
+    @Autowired
+    private TariffMapper tariffMapper;
 
     public BandServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
         this.bandCache = hazelcastInstance.getMap("band-Cache");
         this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.tariffCache = hazelcastInstance.getMap("tariff-Cache");
     }
 
     @Override
@@ -67,6 +73,7 @@ public class BandServiceImpl implements BandService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             int result;
+            String desc = "Band Newly Created";
             UserModel um = handleUserValidation();
 
             Band isExist = bandMapper.getBand(band.getName());
@@ -74,24 +81,36 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(bandName + " " + status.getExistDesc());
             }
 
+//            Band isVersionExist = bandMapper.getVersionBand(band.getName());
+
             band.setOrgId(um.getOrgId());
             band.setApproveStatus("pending");
             band.setCreatedBy(um.getId());
-            band.setDescription("Band Newly Created");
+            band.setDescription(desc);
             result = bandMapper.createBand(band);
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getRegFailureDesc());
             }
             band.setBandId(band.getId());
+
+//            if(isVersionExist.getApproveStatus().equalsIgnoreCase("pending")){
+//                result = bandMapper.updateBandVersion(band);
+//                if(result == 0){
+//                    throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getRegFailureDesc());
+//                }
+//            } else {
+
             result = bandMapper.createBandVersion(band);
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getRegFailureDesc());
             }
+//            }
+
             Band bandByName = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             um.setPassword("");
             handleAddCache(bandByName);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created Band [" + band.getName() + "]");
+            auditNotificationDTO.setDescription(desc);//("Created Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandByName);
             auditRepository.save(auditNotificationDTO);
@@ -118,26 +137,44 @@ public class BandServiceImpl implements BandService {
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
+
+            Band isVersionExist = bandMapper.getVersionBand(band.getId(), um.getOrgId());
+//            handleAddCache(isVersionExist);
             band.setApproveStatus("pending");;
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
             String changeDescription = buildChangeDescription(isExist, band);
             band.setDescription(changeDescription);
             band.setOrgId(um.getOrgId());
-            int result = bandMapper.createBandVersion(band);
+            int result;
+            if(isVersionExist != null && isVersionExist.getApproveStatus().equalsIgnoreCase("pending")){
+                result = bandMapper.updateBandVer(band);
+                if(result == 0){
+                    throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());
+                }
+            } else {
+                result = bandMapper.createBandVersion(band);
+                if(result == 0){
+                    throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());
+                }
+            }
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateFailureDesc());
             }
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
+//            Band bandVersionById = bandMapper.getVersionBand(band.getBandId(), um.getOrgId());
+
+
             handleAddCache(bandById);
+
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated Band [" + band.getName() + "]");
+            auditNotificationDTO.setDescription(changeDescription);//("Updated Band [" + band.getName() + "]");
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(bandById);
 //			authCache.remove("dashboard");
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), bandName + " Update Awaiting Successfully", "");
+            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -160,13 +197,17 @@ public class BandServiceImpl implements BandService {
             UserModel um = handleUserValidation();
 
             Band band = bandMapper.getBandVersionById(bandId, um.getOrgId());
+
+//            Band cachedBand = (Band) bandCache.get(bandId.toString());
             if(band == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
+            Band isExist = bandMapper.getBandById(band.getBandId(), um.getOrgId());
 
-            if(approveStatus != null && approveStatus.equalsIgnoreCase("approve")) {
+            band.setApproveBy(um.getId());
+            if(approveStatus != null && approveStatus.contains("approve")) {
                 band.setApproveStatus("approved");
-                result = bandMapper.approveBandVersion(band, um.getId());
+                result = bandMapper.updateBandVersion(band);
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
@@ -175,11 +216,16 @@ public class BandServiceImpl implements BandService {
                     throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
                 desc = capitalizeFirstLetter(approveStatus) +" Band [" + band.getName() + "]";
+
+                result = tariffMapper.updateTariff(band.getName(), um.getOrgId(), isExist.getName());
+                if(result == 0){
+                    throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+                }
+
             }
-            else if (approveStatus.equalsIgnoreCase("reject")){
+            else if (approveStatus != null && approveStatus.contains("reject")){
                 band.setApproveStatus("rejected");
-                band.setApproveBy(um.getId());
-                result = bandMapper.rejectedBandVersion(band, um.getId());
+                result = bandMapper.rejectedBandVersion(band);
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
@@ -194,7 +240,8 @@ public class BandServiceImpl implements BandService {
 //                desc = state ? "Activated" : "Deactivated" + " Tariff [" + tariffById.getName() + "]";
 //            }
             else {
-                throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", "approveStatus or status");
+                assert approveStatus != null;
+                throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
             }
 
             Band newBand = bandMapper.getBandById(band.getId(), um.getOrgId());
@@ -205,11 +252,9 @@ public class BandServiceImpl implements BandService {
             auditNotificationDTO.setType("band");
             auditNotificationDTO.setCreatedBand(newBand);
             auditRepository.save(auditNotificationDTO);
-//            if(state != null) {
-//                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (tariff.getStatus() ? "Activated Successfully" : status.getDeleteDesc()), "");
-//            } else {
+
             return ResponseMap.response(status.getSuccessCode(), band.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
-//            }
+
 
 
         } catch (Exception exception) {
@@ -322,6 +367,7 @@ public class BandServiceImpl implements BandService {
 
     private void handleAddCache(Band band) {
         bandCache.remove(band.getId().toString()+"_"+band.getOrgId());
+        tariffCache.clear();
         for (String key : auditCache.keySet()) {
             if (key.startsWith("grid_flex_audit_log_page_")) {
                 auditCache.remove(key);
@@ -360,7 +406,7 @@ public class BandServiceImpl implements BandService {
     }
 
     private String buildChangeDescription(Band oldBand, Band newBand) {
-        StringBuilder changes = new StringBuilder("Edited band");
+        StringBuilder changes = new StringBuilder("Edited band ");
 
         if (!Objects.equals(oldBand.getName(), newBand.getName())) {
             changes.append(String.format("name: '%s' → '%s'; ", oldBand.getName(), newBand.getName()));

@@ -65,7 +65,7 @@ public class BandController {
     }
 
 
-    @PatchMapping("/approve")
+    @PutMapping("/approve")
     public ResponseEntity<?> manageBandState(
             @RequestParam UUID bandId,
             @RequestParam String approveStatus) {

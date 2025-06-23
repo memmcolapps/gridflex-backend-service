@@ -28,11 +28,18 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE name = #{name} AND org_id = #{orgId} OR tariff_id = #{tariffId}")
     Tariff getTariffByName(String name, UUID orgId, String tariffId);
 
+    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND approve_status = 'pending' AND org_id = #{orgId} ")
+    Tariff getTariffVersionByName(String name, UUID orgId);
+
 //    @Select("SELECT * FROM tariffs WHERE id = #{tariffId} AND org_id = #{orgId}")
 //    Tariff getTariffById(UUID tariffId, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId}")
+
+    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND approve_status = 'pending'")
     Tariff getTariffVersionById(UUID tariffId, UUID orgId);
+
+    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId}")
+    Tariff getSingleTariffVersionById(UUID tariffId, UUID orgId);
 
     @Update("UPDATE tariffs SET status = #{state}, approve_status = #{approve_state} WHERE id = CAST(#{tariffId} AS UUID) AND org_id = #{orgId}")
     int disableTariff(UUID tariffId, Boolean state, UUID orgId, String approve_state);
@@ -50,20 +57,24 @@ public interface TariffMapper {
             "status = #{status}, effective_date = #{effective_date}, approve_status = #{approve_status}, updated_at = #{updated_at} WHERE id = #{t_id} ")
     int approveTariff(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET name = #{tariff.name}, tariff_id = #{tariff.tariff_id}, tariff_type = #{tariff.tariff_type}, tariff_rate = #{tariff.tariff_rate}, band = #{tariff.band}, " +
-            "status = #{tariff.status}, effective_date = #{tariff.effective_date}, approve_status = #{tariff.approve_status}, approved_by = #{userId}, " +
-            "description = #{tariff.description}, updated_at = #{tariff.updated_at} WHERE t_id = #{tariff.t_id}")
-    int approveTariffVersion(Tariff tariff, UUID userId);
+    @Update("UPDATE tariffs_version SET status = #{status}, approve_status = #{approve_status}, approved_by = #{approved_by}, " +
+            "updated_at = #{updated_at} WHERE t_id = #{t_id} AND approve_status = 'pending'")
+    int updateTariffVersion(Tariff tariff);
+
+    @Update("UPDATE tariffs_version SET name = #{name}, tariff_id = #{tariff_id}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
+            "status = #{status}, effective_date = #{effective_date}, approve_status = #{approve_status}, created_by = #{created_by}, " +
+            "description = #{description}, updated_at = #{updated_at} WHERE t_id = #{t_id} AND approve_status = 'pending'")
+    int updateTariffVer(Tariff tariff);
 
 //    @Update("UPDATE tariffs SET name = #{name}, tariff_id = #{tariff_id}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
 //            "status = #{status}, effective_date = #{effective_date}, updated_at = #{updated_at} WHERE id = #{t_id} ")
 //    int updateTariff(Tariff tariff);
 
-    @Insert("INSERT INTO tariffs_version " +
-            "(name, tariff_id, tariff_type, tariff_rate, band, status, approve_status, effective_date, created_by, description, updated_at, org_id, t_id) " +
-            "VALUES (#{tariff.name}, #{tariff.tariff_id}, #{tariff.tariff_type}, #{tariff.tariff_rate}, #{tariff.band}, #{tariff.status}, " +
-            "#{tariff.approve_status}, #{tariff.effective_date}, #{userId}, #{tariff.description}, #{tariff.updated_at}, #{orgId}, #{tariff.t_id}) ")
-    int updateTariffVersion(Tariff tariff, UUID userId, UUID orgId);
+//    @Insert("INSERT INTO tariffs_version " +
+//            "(name, tariff_id, tariff_type, tariff_rate, band, status, approve_status, effective_date, created_by, description, updated_at, org_id, t_id) " +
+//            "VALUES (#{tariff.name}, #{tariff.tariff_id}, #{tariff.tariff_type}, #{tariff.tariff_rate}, #{tariff.band}, #{tariff.status}, " +
+//            "#{tariff.approve_status}, #{tariff.effective_date}, #{tariff.created_by}, #{tariff.description}, #{tariff.updated_at}, #{tariff_org_id}, #{tariff.t_id}) ")
+//    int updateTariffVersion(Tariff tariff);
 
 //    @Update("UPDATE tariffs SET approve_status = #{approveStatus}, status = false WHERE id = #{tariffId} AND org_id = #{orgId}")
 //    int rejectedTariff(UUID tariffId, String approveStatus, UUID orgId);
@@ -71,8 +82,12 @@ public interface TariffMapper {
 //    @Update("UPDATE tariffs SET approve_status = #{approveStatus}, status = false WHERE id = #{tariffId} AND org_id = #{orgId}")
 //    int rejectedTariff(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET approve_status = #{tariff.approve_status}, status = #{tariff.status}, approved_by = #{userId} WHERE t_id = #{tariff.t_id}")
-    int rejectedTariffVersion(Tariff tariff, UUID userId);
+    @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, status = #{status}, approved_by = #{approved_by} " +
+            "WHERE t_id = #{t_id} AND approve_status = 'pending'")
+    int approvedTariffVersion(Tariff tariff);
+
+    @Update("UPDATE tariffs_version SET approve_status = #{tariff.approve_status}, status = #{tariff.status}, approved_by = #{tariff.approve_status} WHERE t_id = #{tariff.t_id}")
+    int rejectedTariffVersion(Tariff tariff);
 
 //    @Select("SELECT COUNT(*) FROM tariff")
 //    int getTotalCount();
@@ -112,6 +127,11 @@ public interface TariffMapper {
 
     @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND approve_status = 'pending' ORDER BY created_at DESC")
     List<Tariff> GetPendingTariffs(UUID orgId);
+
+    @Update("UPDATE tariffs SET band = #{newName} WHERE org_id = #{orgId} AND band = #{oldName}")
+    int updateTariff(String newName, UUID orgId, String oldName);
+
+}
 //
 //    @Select("SELECT * FROM tariff WHERE tariff_name = #{tariffName} ORDER BY created_at DESC ")
 //    List<Tariff> GetTariffByNameFilter(String tariffName);
@@ -127,8 +147,7 @@ public interface TariffMapper {
 //
 //    @Select("SELECT * FROM tariff WHERE effective_date = #{effectiveDate} ORDER BY created_at DESC ")
 //    List<Tariff> GetTariffEffectiveDateFilter(String effectiveDate);
-
-}
+///
 
 //    @Select("SELECT * FROM tariff WHERE " +
 //            "(name::text = #{filter}) OR " +

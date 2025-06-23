@@ -77,7 +77,7 @@ public class TariffController {
         }
     }
 
-    @PatchMapping("/approve")
+    @PutMapping("/approve")
     public ResponseEntity<?> manageTariffStatus(
             @RequestParam UUID tId,
             @RequestParam String approveStatus) {
@@ -91,7 +91,7 @@ public class TariffController {
         }
     }
 
-    @PatchMapping("/bulk-approve")
+    @PutMapping("/bulk-approve")
     public ResponseEntity<?> bulkApproveTariff(@RequestBody BulkApprovalRequest tariffIds) {
         try {
             Map<String, Object> result = service.bulkApproveTariff(tariffIds);
