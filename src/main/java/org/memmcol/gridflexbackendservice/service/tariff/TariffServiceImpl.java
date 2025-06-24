@@ -438,8 +438,6 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
 
-            System.out.println(">>>>>>>>>>>>>>>>>>:::::::: "+isVersionExist.getId());
-
             tariff.setApprove_status("pending");
             tariff.setStatus(false);
             tariff.setOrg_id(um.getOrgId());

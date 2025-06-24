@@ -24,8 +24,8 @@ public interface NodeMapper {
     Node isNodeExist(UUID parentNodeId);
 
 
-    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, created_at, updated_at) " +
+            "VALUES (#{nodeId}, #{assetId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void createSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
@@ -52,14 +52,14 @@ public interface NodeMapper {
             node_id, name, 
             NULL AS serial_no, phone_number, email, contact_person, address, 
             NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
-            created_at, updated_at, type
+            created_at, updated_at, type, NULL AS asset_id
         FROM region_bhub_service_centers
         WHERE node_id = #{nodeId}
         UNION
         SELECT
             id, NULL AS region_id, 
             node_id, name, serial_no, phone_number, email, contact_person,
-            address, status, voltage, latitude, longitude, description, created_at, updated_at, type
+            address, status, voltage, latitude, longitude, description, created_at, updated_at, type, asset_id
         FROM substation_trans_feeder_lines
         WHERE node_id = #{nodeId}
         """)
@@ -69,6 +69,7 @@ public interface NodeMapper {
             @Result(property = "contactPerson", column = "contact_person"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bhubId", column = "bhub_id"),
+            @Result(property = "assetId", column = "asset_id"),
             @Result(property = "regionId", column = "region_id"),
             @Result(property = "serialNo", column = "serial_no"),
             @Result(property = "createdAt", column = "created_at"),
@@ -95,7 +96,7 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateNode(Node node);
 
-    @Update("UPDATE substation_trans_feeder_lines SET name = #{name}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, " +
+    @Update("UPDATE substation_trans_feeder_lines SET name = #{name}, asset_id = #{assetId}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, " +
             "contact_person = #{contactPerson}, address = #{address}, status = #{status}, voltage = #{voltage}, latitude =  #{latitude}, " +
             "longitude = #{longitude}, description = #{description}, updated_at = #{updatedAt} WHERE node_id = #{nodeId} AND org_id = #{orgId}")
     @Options(useGeneratedKeys = true, keyProperty = "id")

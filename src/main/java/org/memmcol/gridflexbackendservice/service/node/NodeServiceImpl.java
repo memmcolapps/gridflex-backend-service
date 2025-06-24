@@ -162,17 +162,6 @@ public class NodeServiceImpl implements NodeService {
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
-//            else if(request.getType().equalsIgnoreCase("feeder line")){
-//                nodeMapper.createSubStationTransformerFeederLine(request);
-//                id = request.getId();
-//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-//            } else if(request.getType().equalsIgnoreCase("substation")){
-//                nodeMapper.createSubStationTransformerFeederLine(request);
-//                id = request.getId();
-//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-//            } else {
-//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
-//            }
 
             handleClearCache(node);
 
@@ -299,18 +288,6 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
 
-//            else if(request.getType().equalsIgnoreCase("feeder line")){
-//                nodeMapper.updateSubStationTransformerFeederLine(request);
-//                id = request.getId();
-//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-//            } else if(request.getType().equalsIgnoreCase("substation")){
-//                nodeMapper.updateSubStationTransformerFeederLine(request);
-//                id = request.getId();
-//                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
-//            } else {
-//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
-//            }
-
             handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
@@ -320,7 +297,7 @@ public class NodeServiceImpl implements NodeService {
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getUpdateDesc(), "");
-//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
