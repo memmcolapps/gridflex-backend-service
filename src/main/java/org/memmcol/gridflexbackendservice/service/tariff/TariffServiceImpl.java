@@ -448,18 +448,18 @@ public class TariffServiceImpl implements TariffService {
             if(isVersionExist != null && isVersionExist.getApprove_status().equalsIgnoreCase("pending")){
                 result = tariffMapper.updateTariffVer(tariff);
                 if (result == 0) {
-                    throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
                 }
             } else {
                 result = tariffMapper.createTariffVersion(tariff);
                 if (result == 0) {
-                    throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
                 }
             }
-
-            if (result == 0) {
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getUpdateFailureDesc());
-            }
+//
+//            if (result == 0) {
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getUpdateFailureDesc());
+//            }
 
             Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");

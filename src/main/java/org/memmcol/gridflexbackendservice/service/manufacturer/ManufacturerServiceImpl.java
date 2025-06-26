@@ -133,43 +133,43 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             throw exception;
         }
     }
-
-    @Override
-    public Map<String, Object> manageManufacturerState(UUID id, Boolean state) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        try {
-
-            UserModel um = handleUserValidation();
-
-            // check if operator exist
-            Manufacturer isManufacturer = manufacturerMapper.findById(id, um.getOrgId());
-            if (isManufacturer == null){
-                throw new GlobalExceptionHandler.NotFoundException(manfacturerName + " " + status.getNotFoundDesc());
-            }
-
-            // Insert into operators
-            manufacturerMapper.manageManufacturerState(id, state);
-
-            Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
-//            handleAddCache(user);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Disable Manufacturer [" + manufacturer.getName() + "]");
-            auditNotificationDTO.setType("manufacturer");
-            auditNotificationDTO.setManufacturer(manufacturer);
-            auditRepository.save(auditNotificationDTO);
-
-            String m = !manufacturer.getStatus() ? " Disable ": " Activated ";
-            return ResponseMap.response(status.getSuccessCode(), manfacturerName + m + status.getUpdateDesc(), "");
-        } catch (Exception exception) {
-            log.error("Error occurred while change state manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-    }
+//
+//    @Override
+//    public Map<String, Object> manageManufacturerState(UUID id, Boolean state) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            // check if operator exist
+//            Manufacturer isManufacturer = manufacturerMapper.findById(id, um.getOrgId());
+//            if (isManufacturer == null){
+//                throw new GlobalExceptionHandler.NotFoundException(manfacturerName + " " + status.getNotFoundDesc());
+//            }
+//
+//            // Insert into operators
+//            manufacturerMapper.manageManufacturerState(id, state);
+//
+//            Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
+////            handleAddCache(user);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription("Disable Manufacturer [" + manufacturer.getName() + "]");
+//            auditNotificationDTO.setType("manufacturer");
+//            auditNotificationDTO.setManufacturer(manufacturer);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            String m = !manufacturer.getStatus() ? " Disable ": " Activated ";
+//            return ResponseMap.response(status.getSuccessCode(), manfacturerName + m + status.getUpdateDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while change state manufacturer [ACTION]: {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
 
     @Override
     public Map<String, Object> getManufacturer(UUID id) {
@@ -197,7 +197,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     }
 
     @Override
-    public Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String sgc, String state, String dateAdded) {
+    public Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String contactPerson, String dateAdded) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -233,8 +233,8 @@ public class ManufacturerServiceImpl implements ManufacturerService {
                 manufacturerStream = manufacturerStream.filter(u -> u.getManufacturerId() != null && u.getManufacturerId().equalsIgnoreCase(manufacturerId));
             }
 
-            if (sgc != null && !sgc.isEmpty()) {
-                manufacturerStream = manufacturerStream.filter(u -> u.getSgc() != null && u.getSgc().equalsIgnoreCase(sgc));
+            if (contactPerson != null && !contactPerson.isEmpty()) {
+                manufacturerStream = manufacturerStream.filter(u -> u.getContactPerson() != null && u.getContactPerson().equalsIgnoreCase(contactPerson));
             }
 
             if (dateAdded != null && !dateAdded.isEmpty()) {

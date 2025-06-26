@@ -15,8 +15,8 @@ public class Manufacturer implements Serializable {
     private UUID orgId;
     private String manufacturerId;
     private String name;
-    private String sgc;
-    private Boolean status;
+//    private String sgc;
+//    private Boolean status;
     private String contactPerson;
     private String state;
     private String email;
@@ -64,21 +64,21 @@ public class Manufacturer implements Serializable {
         this.name = name;
     }
 
-    public String getSgc() {
-        return sgc;
-    }
-
-    public void setSgc(String sgc) {
-        this.sgc = sgc;
-    }
-
-    public Boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
+//    public String getSgc() {
+//        return sgc;
+//    }
+//
+//    public void setSgc(String sgc) {
+//        this.sgc = sgc;
+//    }
+//
+//    public Boolean getStatus() {
+//        return status;
+//    }
+//
+//    public void setStatus(Boolean status) {
+//        this.status = status;
+//    }
 
     public String getContactPerson() {
         return contactPerson;

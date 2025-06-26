@@ -41,15 +41,15 @@ public class ManufacturerController {
         }
     }
 
-    @PatchMapping("/change-state")
-    public ResponseEntity<?> createManufacturer(@RequestParam UUID id, @RequestParam Boolean status) {
-        try {
-            Map<String, Object> result = service.manageManufacturerState(id, status);
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @PatchMapping("/change-state")
+//    public ResponseEntity<?> createManufacturer(@RequestParam UUID id, @RequestParam Boolean status) {
+//        try {
+//            Map<String, Object> result = service.manageManufacturerState(id, status);
+//            return ResponseEntity.ok(result);
+//        } catch (SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     @GetMapping("/single-manufacturer")
     public ResponseEntity<?> getManufacturers(@RequestParam UUID id) {
@@ -67,12 +67,12 @@ public class ManufacturerController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "name", required = false, defaultValue = "") String name,
             @RequestParam(value = "manufacturerId", required = false, defaultValue = "") String manufacturerId,
-            @RequestParam(value = "sgc", required = false, defaultValue = "") String sgc,
-            @RequestParam(value = "state", required = false, defaultValue = "") String state,
+            @RequestParam(value = "contactPerson", required = false, defaultValue = "") String contactPerson,
+//            @RequestParam(value = "state", required = false, defaultValue = "") String state,
             @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt
     ) {
         try {
-            Map<String, Object> result = service.getManufacturers(page, size, name, manufacturerId, sgc, state, createdAt);
+            Map<String, Object> result = service.getManufacturers(page, size, name, manufacturerId, contactPerson, createdAt);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

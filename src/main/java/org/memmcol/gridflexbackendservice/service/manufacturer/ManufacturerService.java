@@ -11,9 +11,9 @@ public interface ManufacturerService {
 
     Map<String, Object> updateManufacturer(Manufacturer request);
 
-    Map<String, Object> manageManufacturerState(UUID id, Boolean status);
+//    Map<String, Object> manageManufacturerState(UUID id, Boolean status);
 
     Map<String, Object> getManufacturer(UUID id);
 
-    Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String sgc, String state, String dateAdded);
+    Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String contactPerson, String dateAdded);
 }

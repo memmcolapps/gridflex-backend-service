@@ -4,6 +4,7 @@ package org.memmcol.gridflexbackendservice.model.audit;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.*;
@@ -46,6 +47,8 @@ public class AuditLog implements Serializable {
     private Meter createdMeter;
 
     private Manufacturer manufacturer;
+
+    private LiabilityCause liabilityCause;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -164,5 +167,13 @@ public class AuditLog implements Serializable {
 
     public void setManufacturer(Manufacturer manufacturer) {
         this.manufacturer = manufacturer;
+    }
+
+    public LiabilityCause getLiabilityCause() {
+        return liabilityCause;
+    }
+
+    public void setLiabilityCause(LiabilityCause liabilityCause) {
+        this.liabilityCause = liabilityCause;
     }
 }

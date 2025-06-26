@@ -86,7 +86,7 @@ public interface TariffMapper {
             "WHERE t_id = #{t_id} AND approve_status = 'pending'")
     int approvedTariffVersion(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET approve_status = #{tariff.approve_status}, status = #{tariff.status}, approved_by = #{tariff.approve_status} WHERE t_id = #{tariff.t_id}")
+    @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, status = #{status}, approved_by = #{approve_status} WHERE t_id = #{t_id}")
     int rejectedTariffVersion(Tariff tariff);
 
 //    @Select("SELECT COUNT(*) FROM tariff")

@@ -18,8 +18,8 @@ public interface ManufacturerMapper {
     })
     Manufacturer findByName(String name, UUID orgId);
 
-    @Insert("INSERT INTO manufacturers (manufacturer_id, name, sgc, status, state, contact_person, email, phone_no, org_id, created_at, updated_at) " +
-            "VALUES (#{manufacturerId}, #{name}, #{sgc}, true, #{state}, #{contactPerson}, #{email}, #{phoneNo}, #{orgId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO manufacturers (manufacturer_id, name, state, contact_person, email, phone_no, org_id, created_at, updated_at) " +
+            "VALUES (#{manufacturerId}, #{name}, #{state}, #{contactPerson}, #{email}, #{phoneNo}, #{orgId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertManufacturer(Manufacturer isManufacturer);
 
@@ -34,7 +34,7 @@ public interface ManufacturerMapper {
     })
     Manufacturer findById(UUID id, UUID orgId);
 
-    @Update("UPDATE manufacturers SET manufacturer_id = #{manufacturerId}, name = #{name}, sgc = #{sgc}, status = true, contact_person = #{contactPerson}, " +
+    @Update("UPDATE manufacturers SET manufacturer_id = #{manufacturerId}, name = #{name}, contact_person = #{contactPerson}, " +
             "email = #{email}, phone_no = #{phoneNo}, updated_at = #{updatedAt} WHERE id = #{id}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateManufacturer(Manufacturer request);
