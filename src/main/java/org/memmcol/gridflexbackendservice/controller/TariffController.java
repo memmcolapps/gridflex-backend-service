@@ -45,10 +45,10 @@ public class TariffController {
 
     @GetMapping("/single-tariff")
     public ResponseEntity<?> getTariff(
-            @RequestParam(value = "id", required = false) UUID id,
+            @RequestParam(value = "tariffId", required = false) UUID tariffId,
             @RequestParam(value = "tariffVersionId", required = false) UUID tariffVersionId) {
         try {
-            Map<String, Object> result = service.getTariff(id, tariffVersionId);
+            Map<String, Object> result = service.getTariff(tariffId, tariffVersionId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

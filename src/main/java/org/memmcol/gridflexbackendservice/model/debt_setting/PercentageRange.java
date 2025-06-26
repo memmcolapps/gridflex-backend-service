@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.debt_setting;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
 
@@ -10,7 +11,7 @@ import java.util.UUID;
 public class PercentageRange implements Serializable {
     @Id
     private UUID id;
-    private UUID liabilityCauseId;
+    private UUID percentageId;
     private UUID orgId;
     private String name;
     private String code;
@@ -19,10 +20,14 @@ public class PercentageRange implements Serializable {
     private String amountEndRange;
     private Boolean status;
     private String approveStatus;
-    private String createdBy;
-    private String approvedBy;
+    private UUID createdBy;
+    private UUID approvedBy;
     private String description;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private String createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private String updatedAt;
 
     public PercentageRange(String createdAt, String updatedAt) {
@@ -38,12 +43,12 @@ public class PercentageRange implements Serializable {
         this.id = id;
     }
 
-    public UUID getLiabilityCauseId() {
-        return liabilityCauseId;
+    public UUID getPercentageId() {
+        return percentageId;
     }
 
-    public void setLiabilityCauseId(UUID liabilityCauseId) {
-        this.liabilityCauseId = liabilityCauseId;
+    public void setPercentageId(UUID percentageId) {
+        this.percentageId = percentageId;
     }
 
     public UUID getOrgId() {
@@ -110,19 +115,19 @@ public class PercentageRange implements Serializable {
         this.approveStatus = approveStatus;
     }
 
-    public String getCreatedBy() {
+    public UUID getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(String createdBy) {
+    public void setCreatedBy(UUID createdBy) {
         this.createdBy = createdBy;
     }
 
-    public String getApprovedBy() {
+    public UUID getApprovedBy() {
         return approvedBy;
     }
 
-    public void setApprovedBy(String approvedBy) {
+    public void setApprovedBy(UUID approvedBy) {
         this.approvedBy = approvedBy;
     }
 

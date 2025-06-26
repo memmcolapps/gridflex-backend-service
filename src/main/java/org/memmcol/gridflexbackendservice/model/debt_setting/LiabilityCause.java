@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.debt_setting;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
 
@@ -19,7 +20,11 @@ public class LiabilityCause implements Serializable {
     private UUID createdBy;
     private UUID approvedBy;
     private String description;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private String createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private String updatedAt;
 
     public LiabilityCause(String createdAt, String updatedAt) {

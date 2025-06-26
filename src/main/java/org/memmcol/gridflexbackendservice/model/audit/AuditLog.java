@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.*;
@@ -49,6 +50,8 @@ public class AuditLog implements Serializable {
     private Manufacturer manufacturer;
 
     private LiabilityCause liabilityCause;
+
+    private PercentageRange percentageRange;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -175,5 +178,13 @@ public class AuditLog implements Serializable {
 
     public void setLiabilityCause(LiabilityCause liabilityCause) {
         this.liabilityCause = liabilityCause;
+    }
+
+    public PercentageRange getPercentageRange() {
+        return percentageRange;
+    }
+
+    public void setPercentageRange(PercentageRange percentageRange) {
+        this.percentageRange = percentageRange;
     }
 }
