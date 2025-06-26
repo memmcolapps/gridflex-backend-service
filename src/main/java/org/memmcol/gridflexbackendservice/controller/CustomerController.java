@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.service.customer.CustomerService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,11 +51,11 @@ public class CustomerController {
             @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
-            @RequestParam(value = "meterAssigned", required = false, defaultValue = "") Boolean meterAssigned,
+            @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, meterNumber, accountNumber, meterAssigned, customerId);
+            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, meterNumber, accountNumber, status, customerId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -63,8 +64,7 @@ public class CustomerController {
 
     @GetMapping("/single-customer")
     public ResponseEntity<?> singleCustomer(
-            @RequestParam(value = "id", required = true) UUID id
-            ) {
+            @RequestParam(value = "id", required = true) UUID id) {
         try {
             Map<String, Object> result = service.singleCustomer(id);
             return ResponseEntity.ok(result);
@@ -74,12 +74,14 @@ public class CustomerController {
     }
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> changeState(@RequestParam UUID customerId, @RequestParam Boolean status, @RequestParam String reason){
+    public ResponseEntity<?> changeState(@RequestParam UUID customerId, @RequestParam String status, @RequestParam String reason){
         try {
             Map<String, Object> result = service.changeState(customerId, status, reason);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
+        } catch (MissingServletRequestParameterException e) {
+            throw new RuntimeException(e);
         }
     }
 

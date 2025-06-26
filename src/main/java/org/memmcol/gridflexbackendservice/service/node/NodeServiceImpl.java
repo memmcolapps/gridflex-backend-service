@@ -313,9 +313,6 @@ public class NodeServiceImpl implements NodeService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             UserModel um = handleUserValidation();
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
 //
             Object cachedUser = nodeCache.get(nodeId.toString() + "_" + um.getOrgId());
             if (cachedUser != null) {
@@ -366,9 +363,7 @@ public class NodeServiceImpl implements NodeService {
         try {
 
             UserModel um = handleUserValidation();
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
+
             StringBuilder cacheKeyBuilder = new StringBuilder("nodes_"+um.getOrgId());
             String cacheKey = cacheKeyBuilder.toString();
 
@@ -402,7 +397,6 @@ public class NodeServiceImpl implements NodeService {
                     }
                 }
             }
-
 
             nodeCache.put(cacheKey, roots);
 

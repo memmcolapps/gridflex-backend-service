@@ -3,11 +3,14 @@ package org.memmcol.gridflexbackendservice.service.customer;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
@@ -31,17 +34,22 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.*;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-@Transactional
+import static com.hazelcast.map.impl.operation.steps.IMapOpStep.BATCH_SIZE;
+
 @Service
 public class CustomerServiceImpl implements CustomerService {
 
@@ -74,6 +82,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.auditCache = hazelcastInstance.getMap("audit-Cache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createCustomer(Customer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -82,20 +91,12 @@ public class CustomerServiceImpl implements CustomerService {
 
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-//            // check if customer exist
-//            Customer isCustomer = customerMapper.findByAccountNo(request.getAccountNumber());
-//            if (isCustomer != null){
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(customerName + " " + status.getExistDesc());
-//            }
-
-            // Generate unique customer ID using 13-digit timestamp
             String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
             request.setCustomerId(uniqueCustomerId);
 
             request.setOrgId(um.getOrgId());
+            request.setStatus("inactive");
+
             // Insert into customer
             customerMapper.insertCustomer(request);
 
@@ -110,6 +111,7 @@ public class CustomerServiceImpl implements CustomerService {
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), "");
+
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
             exception.printStackTrace();
@@ -121,6 +123,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateCustomer(Customer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -129,21 +132,10 @@ public class CustomerServiceImpl implements CustomerService {
 
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-//            System.out.println("Updating Customer [" + request.getAccountNumber() + "]");
-//            // check if customer exist
-//            Customer isCustomer = customerMapper.findByAccountNo(request.getAccountNumber());
-//            if (isCustomer == null){
-//                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
-//            }
-
             request.setOrgId(um.getOrgId());
+
             // Insert into customer
             customerMapper.updateCustomer(request);
-//            UUID id = request.getId();
-//            System.out.println("id: " + id);
             Customer customer = customerMapper.findById(request.getId(), um.getOrgId());
 
             handleAddCache(customer);
@@ -165,18 +157,15 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> allCustomers(
             int page, int size, String firstname, String lastname, String meterNumber,
-            String accountNumber, Boolean meterAssigned, String customerId) {
+            String accountNumber, String assignedStatus, String customerId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disable");
-            }
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("customers_"+um.getOrgId());
@@ -184,9 +173,10 @@ public class CustomerServiceImpl implements CustomerService {
             if (lastname != null && !lastname.isEmpty()) cacheKeyBuilder.append("_lastname_").append(lastname);
             if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
             if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
+            if (assignedStatus != null && !assignedStatus.isEmpty()) cacheKeyBuilder.append("_status_").append(assignedStatus);
 //            if (address != null && !address.isEmpty()) cacheKeyBuilder.append("_address_").append(address);
 //            if (state != null && !state.isEmpty()) cacheKeyBuilder.append("_state_").append(state);
-            if (meterAssigned != null) cacheKeyBuilder.append("_st_").append(meterAssigned);
+//            if (meterAssigned != null) cacheKeyBuilder.append("_st_").append(meterAssigned);
             cacheKeyBuilder.append("_page_").append(page);
             cacheKeyBuilder.append("_size_").append(size);
 
@@ -211,16 +201,16 @@ public class CustomerServiceImpl implements CustomerService {
                 userStream = userStream.filter(u -> u.getLastname() != null && u.getLastname().equalsIgnoreCase(lastname));
             }
 
+            if (assignedStatus != null && !assignedStatus.isEmpty()) {
+                userStream = userStream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(lastname));
+            }
+
             if (meterNumber != null && !meterNumber.isEmpty()) {
                 userStream = userStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
             }
 
             if (customerId != null && !customerId.isEmpty()) {
                 userStream = userStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
-            }
-
-            if (meterAssigned != null) {
-                userStream = userStream.filter(u -> u.getMeterAssigned() != null);
             }
 
 
@@ -260,16 +250,13 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> singleCustomer(UUID id) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
 
             Object cachedUser = customerCache.get(id.toString()+"_"+um.getOrgId());
 
@@ -297,16 +284,12 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Map<String, Object> changeState(UUID customerId, Boolean state, String reason) {
+    public Map<String, Object> changeState(UUID customerId, String state, String reason) throws MissingServletRequestParameterException {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
 
             // check if customer exist
             Customer isCustomer = customerMapper.findById(customerId, um.getOrgId());
@@ -314,20 +297,16 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
             }
 
-            int isStatus = customerMapper.changeStatus(customerId, state, um.getOrgId());
-            if (isStatus != 1) {
-                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getUpdateFailureDesc());
+            if(state.equalsIgnoreCase("active") || state.equalsIgnoreCase("inactive") || state.equalsIgnoreCase("blocked")){
+                int isStatus = customerMapper.changeStatus(customerId, state.toLowerCase(), um.getOrgId());
+                if (isStatus != 1) {
+                    throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getUpdateFailureDesc());
+                }
+            } else {
+                throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", state);
             }
 
-
-            String desc = state ? "Activated" : "Deactivated" + " User [" + isCustomer.getEmail() + "]";
-
-
-//            Map<String, Object> reasonMap = new HashMap<>();
-//            Map<String, Object> map = new HashMap<>();
-//            map.put("desc", desc);
-//            map.put("reason", reason);
-//            reasonMap.put("status", map);
+            String desc = state + " User [" + isCustomer.getEmail() + "]";
 
             Customer customer = customerMapper.findById(customerId, um.getOrgId());
 
@@ -338,7 +317,9 @@ public class CustomerServiceImpl implements CustomerService {
             auditNotificationDTO.setType("customer");
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
+
+            return ResponseMap.response(status.getSuccessCode(), "Customer " + state + " Successfully", "");
+            
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -350,141 +331,236 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+//    @Transactional
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+        UserModel currentUser = handleUserValidation();
         String filename = file.getOriginalFilename();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        List<Customer> customers;
-        assert filename != null;
+
+        if (filename == null || filename.trim().isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file must have a valid name.");
+        }
+
+        final int MAX_UPLOAD_LIMIT = 2000;
+        final int BATCH_SIZE = 200;
+        final List<Customer> batch = new ArrayList<>();
+        final List<String> failedRecords = new ArrayList<>();
+        final int[] totalCount = {0};
+        final int[] successCount = {0};
+        ExceptionErrorLogs errorLogs = new ExceptionErrorLogs();
+
+        Consumer<Customer> customerConsumer = customer -> {
+//            if (totalCount[0] >= MAX_UPLOAD_LIMIT) {
+//                return; // Ignore further records after hitting the limit
+//            }
+            if (totalCount[0] >= MAX_UPLOAD_LIMIT) {
+                throw new IllegalArgumentException("Maximum upload limit of " + MAX_UPLOAD_LIMIT + " records exceeded.");
+            }
+
+            totalCount[0]++;
+            customer.setCustomerId("C" + Instant.now().toEpochMilli());
+            customer.setOrgId(currentUser.getOrgId());
+            customer.setStatus("inactive");
+            batch.add(customer);
+
+            if (batch.size() >= BATCH_SIZE) {
+                processBatch(batch, successCount, failedRecords);
+            }
+        };
+
+        // Parse with streaming logic
         if (filename.endsWith(".csv")) {
-            customers = parseCSV(file);
+            parseCSV(file, customerConsumer);
         } else if (filename.endsWith(".xlsx")) {
-            customers = parseExcel(file);
+            parseExcel(file, customerConsumer);
         } else {
             throw new IllegalArgumentException("Unsupported file type");
         }
-        System.out.println("Uploading " + customers.size() + " customers");
-        customers.forEach(System.out::println);
 
-
-
-        List<String> failedRecords = new ArrayList<>();
-        List<String> fullErrors = new ArrayList<>();
-        int successCount = 0;
-
-        for (Customer customer : customers) {
-            try {
-
-                customerMapper.insertCustomer(customer);
-                successCount++;
-            }
-            catch (Exception exception) {
-                // Build a full identifier string from unique keys
-                String identifier = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
-                        customer.getCustomerId(),
-                        customer.getEmail(),
-                        customer.getNin(),
-                        customer.getMeterNumber());
-
-                // Add to failed summary
-                failedRecords.add(identifier + " - " + exception.getMessage());
-
-                // Add full exception for audit
-                fullErrors.add(identifier + " - " + exception);
-
-                exception.printStackTrace();
-
-                // Log in system
-                log.error("Failed to upload customer [DATA]: {} | [ERROR]: {}", identifier, exception.getMessage(), exception);
-//                // Log a meaningful identifier of the customer
-//                String identifier = customer.getAccountNumber() != null
-//                        ? customer.getAccountNumber()
-//                        : customer.getFirstname() + " " + customer.getLastname();
-//                failedRecords.add(identifier + " - " + exception.getMessage());
-//
-//                exception.printStackTrace(); // Optional: keep logs for debugging
-//
-//                e.add(exception.toString());
-//                log.error("Error occurred while upload customer record [ACTION]: {}", exception.getMessage(), exception);
-            }
+        // Final insert for any remaining customers
+        if (!batch.isEmpty()) {
+            processBatch(batch, successCount, failedRecords);
         }
+
+        // Save all errors once
         if (!failedRecords.isEmpty()) {
-            exceptionErrorLogs.setDescription("Error occurred while trying to upload customer record");
-            exceptionErrorLogs.setError_message(String.join("; ", failedRecords));
-            exceptionErrorLogs.setError(fullErrors.toString());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            errorLogs.setDescription("Error occurred while trying to upload customer records");
+            errorLogs.setError_message(String.join("; ", failedRecords));
+            exceptionAuditRepository.save(errorLogs);
         }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
-                successCount + " of " + customers.size() + " " + customerName + "s " + status.getRegDesc(),
-                failedRecords.isEmpty() ? "" : "Some records failed to upload. See error logs.");
-
-
+                String.format("%d of %d %ss %s", successCount[0], totalCount[0], customerName, status.getRegDesc()),
+                failedRecords.isEmpty() ? "" : failedRecords
+        );
     }
 
-    //        try {
-//            for (Customer customer : customers) {
-//                customerMapper.insertCustomer(customer);
+    private void processBatch(List<Customer> batch, int[] successCount, List<String> failedRecords) {
+        try {
+            customerMapper.bulkInsertCustomers(batch);
+            successCount[0] += batch.size();
+        } catch (Exception batchEx) {
+            log.warn("Batch insert failed. Falling back to single inserts");
+            for (Customer customer : batch) {
+                try {
+                    customerMapper.insertCustomer(customer);
+                    successCount[0]++;
+                } catch (Exception e) {
+                    String failedId = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
+                            customer.getCustomerId(), customer.getEmail(),
+                            customer.getNin(), customer.getMeterNumber());
+                    failedRecords.add(failedId + " - " + e.getMessage());
+                    log.error("Single insert failed for {}: {}", failedId, e.getMessage(), e);
+                }
+            }
+        }
+        batch.clear();
+    }
+
+    private void parseCSV(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
+        try (
+                Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+                CSVParser parser = CSVFormat.DEFAULT
+                        .withFirstRecordAsHeader()
+                        .parse(reader)
+        ) {
+            for (CSVRecord record : parser) {
+                Customer customer = buildCustomer(
+                        record.get("firstname"),
+                        record.get("lastname"),
+                        record.get("nin"),
+                        record.get("phoneNumber"),
+                        record.get("email"),
+                        record.get("state"),
+                        record.get("city"),
+                        record.get("houseNo"),
+                        record.get("streetName"),
+                        record.get("vat")
+                );
+                customerConsumer.accept(customer);
+            }
+        }
+    }
+
+
+    public void parseExcel(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
+        try {
+            OPCPackage pkg = OPCPackage.open(file.getInputStream());
+            XSSFReader reader = new XSSFReader(pkg);
+            InputStream sheetStream = reader.getSheetsData().next(); // Only first sheet
+
+            XMLReader parser = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+            parser.setContentHandler(new ExcelSheetHandler(customerConsumer));
+
+            parser.parse(new InputSource(sheetStream));
+
+            sheetStream.close();
+            pkg.close();
+        } catch (Exception e) {
+            throw new IOException("Error while parsing Excel file", e);
+        }
+    }
+
+
+
+    public class ExcelSheetHandler extends DefaultHandler {
+        private final Consumer<Customer> customerConsumer;
+
+        private StringBuilder value = new StringBuilder();
+        private String[] rowData = new String[10];
+        private int colIndex = -1;
+        private boolean insideValue = false;
+        private boolean isHeaderRow = true;
+
+        public ExcelSheetHandler(Consumer<Customer> customerConsumer) {
+            this.customerConsumer = customerConsumer;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes attributes) {
+            if ("row".equals(qName)) {
+                colIndex = -1;
+                rowData = new String[10]; // Reset row
+            }
+            if ("c".equals(qName)) {
+                colIndex++;
+            }
+            if ("v".equals(qName)) {
+                insideValue = true;
+                value.setLength(0);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) {
+            if (insideValue) {
+                value.append(ch, start, length);
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) {
+            if ("v".equals(qName)) {
+                rowData[colIndex] = value.toString();
+                insideValue = false;
+            } else if ("row".equals(qName)) {
+                if (isHeaderRow) {
+                    isHeaderRow = false; // skip header
+                } else {
+                    Customer customer = buildCustomer(
+                            safeGet(rowData, 0),
+                            safeGet(rowData, 1),
+                            safeGet(rowData, 2),
+                            safeGet(rowData, 3),
+                            safeGet(rowData, 4),
+                            safeGet(rowData, 5),
+                            safeGet(rowData, 6),
+                            safeGet(rowData, 7),
+                            safeGet(rowData, 8),
+                            safeGet(rowData, 9)
+                    );
+                    customerConsumer.accept(customer);
+                }
+            }
+        }
+
+        private String safeGet(String[] array, int index) {
+            return (index >= 0 && index < array.length) ? array[index] : "";
+        }
+    }
+
+//    private void parseExcel(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
+//        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+//            Sheet sheet = workbook.getSheetAt(0);
+//            Iterator<Row> rowIterator = sheet.iterator();
+//
+//            if (rowIterator.hasNext()) rowIterator.next(); // Skip header row
+//
+//            while (rowIterator.hasNext()) {
+//                Row row = rowIterator.next();
+//                Customer customer = buildCustomer(
+//                        getCellValue(row.getCell(0)),
+//                        getCellValue(row.getCell(1)),
+//                        getCellValue(row.getCell(2)),
+//                        getCellValue(row.getCell(3)),
+//                        getCellValue(row.getCell(4)),
+//                        getCellValue(row.getCell(5)),
+//                        getCellValue(row.getCell(6)),
+//                        getCellValue(row.getCell(7)),
+//                        getCellValue(row.getCell(8)),
+//                        getCellValue(row.getCell(9))
+//                );
+//                customerConsumer.accept(customer);
 //            }
-//            return ResponseMap.response(status.getSuccessCode(), customers.size() + " " + customerName + "s " + status.getRegDesc(), "");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            throw new RuntimeException("Failed to insert customers: " + e.getMessage());
 //        }
-    private List<Customer> parseCSV(MultipartFile file) throws IOException {
-        List<Customer> customers = new ArrayList<>();
-        Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
-        Iterable<CSVRecord> records = CSVFormat.DEFAULT
-                .withFirstRecordAsHeader()
-                .parse(reader);
+//    }
 
-        for (CSVRecord record : records) {
-            customers.add(buildCustomer(UUID.fromString(record.get("orgId")), record.get("firstname"),
-                    record.get("lastname"), record.get("customerId"), record.get("nin"),
-                    record.get("phoneNumber"), record.get("email"), record.get("state"),
-                    record.get("city"), record.get("houseNo"), record.get("streetName")));
-        }
 
-        return customers;
-    }
-
-    private List<Customer> parseExcel(MultipartFile file) throws IOException {
-        List<Customer> customers = new ArrayList<>();
-        Workbook workbook = new XSSFWorkbook(file.getInputStream());
-        Sheet sheet = workbook.getSheetAt(0);
-
-        Iterator<Row> rowIterator = sheet.iterator();
-        if (rowIterator.hasNext()) rowIterator.next(); // Skip header
-
-        while (rowIterator.hasNext()) {
-            Row row = rowIterator.next();
-
-            customers.add(buildCustomer(
-                    UUID.fromString(getCellValue(row.getCell(0))),
-                    getCellValue(row.getCell(1)),
-                    getCellValue(row.getCell(2)),
-                    getCellValue(row.getCell(3)),
-                    getCellValue(row.getCell(4)),
-                    getCellValue(row.getCell(5)),
-                    getCellValue(row.getCell(6)),
-                    getCellValue(row.getCell(7)),
-                    getCellValue(row.getCell(8)),
-                    getCellValue(row.getCell(9)),
-                    getCellValue(row.getCell(10))
-            ));
-        }
-
-        workbook.close();
-        return customers;
-    }
-
-    private Customer buildCustomer(UUID orgId, String firstname, String lastname,
-                                   String customerId, String nin ,String phoneNumber, String email,
-                                   String state,  String city, String houseNo, String streetName) {
+    private Customer buildCustomer(String firstname, String lastname, String nin ,String phoneNumber, String email,
+                                   String state, String city, String houseNo, String streetName, String vat) {
         Customer c = new Customer();
-        c.setOrgId(orgId);
         c.setFirstname(firstname);
         c.setLastname(lastname);
-        c.setCustomerId(customerId);
         c.setNin(nin);
         c.setPhoneNumber(phoneNumber);
         c.setEmail(email);
@@ -492,6 +568,7 @@ public class CustomerServiceImpl implements CustomerService {
         c.setCity(city);
         c.setHouseNo(houseNo);
         c.setStreetName(streetName);
+        c.setVat(vat);
         return c;
     }
 
@@ -516,6 +593,11 @@ public class CustomerServiceImpl implements CustomerService {
 
         UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 
+
+        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+            throw new LockedException("User is disabled");
+        }
+
         return isOperatorExist;
     }
 
@@ -534,3 +616,185 @@ public class CustomerServiceImpl implements CustomerService {
         customerCache.put(customer.getId().toString()+"_"+customer.getOrgId(), customer);  // Cache updated or deleted entity
     }
 }
+
+
+//                // Log a meaningful identifier of the customer
+//                String identifier = customer.getAccountNumber() != null
+//                        ? customer.getAccountNumber()
+//                        : customer.getFirstname() + " " + customer.getLastname();
+//                failedRecords.add(identifier + " - " + exception.getMessage());
+//
+//                exception.printStackTrace(); // Optional: keep logs for debugging
+//
+//                e.add(exception.toString());
+//                log.error("Error occurred while upload customer record [ACTION]: {}", exception.getMessage(), exception);
+
+
+
+///
+
+
+//    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+//
+//        UserModel um = handleUserValidation();
+//
+//        String filename = file.getOriginalFilename();
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        List<Customer> customers;
+//        String identifier = "";
+//        assert filename != null;
+//        if (filename.endsWith(".csv")) {
+//            customers = parseCSV(file);
+//        } else if (filename.endsWith(".xlsx")) {
+//            customers = parseExcel(file);
+//        } else {
+//            throw new IllegalArgumentException("Unsupported file type");
+//        }
+//        System.out.println("Uploading " + customers.size() + " customers");
+//        customers.forEach(System.out::println);
+//
+//
+//
+//        List<String> failedRecords = new ArrayList<>();
+//        List<String> fullErrors = new ArrayList<>();
+//        int successCount = 0;
+//
+//        for (Customer customer : customers) {
+//            try {
+//                customer.setOrgId(um.getOrgId());
+//                customer.setStatus("inactive");
+//                customerMapper.insertCustomer(customer);
+//                successCount++;
+//            }
+//            catch (Exception exception) {
+//                // Build a full identifier string from unique keys
+//                identifier = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
+//                        customer.getCustomerId(),
+//                        customer.getEmail(),
+//                        customer.getNin(),
+////                        customer.getMeterNumber());
+//
+//                // Add to failed summary
+//                failedRecords.add(identifier + " - " + exception.getMessage()));
+//
+//                // Add full exception for audit
+//                fullErrors.add(identifier + " - " + exception);
+//
+//                exception.printStackTrace();
+//
+//                // Log in system
+//                log.error("Failed to upload customer [DATA]: {} | [ERROR]: {}", identifier, exception.getMessage(), exception);
+//
+//            }
+//        }
+//        if (!failedRecords.isEmpty()) {
+//            exceptionErrorLogs.setDescription("Error occurred while trying to upload customer record");
+//            exceptionErrorLogs.setError_message(String.join("; ", failedRecords));
+//            exceptionErrorLogs.setError(fullErrors.toString());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//        }
+//        return ResponseMap.response(
+//                status.getSuccessCode(),
+//                successCount + " of " + customers.size() + " " + customerName + "s " + status.getRegDesc(),
+//                failedRecords.isEmpty() ? "" : "Some records failed to upload. See error logs.");
+//
+//    }
+
+///-------
+
+//    @Override
+//    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+//        UserModel um = handleUserValidation();
+//
+//        List<Customer> customers;
+//        String filename = file.getOriginalFilename();
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        String identifier = "";
+//        assert filename != null;
+//        if (filename.endsWith(".csv")) {
+//            customers = parseCSV(file);
+//        } else if (filename.endsWith(".xlsx")) {
+//            customers = parseExcel(file);
+//        } else {
+//            throw new IllegalArgumentException("Unsupported file type");
+//        }
+//
+//        int total = customers.size();
+//        int success = 0;
+//        List<String> failedRecords = new ArrayList<>();
+//
+//        for (int i = 0; i < total; i += BATCH_SIZE) {
+//            int end = Math.min(i + BATCH_SIZE, total);
+//            List<Customer> batch = customers.subList(i, end);
+//
+//            batch.forEach(customer -> {
+//                customer.setOrgId(um.getOrgId());
+//                customer.setStatus("inactive");
+//            });
+//
+//            try {
+//                customerMapper.bulkInsertCustomers(batch);
+//                success += batch.size();
+//            } catch (Exception e) {
+//                failedRecords.add("Batch " + i + "-" + end + " failed: " + e.getMessage());
+//            }
+//        }
+//
+//        if (!failedRecords.isEmpty()) {
+//            exceptionErrorLogs.setDescription("Error occurred while trying to upload customer record");
+//            exceptionErrorLogs.setError_message(String.join("; ", failedRecords));
+////            exceptionErrorLogs.setError(fullErrors.toString());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//        }
+//
+//        return ResponseMap.response(
+//        status.getSuccessCode(),
+//                success + " of " + customers.size() + " " + customerName + "s " + status.getRegDesc(),
+//        failedRecords.isEmpty() ? "" : "Some records failed to upload. See error logs.");
+//    }
+
+
+//    private List<Customer> parseCSV(MultipartFile file) throws IOException {
+//        List<Customer> customers = new ArrayList<>();
+//        Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+//        Iterable<CSVRecord> records = CSVFormat.DEFAULT
+//                .withFirstRecordAsHeader()
+//                .parse(reader);
+//
+//        for (CSVRecord record : records) {
+//            customers.add(buildCustomer(record.get("firstname"),
+//                    record.get("lastname"),record.get("nin"), record.get("phoneNumber"), record.get("email"), record.get("state"),
+//                    record.get("city"), record.get("houseNo"), record.get("streetName"), record.get("vat")));
+//        }
+//
+//        return customers;
+//    }
+
+//    private List<Customer> parseExcel(MultipartFile file) throws IOException {
+//        List<Customer> customers = new ArrayList<>();
+//        Workbook workbook = new XSSFWorkbook(file.getInputStream());
+//        Sheet sheet = workbook.getSheetAt(0);
+//
+//        Iterator<Row> rowIterator = sheet.iterator();
+//        if (rowIterator.hasNext()) rowIterator.next(); // Skip header
+//
+//        while (rowIterator.hasNext()) {
+//            Row row = rowIterator.next();
+//
+//            customers.add(buildCustomer(
+//                    getCellValue(row.getCell(0)),
+//                    getCellValue(row.getCell(1)),
+//                    getCellValue(row.getCell(2)),
+//                    getCellValue(row.getCell(3)),
+//                    getCellValue(row.getCell(4)),
+//                    getCellValue(row.getCell(5)),
+//                    getCellValue(row.getCell(6)),
+//                    getCellValue(row.getCell(7)),
+//                    getCellValue(row.getCell(8)),
+//                    getCellValue(row.getCell(9))
+//            ));
+//        }
+//
+//        workbook.close();
+//        return customers;
+//    }

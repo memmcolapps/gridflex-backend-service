@@ -178,14 +178,14 @@ public interface AuthMapper {
             node_id, name, 
             NULL AS serial_no, phone_number, email, contact_person, address, 
             NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
-            created_at, updated_at, type
+            created_at, updated_at, type, NULL AS asset_id
         FROM region_bhub_service_centers
         WHERE node_id = #{nodeId}
         UNION
         SELECT
             id, NULL AS region_id, 
             node_id, name, serial_no, phone_number, email, contact_person,
-            address, status, voltage, latitude, longitude, description, created_at, updated_at, type
+            address, status, voltage, latitude, longitude, description, created_at, updated_at, type,  asset_id
         FROM substation_trans_feeder_lines
         WHERE node_id = #{nodeId}
         """)
@@ -194,6 +194,7 @@ public interface AuthMapper {
             @Result(property = "phoneNo", column = "phone_number"),
             @Result(property = "contactPerson", column = "contact_person"),
             @Result(property = "orgId", column = "org_id"),
+            @Result(property = "assetId", column = "asset_id"),
             @Result(property = "regionId", column = "region_id"),
             @Result(property = "serialNo", column = "serial_no"),
             @Result(property = "createdAt", column = "created_at"),

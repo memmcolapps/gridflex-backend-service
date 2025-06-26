@@ -17,6 +17,7 @@ public class NodeInfo implements Serializable {
     private UUID nodeId;
     private UUID parentId;
     private String regionId;
+    private String assetId;
     private String name;
     private String phoneNo;
     private String email;
@@ -81,6 +82,22 @@ public class NodeInfo implements Serializable {
         this.regionId = regionId;
     }
 
+    public String getAssetId() {
+        return assetId;
+    }
+
+    public void setAssetId(String assetId) {
+        this.assetId = assetId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getName() {
         return name;
     }
@@ -119,14 +136,6 @@ public class NodeInfo implements Serializable {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String gettype() {
-        return type;
-    }
-
-    public void settype(String type) {
-        this.type = type;
     }
 
     public String getSerialNo() {

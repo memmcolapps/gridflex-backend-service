@@ -48,21 +48,32 @@ public interface CustomerMapper {
 
 //    Customer findByAccountNo(String accountNumber);
 
-    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, meter_number, meter_assigned, created_at, updated_at) " +
-            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, true, #{meterNumber}, false, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, meter_number) " +
+            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat}, #{meterNumber})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCustomer(Customer request);
+
+    @Insert({
+            "<script>",
+            "INSERT INTO customer (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, meter_number) ",
+            "VALUES",
+            "<foreach collection='customers' item='c' separator=','>",
+            "(#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, ${vat}, #{meterNumber})",
+            "</foreach>",
+            "</script>"
+    })
+    int bulkInsertCustomers(@Param("customers") List<Customer> customers);
 
     @Update("UPDATE customers SET " +
             "firstname = #{firstname}, lastname = #{lastname}, nin = #{nin}, phone_number = #{phoneNumber}, " +
             "email = #{email}, state = #{state}, city = #{city}, house_no = #{houseNo}, " +
-            "street_name = #{streetName}, updated_at = #{updatedAt} " +
+            "street_name = #{streetName}, updated_at = #{updatedAt}, vat = #{vat} " +
             "WHERE id = #{id} AND org_id = #{orgId}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateCustomer(Customer request);
 
     @Update("UPDATE customers SET status = #{state} WHERE id = #{id} AND org_id = #{orgId}")
-    int changeStatus(UUID id, Boolean state, UUID orgId);
+    int changeStatus(UUID id, String state, UUID orgId);
 
     @Select("SELECT * FROM customers WHERE org_id = #{orgId} ORDER BY created_at DESC")
     @Results({

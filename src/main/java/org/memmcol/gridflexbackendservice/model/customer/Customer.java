@@ -27,8 +27,9 @@ public class Customer implements Serializable {
     private String city;
     private String houseNo;
     private String streetName;
-    private Boolean status;
-    private Boolean meterAssigned;
+    private String status;
+    private String vat;
+//    private Boolean meterAssigned;
     private String meterNumber;
     private List<Meter> meter;
 
@@ -155,28 +156,44 @@ public class Customer implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public Boolean getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(Boolean status) {
+    public void setStatus(String status) {
         this.status = status;
     }
+    //    public Boolean getStatus() {
+//        return status;
+//    }
+//
+//    public void setStatus(Boolean status) {
+//        this.status = status;
+//    }
 
-    public Boolean getMeterAssigned() {
-        return meterAssigned;
-    }
-
-    public void setMeterAssigned(Boolean meterAssigned) {
-        this.meterAssigned = meterAssigned;
-    }
-
+//    public Boolean getMeterAssigned() {
+//        return meterAssigned;
+//    }
+//
+//    public void setMeterAssigned(Boolean meterAssigned) {
+//        this.meterAssigned = meterAssigned;
+//    }
+//
     public String getMeterNumber() {
         return meterNumber;
     }
 
     public void setMeterNumber(String meterNumber) {
         this.meterNumber = meterNumber;
+    }
+
+
+    public String getVat() {
+        return vat;
+    }
+
+    public void setVat(String vat) {
+        this.vat = vat;
     }
 
     public List<Meter> getMeter() {
