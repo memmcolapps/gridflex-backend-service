@@ -111,6 +111,17 @@ public class HazelcastConfig {
 		// Set up Near Cache
 		config.getMapConfig("near-cache").setNearCacheConfig(nearCacheConfig);
 
+		// Configure Band Cache
+		config.addMapConfig(new MapConfig("debt-cache")
+				.setTimeToLiveSeconds(18000)
+				.setEvictionConfig(new EvictionConfig()
+						.setEvictionPolicy(EvictionPolicy.LRU)
+						.setMaxSizePolicy(MaxSizePolicy.PER_NODE)
+						.setSize(1000))
+				.setBackupCount(1));
+		// Set up Near Cache
+		config.getMapConfig("near-cache").setNearCacheConfig(nearCacheConfig);
+
 		return Hazelcast.newHazelcastInstance(config);
 	}
 }

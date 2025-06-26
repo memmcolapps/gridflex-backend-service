@@ -67,7 +67,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     private String pr = "Percentage Range";
 
     public DebtSettingServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.debtCache = hazelcastInstance.getMap("debtCache-Cache");
+        this.debtCache = hazelcastInstance.getMap("debt-Cache");
         this.auditCache = hazelcastInstance.getMap("audit-Cache");
     }
 
