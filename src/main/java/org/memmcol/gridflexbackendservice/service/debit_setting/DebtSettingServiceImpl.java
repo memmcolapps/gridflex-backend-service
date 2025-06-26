@@ -332,6 +332,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(isExist != null){
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(pr + " " + status.getExistDesc());
             }
+
+            Band band = debtMapper.getBand(request.getBand(), um.getOrgId());
+            if (band == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Band "+ status.getNotFoundDesc());
+            }
+
             request.setStatus(false); //inactive
             request.setApproveStatus("pending");
             request.setCreatedBy(um.getId());

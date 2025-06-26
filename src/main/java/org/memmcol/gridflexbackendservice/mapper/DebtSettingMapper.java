@@ -152,4 +152,7 @@ public interface DebtSettingMapper {
             "amount_start_range = #{amountStartRange}, amount_end_range = #{amountEndRange} " +
             "WHERE percentage_id = #{percentage} AND approve_status = 'pending'")
     int updatePercentageVer(PercentageRange request);
+
+    @Select("SELECT * FROM bands WHERE name = #{bandName} AND org_id = #{orgId}")
+    Band getBand(String bandName, UUID orgId);
 }
