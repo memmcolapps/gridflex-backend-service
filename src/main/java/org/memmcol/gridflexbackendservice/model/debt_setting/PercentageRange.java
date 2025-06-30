@@ -3,8 +3,10 @@ package org.memmcol.gridflexbackendservice.model.debt_setting;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.UUID;
 
 @Data
@@ -13,26 +15,27 @@ public class PercentageRange implements Serializable {
     private UUID id;
     private UUID percentageId;
     private UUID orgId;
-    private String name;
+    private UUID bandId;
+    private String percentage;
     private String code;
-    private String band;
+    private Band band;
     private String amountStartRange;
     private String amountEndRange;
     private Boolean status;
     private String approveStatus;
     private UUID createdBy;
-    private UUID approvedBy;
+    private UUID approveBy;
     private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private String createdAt;
+    private Date createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private String updatedAt;
+    private Date updatedAt;
 
-    public PercentageRange(String createdAt, String updatedAt) {
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+    public PercentageRange() {
+        this.createdAt = new Date();;
+        this.updatedAt = new Date();;
     }
 
     public UUID getId() {
@@ -59,12 +62,20 @@ public class PercentageRange implements Serializable {
         this.orgId = orgId;
     }
 
-    public String getName() {
-        return name;
+    public UUID getBandId() {
+        return bandId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setBandId(UUID bandId) {
+        this.bandId = bandId;
+    }
+
+    public String getPercentage() {
+        return percentage;
+    }
+
+    public void setPercentage(String percentage) {
+        this.percentage = percentage;
     }
 
     public String getCode() {
@@ -75,11 +86,11 @@ public class PercentageRange implements Serializable {
         this.code = code;
     }
 
-    public String getBand() {
+    public Band getBand() {
         return band;
     }
 
-    public void setBand(String band) {
+    public void setBand(Band band) {
         this.band = band;
     }
 
@@ -123,12 +134,12 @@ public class PercentageRange implements Serializable {
         this.createdBy = createdBy;
     }
 
-    public UUID getApprovedBy() {
-        return approvedBy;
+    public UUID getApproveBy() {
+        return approveBy;
     }
 
-    public void setApprovedBy(UUID approvedBy) {
-        this.approvedBy = approvedBy;
+    public void setApproveBy(UUID approveBy) {
+        this.approveBy = approveBy;
     }
 
     public String getDescription() {
@@ -139,19 +150,19 @@ public class PercentageRange implements Serializable {
         this.description = description;
     }
 
-    public String getCreatedAt() {
+    public Date getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getUpdatedAt() {
+    public Date getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(String updatedAt) {
+    public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
 }

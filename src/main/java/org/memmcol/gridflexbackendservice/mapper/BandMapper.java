@@ -18,9 +18,6 @@ public interface BandMapper {
             "VALUES (#{name}, #{hour}, #{orgId}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{approveStatus}, #{bandId})")
     int createBandVersion(Band band);
 
-//    @Update("UPDATE bands SET name = #{name}, hour = #{hour}, updated_at = #{updated_at} WHERE Id = #{id} AND org_id = #{orgId}")
-//    int updateBand(Band bands);
-
     @Select("SELECT * FROM bands WHERE org_id = #{orgId}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
@@ -51,15 +48,6 @@ public interface BandMapper {
     })
     Band getBand(String name);
 
-//    @Select("SELECT * FROM bands_version WHERE name = #{name} AND approve_status = 'pending' AND org_id = #{orgId}")
-//    @Results({
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "approveStatus", column = "approve_status"),
-//            @Result(property = "createdAt", column = "created_at"),
-//            @Result(property = "updatedAt", column = "updated_at")
-//    })
-//    Band getVersionBand(UUID id, UUID orgId);
-
     @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
@@ -69,8 +57,17 @@ public interface BandMapper {
     })
     Band getBandById(UUID id, UUID orgId);
 
-//    @Update("UPDATE bands SET status = #{status} WHERE id = #{bandId} AND org_id = #{orgId}")
-//    int disableBand(UUID bandId, Boolean status, UUID orgId);
+    @Select("SELECT * FROM bands_version WHERE id = #{id} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "bandId", column = "band_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdBy", column = "created_by"),
+            @Result(property = "approveBy", column = "approve_by"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Band getBandVersion(UUID id, UUID orgId);
 
     @Select("SELECT * FROM bands_version WHERE band_id = #{bandId} AND org_id = #{orgId} AND approve_status = 'pending'")
     @Results({
@@ -103,7 +100,10 @@ public interface BandMapper {
     @Select("SELECT * FROM bands_version WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'pending'")
     @Results({
             @Result(property = "orgId", column = "org_id"),
+            @Result(property = "bandId", column = "band_id"),
             @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdBy", column = "created_by"),
+            @Result(property = "approveBy", column = "approve_by"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })

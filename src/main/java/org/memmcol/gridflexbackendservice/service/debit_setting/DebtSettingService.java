@@ -26,5 +26,5 @@ public interface DebtSettingService {
 
     Map<String, Object> getPercentage(UUID id, UUID percentageVersionId);
 
-    Map<String, Object> managePercentageState(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException;
+    Map<String, Object> managePercentageState(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException;
 }

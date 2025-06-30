@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.UUID;
 
 @Data
@@ -18,18 +19,18 @@ public class LiabilityCause implements Serializable {
     private Boolean status;
     private String approveStatus;
     private UUID createdBy;
-    private UUID approvedBy;
+    private UUID approveBy;
     private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private String createdAt;
+    private Date createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private String updatedAt;
+    private Date updatedAt;
 
-    public LiabilityCause(String createdAt, String updatedAt) {
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+    public LiabilityCause() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
     }
 
     public UUID getId() {
@@ -96,12 +97,12 @@ public class LiabilityCause implements Serializable {
         this.createdBy = createdBy;
     }
 
-    public UUID getApprovedBy() {
-        return approvedBy;
+    public UUID getApproveBy() {
+        return approveBy;
     }
 
-    public void setApprovedBy(UUID approvedBy) {
-        this.approvedBy = approvedBy;
+    public void setApproveBy(UUID approveBy) {
+        this.approveBy = approveBy;
     }
 
     public String getDescription() {
@@ -112,19 +113,19 @@ public class LiabilityCause implements Serializable {
         this.description = description;
     }
 
-    public String getCreatedAt() {
+    public Date getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getUpdatedAt() {
+    public Date getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(String updatedAt) {
+    public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
 }

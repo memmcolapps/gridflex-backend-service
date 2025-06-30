@@ -310,7 +310,7 @@ public class BandServiceImpl implements BandService {
         try {
             UserModel um = handleUserValidation();
 
-            String cacheKey = "bands_"+type+"_"+um.getOrgId();
+            String cacheKey = "bands_"+um.getOrgId()+type;
             Object cachedBand = bandCache.get(cacheKey);
 
             if (cachedBand != null) {
@@ -340,19 +340,37 @@ public class BandServiceImpl implements BandService {
     }
 
     @Override
-    public Map<String, Object> getBand(UUID bandId) {
+    public Map<String, Object> getBand(UUID bandId, UUID bandVersionId) {
         try {
             UserModel um = handleUserValidation();
 
-            Object cachedBand = bandCache.get(bandId.toString());
+            Object cachedBand = null;
+
+            if(bandId != null){
+                cachedBand = bandCache.get(bandId.toString());
+            }
+            if(bandVersionId != null){
+                cachedBand = bandCache.get(bandVersionId.toString());
+            }
 
             if (cachedBand != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + " " + status.getDesc(), cachedBand);
             }
-            Band result = bandMapper.getBandById(bandId, um.getOrgId());
+            Band result = null;
+            if(bandId != null){
+                result = bandMapper.getBandById(bandId, um.getOrgId());
+            }
+
+            if(bandVersionId != null){
+                result = bandMapper.getBandVersion(bandVersionId, um.getOrgId());
+            }
+
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
+
+            handleAddCache(result);
+
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

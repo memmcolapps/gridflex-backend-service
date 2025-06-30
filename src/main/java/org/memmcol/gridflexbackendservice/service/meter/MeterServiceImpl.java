@@ -331,7 +331,7 @@ public class MeterServiceImpl implements MeterService {
 
             Meter meter = meterMapper.getMeter(um.getOrgId(), meterId);
 
-//            handleAddCache(meter);
+            handleAddCache(meter);
 
             return ResponseMap.response(status.getSuccessCode(),  meterName + " " + status.getDesc(), meter);
         } catch (Exception exception) {

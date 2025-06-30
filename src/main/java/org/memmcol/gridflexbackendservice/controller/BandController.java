@@ -55,9 +55,11 @@ public class BandController {
     }
 
     @GetMapping("/single-band")
-    public ResponseEntity<?> getSingleBand(@RequestParam UUID bandId) {
+    public ResponseEntity<?> getSingleBand(
+            @RequestParam(value = "bandId", required = false) UUID bandId,
+            @RequestParam(value = "bandVersionId", required = false) UUID bandVersionId) {
         try {
-            Map<String, Object> result = service.getBand(bandId);
+            Map<String, Object> result = service.getBand(bandId, bandVersionId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -16,8 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 
-@Controller
-@RestController("/debt-setting/service")
+
+@RestController
+@RequestMapping("/debt-setting/service")
 public class DebtSettingController {
     @Autowired
     private GlobalExceptionHandler exception;
@@ -58,11 +59,11 @@ public class DebtSettingController {
 
     @GetMapping("/liability-cause/single")
     public ResponseEntity<?> getLiabilityCause(
-            @RequestParam(value = "liabilityId", required = false, defaultValue = "") UUID liabilityId,
-            @RequestParam(value = "liabilityVersionId", required = false, defaultValue = "") UUID liabilityVersionId
+            @RequestParam(value = "liabilityCauseId", required = false, defaultValue = "") UUID liabilityCauseId,
+            @RequestParam(value = "liabilityCauseVersionId", required = false, defaultValue = "") UUID liabilityCauseVersionId
     ) {
         try {
-            Map<String, Object> result = service.getLiabilityCause(liabilityId, liabilityVersionId);
+            Map<String, Object> result = service.getLiabilityCause(liabilityCauseId, liabilityCauseVersionId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -83,7 +84,7 @@ public class DebtSettingController {
         }
     }
 
-    @PostMapping("/percentage/create")
+    @PostMapping("/percentage-range/create")
     public ResponseEntity<?> createPercentage(@RequestBody PercentageRange request) {
         try {
             Map<String, Object> result = service.createPercentage(request);
@@ -93,7 +94,7 @@ public class DebtSettingController {
         }
     }
 
-    @PutMapping("/percentage/update")
+    @PutMapping("/percentage-range/update")
     public ResponseEntity<?> updatePercentage(@RequestBody PercentageRange request) {
         try {
             Map<String, Object> result = service.updatePercentage(request);
@@ -103,7 +104,7 @@ public class DebtSettingController {
         }
     }
 
-    @GetMapping("/percentage/all")
+    @GetMapping("/percentage-range/all")
     public ResponseEntity<?> getAllPercentages(
             @RequestParam(value = "type", required = false, defaultValue = "") String type
     ) {
@@ -115,7 +116,7 @@ public class DebtSettingController {
         }
     }
 
-    @GetMapping("/percentage/single")
+    @GetMapping("/percentage-range/single")
     public ResponseEntity<?> getPercentage(
             @RequestParam(value = "percentageId", required = false, defaultValue = "") UUID percentageId,
             @RequestParam(value = "percentageVersionId", required = false, defaultValue = "") UUID percentageVersionId
@@ -128,12 +129,12 @@ public class DebtSettingController {
         }
     }
 
-    @PutMapping("/percentage/approve")
+    @PutMapping("/percentage-range/approve")
     public ResponseEntity<?> managePercentageState(
-            @RequestParam UUID liabilityCauseId,
+            @RequestParam UUID percentageId,
             @RequestParam String approveStatus) {
         try {
-            Map<String, Object> result = service.managePercentageState(liabilityCauseId, approveStatus);
+            Map<String, Object> result = service.managePercentageState(percentageId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

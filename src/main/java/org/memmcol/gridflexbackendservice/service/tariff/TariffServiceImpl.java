@@ -481,34 +481,36 @@ public class TariffServiceImpl implements TariffService {
     }
 
     @Override
-    public Map<String, Object> getTariff(UUID id, UUID tariffVersionId) {
+    public Map<String, Object> getTariff(UUID tariffId, UUID tariffVersionId) {
         try {
             UserModel um = handleUserValidation();
             Object cachedTariff = null;
-            if(id != null){
-                cachedTariff = tariffCache.get(id.toString());
+            if(tariffId != null) {
+                cachedTariff = tariffCache.get(tariffId.toString());
             }
             if(tariffVersionId != null){
                 cachedTariff = tariffCache.get(tariffVersionId.toString());
             }
-
 
             if (cachedTariff != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + tariffName + " " + status.getDesc(), cachedTariff);
             }
             Tariff result = null;
 
-            if(id != null){
-                result = tariffMapper.getTariff(id, um.getOrgId());
+            if(tariffId != null){
+                result = tariffMapper.getTariff(tariffId, um.getOrgId());
             }
 
             if(tariffVersionId != null){
-                result = tariffMapper.getSingleTariffVersionById(id, um.getOrgId());
+                result = tariffMapper.getSingleTariffVersionById(tariffId, um.getOrgId());
             }
-//            Tariff result = tariffMapper.getTariff(id, um.getOrgId());
+
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
+
+            handleAddCache(result);
+
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

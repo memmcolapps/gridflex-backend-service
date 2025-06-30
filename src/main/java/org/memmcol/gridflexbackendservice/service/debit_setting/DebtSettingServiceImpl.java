@@ -10,7 +10,6 @@ import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -62,7 +61,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     private final IMap<String, Object> auditCache;
 
-    private String lc = "Liability cause";
+    private String lc = "Liability Cause";
 
     private String pr = "Percentage Range";
 
@@ -87,6 +86,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
             request.setStatus(false); //inactive
             request.setApproveStatus("pending");
+            request.setOrgId(um.getOrgId());
             request.setCreatedBy(um.getId());
             request.setDescription(desc);
             result = debtMapper.createLiabilityCause(request);
@@ -105,7 +105,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddCache(liabilityCause);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
-            auditNotificationDTO.setType("liability cause");
+            auditNotificationDTO.setType(lc);
             auditNotificationDTO.setLiabilityCause(liabilityCause);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
@@ -127,13 +127,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             int result;
             UserModel um = handleUserValidation();
-            LiabilityCause isExist = debtMapper.getLiabilityCauseById(request.getId(), um.getOrgId());
+            LiabilityCause isExist = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
 
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
 
-            LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionByName(request.getName(), um.getOrgId());
+            LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(request.getLiabilityCauseId(), um.getOrgId());
 
             request.setApproveStatus("pending");
             request.setStatus(false);
@@ -154,15 +154,15 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 }
             }
 
-            LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(request.getId(), um.getOrgId());
+            LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
             um.setPassword("");
             handleAddCache(liabilityCause);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setType("liability cause");
+            auditNotificationDTO.setType(lc);
             auditNotificationDTO.setLiabilityCause(liabilityCause);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
@@ -178,7 +178,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             UserModel um = handleUserValidation();
 
-            String cacheKey = "lc_"+type+"_"+um.getOrgId();
+            String cacheKey = "lc_"+ um.getOrgId()+"_"+type;
             Object cachedBand = debtCache.get(cacheKey);
 
             if (cachedBand != null) {
@@ -229,12 +229,15 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
 
             if(lcVersionId != null){
-                result = debtMapper.getSingleLcVersionById(id, um.getOrgId());
+                result = debtMapper.getSingleLcVersionById(lcVersionId, um.getOrgId());
             }
 
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
+
+            handleAddCache(result);
+
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -263,7 +266,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
 
             liabilityCause.setOrgId(um.getOrgId());
-            liabilityCause.setApprovedBy(um.getId());
+            liabilityCause.setApproveBy(um.getId());
 
             if(approveStatus != null && approveStatus.contains("approve")) {
                 liabilityCause.setApproveStatus("approved");
@@ -301,12 +304,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             auditNotificationDTO.setType("Liability Cause");
             auditNotificationDTO.setLiabilityCause(newLc);
             auditRepository.save(auditNotificationDTO);
-//            if(state != null) {
-//                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (tariff.getStatus() ? "Activated Successfully" : status.getDeleteDesc()), "");
-//            } else {
-            return ResponseMap.response(status.getSuccessCode(), liabilityCause.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
-//            }
 
+            return ResponseMap.response(status.getSuccessCode(), liabilityCause.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -327,13 +326,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             String desc = "Percentage Range Newly Created";
             UserModel um = handleUserValidation();
 
-            PercentageRange isExist = debtMapper.getPercentageByName(request.getName(), request.getCode(), um.getOrgId());
-
-            if(isExist != null){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(pr + " " + status.getExistDesc());
-            }
-
-            Band band = debtMapper.getBand(request.getBand(), um.getOrgId());
+            Band band = debtMapper.getBand(request.getBandId(), um.getOrgId());
             if (band == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Band "+ status.getNotFoundDesc());
             }
@@ -342,7 +335,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             request.setApproveStatus("pending");
             request.setCreatedBy(um.getId());
             request.setDescription(desc);
-            result = debtMapper.createPercentageCause(request);
+            request.setBandId(request.getBandId());
+            request.setOrgId(um.getOrgId());
+            result = debtMapper.createPercentageRange(request);
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
@@ -354,11 +349,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
             PercentageRange percentageRange = debtMapper.getPercentageById(request.getId(), um.getOrgId());
+
             um.setPassword("");
             handleAddPercentageCache(percentageRange);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
-            auditNotificationDTO.setType("percentage range");
+            auditNotificationDTO.setType(pr);
             auditNotificationDTO.setPercentageRange(percentageRange);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
@@ -380,13 +376,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             int result;
             UserModel um = handleUserValidation();
-            PercentageRange isExist = debtMapper.getPercentageById(request.getId(), um.getOrgId());
+            PercentageRange isExist = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
 
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
 
-            PercentageRange isVersionExist = debtMapper.getPercentageVersionByName(request.getName(), um.getOrgId());
+            PercentageRange isVersionExist = debtMapper.getPercentageVersionByName(request.getPercentage(), um.getOrgId());
 
             request.setApproveStatus("pending");
             request.setStatus(false);
@@ -407,15 +403,15 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 }
             }
 
-            PercentageRange percentageRange = debtMapper.getPercentageById(request.getId(), um.getOrgId());
+            PercentageRange percentageRange = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
             um.setPassword("");
             handleAddPercentageCache(percentageRange);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setType("percentage range");
+            auditNotificationDTO.setType(pr);
             auditNotificationDTO.setPercentageRange(percentageRange);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
@@ -428,13 +424,31 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Override
     public Map<String, Object> getAllPercentages(String type) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            return Map.of();
+            UserModel um = handleUserValidation();
+
+            String cacheKey = "pr_"+um.getOrgId()+type;
+            Object cachedBand = debtCache.get(cacheKey);
+
+            if (cachedBand != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + pr + "s " + status.getDesc(), cachedBand);
+            }
+            List<PercentageRange> result;
+            if(type.equalsIgnoreCase("pending")) {
+                result = debtMapper.getPercentageVersion(um.getOrgId());
+            } else {
+                result = debtMapper.getPercentage(um.getOrgId());
+            }
+
+            if(result == null) {
+                throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
+            }
+            debtCache.put(cacheKey, result);
+            return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
@@ -444,13 +458,40 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Override
     public Map<String, Object> getPercentage(UUID id, UUID percentageVersionId) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            return Map.of();
+            UserModel um = handleUserValidation();
+            Object cachedLc = null;
+            if(id != null){
+                cachedLc = debtCache.get(id.toString());
+            }
+            if(percentageVersionId != null){
+                cachedLc = debtCache.get(percentageVersionId.toString());
+            }
+
+            if (cachedLc != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + pr + " " + status.getDesc(), cachedLc);
+            }
+            PercentageRange result = null;
+
+            if(id != null){
+                result = debtMapper.getPercentageById(id, um.getOrgId());
+            }
+
+            if(percentageVersionId != null){
+                result = debtMapper.getSinglePercentageVersionById(percentageVersionId, um.getOrgId());
+            }
+
+            if(result == null) {
+                throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
+            }
+
+            handleAddPercentageCache(result);
+
+            return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
@@ -459,11 +500,60 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     }
 
     @Override
-    public Map<String, Object> managePercentageState(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException {
+    public Map<String, Object> managePercentageState(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        int result;
+        String desc = "";
         try {
-            return Map.of();
+            UserModel um = handleUserValidation();
+
+            PercentageRange percentage = debtMapper.getPercentageVersionById(percentageId, um.getOrgId());
+            if(percentage == null) {
+                throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
+            }
+            percentage.setOrgId(um.getOrgId());
+            percentage.setApproveBy(um.getId());
+            percentage.setOrgId(um.getOrgId());
+            if(approveStatus != null && approveStatus.contains("approve")) {
+                percentage.setApproveStatus("approved");
+                percentage.setStatus(true);
+                result = debtMapper.approvePercentageVersion(percentage);
+                if (result == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(pr +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+                }
+                result = debtMapper.approvePercentage(percentage);
+                if (result == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(pr +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+                }
+                desc = capitalizeFirstLetter(approveStatus) + pr + " [" + percentage.getPercentage() + "]";
+            }
+            else if (approveStatus != null && approveStatus.contains("reject")){
+                percentage.setApproveStatus("rejected");
+                percentage.setStatus(false);
+                result = debtMapper.rejectedPercentageVersion(percentage);
+
+                if (result == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(pr +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
+                }
+                desc = capitalizeFirstLetter(approveStatus) + " " +pr + " [" + percentage.getPercentage() + "]";
+            } else {
+                assert approveStatus != null;
+                throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
+            }
+
+            PercentageRange newPercentageRange = debtMapper.getPercentageById(percentage.getId(), um.getOrgId());
+
+            handleAddPercentageCache(percentage);
+            um.setPassword("");
+            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setType(pr);
+            auditNotificationDTO.setPercentageRange(newPercentageRange);
+            auditRepository.save(auditNotificationDTO);
+
+            return ResponseMap.response(status.getSuccessCode(), capitalizeFirstLetter(approveStatus) +" Successfully", "");
+
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
@@ -473,7 +563,6 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             throw exception;
         }
     }
-
 
     UserModel handleUserValidation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -536,27 +625,29 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             changes.append(String.format("name: '%s' → '%s'; ", oldLc.getName(), newLc.getName()));
         }
 
+        System.out.println("old: " + oldLc.getCode());
+        System.out.println("new: " + newLc.getCode());
         if (!Objects.equals(oldLc.getCode(), newLc.getCode())) {
             changes.append(String.format("code: '%s' → '%s'; ", oldLc.getCode(), newLc.getCode()));
         }
-
+        System.out.println("changes: " + changes);
         return changes.toString();
     }
 
     private String buildPercentageChangeDescription(PercentageRange oldPercentage, PercentageRange newPercentage) {
         StringBuilder changes = new StringBuilder("Edited ");
 
-        if (!Objects.equals(oldPercentage.getName(), newPercentage.getName())) {
-            changes.append(String.format("name: '%s' → '%s'; ", oldPercentage.getName(), newPercentage.getName()));
+        if (!Objects.equals(oldPercentage.getPercentage(), newPercentage.getPercentage())) {
+            changes.append(String.format("percentage: '%s' → '%s'; ", oldPercentage.getPercentage(), newPercentage.getPercentage()));
         }
 
         if (!Objects.equals(oldPercentage.getCode(), newPercentage.getCode())) {
             changes.append(String.format("code: '%s' → '%s'; ", oldPercentage.getCode(), newPercentage.getCode()));
         }
 
-        if (!Objects.equals(oldPercentage.getBand(), newPercentage.getBand())) {
-            changes.append(String.format("band: '%s' → '%s'; ", oldPercentage.getBand(), newPercentage.getBand()));
-        }
+//        if (!Objects.equals(oldPercentage.getBand().getName(), newPercentage.getBand().getName())) {
+//            changes.append(String.format("band: '%s' → '%s'; ", oldPercentage.getBand().getName(), newPercentage.getBand().getName()));
+//        }
 
         if (!Objects.equals(oldPercentage.getAmountStartRange(), newPercentage.getAmountStartRange())) {
             changes.append(String.format("amountStartRange: '%s' → '%s'; ", oldPercentage.getAmountStartRange(), newPercentage.getAmountStartRange()));
