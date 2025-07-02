@@ -4,7 +4,7 @@ package org.memmcol.gridflexbackendservice.model.audit;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
-import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustment;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
@@ -58,7 +58,7 @@ public class AuditLog implements Serializable {
 
     private PercentageRange percentageRange;
 
-    private DebitCreditAdjustment debitAdjustment;
+    private DebitCreditAdjust debitCreditAdjust;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -211,11 +211,11 @@ public class AuditLog implements Serializable {
         this.percentageRange = percentageRange;
     }
 
-    public DebitCreditAdjustment getDebitAdjustment() {
-        return debitAdjustment;
+    public DebitCreditAdjust getDebitCreditAdjust() {
+        return debitCreditAdjust;
     }
 
-    public void setDebitAdjustment(DebitCreditAdjustment debitAdjustment) {
-        this.debitAdjustment = debitAdjustment;
+    public void setDebitCreditAdjust(DebitCreditAdjust debitCreditAdjust) {
+        this.debitCreditAdjust = debitCreditAdjust;
     }
 }

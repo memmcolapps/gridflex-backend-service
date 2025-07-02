@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.service.debit_credit_adjustment.DebitCreditAdjustmentService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ public class DebitCreditAdjustment {
     @Autowired private DebitCreditAdjustmentService service;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createDebitAdjustment(@RequestBody org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustment debitAdjustment) {
+    public ResponseEntity<?> createDebitAdjustment(@RequestBody DebitCreditAdjust debitAdjustment) {
         try {
             Map<String, Object> result = service.createDebitAdjustment(debitAdjustment);
             return ResponseEntity.ok(result);
@@ -31,9 +32,8 @@ public class DebitCreditAdjustment {
 
     @PostMapping("/reconcile-dept")
     public ResponseEntity<?> reconcileDept(
-            @RequestParam(value = "debitCreditAdjustmentId", required = true, defaultValue = "") UUID debitCreditAdjustmentId,
-            @RequestParam(value = "amount", required = true, defaultValue = "") String amount
-    ) {
+            @RequestParam(value = "debitCreditAdjustmentId", required = true) UUID debitCreditAdjustmentId,
+            @RequestParam(value = "amount", required = true, defaultValue = "") String amount) {
         try {
             Map<String, Object> result = service.reconcileDebt(debitCreditAdjustmentId, amount);
             return ResponseEntity.ok(result);
@@ -44,15 +44,14 @@ public class DebitCreditAdjustment {
 
     @GetMapping("/all")
     public ResponseEntity<?> getDebitAdjustments(
-            @RequestParam(value = "type", required = true, defaultValue = "credit") String type,
+            @RequestParam(value = "type", required = true, defaultValue = "debit") String type,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "0") int size,
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
             @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
             @RequestParam(value = "customerName", required = false, defaultValue = "") String customerName,
             @RequestParam(value = "MeterNumber", required = false, defaultValue = "") String MeterNumber,
-            @RequestParam(value = "balance", required = false, defaultValue = "") BigDecimal balance
-    ) {
+            @RequestParam(value = "balance", required = false, defaultValue = "") BigDecimal balance) {
         try {
             Map<String, Object> result = service.getDebitAdjustments(page, size, customerId, accountNumber, customerName, MeterNumber, balance, type);
             return ResponseEntity.ok(result);
@@ -62,9 +61,21 @@ public class DebitCreditAdjustment {
     }
 
     @GetMapping("/single")
-    public ResponseEntity<?> getDebitAdjustment(@RequestParam String accountNumber) {
+    public ResponseEntity<?> getDebitAdjustment(@RequestParam UUID meterId, @RequestParam String type) {
         try {
-            Map<String, Object> result = service.getDebitAdjustment(accountNumber);
+            Map<String, Object> result = service.getDebitAdjustment(meterId, type);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/meter-liability")
+    public ResponseEntity<?> getMeterAndLiabilityCause(
+            @RequestParam(value = "meterNumber", required = false) String meterNumber,
+            @RequestParam(value = "accountNumber", required = false) String accountNumber) {
+        try {
+            Map<String, Object> result = service.getMeterAndLiabilityCause(meterNumber, accountNumber);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

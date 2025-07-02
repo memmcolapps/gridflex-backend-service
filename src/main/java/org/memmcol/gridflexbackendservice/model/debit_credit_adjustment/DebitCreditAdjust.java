@@ -13,18 +13,20 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
-public class DebitCreditAdjustment implements Serializable {
+public class DebitCreditAdjust implements Serializable {
     @Id
     private UUID id;
-    private String accountNumber;
+    private UUID meterId;
     private UUID liabilityCauseId;
-    private BigDecimal credit;
-    private BigDecimal debit;
+    private BigDecimal amount;
     private BigDecimal balance;
+    private String status;
     private String type;
     private UUID orgId;
+    private List<DebitCreditPayment> payment;
     private LiabilityCause liabilityCause;
     private List<Meter> meter;
+
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -32,7 +34,7 @@ public class DebitCreditAdjustment implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;
 
-    public DebitCreditAdjustment() {
+    public DebitCreditAdjust() {
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -53,12 +55,12 @@ public class DebitCreditAdjustment implements Serializable {
         this.liabilityCauseId = liabilityCauseId;
     }
 
-    public String getAccountNumber() {
-        return accountNumber;
+    public UUID getMeterId() {
+        return meterId;
     }
 
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
     }
 
     public UUID getOrgId() {
@@ -77,20 +79,28 @@ public class DebitCreditAdjustment implements Serializable {
         this.type = type;
     }
 
-    public BigDecimal getCredit() {
-        return credit;
+    public String getStatus() {
+        return status;
     }
 
-    public void setCredit(BigDecimal credit) {
-        this.credit = credit;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    public BigDecimal getDebit() {
-        return debit;
+    public BigDecimal getAmount() {
+        return amount;
     }
 
-    public void setDebit(BigDecimal debit) {
-        this.debit = debit;
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public List<DebitCreditPayment> getPayment() {
+        return payment;
+    }
+
+    public void setPayment(List<DebitCreditPayment> payment) {
+        this.payment = payment;
     }
 
     public BigDecimal getBalance() {

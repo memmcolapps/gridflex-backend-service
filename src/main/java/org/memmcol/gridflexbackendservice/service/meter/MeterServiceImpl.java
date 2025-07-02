@@ -337,7 +337,7 @@ public class MeterServiceImpl implements MeterService {
                 meter = meterMapper.getMeterNumber(um.getOrgId(), meterNumber);
             }
 
-            if(meterNumber != null){
+            if(accountNumber != null){
                 meter = meterMapper.getAccountNumber(um.getOrgId(), accountNumber);
             }
 
