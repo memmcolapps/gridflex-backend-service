@@ -317,11 +317,15 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
-    public Map<String, Object> getSingleMeter(UUID meterId) {
+    public Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-
+            Meter meter = null;
             UserModel um = handleUserValidation();
+
+            if (meterId == null && meterNumber == null && accountNumber == null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("At least one of meterId, meterNumber, or accountNumber must be provided.");
+            }
 
             Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
 
@@ -329,7 +333,17 @@ public class MeterServiceImpl implements MeterService {
                 return ResponseMap.response(status.getSuccessCode(), "Cached " + meterName + " " + status.getDesc(), cachedUser);
             }
 
-            Meter meter = meterMapper.getMeter(um.getOrgId(), meterId);
+            if(meterNumber != null){
+                meter = meterMapper.getMeterNumber(um.getOrgId(), meterNumber);
+            }
+
+            if(meterNumber != null){
+                meter = meterMapper.getAccountNumber(um.getOrgId(), accountNumber);
+            }
+
+            if(meterId != null){
+                meter = meterMapper.getMeter(um.getOrgId(), meterId);
+            }
 
             handleAddCache(meter);
 

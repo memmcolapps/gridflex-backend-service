@@ -76,6 +76,55 @@ public interface MeterMapper {
     })
     Meter getMeter(UUID orgId, UUID meterId);
 
+    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.meter_number = #{meterNumber}")
+    @Results({
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "feederLine", column = "feeder_line"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
+            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
+            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
+            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+            @Result(property = "meterRating", column = "meter_rating"),
+            @Result(property = "initialReading", column = "initial_reading"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "customer", column = "customer_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId"))
+    })
+    Meter getMeterNumber(UUID orgId, String meterNumber);
+
+
+    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.account_number = #{accountNumber}")
+    @Results({
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "feederLine", column = "feeder_line"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
+            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
+            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
+            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+            @Result(property = "meterRating", column = "meter_rating"),
+            @Result(property = "initialReading", column = "initial_reading"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "customer", column = "customer_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId"))
+    })
+    Meter getAccountNumber(UUID orgId, String accountNumber);
+
+
+
     @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
     @Results({
             @Result(property = "orgId", column = "org_id"),

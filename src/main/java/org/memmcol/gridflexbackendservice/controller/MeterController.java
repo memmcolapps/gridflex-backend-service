@@ -72,9 +72,14 @@ public class MeterController {
     }
 
     @GetMapping("/single-meter")
-    public ResponseEntity<?> getAllMeters(@RequestParam(required = true) UUID meterId) {
+    public ResponseEntity<?> getSingleMeter(
+            @RequestParam(value = "meterId", required = false) UUID meterId,
+            @RequestParam(value = "meterNumber", required = false) String meterNumber,
+            @RequestParam(value = "accountNumber", required = false) String accountNumber
+
+    ) {
         try {
-            Map<String, Object> result = service.getSingleMeter(meterId);
+            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
