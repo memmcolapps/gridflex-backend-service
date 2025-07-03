@@ -9,6 +9,6 @@ import java.util.Optional;
 
 public interface AuditLogService {
 
-    Map<String, Object> getAuditLog();
+    Map<String, Object> getAuditLog(int page, int size);
     Map<String, Object> getAuditLogById(String id);
 }

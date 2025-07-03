@@ -26,9 +26,12 @@ public class AuditLogController {
 
 
     @GetMapping("/all-logs")
-    public ResponseEntity<?> getAuditLogs() {
+    public ResponseEntity<?> getAuditLogs(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size
+    ) {
         try {
-            Map<String, Object> result = auditLogService.getAuditLog();
+            Map<String, Object> result = auditLogService.getAuditLog(page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
