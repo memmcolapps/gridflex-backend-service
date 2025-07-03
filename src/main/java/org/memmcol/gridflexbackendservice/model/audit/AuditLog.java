@@ -21,7 +21,7 @@ import java.util.Date;
 @Document(collection = "gridflex-audit-logs")
 public class AuditLog implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+//    private static final long serialVersionUID = 1L;
 
     @Id
     private String id;
