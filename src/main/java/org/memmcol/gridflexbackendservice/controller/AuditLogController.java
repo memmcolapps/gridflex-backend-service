@@ -1,35 +1,51 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
-import org.memmcol.gridflexbackendservice.DTO.AuditLogDto;
-import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.service.auditlog.AuditLogService;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/audit-log")
+@RequestMapping("/audit-log/service")
 public class AuditLogController {
 
     private final AuditLogService auditLogService;
+
+    @Autowired
+    private GlobalExceptionHandler exception;
 
     public AuditLogController(AuditLogService auditLogService) {
         this.auditLogService = auditLogService;
     }
 
 
-    @GetMapping("getAll/service")
-    public ResponseEntity<List<AuditLogDto>> getAuditLogs() {
-        return ResponseEntity.ok(auditLogService.getAuditLog());
+    @GetMapping("/all-logs")
+    public ResponseEntity<?> getAuditLogs() {
+        try {
+            Map<String, Object> result = auditLogService.getAuditLog();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
     }
 
-    @GetMapping("/getById/service")
+    @GetMapping("/single-log")
     public ResponseEntity<?> getAuditLogById(@RequestParam String id) {
-        return auditLogService.getAuditLogById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            Map<String, Object> result = auditLogService.getAuditLogById(id);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
+        return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
 }

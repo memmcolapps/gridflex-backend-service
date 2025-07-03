@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.DTO;
+package org.memmcol.gridflexbackendservice.model.audit;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,6 +6,8 @@ import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuditLogDto {
+    private String id;
+    private String type;
     private String username;
     private String email;
     private String groupPermission;
@@ -16,8 +18,10 @@ public class AuditLogDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date timeStamp;
 
-    public AuditLogDto(String username, String email, String groupPermission, String activity,
+    public AuditLogDto(String id, String type, String username, String email, String groupPermission, String activity,
                        String userAgent, String ipAddress, Date timeStamp) {
+        this.id = id;
+        this.type = type;
         this.username = username;
         this.email = email;
         this.groupPermission = groupPermission;
@@ -28,6 +32,22 @@ public class AuditLogDto {
     }
 
     public AuditLogDto() {}
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
