@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.customer;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -49,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.hazelcast.map.impl.operation.steps.IMapOpStep.BATCH_SIZE;
+import static org.memmcol.gridflexbackendservice.service.band.BandServiceImpl.capitalizeFirstLetter;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -69,6 +71,9 @@ public class CustomerServiceImpl implements CustomerService {
     private AuthMapper operatorMapper;
 
     @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
 
     private String customerName = "Customer";
@@ -87,8 +92,10 @@ public class CustomerServiceImpl implements CustomerService {
     public Map<String, Object> createCustomer(Customer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
-
+            String desc = "Customer newly created";
             UserModel um = handleUserValidation();
 
             String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
@@ -105,7 +112,9 @@ public class CustomerServiceImpl implements CustomerService {
             Customer customer = customerMapper.findById(id, um.getOrgId());
             handleAddCache(customer);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created Customer [" + customer.getEmail() + "]");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType("customer");
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
@@ -128,6 +137,8 @@ public class CustomerServiceImpl implements CustomerService {
     public Map<String, Object> updateCustomer(Customer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
 
             UserModel um = handleUserValidation();
@@ -140,7 +151,9 @@ public class CustomerServiceImpl implements CustomerService {
 
             handleAddCache(customer);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated Customer [" + customer.getEmail() + "]");
+            auditNotificationDTO.setDescription("Edited customer");
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType("customer");
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
@@ -288,7 +301,7 @@ public class CustomerServiceImpl implements CustomerService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-
+            String desc;
             UserModel um = handleUserValidation();
 
             // check if customer exist
@@ -297,16 +310,15 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
             }
 
-            if(state.equalsIgnoreCase("active") || state.equalsIgnoreCase("inactive") || state.equalsIgnoreCase("blocked")){
+            if(state.equalsIgnoreCase("active") || state.equalsIgnoreCase("inactive") || state.equalsIgnoreCase("block")){
                 int isStatus = customerMapper.changeStatus(customerId, state.toLowerCase(), um.getOrgId());
                 if (isStatus != 1) {
                     throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getUpdateFailureDesc());
                 }
+                desc = state.equals("active") ? "User activated" : state.equals("inactive") ? "User inactive": "User blocked" ; //[" + isCustomer.getEmail() + "]";
             } else {
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", state);
             }
-
-            String desc = state + " User [" + isCustomer.getEmail() + "]";
 
             Customer customer = customerMapper.findById(customerId, um.getOrgId());
 

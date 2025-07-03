@@ -136,7 +136,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 //		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
 		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
-
+		String ipAddress = request.getRemoteAddr();
+		String userAgent = request.getHeader("User-Agent");
 		ObjectMapper mapper = new ObjectMapper();
 		List<Map<String, Object>> permissionTree = mapper.readValue(userDetails.getPermissionTreeJson(), List.class);
 
@@ -173,7 +174,9 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		auditNotificationDTO.setCreator(user);
 		user.setNodes(root);
 		user.setPassword("");
-		auditNotificationDTO.setDescription(user.getEmail()+" Logged in");
+		auditNotificationDTO.setDescription("Logged in");
+		auditNotificationDTO.setUserAgent(userAgent);
+		auditNotificationDTO.setIpAddress(ipAddress);
 		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {

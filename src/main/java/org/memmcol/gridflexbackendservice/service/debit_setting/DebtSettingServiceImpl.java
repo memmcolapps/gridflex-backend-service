@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.debit_setting;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper;
@@ -55,6 +56,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     private AuditRepository auditRepository;
 
     @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
 
     private final IMap<String, Object> debtCache;
@@ -74,9 +78,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> createLiabilityCause(LiabilityCause request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
-            String desc = "Liability Cause Newly Created";
+            String desc = capitalizeFirstLetter(request.getName()) + " newly created";
             UserModel um = handleUserValidation();
 
             LiabilityCause isExist = debtMapper.getLiabilityCauseByName(request.getName(), request.getCode(), um.getOrgId());
@@ -105,6 +111,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddCache(liabilityCause);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(lc);
             auditNotificationDTO.setLiabilityCause(liabilityCause);
             auditRepository.save(auditNotificationDTO);
@@ -124,6 +132,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> updateLiabilityCause(LiabilityCause request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
             UserModel um = handleUserValidation();
@@ -159,6 +169,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddCache(liabilityCause);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(lc);
             auditNotificationDTO.setLiabilityCause(liabilityCause);
             auditRepository.save(auditNotificationDTO);
@@ -254,6 +266,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> manageLiabilityCauseState(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         int result;
         String desc = "";
         try {
@@ -279,7 +293,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(lc +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) + lc + " [" + liabilityCause.getName() + "]";
+
+                desc = capitalizeFirstLetter(liabilityCause.getName()) + " " + liabilityCause.getApproveStatus();
             }
             else if (approveStatus != null && approveStatus.contains("reject")){
                 liabilityCause.setApproveStatus("rejected");
@@ -289,7 +304,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(lc +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) +" Liability Cause [" + liabilityCause.getName() + "]";
+                desc = capitalizeFirstLetter(liabilityCause.getName()) + " " + liabilityCause.getApproveStatus();
             } else {
                 assert approveStatus != null;
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
@@ -301,6 +316,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType("Liability Cause");
             auditNotificationDTO.setLiabilityCause(newLc);
             auditRepository.save(auditNotificationDTO);
@@ -321,9 +338,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> createPercentage(PercentageRange request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
-            String desc = "Percentage Range Newly Created";
+            String desc = request.getPercentage()+ "% newly created";
             UserModel um = handleUserValidation();
 
             Band band = debtMapper.getBand(request.getBandId(), um.getOrgId());
@@ -354,6 +373,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddPercentageCache(percentageRange);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(pr);
             auditNotificationDTO.setPercentageRange(percentageRange);
             auditRepository.save(auditNotificationDTO);
@@ -373,6 +394,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> updatePercentage(PercentageRange request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
             UserModel um = handleUserValidation();
@@ -408,6 +431,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddPercentageCache(percentageRange);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(pr);
             auditNotificationDTO.setPercentageRange(percentageRange);
             auditRepository.save(auditNotificationDTO);
@@ -506,6 +531,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         int result;
         String desc = "";
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
             PercentageRange percentage = debtMapper.getPercentageVersionById(percentageId, um.getOrgId());
@@ -526,7 +553,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(pr +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) + pr + " [" + percentage.getPercentage() + "]";
+
+                desc = capitalizeFirstLetter(percentage.getPercentage()) + " " + percentage.getApproveStatus();
             }
             else if (approveStatus != null && approveStatus.contains("reject")){
                 percentage.setApproveStatus("rejected");
@@ -536,7 +564,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(pr +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) + " " +pr + " [" + percentage.getPercentage() + "]";
+                desc = capitalizeFirstLetter(percentage.getPercentage()) + " " + percentage.getApproveStatus();
             } else {
                 assert approveStatus != null;
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
@@ -548,11 +576,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(pr);
             auditNotificationDTO.setPercentageRange(newPercentageRange);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(), capitalizeFirstLetter(approveStatus) +" Successfully", "");
+            return ResponseMap.response(status.getSuccessCode(), capitalizeFirstLetter(approveStatus) +" successfully", "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);

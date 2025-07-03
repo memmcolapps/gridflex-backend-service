@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.user;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
@@ -32,6 +33,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.memmcol.gridflexbackendservice.service.band.BandServiceImpl.capitalizeFirstLetter;
+
 @Transactional
 @Service
 public class UserServiceImpl implements  UserService {
@@ -54,6 +57,9 @@ public class UserServiceImpl implements  UserService {
     private ExceptionAuditRepository exceptionAuditRepository;
 
     @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private String userName = "User";
@@ -72,6 +78,9 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
+
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
 
             UserModel um = handleUserValidation();
 
@@ -99,15 +108,18 @@ public class UserServiceImpl implements  UserService {
             // Insert into operators
             userMapper.insertUser(operator);
             UUID userId = operator.getId();
-            System.out.println("userId: " + userId);
+            
             userMapper.assignUserToGroup(userId, request.getGroupId(), um.getOrgId());
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+            String desc = "User newly created";
             user.setPassword("");
             handleAddCache(user);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created User [" + user.getEmail() + "]");
-            auditNotificationDTO.setType("user");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setType(userName);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
 
@@ -128,6 +140,8 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
             if (!Boolean.TRUE.equals(um.getStatus())) {
@@ -156,11 +170,14 @@ public class UserServiceImpl implements  UserService {
             userMapper.updateUserToGroup(userId, isGroupId, um.getOrgId());
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+            String desc = "User edited";
             user.setPassword("");
             handleAddCache(user);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Updated User [" + user.getEmail() + "]");
-            auditNotificationDTO.setType("user");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType(userName);
             auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
 
@@ -374,6 +391,8 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
 
             UserModel um = handleUserValidation();
 
@@ -391,17 +410,19 @@ public class UserServiceImpl implements  UserService {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getUpdateFailureDesc());
 //                return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
             }
-            String desc = state ? "Activated" : "Deactivated" + " User [" + isOperator.getEmail() + "]";
+            String desc = state ? "User activated" : "User deactivated";
 //            UserModel user = userMapper.findById(userId);
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
             handleAddCache(user);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType("user");
+            auditNotificationDTO.setType(userName);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), state ? " User Activated Successfully" : "User Deactivated Successfully", "");
+            return ResponseMap.response(status.getSuccessCode(), state ? " User activated successfully" : "User deactivated successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
@@ -417,7 +438,8 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
             if (!Boolean.TRUE.equals(um.getStatus())) {
@@ -479,9 +501,12 @@ public class UserServiceImpl implements  UserService {
             /// Assign permission to the group created
             userMapper.assignPermissionToGroup(groupId, permission.getId(), um.getOrgId());
 
+            String desc = capitalizeFirstLetter(request.getGroupTitle() + " newly created");
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created group [" + request.getGroupTitle() + "]");
-            auditNotificationDTO.setType("group");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setType("Group");
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
 //            auditNotificationDTO.setCreatedOperator(user);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");

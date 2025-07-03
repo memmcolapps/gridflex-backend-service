@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.auth;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
@@ -50,6 +51,9 @@ public class AuthServiceImpl implements AuthService {
 
 	@Autowired private RestTemplate restTemplate;
 
+	@Autowired
+	private HttpServletRequest httpServletRequest;
+
 	private final Random random = new SecureRandom();
 
 	String user = "Operator";
@@ -72,6 +76,8 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public Map<String, Object> logout(String token, int expirySeconds, String username) {
 		AuditLog auditNotificationDTO = new AuditLog();
+		String ipAddress = httpServletRequest.getRemoteAddr();
+		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
 			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
 //			List<Node> nodes = operatorMapper.getNodeWithChildren(isOperatorExist.getNodeId(), isOperatorExist.getOrgId());
@@ -84,7 +90,9 @@ public class AuthServiceImpl implements AuthService {
 			operatorMapper.updateLogoutState(username);
 			blacklistToken(token, expirySeconds);
 			auditNotificationDTO.setCreator(isOperatorExist);
-			auditNotificationDTO.setDescription(username + " Logged out");
+			auditNotificationDTO.setUserAgent(userAgent);
+			auditNotificationDTO.setIpAddress(ipAddress);
+			auditNotificationDTO.setDescription("Logged out");
 			auditNotificationDTO.setType("auth");
 			removeFromCache();
 //			authCache.remove("dashboard");
@@ -105,6 +113,8 @@ public class AuthServiceImpl implements AuthService {
 
 	public Map<String, Object> handleForgetPassword(String username, String password) {
 		AuditLog AuditLog = new AuditLog();
+		String ipAddress = httpServletRequest.getRemoteAddr();
+		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			String isUser = "Unknown";
@@ -122,8 +132,7 @@ public class AuthServiceImpl implements AuthService {
 
 
 			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
-//			List<Node> nodes = operatorMapper.getNodeWithChildren(isOperator.getNodeId(), isOperator.getOrgId());
-//			isOperator.setNodes(nodes);
+
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}
@@ -145,7 +154,9 @@ public class AuthServiceImpl implements AuthService {
 //			handleCacheUpdate(isOperator);
 			AuditLog.setCreator(isOperatorExist);
 			AuditLog.setCreatedUser(isOperator);
-			AuditLog.setDescription(isOperator.getEmail() + " Reset password");
+			AuditLog.setUserAgent(userAgent);
+			AuditLog.setIpAddress(ipAddress);
+			AuditLog.setDescription("Reset password");
 			AuditLog.setType("operator");
 			auditRepository.save(AuditLog);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");

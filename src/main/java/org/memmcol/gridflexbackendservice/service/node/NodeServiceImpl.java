@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.node;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
@@ -50,6 +51,9 @@ public class NodeServiceImpl implements NodeService {
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
 
+    @Autowired
+    private HttpServletRequest httpServletRequest;
+
     private final IMap<String, Object> nodeCache;
 
     private final IMap<String, Object> auditCache;
@@ -66,6 +70,9 @@ public class NodeServiceImpl implements NodeService {
         RegionBhubServiceCenter regionBhubServiceCenter;
         UUID id;
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
+            String desc;
             UserModel um = handleUserValidation();
 
             Node node = new Node();
@@ -91,6 +98,7 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+                desc = regionBhubServiceCenter.getName() + "newly created";
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
@@ -108,10 +116,11 @@ public class NodeServiceImpl implements NodeService {
 
             handleClearCache(node);
 
-
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub");
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
             auditRepository.save(auditNotificationDTO);
 
@@ -134,6 +143,9 @@ public class NodeServiceImpl implements NodeService {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
+            String desc;
             UserModel um = handleUserValidation();
 
             Node node = new Node();
@@ -159,6 +171,7 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.createSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+                desc = subStationTransformerFeederLine.getName() + "newly created";
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
@@ -166,8 +179,10 @@ public class NodeServiceImpl implements NodeService {
             handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feeder line") ? "feeder line" : "substation");
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
             auditRepository.save(auditNotificationDTO);
 
@@ -190,6 +205,9 @@ public class NodeServiceImpl implements NodeService {
         RegionBhubServiceCenter regionBhubServiceCenter;
         UUID id;
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
+            String desc;
             UserModel um = handleUserValidation();
 
             Node node = new Node();
@@ -216,6 +234,7 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 id = request.getId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+                desc = regionBhubServiceCenter.getName()  + "edited";
             }  else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
@@ -234,8 +253,10 @@ public class NodeServiceImpl implements NodeService {
             handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + regionBhubServiceCenter.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub");
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
             auditRepository.save(auditNotificationDTO);
 
@@ -258,6 +279,9 @@ public class NodeServiceImpl implements NodeService {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
+            String desc;
             UserModel um = handleUserValidation();
 
             Node node = new Node();
@@ -284,6 +308,7 @@ public class NodeServiceImpl implements NodeService {
                 nodeMapper.updateSubStationTransformerFeederLine(request);
                 id = request.getId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+                desc = subStationTransformerFeederLine.getName()  + "edited";
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
@@ -291,8 +316,10 @@ public class NodeServiceImpl implements NodeService {
             handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created node [" + subStationTransformerFeederLine.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feeder line") ? "feeder line" : "substation");
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
             auditRepository.save(auditNotificationDTO);
 

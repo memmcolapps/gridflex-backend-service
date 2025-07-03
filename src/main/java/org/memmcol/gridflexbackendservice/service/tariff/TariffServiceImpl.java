@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.tariff;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
@@ -52,6 +53,9 @@ public class TariffServiceImpl implements TariffService {
     private AuditRepository auditRepository;
 
     @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
 
     private final IMap<String, Object> tariffCache;
@@ -72,8 +76,10 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             int result;
-            String desc = "Tariff Newly Created";
+            String desc = tariff.getName()+" newly created";
             UserModel um = handleUserValidation();
 
             Tariff isExist = tariffMapper.getTariffByName(tariff.getName(), um.getOrgId(), tariff.getTariff_id());
@@ -116,7 +122,9 @@ public class TariffServiceImpl implements TariffService {
             handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
-            auditNotificationDTO.setType("tariff");
+            auditNotificationDTO.setType(tariffName);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setCreatedTariff(tariffByName);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getRegDesc(), "");
@@ -137,6 +145,8 @@ public class TariffServiceImpl implements TariffService {
         int result;
         String desc = "";
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
             Tariff tariff = tariffMapper.getTariffVersionById(tariffVersionId, um.getOrgId());
@@ -159,7 +169,8 @@ public class TariffServiceImpl implements TariffService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + tariff.getName() + "]";
+                desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
+                //capitalizeFirstLetter(approveStatus) +" Tariff [" + tariff.getName() + "]";
             }
             else if (approveStatus != null && approveStatus.contains("reject")){
                 tariff.setApprove_status("rejected");
@@ -169,7 +180,7 @@ public class TariffServiceImpl implements TariffService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) +" Tariff [" + tariff.getName() + "]";
+                desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
             }
 //            else if (state != null) {
 //                String approve_state = state ? "approved" : "pending";
@@ -189,7 +200,9 @@ public class TariffServiceImpl implements TariffService {
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType("tariff");
+            auditNotificationDTO.setType(tariffName);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setCreatedTariff(newTariff);
             auditRepository.save(auditNotificationDTO);
 //            if(state != null) {
@@ -369,6 +382,8 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
                 for(UUID id : request.getTariffIds()) {
@@ -387,24 +402,26 @@ public class TariffServiceImpl implements TariffService {
                     tariffMapper.approveTariff(t);
                     Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
                     if(tariff == null) {
-                        String desc = t.getApprove_status() + "Tariff [" + id + "] does not exist ";
+                        String desc = t.getApprove_status() + "tariff [" + id + "] does not exist ";
                         auditNotificationDTO.setCreator(um);
                         auditNotificationDTO.setDescription(desc);
-                        auditNotificationDTO.setType("tariff");
+                        auditNotificationDTO.setType(tariffName);
                         auditNotificationDTO.setCreatedTariff(null);
                         auditRepository.save(auditNotificationDTO);
                         continue;
                     }
                     handleAddCache(tariff);
-                    String desc = t.getApprove_status() + " Tariff [" + tariff.getName() + "]";
+                    String desc = capitalizeFirstLetter(tariff.getName()) + t.getApprove_status();
                     um.setPassword("");
                     auditNotificationDTO.setCreator(um);
                     auditNotificationDTO.setDescription(desc);
-                    auditNotificationDTO.setType("tariff");
+                    auditNotificationDTO.setIpAddress(ipAddress);
+                    auditNotificationDTO.setUserAgent(userAgent);
+                    auditNotificationDTO.setType(tariffName);
                     auditNotificationDTO.setCreatedTariff(tariff);
                     auditRepository.save(auditNotificationDTO);
                 }
-                return ResponseMap.response(status.getSuccessCode(), tariffName + " Approved Successfully ", "");
+                return ResponseMap.response(status.getSuccessCode(), tariffName + " approved successfully ", "");
 //            }
 //            return ResponseMap.response(status.getUpdateCode(), request.getApproveStatus() + " value not accepted try [approved]", "");
 
@@ -424,6 +441,8 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             int result;
             UserModel um = handleUserValidation();
 
@@ -466,7 +485,9 @@ public class TariffServiceImpl implements TariffService {
             handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setType("tariff");
+            auditNotificationDTO.setType(tariffName);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setCreatedTariff(tariffByName);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getUpdateDesc(), "");

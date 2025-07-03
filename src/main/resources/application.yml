@@ -30,11 +30,25 @@ eureka:
     health-check-url-path: /actuator/health
     health-check-interval-seconds: 10
 
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health, info, prometheus
+
 management:
   endpoints:
     web:
       exposure:
         include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 
 resilience4j:
   circuitbreaker:

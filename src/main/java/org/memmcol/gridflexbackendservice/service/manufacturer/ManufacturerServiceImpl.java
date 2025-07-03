@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.manufacturer;
 
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.ManufacturerMapper;
@@ -31,6 +32,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static org.memmcol.gridflexbackendservice.service.band.BandServiceImpl.capitalizeFirstLetter;
+
 @Transactional
 @Service
 public class ManufacturerServiceImpl implements ManufacturerService {
@@ -51,6 +54,9 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     private ManufacturerMapper manufacturerMapper;
 
     @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
 
 
@@ -61,7 +67,10 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
 
+            String desc = capitalizeFirstLetter(request.getName()) + "newly created";
             UserModel um = handleUserValidation();
 
             // check if operator exist
@@ -79,8 +88,10 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
 //            handleAddCache(user);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created Manufacturer [" + manufacturer.getName() + "]");
-            auditNotificationDTO.setType("manufacturer");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType(manfacturerName);
             auditNotificationDTO.setManufacturer(manufacturer);
             auditRepository.save(auditNotificationDTO);
 
@@ -101,6 +112,9 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
 
+            String desc = capitalizeFirstLetter(request.getName()) + "edited";
+            String ipAddress = httpServletRequest.getRemoteAddr();
+            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
             // check if operator exist
@@ -118,8 +132,10 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
 //            handleAddCache(user);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Created Manufacturer [" + manufacturer.getName() + "]");
-            auditNotificationDTO.setType("manufacturer");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType(manfacturerName);
             auditNotificationDTO.setManufacturer(manufacturer);
             auditRepository.save(auditNotificationDTO);
 
@@ -133,43 +149,6 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             throw exception;
         }
     }
-//
-//    @Override
-//    public Map<String, Object> manageManufacturerState(UUID id, Boolean state) {
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        AuditLog auditNotificationDTO = new AuditLog();
-//        try {
-//
-//            UserModel um = handleUserValidation();
-//
-//            // check if operator exist
-//            Manufacturer isManufacturer = manufacturerMapper.findById(id, um.getOrgId());
-//            if (isManufacturer == null){
-//                throw new GlobalExceptionHandler.NotFoundException(manfacturerName + " " + status.getNotFoundDesc());
-//            }
-//
-//            // Insert into operators
-//            manufacturerMapper.manageManufacturerState(id, state);
-//
-//            Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
-////            handleAddCache(user);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription("Disable Manufacturer [" + manufacturer.getName() + "]");
-//            auditNotificationDTO.setType("manufacturer");
-//            auditNotificationDTO.setManufacturer(manufacturer);
-//            auditRepository.save(auditNotificationDTO);
-//
-//            String m = !manufacturer.getStatus() ? " Disable ": " Activated ";
-//            return ResponseMap.response(status.getSuccessCode(), manfacturerName + m + status.getUpdateDesc(), "");
-//        } catch (Exception exception) {
-//            log.error("Error occurred while change state manufacturer [ACTION]: {}", exception.getMessage(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//            throw exception;
-//        }
-//    }
 
     @Override
     public Map<String, Object> getManufacturer(UUID id) {
@@ -202,23 +181,6 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         try {
 
             UserModel um = handleUserValidation();
-
-//            // Build a unique cache key
-//            StringBuilder cacheKeyBuilder = new StringBuilder("manufacturers_"+um.getOrgId());
-//            if (name != null && !name.isEmpty()) cacheKeyBuilder.append("_name_").append(name);
-//            if (manufacturerId != null && !manufacturerId.isEmpty()) cacheKeyBuilder.append("_manufacturerId_").append(manufacturerId);
-//            if (sgc != null && !sgc.isEmpty()) cacheKeyBuilder.append("_sgc_").append(sgc);
-//            if (dateAdded != null && !dateAdded.isEmpty()) cacheKeyBuilder.append("_dateAdded_").append(dateAdded);
-//            cacheKeyBuilder.append("_page_").append(page);
-//            cacheKeyBuilder.append("_size_").append(size);
-//
-//            String cacheKey = cacheKeyBuilder.toString();
-//
-//            // Return from cache if available
-//            Object cachedUser = userCache.get(cacheKey);
-//            if (cachedUser != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached Manufacturers " + status.getDesc(), cachedUser);
-//            }
 
             List<Manufacturer> manufacturers = manufacturerMapper.getAllManufacturers(um.getOrgId());
 

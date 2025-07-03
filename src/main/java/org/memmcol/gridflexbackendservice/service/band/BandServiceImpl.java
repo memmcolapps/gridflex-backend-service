@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.band;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
@@ -50,6 +51,9 @@ public class BandServiceImpl implements BandService {
     private AuditRepository auditRepository;
 
     @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
 
     private final IMap<String, Object> bandCache;
@@ -71,9 +75,11 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> createBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
-            String desc = "Band Newly Created";
+            String desc = capitalizeFirstLetter(band.getName())+ " newly created";
             UserModel um = handleUserValidation();
 
             Band isExist = bandMapper.getBand(band.getName());
@@ -110,8 +116,10 @@ public class BandServiceImpl implements BandService {
             um.setPassword("");
             handleAddCache(bandByName);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);//("Created Band [" + band.getName() + "]");
-            auditNotificationDTO.setType("band");
+            auditNotificationDTO.setDescription(desc);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType("Band");
             auditNotificationDTO.setCreatedBand(bandByName);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
@@ -130,6 +138,8 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> updateBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             UserModel um = handleUserValidation();
 
@@ -170,7 +180,9 @@ public class BandServiceImpl implements BandService {
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);//("Updated Band [" + band.getName() + "]");
-            auditNotificationDTO.setType("band");
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType("Band");
             auditNotificationDTO.setCreatedBand(bandById);
 //			authCache.remove("dashboard");
             auditRepository.save(auditNotificationDTO);
@@ -191,6 +203,8 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> manageBandState(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         int result;
         String desc = "";
         try {
@@ -215,7 +229,7 @@ public class BandServiceImpl implements BandService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) +" Band [" + band.getName() + "]";
+                desc = capitalizeFirstLetter(band.getName()) + " " + band.getApproveStatus();
 
                 result = tariffMapper.updateTariff(band.getName(), um.getOrgId(), isExist.getName());
                 if(result == 0){
@@ -229,17 +243,8 @@ public class BandServiceImpl implements BandService {
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(approveStatus) + " Band [" + band.getName() + "]";
-            }
-//            else if (state != null) {
-//                String approve_state = state ? "approved" : "pending";
-//                result = tariffMapper.disableTariff(id, state,um.getOrgId(), approve_state);
-//                if (result == 0) {
-//                    return ResponseMap.response(status.getUpdateCode(), tariffName +" Activated or Deactivated "+ status.getUpdateFailureDesc(), "");
-//                }
-//                desc = state ? "Activated" : "Deactivated" + " Tariff [" + tariffById.getName() + "]";
-//            }
-            else {
+                desc = capitalizeFirstLetter(band.getName()) + " " + band.getApproveStatus();
+            } else {
                 assert approveStatus != null;
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
             }
@@ -249,7 +254,9 @@ public class BandServiceImpl implements BandService {
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType("band");
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType("Band");
             auditNotificationDTO.setCreatedBand(newBand);
             auditRepository.save(auditNotificationDTO);
 
