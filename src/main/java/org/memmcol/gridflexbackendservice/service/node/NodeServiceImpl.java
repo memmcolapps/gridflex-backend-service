@@ -28,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+
 @Transactional
 @Service
 public class NodeServiceImpl implements NodeService {
@@ -70,7 +73,7 @@ public class NodeServiceImpl implements NodeService {
         RegionBhubServiceCenter regionBhubServiceCenter;
         UUID id;
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             String desc;
             UserModel um = handleUserValidation();
@@ -102,18 +105,6 @@ public class NodeServiceImpl implements NodeService {
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
-//            else if(request.getType().equalsIgnoreCase("business hub")){
-//                nodeMapper.createRegionBhubServiceCenter(request);
-//                id = request.getId();
-//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-//            } else if(request.getType().equalsIgnoreCase("service center")){
-//                nodeMapper.createRegionBhubServiceCenter(request);
-//                id = request.getId();
-//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-//            } else {
-//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
-//            }
-
             handleClearCache(node);
 
             auditNotificationDTO.setCreator(um);
@@ -125,7 +116,7 @@ public class NodeServiceImpl implements NodeService {
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getRegDesc(), "");
-//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -143,7 +134,7 @@ public class NodeServiceImpl implements NodeService {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             String desc;
             UserModel um = handleUserValidation();
@@ -187,7 +178,7 @@ public class NodeServiceImpl implements NodeService {
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getRegDesc(), "");
-//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -205,7 +196,7 @@ public class NodeServiceImpl implements NodeService {
         RegionBhubServiceCenter regionBhubServiceCenter;
         UUID id;
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             String desc;
             UserModel um = handleUserValidation();
@@ -238,17 +229,6 @@ public class NodeServiceImpl implements NodeService {
             }  else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
-//            else if(request.getType().equalsIgnoreCase("business hub")){
-//                nodeMapper.updateRegionBhubServiceCenter(request);
-//                id = request.getId();
-//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-//            } else if(request.getType().equalsIgnoreCase("service center")){
-//                nodeMapper.updateRegionBhubServiceCenter(request);
-//                id = request.getId();
-//                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
-//            } else {
-//                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
-//            }
 
             handleClearCache(node);
 
@@ -261,7 +241,7 @@ public class NodeServiceImpl implements NodeService {
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getUpdateDesc(), "");
-//            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ request.getName() +"' "+ status.getRegDesc(), "");
+
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to creating region node");
@@ -279,7 +259,7 @@ public class NodeServiceImpl implements NodeService {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             String desc;
             UserModel um = handleUserValidation();
@@ -438,23 +418,6 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disabled");
-        }
-
-        return isOperatorExist;
-    }
 
     private void handleAddCache(Node node) {
         nodeCache.remove(node.getId().toString()+"_"+node.getOrgId());

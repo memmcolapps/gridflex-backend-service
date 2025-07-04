@@ -23,9 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -35,16 +32,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+
 @Service
 @Transactional
 public class DebtSettingServiceImpl implements DebtSettingService {
     private static final Logger log = LoggerFactory.getLogger(TariffServiceImpl.class);
-
-    @Autowired
-    private AuthMapper operatorMapper;
-
-    @Autowired
-    private BandMapper bandMapper;
 
     @Autowired
     private DebtSettingMapper debtMapper;
@@ -78,7 +73,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> createLiabilityCause(LiabilityCause request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
@@ -110,7 +105,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             handleAddCache(liabilityCause);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(lc);
@@ -132,7 +127,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> updateLiabilityCause(LiabilityCause request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
@@ -266,7 +261,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> manageLiabilityCauseState(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         int result;
         String desc = "";
@@ -300,7 +295,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 liabilityCause.setApproveStatus("rejected");
                 liabilityCause.setStatus(false);
                 result = debtMapper.rejectedLiabilityVersion(liabilityCause);
-//                result = tariffMapper.rejectedTariff(tariff);
+
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(lc +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
@@ -338,7 +333,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> createPercentage(PercentageRange request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
@@ -372,7 +367,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             handleAddPercentageCache(percentageRange);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setType(pr);
@@ -394,7 +389,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> updatePercentage(PercentageRange request) {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
@@ -531,7 +526,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         int result;
         String desc = "";
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -593,30 +588,6 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             throw exception;
         }
     }
-
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disable");
-        }
-
-        return isOperatorExist;
-    }
-
-    public static String capitalizeFirstLetter(String input) {
-        if (input == null || input.isEmpty()) return input;
-        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
-    }
-
 
     private void handleAddCache(LiabilityCause liabilityCause) {
         debtCache.remove(liabilityCause.getId().toString()+"_"+liabilityCause.getOrgId());

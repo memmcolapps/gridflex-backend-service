@@ -31,7 +31,7 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCause")),
             @Result(property = "meter", column = "meter_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
-            @Result(property = "payment", column = "meter_id",
+            @Result(property = "payment", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
     DebitCreditAdjust getDebitAdjustmentById(UUID id, UUID orgId);
@@ -86,7 +86,7 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCause")),
             @Result(property = "meter", column = "meter_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
-            @Result(property = "payment", column = "meter_id",
+            @Result(property = "payment", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
     List<DebitCreditAdjust> GetDebitCreditAdjustment(UUID orgId, String type);

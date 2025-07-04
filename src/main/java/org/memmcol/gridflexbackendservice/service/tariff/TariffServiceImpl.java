@@ -9,10 +9,8 @@ import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
-//import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
-import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -23,15 +21,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
 @Transactional
 @Service
@@ -76,7 +75,7 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             int result;
             String desc = tariff.getName()+" newly created";
@@ -86,10 +85,6 @@ public class TariffServiceImpl implements TariffService {
             if (isExist != null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getExistDesc());
             }
-//            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
-//            if (isVersionExist != null) {
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getExistDesc());
-//            }
             Band isBand = bandMapper.getBand(tariff.getBand());
             if (isBand == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
@@ -100,28 +95,20 @@ public class TariffServiceImpl implements TariffService {
             tariff.setCreated_by(um.getId());
             tariff.setDescription(desc);
             result = tariffMapper.createTariff(tariff);
-//            UUID tId = tariff.getId();
             if (result == 0) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
             }
             tariff.setT_id(tariff.getId());
-//            if(isVersionExist.getApprove_status().equalsIgnoreCase("pending")){
-//                result = tariffMapper.updateTariffVersion(tariff);
-//                if (result == 0) {
-//                    throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
-//                }
-//            } else{
             result = tariffMapper.createTariffVersion(tariff);
             if (result == 0) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
             }
-//            }
 
             Tariff tariffByName = tariffMapper.getTariff(tariff.getId(), um.getOrgId());
             um.setPassword("");
             handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);//("Created Tariff [" + tariff.getName() + "]");
+            auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType(tariffName);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
@@ -145,7 +132,7 @@ public class TariffServiceImpl implements TariffService {
         int result;
         String desc = "";
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -170,26 +157,16 @@ public class TariffServiceImpl implements TariffService {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
                 }
                 desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
-                //capitalizeFirstLetter(approveStatus) +" Tariff [" + tariff.getName() + "]";
             }
             else if (approveStatus != null && approveStatus.contains("reject")){
                 tariff.setApprove_status("rejected");
                 tariff.setStatus(false);
                 result = tariffMapper.rejectedTariffVersion(tariff);
-//                result = tariffMapper.rejectedTariff(tariff);
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
                 }
                 desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
             }
-//            else if (state != null) {
-//                String approve_state = state ? "approved" : "pending";
-//                result = tariffMapper.disableTariff(id, state,um.getOrgId(), approve_state);
-//                if (result == 0) {
-//                    return ResponseMap.response(status.getUpdateCode(), tariffName +" Activated or Deactivated "+ status.getUpdateFailureDesc(), "");
-//                }
-//                desc = state ? "Activated" : "Deactivated" + " Tariff [" + tariffById.getName() + "]";
-//            }
             else {
                 assert approveStatus != null;
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
@@ -205,11 +182,9 @@ public class TariffServiceImpl implements TariffService {
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setCreatedTariff(newTariff);
             auditRepository.save(auditNotificationDTO);
-//            if(state != null) {
-//                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (tariff.getStatus() ? "Activated Successfully" : status.getDeleteDesc()), "");
-//            } else {
-                return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
-//            }
+
+            return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
+
 
 
         } catch (Exception exception) {
@@ -382,7 +357,7 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -422,8 +397,6 @@ public class TariffServiceImpl implements TariffService {
                     auditRepository.save(auditNotificationDTO);
                 }
                 return ResponseMap.response(status.getSuccessCode(), tariffName + " approved successfully ", "");
-//            }
-//            return ResponseMap.response(status.getUpdateCode(), request.getApproveStatus() + " value not accepted try [approved]", "");
 
         } catch (Exception exception) {
             log.error("Error occurred while bulk approving tariff(s): {}", exception.getMessage(), exception);
@@ -441,7 +414,7 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             int result;
             UserModel um = handleUserValidation();
@@ -475,10 +448,6 @@ public class TariffServiceImpl implements TariffService {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
                 }
             }
-//
-//            if (result == 0) {
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getUpdateFailureDesc());
-//            }
 
             Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");
@@ -543,31 +512,6 @@ public class TariffServiceImpl implements TariffService {
             throw exception;
         }
     }
-
-
-    public static String capitalizeFirstLetter(String input) {
-        if (input == null || input.isEmpty()) return input;
-        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
-    }
-
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disable");
-        }
-
-        return isOperatorExist;
-    }
-
 
     private void handleAddCache(Tariff tariff) {
         tariffCache.remove(tariff.getId().toString()+"_"+tariff.getOrg_id());

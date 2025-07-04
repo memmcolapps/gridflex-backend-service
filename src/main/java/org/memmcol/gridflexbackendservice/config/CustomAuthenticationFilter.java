@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+
 
 @RequiredArgsConstructor
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -136,7 +138,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 //		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
 		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
-		String ipAddress = request.getRemoteAddr();
+		String ipAddress = getClientIp(request);
 		String userAgent = request.getHeader("User-Agent");
 		ObjectMapper mapper = new ObjectMapper();
 		List<Map<String, Object>> permissionTree = mapper.readValue(userDetails.getPermissionTreeJson(), List.class);

@@ -30,6 +30,9 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+
 @Transactional
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -76,15 +79,13 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public Map<String, Object> logout(String token, int expirySeconds, String username) {
 		AuditLog auditNotificationDTO = new AuditLog();
-		String ipAddress = httpServletRequest.getRemoteAddr();
+		String ipAddress = getClientIp(httpServletRequest);
 		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
 			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-//			List<Node> nodes = operatorMapper.getNodeWithChildren(isOperatorExist.getNodeId(), isOperatorExist.getOrgId());
-//			isOperatorExist.setNodes(nodes);
+
 			if (isOperatorExist == null) {
 				throw new GlobalExceptionHandler.NotFoundException(user + status.getNotFoundDesc());
-//				return ResponseMap.response(status.getNotFoundCode(), user + status.getNotFoundDesc(), "");
 			}
 			isOperatorExist.setPassword("");
 			operatorMapper.updateLogoutState(username);
@@ -113,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
 
 	public Map<String, Object> handleForgetPassword(String username, String password) {
 		AuditLog AuditLog = new AuditLog();
-		String ipAddress = httpServletRequest.getRemoteAddr();
+		String ipAddress = getClientIp(httpServletRequest);
 		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -261,19 +262,6 @@ public class AuthServiceImpl implements AuthService {
 		authCache.put(token, true, expirySeconds, TimeUnit.SECONDS);
 	}
 
-	UserModel handleUserValidation() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String username = "Unknown";
-
-		if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-			CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-			username = principal.getUsername();  // or principal.getEmail() if you named it that way
-		}
-
-		UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-		return isOperatorExist;
-	}
 
 	private void removeFromCache() {
 //		authCache.remove("dashboard");

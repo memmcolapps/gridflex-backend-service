@@ -187,7 +187,7 @@ public interface DebtSettingMapper {
     })
     List<PercentageRange> getPercentageVersion(UUID orgId);
 
-    @Select("SELECT * FROM debt_percentage_version WHERE org_id = #{orgId}")
+    @Select("SELECT * FROM debt_percentage WHERE org_id = #{orgId}")
     @Results({
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),

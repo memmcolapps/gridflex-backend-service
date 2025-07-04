@@ -49,8 +49,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static com.hazelcast.map.impl.operation.steps.IMapOpStep.BATCH_SIZE;
-import static org.memmcol.gridflexbackendservice.service.band.BandServiceImpl.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -92,7 +92,7 @@ public class CustomerServiceImpl implements CustomerService {
     public Map<String, Object> createCustomer(Customer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             String desc = "Customer newly created";
@@ -115,7 +115,7 @@ public class CustomerServiceImpl implements CustomerService {
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType("customer");
+            auditNotificationDTO.setType(customerName);
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
 
@@ -137,7 +137,7 @@ public class CustomerServiceImpl implements CustomerService {
     public Map<String, Object> updateCustomer(Customer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
 
@@ -154,7 +154,7 @@ public class CustomerServiceImpl implements CustomerService {
             auditNotificationDTO.setDescription("Edited customer");
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType("customer");
+            auditNotificationDTO.setType(customerName);
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
 
@@ -326,7 +326,7 @@ public class CustomerServiceImpl implements CustomerService {
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setReason(reason);
-            auditNotificationDTO.setType("customer");
+            auditNotificationDTO.setType(customerName);
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
 
@@ -594,24 +594,24 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
 
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disabled");
-        }
-
-        return isOperatorExist;
-    }
+//    UserModel handleUserValidation() {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        String username = "Unknown";
+//
+//        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+//            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+//            username = principal.getUsername();  // or principal.getEmail() if you named it that way
+//        }
+//
+//        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//
+//
+//        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+//            throw new LockedException("User is disabled");
+//        }
+//
+//        return isOperatorExist;
+//    }
 
     private void handleAddCache(Customer customer) {
         customerCache.remove(customer.getId().toString()+"_"+customer.getOrgId());

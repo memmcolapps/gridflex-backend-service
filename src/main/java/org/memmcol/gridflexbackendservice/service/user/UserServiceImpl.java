@@ -33,7 +33,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.memmcol.gridflexbackendservice.service.band.BandServiceImpl.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
 @Transactional
 @Service
@@ -79,7 +81,7 @@ public class UserServiceImpl implements  UserService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
 
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
 
             UserModel um = handleUserValidation();
@@ -140,7 +142,7 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -391,7 +393,7 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
 
             UserModel um = handleUserValidation();
@@ -438,7 +440,7 @@ public class UserServiceImpl implements  UserService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -563,21 +565,6 @@ public class UserServiceImpl implements  UserService {
 
     }
 
-
-
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        return isOperatorExist;
-    }
 
     private void handleAddCache(UserModel user) {
         userCache.remove(user.getId().toString()+"_"+user.getOrgId());

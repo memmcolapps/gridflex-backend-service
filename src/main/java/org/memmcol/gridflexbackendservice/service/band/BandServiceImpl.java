@@ -33,6 +33,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+
 @Transactional
 @Service
 public class BandServiceImpl implements BandService {
@@ -75,7 +79,7 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> createBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
@@ -119,7 +123,7 @@ public class BandServiceImpl implements BandService {
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType("Band");
+            auditNotificationDTO.setType(bandName);
             auditNotificationDTO.setCreatedBand(bandByName);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
@@ -138,7 +142,7 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> updateBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             UserModel um = handleUserValidation();
@@ -149,8 +153,8 @@ public class BandServiceImpl implements BandService {
             }
 
             Band isVersionExist = bandMapper.getVersionBand(band.getId(), um.getOrgId());
-//            handleAddCache(isVersionExist);
-            band.setApproveStatus("pending");;
+
+            band.setApproveStatus("pending");
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
             String changeDescription = buildChangeDescription(isExist, band);
@@ -172,17 +176,16 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateFailureDesc());
             }
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
-//            Band bandVersionById = bandMapper.getVersionBand(band.getBandId(), um.getOrgId());
 
 
             handleAddCache(bandById);
 
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);//("Updated Band [" + band.getName() + "]");
+            auditNotificationDTO.setDescription(changeDescription);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType("Band");
+            auditNotificationDTO.setType(bandName);
             auditNotificationDTO.setCreatedBand(bandById);
 //			authCache.remove("dashboard");
             auditRepository.save(auditNotificationDTO);
@@ -203,7 +206,7 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> manageBandState(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = httpServletRequest.getRemoteAddr();
+        String ipAddress = getClientIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         int result;
         String desc = "";
@@ -212,7 +215,6 @@ public class BandServiceImpl implements BandService {
 
             Band band = bandMapper.getBandVersionById(bandId, um.getOrgId());
 
-//            Band cachedBand = (Band) bandCache.get(bandId.toString());
             if(band == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
@@ -221,6 +223,7 @@ public class BandServiceImpl implements BandService {
             band.setApproveBy(um.getId());
             if(approveStatus != null && approveStatus.contains("approve")) {
                 band.setApproveStatus("approved");
+
                 result = bandMapper.updateBandVersion(band);
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
@@ -256,7 +259,7 @@ public class BandServiceImpl implements BandService {
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType("Band");
+            auditNotificationDTO.setType(bandName);
             auditNotificationDTO.setCreatedBand(newBand);
             auditRepository.save(auditNotificationDTO);
 
@@ -273,44 +276,6 @@ public class BandServiceImpl implements BandService {
             throw exception;
         }
     }
-
-
-
-//    @Override
-//    public Map<String, Object> manageBandState(UUID bandId, Boolean state) {
-//        AuditLog auditNotificationDTO = new AuditLog();
-//        try {
-//            UserModel um = handleUserValidation();
-//
-//
-//            Band bandById = bandMapper.getBandById(bandId, um.getOrgId());
-//            if(bandById == null) {
-//                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
-//            }
-//            int result = bandMapper.disableBand(bandId, state, um.getOrgId());
-//            if (result == 0) {
-//                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
-//            }
-//            Band band = bandMapper.getBandById(bandId, um.getOrgId());
-//            handleAddCache(bandById);
-//            um.setPassword("");
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription("Disabled Band [" + band.getName() + "]");
-//            auditNotificationDTO.setType("band");
-//            auditNotificationDTO.setCreatedBand(band);
-//
-//            return ResponseMap.response(status.getSuccessCode(), band.getName() + " " + (band.getStatus() ? "Enabled Successfully" : status.getDeleteDesc()), "");
-//        } catch (Exception exception) {
-//            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//            throw exception;
-//        }
-//
-//    }
 
     @Override
     public Map<String, Object> getBands(String type) {
@@ -404,30 +369,6 @@ public class BandServiceImpl implements BandService {
             }
         }
         bandCache.put(band.getId().toString()+"_"+band.getOrgId(), band);  // Cache updated or deleted entity
-    }
-
-    public static String capitalizeFirstLetter(String input) {
-        if (input == null || input.isEmpty()) return input;
-        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
-    }
-
-
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disable");
-        }
-
-        return isOperatorExist;
     }
 
     private String buildChangeDescription(Band oldBand, Band newBand) {

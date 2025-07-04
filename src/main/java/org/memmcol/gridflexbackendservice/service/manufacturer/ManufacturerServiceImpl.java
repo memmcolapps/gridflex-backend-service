@@ -32,7 +32,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static org.memmcol.gridflexbackendservice.service.band.BandServiceImpl.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
 @Transactional
 @Service
@@ -67,7 +69,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
 
             String desc = capitalizeFirstLetter(request.getName()) + "newly created";
@@ -113,7 +115,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         try {
 
             String desc = capitalizeFirstLetter(request.getName()) + "edited";
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -247,19 +249,19 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         }
     }
 
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disabled");
-        }
-        return isOperatorExist;
-    }
+//    UserModel handleUserValidation() {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        String username = "Unknown";
+//
+//        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+//            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+//            username = principal.getUsername();  // or principal.getEmail() if you named it that way
+//        }
+//
+//        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+//            throw new LockedException("User is disabled");
+//        }
+//        return isOperatorExist;
+//    }
 }

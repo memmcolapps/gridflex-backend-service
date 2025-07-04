@@ -40,6 +40,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+
 @Transactional
 @Service
 public class MeterServiceImpl implements MeterService {
@@ -85,7 +89,7 @@ public class MeterServiceImpl implements MeterService {
         AuditLog auditNotificationDTO = new AuditLog();
         try {
             String desc = capitalizeFirstLetter(request.getMeterClass()) + "newly created";
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -137,7 +141,7 @@ public class MeterServiceImpl implements MeterService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
             request.setOrgId(um.getOrgId());
@@ -328,7 +332,7 @@ public class MeterServiceImpl implements MeterService {
         String desc = "";
         String resp = "";
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
@@ -504,7 +508,7 @@ public class MeterServiceImpl implements MeterService {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
 
             UserModel um = handleUserValidation();
@@ -536,23 +540,23 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disabled");
-        }
-
-        return isOperatorExist;
-    }
+//    UserModel handleUserValidation() {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        String username = "Unknown";
+//
+//        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+//            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+//            username = principal.getUsername();  // or principal.getEmail() if you named it that way
+//        }
+//
+//        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//
+//        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+//            throw new LockedException("User is disabled");
+//        }
+//
+//        return isOperatorExist;
+//    }
 
     private void handleAddCache(Meter meter) {
         meterCache.remove(meter.getId().toString()+"_"+meter.getOrgId());
@@ -569,8 +573,8 @@ public class MeterServiceImpl implements MeterService {
         meterCache.put(meter.getId().toString()+"_"+meter.getOrgId(), meter);  // Cache updated or deleted entity
     }
 
-    public static String capitalizeFirstLetter(String input) {
-        if (input == null || input.isEmpty()) return input;
-        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
-    }
+//    public static String capitalizeFirstLetter(String input) {
+//        if (input == null || input.isEmpty()) return input;
+//        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
+//    }
 }

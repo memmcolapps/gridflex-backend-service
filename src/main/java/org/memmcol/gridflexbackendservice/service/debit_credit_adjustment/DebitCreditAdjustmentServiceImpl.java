@@ -24,15 +24,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
 @Transactional
 @Service
@@ -75,7 +76,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             int result;
 
@@ -104,7 +105,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             }
 
             request.setOrgId(um.getOrgId());
-            request.setStatus("UNPAID");
+            request.setStatus("unpaid");
             result = mapper.createDebitAdjustment(request);
 
             if(result == 0){
@@ -121,7 +122,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setDebitCreditAdjust(debitAdjustment);
             auditRepository.save(auditNotificationDTO);
-//            return ResponseMap.response(status.getSuccessCode(), debit + " " + status.getRegDesc(), "");
 
             if(request.getType().equalsIgnoreCase("credit")){
                 return ResponseMap.response(status.getSuccessCode(), credit + " " + status.getRegDesc(), "");
@@ -145,9 +145,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 
         try {
-            String ipAddress = httpServletRequest.getRemoteAddr();
+            String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
-            String desc = "Debt reconciliation";
+
             UserModel um = handleUserValidation();
 
             DebitCreditAdjust debitCreditAdjust = mapper.getDebitAdjustmentById(debitCreditAdjustmentId, um.getOrgId());
@@ -178,12 +178,13 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             // 2. Update penalty balance
             BigDecimal newBalance = currentBalance.subtract(paymentAmount);
-            String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "PAID" : "PARTIALLY_PAID";
+            String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "paid" : "partially_paid";
 
             // Persist the updated values
             mapper.updateReconciledDebt(debitCreditAdjustmentId, newBalance, newStatus);
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debitCreditAdjustmentId, um.getOrgId());
+            String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
             um.setPassword("");
             handleAddCache(debitAdjustment);
             auditNotificationDTO.setCreator(um);
@@ -390,26 +391,4 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         debitCreditCache.put(debitCreditAdjustment.getId().toString()+"_"+debitCreditAdjustment.getOrgId(), debitCreditAdjustment);  // Cache updated or deleted entity
     }
 
-    UserModel handleUserValidation() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
-
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-        }
-
-        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-
-        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-            throw new LockedException("User is disable");
-        }
-
-        return isOperatorExist;
-    }
-
-    public static String capitalizeFirstLetter(String input) {
-        if (input == null || input.isEmpty()) return input;
-        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
-    }
 }

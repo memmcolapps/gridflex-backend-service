@@ -1,11 +1,11 @@
 package org.memmcol.gridflexbackendservice.service.auditlog;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
-import org.memmcol.gridflexbackendservice.service.auth.AuthServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.ResponseProperties;
@@ -30,7 +30,6 @@ public class AuditLogServiceImpl implements AuditLogService {
     private static final Logger log = LoggerFactory.getLogger(AuditLogServiceImpl.class);
 
     private final AuditRepository auditRepository;
-
 
     @Autowired
     private ResponseProperties status;
@@ -122,59 +121,5 @@ public class AuditLogServiceImpl implements AuditLogService {
             throw exception;
         }
     }
+
 }
-
-
-//    public Map<String, Object> getAuditLog(int page, int size) {
-//        try {
-//            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-//            Page<AuditLog> pagedResult = auditRepository.findAllByOrderBySize(pageable);
-//            List<AuditLogDto> result = pagedResult.getContent()
-//                    .stream()
-//                    .map(log -> new AuditLogDto(
-//                            log.getId(),
-//                            log.getType(),
-//                            log.getCreator().getFirstname() + " " + log.getCreator().getLastname(),
-//                            log.getCreator().getEmail(),
-//                            log.getCreator().getGroups().getGroupTitle(),
-//                            log.getDescription(),
-//                            log.getUserAgent(),
-//                            log.getIpAddress(),
-//                            log.getCreatedAt()
-//                    ))
-//                    .collect(Collectors.toList());
-//
-//            Map<String, Object> response = new HashMap<>();
-//            response.put("responsecode", status.getSuccessCode());
-//            response.put("responsedesc", status.getDesc());
-//            response.put("responsedata", result);
-//            response.put("currentPage", pagedResult.getNumber());
-//            response.put("totalItems", pagedResult.getTotalElements());
-//            response.put("totalPages", pagedResult.getTotalPages());
-//
-//            return response;
-////            List<AuditLogDto> result = auditRepository.findAllByOrderByCreatedAtDesc()
-////                    .stream()
-////                    .map(log -> new AuditLogDto(
-////                            log.getId(),
-////                            log.getType(),
-////                            log.getCreator().getFirstname() + " " + log.getCreator().getLastname(),
-////                            log.getCreator().getEmail(),
-////                            log.getCreator().getGroups().getGroupTitle(),
-////                            log.getDescription(),
-////                            log.getUserAgent(),
-////                            log.getIpAddress(),
-////                            log.getCreatedAt()
-////                    ))
-////                    .collect(Collectors.toList());
-////            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), result);
-//        } catch (Exception exception) {
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//        exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-//        exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//        exceptionErrorLogs.setError(exception.toString().trim());
-//        exceptionAuditRepository.save(exceptionErrorLogs);
-//        throw exception;
-//        }
-//    }

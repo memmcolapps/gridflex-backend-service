@@ -1,0 +1,33 @@
+package org.memmcol.gridflexbackendservice.util;
+
+
+import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class handleValidUser {
+
+    private static AuthMapper staticOperatorMapper;
+
+    @Autowired
+    public void setOperatorMapper(AuthMapper operatorMapper) {
+        handleValidUser.staticOperatorMapper = operatorMapper;
+    }
+
+    public static UserModel handleUserValidation() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = "Unknown";
+
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+            username = principal.getUsername();
+        }
+
+        return staticOperatorMapper.findAuthByUserEmail(username);
+    }
+}
