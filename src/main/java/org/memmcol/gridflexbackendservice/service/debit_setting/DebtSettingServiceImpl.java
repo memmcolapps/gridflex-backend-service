@@ -623,13 +623,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         StringBuilder changes = new StringBuilder("Edited ");
 
         if (!Objects.equals(oldLc.getName(), newLc.getName())) {
-            changes.append(String.format("name: '%s' → '%s'; ", oldLc.getName(), newLc.getName()));
+            changes.append(String.format("name: '%s' → '%s' ", oldLc.getName(), newLc.getName()));
         }
 
         System.out.println("old: " + oldLc.getCode());
         System.out.println("new: " + newLc.getCode());
         if (!Objects.equals(oldLc.getCode(), newLc.getCode())) {
-            changes.append(String.format("code: '%s' → '%s'; ", oldLc.getCode(), newLc.getCode()));
+            changes.append(String.format("code: '%s' → '%s' ", oldLc.getCode(), newLc.getCode()));
         }
         System.out.println("changes: " + changes);
         return changes.toString();

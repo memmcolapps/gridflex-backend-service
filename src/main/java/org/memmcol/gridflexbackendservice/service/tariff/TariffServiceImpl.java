@@ -532,7 +532,7 @@ public class TariffServiceImpl implements TariffService {
         StringBuilder changes = new StringBuilder("Edited ");
 
         if (!Objects.equals(oldTariff.getName(), newTariff.getName())) {
-            changes.append(String.format("name: '%s' → '%s'; ", oldTariff.getName(), newTariff.getName()));
+            changes.append(String.format("name: '%s' → '%s' ", oldTariff.getName(), newTariff.getName()));
         }
 //
 //        if (!Objects.equals(oldTariff.getTariff_id(), newTariff.getTariff_id())) {
@@ -540,19 +540,19 @@ public class TariffServiceImpl implements TariffService {
 //        }
 
         if (!Objects.equals(oldTariff.getTariff_type(), newTariff.getTariff_type())) {
-            changes.append(String.format("tariff_type: '%s' → '%s'; ", oldTariff.getTariff_type(), newTariff.getTariff_type()));
+            changes.append(String.format("tariff_type: '%s' → '%s' ", oldTariff.getTariff_type(), newTariff.getTariff_type()));
         }
 
         if (!Objects.equals(oldTariff.getTariff_rate(), newTariff.getTariff_rate())) {
-            changes.append(String.format("tariff_rate: '%s' → '%s'; ", oldTariff.getTariff_rate(), newTariff.getTariff_rate()));
+            changes.append(String.format("tariff_rate: '%s' → '%s' ", oldTariff.getTariff_rate(), newTariff.getTariff_rate()));
         }
 
         if (!Objects.equals(oldTariff.getBand(), newTariff.getBand())) {
-            changes.append(String.format("band: '%s' → '%s'; ", oldTariff.getBand(), newTariff.getBand()));
+            changes.append(String.format("band: '%s' → '%s' ", oldTariff.getBand(), newTariff.getBand()));
         }
 
         if (!Objects.equals(oldTariff.getEffective_date(), newTariff.getEffective_date())) {
-            changes.append(String.format("effective_date: '%s' → '%s'; ", oldTariff.getEffective_date(), newTariff.getEffective_date()));
+            changes.append(String.format("effective_date: '%s' → '%s' ", oldTariff.getEffective_date(), newTariff.getEffective_date()));
         }
 
         return changes.toString();

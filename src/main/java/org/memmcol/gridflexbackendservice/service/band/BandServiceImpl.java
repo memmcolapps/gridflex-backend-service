@@ -375,11 +375,11 @@ public class BandServiceImpl implements BandService {
         StringBuilder changes = new StringBuilder("Edited band ");
 
         if (!Objects.equals(oldBand.getName(), newBand.getName())) {
-            changes.append(String.format("name: '%s' → '%s'; ", oldBand.getName(), newBand.getName()));
+            changes.append(String.format("name: '%s' → '%s' ", oldBand.getName(), newBand.getName()));
         }
 
         if (!Objects.equals(oldBand.getHour(), newBand.getHour())) {
-            changes.append(String.format("hour: '%s' → '%s'; ", oldBand.getHour(), newBand.getHour()));
+            changes.append(String.format("hour: '%s' → '%s' ", oldBand.getHour(), newBand.getHour()));
         }
 
         return changes.toString();

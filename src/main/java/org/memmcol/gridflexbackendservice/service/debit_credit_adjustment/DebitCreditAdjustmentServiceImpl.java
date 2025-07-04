@@ -82,8 +82,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             UserModel um = handleUserValidation();
 
-            System.out.println("type: "+request.getType());
-
             if (request.getType() == null ||
                     (!request.getType().trim().equalsIgnoreCase("credit")
                             && !request.getType().trim().equalsIgnoreCase("debit"))) {
@@ -218,12 +216,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("At least one of meterId, meterNumber, or accountNumber must be provided.");
             }
 
-//            Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
-//
-//            if (cachedUser != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached Meter" + " " + status.getDesc(), cachedUser);
-//            }
-
             if(meterNumber != null){
                 meter = mapper.getMeterNumber(um.getOrgId(), meterNumber);
             }
@@ -241,13 +233,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             MeterAndLiabilityCause meterAndLiabilityCause = new MeterAndLiabilityCause();
             meterAndLiabilityCause.setMeter(meter);
             meterAndLiabilityCause.setLiabilityCause(liabilityCause);
-
-
-//            if(meterId != null){
-//                meter = meterMapper.getMeter(um.getOrgId(), meterId);
-//            }
-
-//            handleAddCache(meter);
 
             return ResponseMap.response(status.getSuccessCode(),  "Meter " + status.getDesc(), meterAndLiabilityCause);
         } catch (Exception exception) {
@@ -332,7 +317,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 return ResponseMap.response(status.getSuccessCode(),  debit + " "+status.getDesc(), response);
             }
 
-
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to filter tariffs");
@@ -347,22 +331,12 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     public Map<String, Object> getDebitAdjustment(UUID meterId, String type) {
         try {
             UserModel um = handleUserValidation();
-            Object cachedMeterId = null;
 
-//            if(meterId != null) {
-//                cachedMeterId = debitCreditCache.get(meterId.toString());
-//            }
-//
-//            if (cachedMeterId != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached " + debit + " " + status.getDesc(), cachedMeterId);
-//            }
             List<DebitCreditAdjust> result = mapper.getDebitAdjustmentByMeterId(meterId, um.getOrgId(), type);
 
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getNotFoundDesc());
             }
-
-//            handleAddCache(result);
 
             return ResponseMap.response(status.getSuccessCode(), debit + " " + status.getDesc(), result);
         } catch (Exception exception) {
