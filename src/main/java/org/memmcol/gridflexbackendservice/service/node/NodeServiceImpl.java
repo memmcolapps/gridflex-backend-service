@@ -234,7 +234,7 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub");
+            auditNotificationDTO.setType(request.getType().equals("region") ? "Region" : request.getType().equals("service center") ? "Service center" : "Business hub");
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
@@ -297,7 +297,7 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feeder line") ? "feeder line" : "substation");
+            auditNotificationDTO.setType(request.getType().equalsIgnoreCase("transformer") ? "Transformer" : request.getType().equalsIgnoreCase("feeder line") ? "Feeder line" : "Substation");
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);

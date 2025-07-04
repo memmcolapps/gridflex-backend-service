@@ -44,9 +44,6 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     private static final Logger log = LoggerFactory.getLogger(ManufacturerServiceImpl.class);
 
     @Autowired
-    private AuthMapper operatorMapper;
-
-    @Autowired
     private ResponseProperties status;
 
     @Autowired
@@ -248,20 +245,4 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             throw exception;
         }
     }
-
-//    UserModel handleUserValidation() {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        String username = "Unknown";
-//
-//        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-//            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-//            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-//        }
-//
-//        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-//        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-//            throw new LockedException("User is disabled");
-//        }
-//        return isOperatorExist;
-//    }
 }

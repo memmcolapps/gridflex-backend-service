@@ -59,7 +59,8 @@ public class AuditLogServiceImpl implements AuditLogService {
                                 log.getDescription(),
                                 log.getUserAgent(),
                                 log.getIpAddress(),
-                                log.getCreatedAt()
+                                log.getCreatedAt(),
+                                log.getReason()
                         ))
                         .collect(Collectors.toList());
 
@@ -80,7 +81,8 @@ public class AuditLogServiceImpl implements AuditLogService {
                                 log.getDescription(),
                                 log.getUserAgent(),
                                 log.getIpAddress(),
-                                log.getCreatedAt()
+                                log.getCreatedAt(),
+                                log.getReason()
                         ))
                         .collect(Collectors.toList());
                 response.put("data", result);

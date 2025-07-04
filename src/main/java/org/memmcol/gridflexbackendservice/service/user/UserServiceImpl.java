@@ -410,10 +410,8 @@ public class UserServiceImpl implements  UserService {
             int isStatus = userMapper.changeStatus(userId, state);
             if (isStatus != 1) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getUpdateFailureDesc());
-//                return ResponseMap.response(status.getUpdateCode(), userName + " " + status.getUpdateFailureDesc(), "");
             }
             String desc = state ? "User activated" : "User deactivated";
-//            UserModel user = userMapper.findById(userId);
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
             handleAddCache(user);
@@ -509,7 +507,7 @@ public class UserServiceImpl implements  UserService {
             auditNotificationDTO.setType("Group");
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setCreatedOperator(user);
+//            auditNotificationDTO.setCreatedUser(user);
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
@@ -580,59 +578,4 @@ public class UserServiceImpl implements  UserService {
         }
         userCache.put(user.getId().toString()+"_"+user.getOrgId(), user);  // Cache updated or deleted entity
     }
-
-//
-//    @Override
-//    public Map<String, Object> getFilteredUsers(
-//            String email,
-//            String permission,
-//            String dateAddedTo) {
-//
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        try {
-//            // Optional caching (implement your own if needed)
-//            StringBuilder cacheKeyBuilder = new StringBuilder("users");
-//            if (email != null && !email.isEmpty()) cacheKeyBuilder.append("_email_").append(email);
-//            if (permission != null && !permission.isEmpty()) cacheKeyBuilder.append("_perm_").append(permission);
-//            if (dateAddedFrom != null) cacheKeyBuilder.append("_from_").append(dateAddedFrom);
-//            if (dateAddedTo != null) cacheKeyBuilder.append("_to_").append(dateAddedTo);
-//            String cacheKey = cacheKeyBuilder.toString();
-//
-//            Object cachedUsers = userCache.get(cacheKey);
-//            if (cachedUsers != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached users " + status.getDesc(), cachedUsers);
-//            }
-//
-//            // Ideally fetch all users with minimal join
-//            List<UserModel> allUsers = userMapper.findAllUsersWithGroupsAndPermissions();
-//
-//            List<UserModel> filteredUsers = allUsers.stream()
-//                    .filter(user -> email == null || email.isEmpty() || user.getEmail().equalsIgnoreCase(email))
-//                    .filter(user -> {
-//                        if (permission == null || permission.isEmpty()) return true;
-//                        return user.getGroups().stream()
-//                                .flatMap(group -> group.getModules().stream())
-//                                .flatMap(module -> module.getSubModules().stream())
-//                                .flatMap(sub -> sub.getPermissions().stream())
-//                                .anyMatch(perm -> perm.getName().equalsIgnoreCase(permission));
-//                    })
-//                    .filter(user -> {
-//                        if (dateAddedFrom != null && user.getCreatedAt().toLocalDate().isBefore(dateAddedFrom)) return false;
-//                        if (dateAddedTo != null && user.getCreatedAt().toLocalDate().isAfter(dateAddedTo)) return false;
-//                        return true;
-//                    })
-//                    .collect(Collectors.toList());
-//
-//            userCache.put(cacheKey, filteredUsers);
-//            return ResponseMap.response(status.getSuccessCode(), "Filtered users " + status.getDesc(), filteredUsers);
-//
-//        } catch (Exception exception) {
-//            log.error("Error occurred while filtering users: {}", exception.getMessage().trim(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to filter users");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//            throw exception;
-//        }
-//    }
 }

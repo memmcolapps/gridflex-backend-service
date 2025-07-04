@@ -34,9 +34,6 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-	@Autowired
-	private ResponseProperties status;
-
 	Map<String, String> errorMessage = new HashMap<>();
 
 	@ExceptionHandler(Exception.class)

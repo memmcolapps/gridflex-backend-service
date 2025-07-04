@@ -3,9 +3,6 @@ package org.memmcol.gridflexbackendservice.util;
 import java.util.HashMap;
 import java.util.Map;
 
-
-
-
 public class ResponseMap {
 	
 	public static Map<String, Object> response(String responseCode, String responseDesc, Object responseData) {

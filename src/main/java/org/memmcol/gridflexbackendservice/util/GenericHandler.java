@@ -1,10 +1,6 @@
 package org.memmcol.gridflexbackendservice.util;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
-import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 public class GenericHandler {
 
