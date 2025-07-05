@@ -492,7 +492,7 @@ public class TariffServiceImpl implements TariffService {
             }
 
             if(tariffVersionId != null){
-                result = tariffMapper.getSingleTariffVersionById(tariffId, um.getOrgId());
+                result = tariffMapper.getTariffVersionById(tariffVersionId, um.getOrgId());
             }
 
             if(result == null) {

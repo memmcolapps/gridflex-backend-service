@@ -68,7 +68,7 @@ public interface DebtSettingMapper {
     @Select("SELECT * FROM liability_cause_version WHERE org_id = #{orgId} AND approve_status = 'pending'")
     @Results({
             @Result(column = "org_id", property = "orgId"),
-            @Result(column = "liabilityCauseId", property = "liability_cause_id"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_by", property = "createdBy"),
             @Result(column = "approve_by", property = "approveBy"),

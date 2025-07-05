@@ -38,8 +38,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND approve_status = 'pending'")
     Tariff getTariffVersionById(UUID tariffId, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId}")
-    Tariff getSingleTariffVersionById(UUID tariffId, UUID orgId);
+//    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND approve_status = 'pending'")
+//    Tariff getSingleTariffVersionById(UUID tariffId, UUID orgId);
 
     @Update("UPDATE tariffs SET status = #{state}, approve_status = #{approve_state} WHERE id = CAST(#{tariffId} AS UUID) AND org_id = #{orgId}")
     int disableTariff(UUID tariffId, Boolean state, UUID orgId, String approve_state);
