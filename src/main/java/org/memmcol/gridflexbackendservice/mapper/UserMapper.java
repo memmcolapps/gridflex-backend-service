@@ -15,11 +15,8 @@ import java.util.UUID;
 public interface UserMapper {
 
     @Insert("""
-        INSERT INTO users (
-            firstname, lastname, email, node_id, status, active, last_active, password, org_id, created_at, updated_at
-        ) VALUES (
-            #{firstname}, #{lastname}, #{email}, #{nodeId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt}
-        )
+        INSERT INTO users (firstname, lastname, email, node_id, status, active, last_active, password, org_id, created_at, updated_at) 
+    VALUES (#{firstname}, #{lastname}, #{email}, #{nodeId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt})
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertUser(UserModel operator);
