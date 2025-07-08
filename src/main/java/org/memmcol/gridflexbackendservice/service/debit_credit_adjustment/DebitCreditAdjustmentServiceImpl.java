@@ -103,7 +103,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             }
 
             request.setOrgId(um.getOrgId());
-            request.setStatus("unpaid");
+            request.setStatus("UNPAID");
             result = mapper.createDebitAdjustment(request);
 
             if(result == 0){
@@ -176,7 +176,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             // 2. Update penalty balance
             BigDecimal newBalance = currentBalance.subtract(paymentAmount);
-            String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "paid" : "partially_paid";
+            String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "PAID" : "PARTIALLY_PAID";
 
             // Persist the updated values
             mapper.updateReconciledDebt(debitCreditAdjustmentId, newBalance, newStatus);

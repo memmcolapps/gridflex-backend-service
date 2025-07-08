@@ -14,29 +14,31 @@ public class Meter implements Serializable {
 
     private UUID id;
     private UUID orgId;
+    private UUID nodeId;
     private String meterNumber;
     private String accountNumber;
     private String simNumber;
-    private String substation;
-    private String feederLine;
-    private String transformer;
+    private String cin;
+    private String tariff;
+    private String type;
+    private String energyType;
+    private String fixedType;
     private String meterCategory;
     private String meterClass;
     private String manufacturer;
     private String meterType;
     private String status;
     private String customerId;
-    private Long ctRatioNum;
-    private Long ctRatioDenom;
-    private Long voltRatioNum;
-    private Long voltRatioDenom;
-    private Long multiplier;
-    private Long meterRating;
-    private Long initialReading;
-    private Long dial;
-    private String latitude;
-    private String longitude;
+    private String oldSgc;
+    private String newSgc;
+    private String oldKrn;
+    private String newKrn;
+    private Long oldTariffIndex;
+    private Long newTariffIndex;
     private Customer customer;
+    private MeterAssignLocation meterAssignLocation;
+    private MDMeterInfo mdMeterInfo;
+    private PaymentMode paymentMode;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -65,6 +67,14 @@ public class Meter implements Serializable {
         this.orgId = orgId;
     }
 
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
     public String getMeterNumber() {
         return meterNumber;
     }
@@ -89,28 +99,44 @@ public class Meter implements Serializable {
         this.simNumber = simNumber;
     }
 
-    public String getSubstation() {
-        return substation;
+    public String getCin() {
+        return cin;
     }
 
-    public void setSubstation(String substation) {
-        this.substation = substation;
+    public void setCin(String cin) {
+        this.cin = cin;
     }
 
-    public String getFeederLine() {
-        return feederLine;
+    public String getType() {
+        return type;
     }
 
-    public void setFeederLine(String feederLine) {
-        this.feederLine = feederLine;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public String getTransformer() {
-        return transformer;
+    public String getTariff() {
+        return tariff;
     }
 
-    public void setTransformer(String transformer) {
-        this.transformer = transformer;
+    public void setTariff(String tariff) {
+        this.tariff = tariff;
+    }
+
+    public String getEnergyType() {
+        return energyType;
+    }
+
+    public void setEnergyType(String energyType) {
+        this.energyType = energyType;
+    }
+
+    public String getFixedType() {
+        return fixedType;
+    }
+
+    public void setFixedType(String fixedType) {
+        this.fixedType = fixedType;
     }
 
     public String getMeterCategory() {
@@ -161,84 +187,52 @@ public class Meter implements Serializable {
         this.customerId = customerId;
     }
 
-    public Long getCtRatioNum() {
-        return ctRatioNum;
+    public String getOldSgc() {
+        return oldSgc;
     }
 
-    public void setCtRatioNum(Long ctRatioNum) {
-        this.ctRatioNum = ctRatioNum;
+    public void setOldSgc(String oldSgc) {
+        this.oldSgc = oldSgc;
     }
 
-    public Long getVoltRatioNum() {
-        return voltRatioNum;
+    public String getNewSgc() {
+        return newSgc;
     }
 
-    public void setVoltRatioNum(Long voltRatioNum) {
-        this.voltRatioNum = voltRatioNum;
+    public void setNewSgc(String newSgc) {
+        this.newSgc = newSgc;
     }
 
-    public Long getCtRatioDenom() {
-        return ctRatioDenom;
+    public String getOldKrn() {
+        return oldKrn;
     }
 
-    public void setCtRatioDenom(Long ctRatioDenom) {
-        this.ctRatioDenom = ctRatioDenom;
+    public void setOldKrn(String oldKrn) {
+        this.oldKrn = oldKrn;
     }
 
-    public Long getVoltRatioDenom() {
-        return voltRatioDenom;
+    public String getNewKrn() {
+        return newKrn;
     }
 
-    public void setVoltRatioDenom(Long voltRatioDenom) {
-        this.voltRatioDenom = voltRatioDenom;
+    public void setNewKrn(String newKrn) {
+        this.newKrn = newKrn;
     }
 
-    public Long getMultiplier() {
-        return multiplier;
+    public Long getOldTariffIndex() {
+        return oldTariffIndex;
     }
 
-    public void setMultiplier(Long multiplier) {
-        this.multiplier = multiplier;
+    public void setOldTariffIndex(Long oldTariffIndex) {
+        this.oldTariffIndex = oldTariffIndex;
     }
 
-    public Long getMeterRating() {
-        return meterRating;
+    public Long getNewTariffIndex() {
+        return newTariffIndex;
     }
 
-    public void setMeterRating(Long meterRating) {
-        this.meterRating = meterRating;
-    }
-
-    public Long getInitialReading() {
-        return initialReading;
-    }
-
-    public void setInitialReading(Long initialReading) {
-        this.initialReading = initialReading;
-    }
-
-    public Long getDial() {
-        return dial;
-    }
-
-    public void setDial(Long dial) {
-        this.dial = dial;
-    }
-
-    public String getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
-    }
-
-    public String getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
+    public void setNewTariffIndex(Long newTariffIndex) {
+        this.newTariffIndex = newTariffIndex;
     }
 
     public Customer getCustomer() {
@@ -247,6 +241,30 @@ public class Meter implements Serializable {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
+    }
+
+    public MeterAssignLocation getMeterAssignLocation() {
+        return meterAssignLocation;
+    }
+
+    public void setMeterAssignLocation(MeterAssignLocation meterAssignLocation) {
+        this.meterAssignLocation = meterAssignLocation;
+    }
+
+    public MDMeterInfo getMdMeterInfo() {
+        return mdMeterInfo;
+    }
+
+    public void setMdMeterInfo(MDMeterInfo mdMeterInfo) {
+        this.mdMeterInfo = mdMeterInfo;
+    }
+
+    public PaymentMode getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(PaymentMode paymentMode) {
+        this.paymentMode = paymentMode;
     }
 
     public Date getCreatedAt() {

@@ -1,6 +1,8 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
@@ -61,10 +63,11 @@ public class MeterController {
             @RequestParam(value = "meterClass", required = false, defaultValue = "") String meterClass,
             @RequestParam(value = "category", required = false, defaultValue = "") String category,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
-            @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt
+            @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt,
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterClass, category, status, createdAt);
+            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterClass, category, status, createdAt, customerId);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -103,6 +106,17 @@ public class MeterController {
         }
     }
 
+    @PatchMapping("/migrate")
+    public ResponseEntity<Map<String, Object>> migrate(@RequestBody PaymentMode paymentMode) {
+        try {
+            Map<String, Object> result =  service.migrate(paymentMode);
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 //    @PatchMapping("/bulk-approve")
 //    public ResponseEntity<?> bulkApproveMeter(@RequestBody BulkApproveMeter request) {
 //        try {
@@ -127,17 +141,9 @@ public class MeterController {
 
     @PostMapping("/assign-meter")
     public ResponseEntity<Map<String, Object>> AssignMeter(
-            @RequestParam UUID cId,
-            @RequestParam UUID meterId,
-            @RequestParam String customerId,
-            @RequestParam String accountNumber,
-            @RequestParam String tariff,
-            @RequestParam String feederLine,
-            @RequestParam String transformer,
-            @RequestParam String substation) {
+            AssignMeterToCustomer assignMeterToCustomer) {
         try {
-            Map<String, Object> result =  service.assignMeterToCustomer(accountNumber, tariff, customerId, meterId, cId, feederLine, transformer, substation);
-
+            Map<String, Object> result = service.assignMeterToCustomer(assignMeterToCustomer);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -158,11 +164,11 @@ public class MeterController {
 
     @PatchMapping("/allocate-meter")
     public ResponseEntity<?> allocatedMeter(
-            @RequestParam(value = "meterId", required = true) UUID meterId,
-            @RequestParam(value = "nodeId", required = true) UUID nodeId
+            @RequestParam(value = "meterNumber", required = true) String meterNumber,
+            @RequestParam(value = "regionId", required = true) String regionId
     ) {
         try {
-            Map<String, Object> result = service.allocateMeter(meterId, nodeId);
+            Map<String, Object> result = service.allocateMeter(meterNumber, regionId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

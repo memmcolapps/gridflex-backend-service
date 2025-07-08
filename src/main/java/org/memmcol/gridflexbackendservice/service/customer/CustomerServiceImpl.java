@@ -18,6 +18,7 @@ import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -30,9 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -49,6 +47,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
@@ -102,7 +101,9 @@ public class CustomerServiceImpl implements CustomerService {
             request.setCustomerId(uniqueCustomerId);
 
             request.setOrgId(um.getOrgId());
-            request.setStatus("inactive");
+            request.setStatus("Inactive");
+
+            capitalizeFirstLetter(request.getVat());
 
             // Insert into customer
             customerMapper.insertCustomer(request);
@@ -173,7 +174,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> allCustomers(
-            int page, int size, String firstname, String lastname, String meterNumber,
+            int page, int size, String firstname, String lastname,
             String accountNumber, String assignedStatus, String customerId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
@@ -184,7 +185,7 @@ public class CustomerServiceImpl implements CustomerService {
             StringBuilder cacheKeyBuilder = new StringBuilder("customers_"+um.getOrgId());
             if (firstname != null && !firstname.isEmpty()) cacheKeyBuilder.append("_firstname_").append(firstname);
             if (lastname != null && !lastname.isEmpty()) cacheKeyBuilder.append("_lastname_").append(lastname);
-            if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
+//            if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
             if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
             if (assignedStatus != null && !assignedStatus.isEmpty()) cacheKeyBuilder.append("_status_").append(assignedStatus);
 //            if (address != null && !address.isEmpty()) cacheKeyBuilder.append("_address_").append(address);
@@ -218,9 +219,9 @@ public class CustomerServiceImpl implements CustomerService {
                 userStream = userStream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(lastname));
             }
 
-            if (meterNumber != null && !meterNumber.isEmpty()) {
-                userStream = userStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
-            }
+//            if (meterNumber != null && !meterNumber.isEmpty()) {
+//                userStream = userStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
+//            }
 
             if (customerId != null && !customerId.isEmpty()) {
                 userStream = userStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
@@ -311,11 +312,11 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             if(state.equalsIgnoreCase("active") || state.equalsIgnoreCase("inactive") || state.equalsIgnoreCase("block")){
-                int isStatus = customerMapper.changeStatus(customerId, state.toLowerCase(), um.getOrgId());
+                int isStatus = customerMapper.changeStatus(customerId, capitalizeFirstLetter(state.toLowerCase()), um.getOrgId());
                 if (isStatus != 1) {
                     throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getUpdateFailureDesc());
                 }
-                desc = state.equals("active") ? "User activated" : state.equals("inactive") ? "User inactive": "User blocked" ; //[" + isCustomer.getEmail() + "]";
+                desc = state.equals("active") ? "User activated" : state.equals("inactive") ? "User inactive": "User blocked" ;
             } else {
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", state);
             }
@@ -330,7 +331,7 @@ public class CustomerServiceImpl implements CustomerService {
             auditNotificationDTO.setCreatedCustomer(customer);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(), "Customer " + state + " Successfully", "");
+            return ResponseMap.response(status.getSuccessCode(), "Customer " + state + " successfully", "");
             
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -419,8 +420,8 @@ public class CustomerServiceImpl implements CustomerService {
                     successCount[0]++;
                 } catch (Exception e) {
                     String failedId = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
-                            customer.getCustomerId(), customer.getEmail(),
-                            customer.getNin(), customer.getMeterNumber());
+                            customer.getCustomerId(), customer.getEmail());
+//                            customer.getNin(), customer.getMeterNumber());
                     failedRecords.add(failedId + " - " + e.getMessage());
                     log.error("Single insert failed for {}: {}", failedId, e.getMessage(), e);
                 }
@@ -472,8 +473,6 @@ public class CustomerServiceImpl implements CustomerService {
             throw new IOException("Error while parsing Excel file", e);
         }
     }
-
-
 
     public class ExcelSheetHandler extends DefaultHandler {
         private final Consumer<Customer> customerConsumer;

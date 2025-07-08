@@ -29,8 +29,6 @@ public class Customer implements Serializable {
     private String streetName;
     private String status;
     private String vat;
-//    private Boolean meterAssigned;
-    private String meterNumber;
     private List<Meter> meter;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -163,30 +161,6 @@ public class Customer implements Serializable {
     public void setStatus(String status) {
         this.status = status;
     }
-    //    public Boolean getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(Boolean status) {
-//        this.status = status;
-//    }
-
-//    public Boolean getMeterAssigned() {
-//        return meterAssigned;
-//    }
-//
-//    public void setMeterAssigned(Boolean meterAssigned) {
-//        this.meterAssigned = meterAssigned;
-//    }
-//
-    public String getMeterNumber() {
-        return meterNumber;
-    }
-
-    public void setMeterNumber(String meterNumber) {
-        this.meterNumber = meterNumber;
-    }
-
 
     public String getVat() {
         return vat;

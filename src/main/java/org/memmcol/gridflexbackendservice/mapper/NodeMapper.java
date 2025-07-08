@@ -9,8 +9,8 @@ import java.util.UUID;
 @Mapper
 public interface NodeMapper {
 
-    @Insert("INSERT INTO region_bhub_service_centers (org_id, node_id, region_id, name, phone_number, email, contact_person, address, type, created_at, updated_at) " +
-            "VALUES (#{orgId}, #{nodeId}, #{regionId}, #{name}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{type}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO region_bhub_service_centers (org_id, node_id, region_id, name, phone_number, email, contact_person, address, type, parent_id, created_at, updated_at) " +
+            "VALUES (#{orgId}, #{nodeId}, #{regionId}, #{name}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{type}, #{parentId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void createRegionBhubServiceCenter(RegionBhubServiceCenter request);
 
@@ -24,8 +24,8 @@ public interface NodeMapper {
     Node isNodeExist(UUID parentNodeId);
 
 
-    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{assetId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, parent_id, created_at, updated_at) " +
+            "VALUES (#{nodeId}, #{assetId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{parentId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void createSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
@@ -101,6 +101,15 @@ public interface NodeMapper {
             "longitude = #{longitude}, description = #{description}, updated_at = #{updatedAt} WHERE node_id = #{nodeId} AND org_id = #{orgId}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
+
+    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = {regionId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id")
+    })
+    RegionBhubServiceCenter verifyNode(String regionId);
 }
 
 

@@ -49,13 +49,12 @@ public class CustomerController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "firstname", required = false, defaultValue = "") String firstname,
             @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
-            @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, meterNumber, accountNumber, status, customerId);
+            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, accountNumber, status, customerId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -91,9 +91,11 @@ public class NodeServiceImpl implements NodeService {
             nodeMapper.createNode(node);
 
             UUID nodeId = node.getId();
+            UUID parentNodeId = node.getParentId();
 
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
+            request.setParentId(parentNodeId);
 
             if(request.getType().equalsIgnoreCase("region") ||
                     request.getType().equalsIgnoreCase("business hub") ||
@@ -152,11 +154,13 @@ public class NodeServiceImpl implements NodeService {
             nodeMapper.createNode(node);
 
             UUID nodeId = node.getId();
+            UUID parentNodeId = node.getParentId();
 
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
+            request.setParentId(parentNodeId);
 
-            if(request.getType().equalsIgnoreCase("transformer") ||
+            if(request.getType().equalsIgnoreCase("dss") ||
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.createSubStationTransformerFeederLine(request);
@@ -171,7 +175,7 @@ public class NodeServiceImpl implements NodeService {
 
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(request.getType().equals("transformer") ? "transformer" : request.getType().equals("feeder line") ? "feeder line" : "substation");
+            auditNotificationDTO.setType(request.getType().equals("dss") ? "dss" : request.getType().equals("feeder line") ? "feeder line" : "substation");
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setSubStationTransformerFeederLine(subStationTransformerFeederLine);
@@ -282,7 +286,7 @@ public class NodeServiceImpl implements NodeService {
             request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
 
-            if(request.getType().equalsIgnoreCase("transformer") ||
+            if(request.getType().equalsIgnoreCase("dss") ||
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.updateSubStationTransformerFeederLine(request);
