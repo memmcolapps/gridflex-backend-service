@@ -11,8 +11,11 @@ import java.util.UUID;
 @Data
 public class AssignMeterToCustomer implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+    private UUID id;
     private UUID meterId;
-    private UUID oldMeterId;
+    private String oldMeterNumber;
+    private String newMeterNumber;
     private UUID orgId;
     private String customerId;
     private String type;
@@ -20,6 +23,7 @@ public class AssignMeterToCustomer implements Serializable {
     private String dssAssetId;
     private String cin;
     private String accountNumber;
+
     private String state;
     private String city;
     private String houseNo;
@@ -32,6 +36,10 @@ public class AssignMeterToCustomer implements Serializable {
     private String debitPaymentMode;
     private String debitPaymentPlan;
 
+    private UUID createdBy;
+    private UUID updatedBy;
+    private String description;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
@@ -43,20 +51,20 @@ public class AssignMeterToCustomer implements Serializable {
         createdAt = new Date();
     }
 
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
     public UUID getMeterId() {
         return meterId;
     }
 
     public void setMeterId(UUID meterId) {
         this.meterId = meterId;
-    }
-
-    public UUID getOldMeterId() {
-        return oldMeterId;
-    }
-
-    public void setOldMeterId(UUID oldMeterId) {
-        this.oldMeterId = oldMeterId;
     }
 
     public UUID getOrgId() {
@@ -73,6 +81,22 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setCustomerId(String customerId) {
         this.customerId = customerId;
+    }
+
+    public String getOldMeterNumber() {
+        return oldMeterNumber;
+    }
+
+    public void setOldMeterNumber(String oldMeterNumber) {
+        this.oldMeterNumber = oldMeterNumber;
+    }
+
+    public String getNewMeterNumber() {
+        return newMeterNumber;
+    }
+
+    public void setNewMeterNumber(String newMeterNumber) {
+        this.newMeterNumber = newMeterNumber;
     }
 
     public String getType() {
@@ -217,5 +241,29 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setCreditPaymentMode(String creditPaymentMode) {
         this.creditPaymentMode = creditPaymentMode;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(UUID createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public UUID getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(UUID updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

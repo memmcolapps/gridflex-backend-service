@@ -1,8 +1,10 @@
 package org.memmcol.gridflexbackendservice.model.meter;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.persistence.Id;
 import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -12,9 +14,11 @@ import java.util.UUID;
 public class Meter implements Serializable {
     static final long serialVersionUID = 1L;
 
+    @Id
     private UUID id;
     private UUID orgId;
     private UUID nodeId;
+    private UUID meterId;
     private String meterNumber;
     private String accountNumber;
     private String simNumber;
@@ -23,9 +27,10 @@ public class Meter implements Serializable {
     private String type;
     private String energyType;
     private String fixedType;
+    private String approveStatus;
     private String meterCategory;
     private String meterClass;
-    private String manufacturer;
+    private UUID meterManufacturer;
     private String meterType;
     private String status;
     private String customerId;
@@ -35,10 +40,14 @@ public class Meter implements Serializable {
     private String newKrn;
     private Long oldTariffIndex;
     private Long newTariffIndex;
+    private UUID createdBy;
+    private UUID approveBy;
+    private String description;
     private Customer customer;
     private MeterAssignLocation meterAssignLocation;
     private MDMeterInfo mdMeterInfo;
     private PaymentMode paymentMode;
+    private Manufacturer manufacturer;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -139,6 +148,14 @@ public class Meter implements Serializable {
         this.fixedType = fixedType;
     }
 
+    public String getApproveStatus() {
+        return approveStatus;
+    }
+
+    public void setApproveStatus(String approveStatus) {
+        this.approveStatus = approveStatus;
+    }
+
     public String getMeterCategory() {
         return meterCategory;
     }
@@ -155,11 +172,19 @@ public class Meter implements Serializable {
         this.meterClass = meterClass;
     }
 
-    public String getManufacturer() {
+    public UUID getMeterManufacturer() {
+        return meterManufacturer;
+    }
+
+    public void setMeterManufacturer(UUID meterManufacturer) {
+        this.meterManufacturer = meterManufacturer;
+    }
+
+    public Manufacturer getManufacturer() {
         return manufacturer;
     }
 
-    public void setManufacturer(String manufacturer) {
+    public void setManufacturer(Manufacturer manufacturer) {
         this.manufacturer = manufacturer;
     }
 
@@ -265,6 +290,38 @@ public class Meter implements Serializable {
 
     public void setPaymentMode(PaymentMode paymentMode) {
         this.paymentMode = paymentMode;
+    }
+
+    public UUID getMeterId() {
+        return meterId;
+    }
+
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(UUID createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public UUID getApproveBy() {
+        return approveBy;
+    }
+
+    public void setApproveBy(UUID approveBy) {
+        this.approveBy = approveBy;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Date getCreatedAt() {

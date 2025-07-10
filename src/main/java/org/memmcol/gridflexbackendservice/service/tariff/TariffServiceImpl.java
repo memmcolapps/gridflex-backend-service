@@ -78,7 +78,7 @@ public class TariffServiceImpl implements TariffService {
             String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             int result;
-            String desc = tariff.getName()+" newly created";
+            String desc = tariff.getName()+" created";
             UserModel um = handleUserValidation();
 
             Tariff isExist = tariffMapper.getTariffByName(tariff.getName(), um.getOrgId(), tariff.getTariff_id());
@@ -146,7 +146,7 @@ public class TariffServiceImpl implements TariffService {
             tariff.setApproved_by(um.getId());
 
             if(approveStatus != null && approveStatus.contains("approve")) {
-                tariff.setApprove_status("approved");
+                tariff.setApprove_status("Approved");
                 tariff.setStatus(true);
                 result = tariffMapper.approvedTariffVersion(tariff);
                 if (result == 0) {
@@ -159,7 +159,7 @@ public class TariffServiceImpl implements TariffService {
                 desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
             }
             else if (approveStatus != null && approveStatus.contains("reject")){
-                tariff.setApprove_status("rejected");
+                tariff.setApprove_status("Rejected");
                 tariff.setStatus(false);
                 result = tariffMapper.rejectedTariffVersion(tariff);
                 if (result == 0) {

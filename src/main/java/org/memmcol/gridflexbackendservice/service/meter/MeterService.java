@@ -14,10 +14,10 @@ public interface MeterService {
 
     Map<String, Object> updateMeter(Meter request);
 
-    Map<String, Object> getAllMeters(int page, int size, String meterNumber, String simNo, String manufacturer,
+    Map<String, Object> getAllMeters(int page, int size, String meterNumber, String simNo, String manufacturer, String type,
                                      String meterClass, String category, String status, String createdAt, String customerId);
 
-    Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber);
+    Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber);
 
     Map<String, Object> changeStatus(UUID meterId, String status, String reason) throws MissingServletRequestParameterException;
 
@@ -36,4 +36,6 @@ public interface MeterService {
     Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer assignMeterToCustomer);
 
     Map<String, Object> migrate(PaymentMode paymentMode);
+
+    Map<String, Object> approve(UUID meterVersionId, String approveState) throws MissingServletRequestParameterException;
 }

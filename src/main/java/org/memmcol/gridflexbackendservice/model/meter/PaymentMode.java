@@ -13,6 +13,7 @@ public class PaymentMode implements Serializable {
     private UUID id;
     private UUID orgId;
     private UUID meterId;
+    private Boolean status;
     private String meterCategory;
     private String creditPaymentMode;
     private String creditPaymentPlan;
@@ -49,6 +50,14 @@ public class PaymentMode implements Serializable {
 
     public void setMeterId(UUID meterId) {
         this.meterId = meterId;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
     }
 
     public String getMeterCategory() {

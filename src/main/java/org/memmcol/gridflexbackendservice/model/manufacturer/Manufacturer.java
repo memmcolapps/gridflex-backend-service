@@ -15,8 +15,6 @@ public class Manufacturer implements Serializable {
     private UUID orgId;
     private String manufacturerId;
     private String name;
-//    private String sgc;
-//    private Boolean status;
     private String contactPerson;
     private String state;
     private String email;

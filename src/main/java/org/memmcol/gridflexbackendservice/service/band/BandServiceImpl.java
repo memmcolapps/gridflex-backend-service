@@ -83,7 +83,7 @@ public class BandServiceImpl implements BandService {
         String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
-            String desc = capitalizeFirstLetter(band.getName())+ " newly created";
+            String desc = capitalizeFirstLetter(band.getName())+ " created";
             UserModel um = handleUserValidation();
 
             Band isExist = bandMapper.getBand(band.getName());

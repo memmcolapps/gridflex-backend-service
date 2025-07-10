@@ -55,6 +55,7 @@ public class MeterController {
 
     @GetMapping("/all-meters")
     public ResponseEntity<?> getAllMeters(
+            @RequestParam(value = "type", required = false,  defaultValue = "") String type,
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
@@ -67,7 +68,7 @@ public class MeterController {
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterClass, category, status, createdAt, customerId);
+            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, type, meterClass, category, status, createdAt, customerId);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -78,11 +79,13 @@ public class MeterController {
     public ResponseEntity<?> getSingleMeter(
             @RequestParam(value = "meterId", required = false) UUID meterId,
             @RequestParam(value = "meterNumber", required = false) String meterNumber,
-            @RequestParam(value = "accountNumber", required = false) String accountNumber
+            @RequestParam(value = "accountNumber", required = false) String accountNumber,
+            @RequestParam(value = "meterVersionId", required = false) UUID meterVersionId,
+            @RequestParam(value = "versionMeterNumber", required = false) String versionMeterNumber
 
     ) {
         try {
-            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber);
+            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber, meterVersionId, versionMeterNumber);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -114,6 +117,19 @@ public class MeterController {
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
+        }
+    }
+
+    @PatchMapping("/approve")
+    public ResponseEntity<Map<String, Object>> approveMeter(@RequestParam UUID meterVersionId, @RequestParam String approveState) {
+        try {
+            Map<String, Object> result =  service.approve(meterVersionId, approveState);
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        } catch (MissingServletRequestParameterException e) {
+            throw new RuntimeException(e);
         }
     }
 
