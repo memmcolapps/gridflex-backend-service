@@ -139,14 +139,8 @@ public class MeterServiceImpl implements MeterService {
                 request.getMdMeterInfo().setCreatedBy(um.getId());
                 String description = capitalizeFirstLetter("MD Meter Info created");
                 request.getMdMeterInfo().setDescription(description);
-//                if(meter.getApproveStatus().equalsIgnoreCase("rejected")){
-//                    result = meterMapper.insertMDMeterInfoVersion(request.getMdMeterInfo());
-//                    if(result == 0){
-//                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
-//                    }
-//                } else {
-                    mdResult1 = meterMapper.insertMDMeterInfo(request.getMdMeterInfo());   
-//                }
+
+                mdResult1 = meterMapper.insertMDMeterInfo(request.getMdMeterInfo());
                 mdResult2 = meterMapper.insertMDMeterInfoVersion(request.getMdMeterInfo());
                 if (mdResult1 == 0 || mdResult2 == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
@@ -208,7 +202,7 @@ public class MeterServiceImpl implements MeterService {
 
             // Prepare meter update data
             request.setType("NON VIRTUAL");
-            request.setApproveStatus("Pending");
+            request.setApproveStatus("pending");
             request.setDescription(buildChangeDescription(existingMeter, request));
             request.setCreatedBy(user.getId());
 
@@ -230,6 +224,7 @@ public class MeterServiceImpl implements MeterService {
                 UUID meterId = request.getId();
                 request.getMdMeterInfo().setMeterId(meterId);
                 request.getMdMeterInfo().setOrgId(user.getOrgId());
+                request.getMdMeterInfo().setApproveStatus("pending");
                 request.getMdMeterInfo().setDescription(buildMDMeterInfoChangeDescription(existingMeter.getMdMeterInfo(), request.getMdMeterInfo()));
                 if (versionedMeter != null &&
                         "pending".equalsIgnoreCase(versionedMeter.getMdMeterInfo().getApproveStatus())) {
@@ -562,105 +557,195 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+
         try {
-            int result;
-            UserModel um = handleUserValidation();
+            UserModel user = handleUserValidation();
+            request.setOrgId(user.getOrgId());
+            request.setCreatedBy(user.getId());
 
-            request.setOrgId(um.getOrgId());
-
-//            if(request.getOldMeterId() != null){
-////                result = meterMapper.changeState(request.getOldMeterId(), "Inactive", um.getOrgId());
-//                result = meterMapper.changeStateVersion(request.getOldMeterId(), "Inactive", um.getOrgId());
-//                if(result == 0){
-//                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
-//                }
-//            }
-
-//            Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
-//            if(customer == null){
-//                throw new GlobalExceptionHandler.NotFoundException("Customer " + status.getNotFoundDesc());
-//            }
-
-            // verify dss
-            SubStationTransformerFeederLine verifyDss = meterMapper.verifyDss(request.getDssAssetId(), um.getOrgId());
-            if(verifyDss == null){
+            // Validate DSS
+            SubStationTransformerFeederLine dss = meterMapper.verifyDss(request.getDssAssetId(), user.getOrgId());
+            if (dss == null) {
                 throw new GlobalExceptionHandler.NotFoundException("DSS " + status.getNotFoundDesc());
             }
 
-            // verify feeder line
-            SubStationTransformerFeederLine verifyFeederLine = meterMapper.verifyFeederLine(verifyDss.getParentId(), um.getOrgId());
-            if(verifyFeederLine == null){
+            // Validate feeder line
+            SubStationTransformerFeederLine feederLine = meterMapper.verifyFeederLine(dss.getParentId(), user.getOrgId());
+            if (feederLine == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
             }
 
-            Meter verifyMeter2 = meterMapper.findByIdVersion(request.getMeterId(), um.getOrgId());
-            if(verifyMeter2 == null){
-                throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter have a pending record that needs approval");
+            // Validate meter version (must exist and be approved)
+            Meter pendingMeter = meterMapper.getVersionMeterNumber(user.getOrgId(), request.getNewMeterNumber());
+            if (pendingMeter == null) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        request.getNewMeterNumber() + " meter has a pending record that needs approval"
+                );
             }
 
-            Meter verifyMeter1 = meterMapper.findById(request.getMeterId(), um.getOrgId());
-            if(verifyMeter1 == null){
+            // Validate main meter record
+            Meter mainMeter = meterMapper.getMeterNumber(user.getOrgId(), request.getNewMeterNumber());
+            if (mainMeter == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
             }
-            if(verifyMeter1.getNodeId() == null){
-                throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter have not been allocated");
-            }
 
-            if(verifyMeter2.getMeterAssignLocation() == null){
-                throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter assign location have a pending record that needs approval");
+            // Validate node assignment
+            if (mainMeter.getNodeId() == null) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        request.getNewMeterNumber() + " meter has not been allocated"
+                );
             }
-
-            // set dss value obtain after verification
-            request.setDssAssetId(verifyDss.getAssetId());
-            request.setCreatedBy(um.getId());
-            request.setOrgId(um.getOrgId());
 
             // Assign meter to customer
-            request.setDescription("Meter assigned to "+request.getCustomerId() );
-            int result1 = meterMapper.assignedVersionMeterToCustomer(verifyMeter1, request);
-//            int result1 = meterMapper.assignedVersionMeterToCustomer(request);
+            request.setDssAssetId(dss.getAssetId());
+            request.setDescription("Meter assigned to customer " + request.getCustomerId());
 
+            int customerAssignResult = meterMapper.assignedVersionMeterToCustomer(mainMeter, request);
+            int locationAssignResult = meterMapper.assignVersionMeterToLocation(request);
 
-            // Assign meter to customer location
-            request.setDescription(request.getNewMeterNumber() + " meter assigned to location" );
-            int result2 = meterMapper.assignVersionMeterToLocation(request);
-
-            if(result1 == 0 || result2 == 0){
-                throw new GlobalExceptionHandler.NotFoundException("Meter assigned to customer or location failed");
+            if (customerAssignResult == 0 || locationAssignResult == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter assignment to customer or location failed");
             }
 
-            if(request.getMeterCategory().equalsIgnoreCase("prepaid")){
-                if(verifyMeter2.getPaymentMode() == null){
-                    throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter payment mode have a pending record that needs approval");
+            // Handle prepaid meter assignment
+            if ("prepaid".equalsIgnoreCase(request.getMeterCategory())) {
+                if (pendingMeter.getPaymentMode() == null) {
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            request.getNewMeterNumber() + " meter payment mode has a pending record that needs approval"
+                    );
                 }
-                int result4 = meterMapper.assignPaymentModeVersion(request);
-                request.setDescription("Payment mode assigned to" + request.getNewMeterNumber());
-                if(result4 == 0){
-                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+
+                request.setDescription("Payment mode assigned to " + request.getNewMeterNumber());
+                int paymentModeResult = meterMapper.assignPaymentModeVersion(request);
+
+                if (paymentModeResult == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode assignment failed");
                 }
             }
 
-//            meterMapper.assignedMeterToCustomer(request);
-            // Assign meter to customer location
-//            meterMapper.assignMeterToLocation(request);
-//                meterMapper.assignPaymentMode(request);
-            // assign payment mode
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    "Meter assigned successfully",
+                    ""
+            );
 
+        } catch (Exception e) {
+            log.error("Error occurred during meter assignment: {}", e.getMessage(), e);
 
+            exceptionErrorLogs.setDescription("Error occurred while assigning meter to customer");
+            exceptionErrorLogs.setError_message(e.getMessage().trim());
+            exceptionErrorLogs.setError(e.toString().trim());
 
-//            handleAddCache(isCustomer);
-
-            return ResponseMap.response(status.getSuccessCode(), "Meter assigned successfully", "");
-        } catch (Exception exception) {
-            log.error("Error occurred while fetching customer [ACTION]: {}", exception.getMessage(), exception);
-            exception.printStackTrace();
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching customer");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
+            throw e;
         }
     }
+
+
+//    @Override
+//    public Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        try {
+//            int result;
+//            UserModel um = handleUserValidation();
+//
+//            request.setOrgId(um.getOrgId());
+//
+////            if(request.getOldMeterId() != null){
+//////                result = meterMapper.changeState(request.getOldMeterId(), "Inactive", um.getOrgId());
+////                result = meterMapper.changeStateVersion(request.getOldMeterId(), "Inactive", um.getOrgId());
+////                if(result == 0){
+////                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+////                }
+////            }
+//
+////            Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
+////            if(customer == null){
+////                throw new GlobalExceptionHandler.NotFoundException("Customer " + status.getNotFoundDesc());
+////            }
+//
+//            // verify dss
+//            SubStationTransformerFeederLine verifyDss = meterMapper.verifyDss(request.getDssAssetId(), um.getOrgId());
+//            if(verifyDss == null){
+//                throw new GlobalExceptionHandler.NotFoundException("DSS " + status.getNotFoundDesc());
+//            }
+//
+//            // verify feeder line
+//            SubStationTransformerFeederLine verifyFeederLine = meterMapper.verifyFeederLine(verifyDss.getParentId(), um.getOrgId());
+//            if(verifyFeederLine == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
+//            }
+//
+//            Meter verifyMeter2 = meterMapper.getVersionMeterNumber(um.getOrgId(), request.getNewMeterNumber());
+////                    meterMapper.findByIdVersion(request.getMeterId(), um.getOrgId());
+//            if(verifyMeter2 == null){
+//                throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter have a pending record that needs approval");
+//            }
+//
+//            Meter verifyMeter1 = meterMapper.getMeterNumber(um.getOrgId(), request.getNewMeterNumber());
+////                    findById(request.getMeterId(), um.getOrgId());
+//            if(verifyMeter1 == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+//            }
+//            if(verifyMeter1.getNodeId() == null){
+//                throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter have not been allocated");
+//            }
+//
+////            if(verifyMeter2.getMeterAssignLocation() == null){
+////                throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter assign location have a pending record that needs approval");
+////            }
+//
+//            // set dss value obtain after verification
+//            request.setDssAssetId(verifyDss.getAssetId());
+//            request.setCreatedBy(um.getId());
+//            request.setOrgId(um.getOrgId());
+//
+//            // Assign meter to customer
+//            request.setDescription("Meter assigned to "+request.getCustomerId() );
+//            int result1 = meterMapper.assignedVersionMeterToCustomer(verifyMeter1, request);
+////            int result1 = meterMapper.assignedVersionMeterToCustomer(request);
+//
+//
+//            // Assign meter to customer location
+//            request.setDescription(request.getNewMeterNumber() + " meter assigned to location" );
+//            int result2 = meterMapper.assignVersionMeterToLocation(request);
+//
+//            if(result1 == 0 || result2 == 0){
+//                throw new GlobalExceptionHandler.NotFoundException("Meter assigned to customer or location failed");
+//            }
+//
+//            if(request.getMeterCategory().equalsIgnoreCase("prepaid")){
+//                if(verifyMeter2.getPaymentMode() == null){
+//                    throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + "meter payment mode have a pending record that needs approval");
+//                }
+//                int result4 = meterMapper.assignPaymentModeVersion(request);
+//                request.setDescription("Payment mode assigned to" + request.getNewMeterNumber());
+//                if(result4 == 0){
+//                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+//                }
+//            }
+//
+////            meterMapper.assignedMeterToCustomer(request);
+//            // Assign meter to customer location
+////            meterMapper.assignMeterToLocation(request);
+////                meterMapper.assignPaymentMode(request);
+//            // assign payment mode
+//
+//
+//
+////            handleAddCache(isCustomer);
+//
+//            return ResponseMap.response(status.getSuccessCode(), "Meter assigned successfully", "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while fetching customer [ACTION]: {}", exception.getMessage(), exception);
+//            exception.printStackTrace();
+//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching customer");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
 
     @Override
     public Map<String, Object> migrate(PaymentMode request) {
@@ -725,84 +810,245 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+
     @Override
     public Map<String, Object> approve(UUID meterVersionId, String approveStatus) throws MissingServletRequestParameterException {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        int result;
-        String desc = "";
+        AuditLog auditLog = new AuditLog();
+        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
+
         try {
+            // Get client metadata
             String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
-            UserModel um = handleUserValidation();
+            UserModel user = handleUserValidation();
 
-            Meter meter = meterMapper.findByIdVersion(meterVersionId, um.getOrgId());
-            if(meter == null) {
+            // Fetch meter version
+            Meter meter = meterMapper.findByIdVersion(meterVersionId, user.getOrgId());
+            if (meter == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
 
+            // Set common properties
+            meter.setOrgId(user.getOrgId());
+            meter.setApproveBy(user.getId());
 
-            meter.setOrgId(um.getOrgId());
-            meter.setApproveBy(um.getId());
+            if (meter.getMdMeterInfo() != null) {
+                meter.getMdMeterInfo().setMeterId(meterVersionId);
+                meter.getMdMeterInfo().setOrgId(user.getOrgId());
+                meter.getMdMeterInfo().setApproveBy(user.getId());
+            }
 
+            // Set meter status based on assignment
             if (meter.getCustomerId() != null) {
-                meter.setStatus("Assigned");
-            } else if (meter.getNodeId() == null){
-                meter.setStatus("In-stock");
+                meter.setStatus("assigned");
+            } else if (meter.getNodeId() == null) {
+                meter.setStatus("in-stock");
             } else {
-                meter.setStatus("Unassigned");
+                meter.setStatus("unassigned");
             }
 
-            if(approveStatus != null && approveStatus.contains("approve")) {
-                meter.setApproveStatus("Approved");
-//                meter.setStatus("Unassigned");
-                result = meterMapper.approvedMeterVersion(meter);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+            // Approval logic
+            if (approveStatus != null && approveStatus.contains("approve")) {
+                meter.setApproveStatus("approved");
+
+                int approvedMeter = meterMapper.approvedMeterVersion(meter);
+                if (approvedMeter == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
-                result = meterMapper.updateMeter(meter);
-//                        meterMapper.approveMeter(meter);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+                int updatedMeter = meterMapper.approveMeter(meter);
+                if ( updatedMeter == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
-                desc = capitalizeFirstLetter(meter.getMeterNumber()) + " meter " + approveStatus;
-            }
-            else if (approveStatus != null && approveStatus.contains("reject")){
-                meter.setApproveStatus("Rejected");
-//                meter.setStatus(false);
-                result = meterMapper.rejectedMeterVersion(meter);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
+
+                // Approve MD meter info if applicable
+                if ("md".equalsIgnoreCase(meter.getMeterClass()) && meter.getMdMeterInfo() != null) {
+                    meter.getMdMeterInfo().setApproveStatus("approved");
+                    int mdApproval = meterMapper.approveMDMeterInfoVersion(meter.getMdMeterInfo());
+                    int updateMdApproval = meterMapper.updateMDMeterInfo(meter.getMdMeterInfo());
+                    if (mdApproval == 0 || updateMdApproval == 0) {
+                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
+                    }
                 }
-                desc = capitalizeFirstLetter(meter.getMeterNumber()) + " meter " + approveStatus;
+
+                // Approve prepaid meter info if applicable
+                if ("prepaid".equalsIgnoreCase(meter.getMeterCategory()) && meter.getPaymentMode() != null) {
+                    meter.getPaymentMode().setApproveStatus("approved");
+                    int prepaidApproval = meterMapper.approvePrepaidMeterVersion(meter.getPaymentMode());
+                    int updatePrepaidApproval = meterMapper.updatePrepaidMeterVersion(meter.getPaymentMode());
+                    if (prepaidApproval == 0 || updatePrepaidApproval == 0) {
+                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                    }
+                }
+
+            } else if (approveStatus != null && approveStatus.contains("reject")) {
+                meter.setApproveStatus("rejected");
+
+                int rejectedMeter = meterMapper.rejectedMeterVersion(meter);
+                if (rejectedMeter == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "ed " + status.getUpdateFailureDesc());
+                }
+
+                // Reject MD meter info if applicable
+                if ("md".equalsIgnoreCase(meter.getMeterClass()) && meter.getMdMeterInfo() != null) {
+                    meter.getMdMeterInfo().setApproveStatus("rejected");
+                    int mdRejection = meterMapper.rejectedMDMeterInfoVersion(meter.getMdMeterInfo());
+                    if (mdRejection == 0) {
+                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
+                    }
+                }
+
+                // Reject prepaid meter info if applicable
+                if ("prepaid".equalsIgnoreCase(meter.getMeterCategory()) && meter.getPaymentMode() != null) {
+                    meter.getPaymentMode().setApproveStatus("rejected");
+                    int prepaidRejection = meterMapper.rejectPrepaidMeterVersion(meter.getPaymentMode());
+                    if (prepaidRejection == 0) {
+                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                    }
+                }
+
+            } else {
+                throw new MissingServletRequestParameterException("approveStatus", "String");
             }
-            else {
-                assert approveStatus != null;
-                throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
-            }
 
-            Meter newMeter = meterMapper.findById(meter.getId(), um.getOrgId());
-//            handleAddCache(tariff);
-            um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(meterName);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setCreatedMeter(newMeter);
-            auditRepository.save(auditNotificationDTO);
+            // Prepare audit log
+            Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId());
+            user.setPassword(""); // remove password from audit
 
-            return ResponseMap.response(status.getSuccessCode(), meter.getMeterNumber() + meterName + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
+            String description = capitalizeFirstLetter(meter.getMeterNumber()) + " meter " + approveStatus;
 
-        } catch (Exception exception) {
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
+            auditLog.setCreator(user);
+            auditLog.setDescription(description);
+            auditLog.setType(meterName);
+            auditLog.setUserAgent(userAgent);
+            auditLog.setIpAddress(ipAddress);
+            auditLog.setCreatedMeter(updatedMeter);
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    meter.getMeterNumber() + " " + meterName + " " + capitalizeFirstLetter(approveStatus) + " Successfully",
+                    ""
+            );
+
+        } catch (Exception ex) {
+            log.error("Error occurred while approving/rejecting meter: {}", ex.getMessage(), ex);
+            errorLog.setDescription("Error occurred while processing meter approval");
+            errorLog.setError_message(ex.getMessage().trim());
+            errorLog.setError(ex.toString().trim());
+            exceptionAuditRepository.save(errorLog);
+            throw ex;
         }
     }
+
+
+//    @Override
+//    public Map<String, Object> approve(UUID meterVersionId, String approveStatus) throws MissingServletRequestParameterException {
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        int result;
+//        String desc = "";
+//        try {
+//            String ipAddress = getClientIp(httpServletRequest);
+//            String userAgent = httpServletRequest.getHeader("User-Agent");
+//            UserModel um = handleUserValidation();
+//
+//            Meter meter = meterMapper.findByIdVersion(meterVersionId, um.getOrgId());
+//            if(meter == null) {
+//                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
+//            }
+//
+//
+//            meter.setOrgId(um.getOrgId());
+//            meter.setApproveBy(um.getId());
+//
+//            meter.getMdMeterInfo().setMeterId(meterVersionId);
+//            meter.getMdMeterInfo().setOrgId(um.getOrgId());
+//            meter.getMdMeterInfo().setApproveBy(um.getId());
+//
+//            if (meter.getCustomerId() != null) {
+//                meter.setStatus("assigned");
+//            } else if (meter.getNodeId() == null){
+//                meter.setStatus("in-stock");
+//            } else {
+//                meter.setStatus("unassigned");
+//            }
+//
+//            if(approveStatus != null && approveStatus.contains("approve")) {
+//                meter.setApproveStatus("approved");
+////                meter.setStatus("Unassigned");
+//                int result1 = meterMapper.approvedMeterVersion(meter);
+//                int result2 = meterMapper.approveMeter(meter);
+//
+//                if (result1 == 0 || result2 == 0) {
+//                    throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+//                }
+//                if ("md".equalsIgnoreCase(meter.getMeterClass())) {
+//                    meter.getMdMeterInfo().setApproveStatus("approved");
+//                        int mdResult = meterMapper.approveMDMeterInfoVersion(meter.getMdMeterInfo());
+//                        if (mdResult == 0) {
+//                            throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
+//                        }
+//                    }
+//                if("prepaid".equalsIgnoreCase(meter.getMeterCategory())) {
+//                    meter.getPaymentMode().setApproveStatus("approved");
+//                    int result5 = meterMapper.approvePrepaidMeterVersion(meter.getPaymentMode());
+//                    if (result5 == 0) {
+//                        throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+//                    }
+//                }
+//                desc = capitalizeFirstLetter(meter.getMeterNumber()) + " meter " + approveStatus;
+//            } else if (approveStatus != null && approveStatus.contains("reject")){
+//                meter.setApproveStatus("rejected");
+////                meter.setStatus(false);
+//                int result3 = meterMapper.rejectedMeterVersion(meter);
+//
+//                if (result3 == 0) {
+//                    throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
+//                }
+//                if ("md".equalsIgnoreCase(meter.getMeterClass())) {
+//                    meter.getMdMeterInfo().setApproveStatus("rejected");
+//                    int result4 = meterMapper.rejectedMDMeterInfoVersion(meter.getMdMeterInfo());
+//                    if (result4 == 0) {
+//                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
+//                    }
+//                }
+//
+//                if("prepaid".equalsIgnoreCase(meter.getMeterCategory())) {
+//                    meter.getPaymentMode().setApproveStatus("rejected");
+//                    int result5 = meterMapper.rejectPrepaidMeterVersion(meter.getPaymentMode());
+//                    if (result5 == 0) {
+//                        throw new GlobalExceptionHandler.NotFoundException(meterName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+//                    }
+//                }
+//                desc = capitalizeFirstLetter(meter.getMeterNumber()) + " meter " + approveStatus;
+//            }
+//            else {
+//                assert approveStatus != null;
+//                throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", approveStatus);
+//            }
+//
+//            Meter newMeter = meterMapper.findById(meter.getId(), um.getOrgId());
+////            handleAddCache(tariff);
+//            um.setPassword("");
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setType(meterName);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setCreatedMeter(newMeter);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(), meter.getMeterNumber() + meterName + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
 
     @Override
     public Map<String, Object> allocateMeter(String meterNumber, String regionId) {

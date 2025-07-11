@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -94,7 +95,7 @@ public interface MeterMapper {
     })
     Meter findById(UUID meterId, UUID orgId);
 
-    @Select("SELECT * FROM meters_version WHERE id = #{meterId} AND org_id = #{orgId} AND approve_pending = 'pending'")
+    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -139,31 +140,61 @@ public interface MeterMapper {
 
     @Update("UPDATE meters " +
             "SET meter_number = #{meterNumber}, sim_number = #{simNumber}, meter_category = #{meterCategory}, meter_class = #{meterClass}, " +
-            "meter_manufacturer = #{meterManufacturer}, meter_type = #{meterType}, approve_status = 'pending', status = 'in-stock'," +
+            "meter_type = #{meterType}, approve_status = #{approveStatus}, status = #{status}," +
             "old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, new_krn = #{newKrn}, old_tariff_index = #{oldTariffIndex}, " +
-            "new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt}, " +
-            "WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
-    int updateMeter(Meter request);
+            "new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt} WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
+    int approveMeter(Meter request);
 
     @Update("UPDATE meters_version " +
             "SET meter_number = #{meterNumber}, sim_number = #{simNumber}, meter_category = #{meterCategory}, meter_class = #{meterClass}, " +
             "meter_manufacturer = #{meterManufacturer}, meter_type = #{meterType}, old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, " +
             "new_krn = #{newKrn}, old_tariff_index = #{oldTariffIndex}, new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt} " +
-            "created_by = #{created_by}, description = #{description} WHERE id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
+            "created_by = #{created_by}, description = #{description}, approveStatus = #{approveStatus} WHERE id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
     int updateMeterVersion(Meter request);
 
-    @Update("UPDATE md_meters_info " +
-            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
-            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
-            "latitude = #{latitude}, longitude = #{longitude} WHERE id = #{id} AND org_id = #{orgId}")
-    int updateMDMeterInfo(MDMeterInfo request);
+//    @Update("UPDATE md_meters_info " +
+//            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
+//            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
+//            "latitude = #{latitude}, longitude = #{longitude} WHERE id = #{id} AND org_id = #{orgId}")
+//    int updateMDMeterInfo(MDMeterInfo request);
 
     @Update("UPDATE md_meters_info_version " +
             "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
             "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
-            "latitude = #{latitude}, longitude = #{longitude} WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'pending'")
+            "latitude = #{latitude}, longitude = #{longitude}, approve_status = #{approve_status} " +
+            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
     int updateMDMeterInfoVersion(MDMeterInfo request);
 
+    @Update("UPDATE md_meters_info " +
+            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
+            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
+            "latitude = #{latitude}, longitude = #{longitude} WHERE id = #{meterId} AND org_id = #{orgId}")
+    int updateMDMeterInfo(MDMeterInfo request);
+
+    @Update("UPDATE md_meters_info_version SET approve_status = #{approve_status}, approve_by = #{approveBy} " +
+            "WHERE meter_id = #{meterId} AND approve_status = 'pending' AND org_id = #{orgId}")
+    int approveMDMeterInfoVersion(MDMeterInfo request);
+
+    @Update("UPDATE payment_mode_version SET status = true, approve_status = #{approveStatus}, approve_by = #{approveBy}, updatedAt = #{updated_at} " +
+            "WHERE approve_status = #{approveStatus} AND orgId = #{org_id} AND meter_id = #{meterId} AND approve_status = 'pending'")
+    int approvePrepaidMeterVersion(PaymentMode paymentMode);
+
+    @Update("UPDATE payment_mode SET status = true, meter_category = #{meterCategory}, credit_payment_mode = #{creditPaymentMode}, " +
+            "credit_payment_plan = #{creditPaymentPlan}, debit_payment_mode = #{debitPaymentMode}, debit_payment_plan = #{debitPaymentPlan}, " +
+            "updatedAt = #{updated_at} WHERE approve_status = #{approveStatus} AND orgId = #{org_id} AND meter_id = #{meterId}")
+    int updatePrepaidMeterVersion(PaymentMode paymentMode);
+
+//    private UUID orgId;
+//    private UUID meterId;
+//    private Boolean status;
+//    private String meterCategory;
+//    private String creditPaymentMode;
+//    private String creditPaymentPlan;
+//    private String debitPaymentMode;
+//    private String debitPaymentPlan;
+//    private String migrationFrom;
+//    private Date createdAt;
+//    private Date updatedAt;
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.id = #{meterId}")
     @Results({
@@ -603,9 +634,9 @@ public interface MeterMapper {
     })
     Manufacturer getMeterManufacturer(UUID meter_manufacturer);
 
-    @Update("UPDATE meters SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
-            "updated_at = #{updatedAt}, status = 'assigned', tariff = #{tariff} WHERE id = #{meterId} AND org_id = #{orgId}")
-    void assignedMeterToCustomer(AssignMeterToCustomer request);
+//    @Update("UPDATE meters SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
+//            "updated_at = #{updatedAt}, status = 'assigned', tariff = #{tariff} WHERE id = #{meterId} AND org_id = #{orgId}")
+//    void assignedMeterToCustomer(AssignMeterToCustomer request);
 
 //    @Update("UPDATE meters_version SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
 //            "updated_at = #{updatedAt}, status = 'assigned', approve_status = 'pending', tariff = #{tariff}, old_meter_number = #{oldMeterNumber}" +
@@ -621,33 +652,45 @@ int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
 //    int insertAssignedVersionMeterToCustomer(Meter meter, AssignMeterToCustomer request);
 
     @Insert("INSERT INTO meters_version (" +
-            "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
-            "approve_status, status, customer_id, cin, dss, tariff, meter_number, new_meter_number, " +
+            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
+            "approve_status, status, customer_id, cin, dss, tariff, meter_number, old_meter_number, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, " +
             "created_at, updated_at, type, created_by, description, meter_id, account_number) " +
             "VALUES (" +
-            "#{meter.orgId}, #{meter.meterNumber}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
-            "'pending', 'assigned', #{request.customerId}, #{request.cin}, #{request.dssAssetId}, #{meter.tariff}, #{meter.oldMeterNumber}, #{meter.newMeterNumber}, " +
+            "#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
+            "'pending', 'assigned', #{request.customerId}, #{request.cin}, #{request.dssAssetId}, #{meter.tariff}, #{request.newMeterNumber}, #{request.oldMeterNumber}, " +
             "#{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{request.createdAt}, #{request.updatedAt}, #{meter.type}, #{request.createdBy}, #{request.description}, #{meter.id}, #{request.accountNumber})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignedVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
 
 
-    @Insert("INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at) " +
-            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt})")
-    void assignMeterToLocation(AssignMeterToCustomer request);
+//    @Insert("UPDATE meters_version_version SET " +
+//            "sim_number = #{meter.simNumber}, meter_category = #{meter.meterCategory}, meter_class =  #{meter.meterClass}, " +
+//            "meter_manufacturer = #{meter.meterManufacturer}, meter_type = #{meter.meterType}, approve_status = 'pending', status = 'assigned', " +
+//            "customer_id = #{request.customerId}, cin = #{request.cin}, dss = #{request.dssAssetId}, tariff = #{request.tariff}, meter_number = #{meter.meterNumber}, " +
+//            "old_meter_number = #{meter.oldMeterNumber}, old_sgc = #{meter.oldSgc}, new_sgc = #{meter.newSgc}, old_krn = #{meter.oldKrn}, new_krn = #{meter.newKrn}, " +
+//            "old_tariff_index = #{meter.oldTariffIndex}, new_tariff_index = #{meter.newTariffIndex}, updated_at = #{request.updatedAt}, type = #{meter.type}, " +
+//            "created_by = #{request.createdBy}, description = #{request.description}, meter_id =  #{meter.id}, account_number =  #{request.accountNumber}) " +
+//            "WHERE orgId = #{request.org_id} AND meter_id = #{meter.id} AND WHERE ")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    int assignedVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
+
+
+//    @Insert("INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at) " +
+//            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt})")
+//    void assignMeterToLocation(AssignMeterToCustomer request);
 
     @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, approve_status, created_by, updated_by, description) " +
-            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt}, 'pending', #{approveStatus}, #{createdBy}, #{updatedBy}, #{description})")
+            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt}, 'pending', #{createdBy}, #{updatedBy}, #{description})")
     int assignVersionMeterToLocation(AssignMeterToCustomer request);
 
-    @Insert("INSERT INTO payment_mode (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status)" +
-            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, #{status})")
-    void assignPaymentMode(AssignMeterToCustomer request);
+//    @Insert("INSERT INTO payment_mode (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status)" +
+//            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, #{status})")
+//    void assignPaymentMode(AssignMeterToCustomer request);
 
     @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, approve_status, created_by, approve_by, description)" +
-            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, #{status}, 'pending', #{createdBy}, #{approveBy}, #{description})")
+            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, 'pending', #{createdBy}, #{approveBy}, #{description})")
     int assignPaymentModeVersion(AssignMeterToCustomer request);
 
     @Insert("INSERT INTO payment_mode (org_id, meter_id, meter_category, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at)" +
@@ -693,12 +736,18 @@ int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
 
 
     @Update("UPDATE meters_version SET approve_status = #{approveStatus}, status = #{status}, approve_by = #{approveBy} " +
-            "WHERE meterId = #{meter_id} AND approve_status = 'pending' ")
+            "WHERE meter_number = #{meterNumber} AND approve_status = 'pending' ")
     int approvedMeterVersion(Meter meter);
 
-    @Update("UPDATE meters SET ")
-    int approveMeter(Meter meter);
+//    @Update("UPDATE meters SET ")
+//    int approveMeter(Meter meter);
 
-    @Update("UPDATE meters_version SET approve_status = #{approve_status}, status = #{status}, approved_by = #{approveBy} WHERE t_id = #{t_id}")
+    @Update("UPDATE meters_version SET approve_status = #{approve_status}, status = #{status}, approved_by = #{approveBy} WHERE meter_id = #{meterId} AND approve_status = 'pending'")
     int rejectedMeterVersion(Meter meter);
+
+    @Update("UPDATE md_meters_info_version SET approve_status = #{approve_status}, approved_by = #{approveBy} WHERE meter_id = #{meterId} AND approve_status = 'pending'")
+    int rejectedMDMeterInfoVersion(MDMeterInfo mdMeterInfo);
+
+    @Update("UPDATE prepaid_mode_version SET approve_status = #{approve_status}, approved_by = #{approveBy} WHERE meter_id = #{meterId} AND approve_status = 'pending'")
+    int rejectPrepaidMeterVersion(PaymentMode paymentMode);
 }
