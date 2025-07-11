@@ -1,0 +1,74 @@
+package org.memmcol.gridflexbackendservice.controller;
+
+
+import org.memmcol.gridflexbackendservice.model.user.Organization;
+import org.memmcol.gridflexbackendservice.service.organization.OrganizationService;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/organization/service")
+public class OrganizationController {
+
+    @Autowired
+    private final OrganizationService organizationService;
+
+    @Autowired
+    private GlobalExceptionHandler exception;
+
+    public OrganizationController(OrganizationService organizationService) {
+        this.organizationService = organizationService;
+    }
+
+    @PostMapping("/create-organization")
+    public ResponseEntity<Map<String, Object>> createOrganization(@RequestBody Organization organization) {
+        try {
+            Map<String, Object> result = organizationService.addOrganization(organization);
+            return ResponseEntity.ok(result);
+        }catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PatchMapping("/update-organization")
+    public ResponseEntity<Map<String, Object>> updateOrganization(@RequestBody Organization organization,
+                                                                  @RequestParam UUID orgId) {
+        try {
+            Map<String, Object> result = organizationService.updateOrganization(organization,orgId);
+            return ResponseEntity.ok(result);
+        }catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("get/all-organization")
+    public ResponseEntity<Map<String, Object>> getOrganization(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size) {
+        try {
+            Map<String, Object> result = organizationService.getOrganization(page,size);
+            return ResponseEntity.ok(result);
+        }catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("get/single-organization")
+    public ResponseEntity<Map<String, Object>> getOrganizationById(@RequestParam UUID id) {
+        try {
+            Map<String, Object> result = organizationService.getOrganizationById(id);
+            return ResponseEntity.ok(result);
+        }catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
+        return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
+    }
+}
