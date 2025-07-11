@@ -26,6 +26,8 @@ public class Organization implements Serializable {
 
     private String state;
 
+    private String city;
+
     private String email;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -93,6 +95,14 @@ public class Organization implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 
     public String getEmail() {
