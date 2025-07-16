@@ -28,9 +28,11 @@ public class AssignMeterToCustomer implements Serializable {
     private String city;
     private String houseNo;
     private String streetName;
+
     private String energyType;
-    private String fixedType;
+    private String fixedEnergy;
     private String meterCategory;
+
     private String creditPaymentMode;
     private String creditPaymentPlan;
     private String debitPaymentMode;
@@ -179,12 +181,12 @@ public class AssignMeterToCustomer implements Serializable {
         this.energyType = energyType;
     }
 
-    public String getFixedType() {
-        return fixedType;
+    public String getFixedEnergy() {
+        return fixedEnergy;
     }
 
-    public void setFixedType(String fixedType) {
-        this.fixedType = fixedType;
+    public void setFixedEnergy(String fixedEnergy) {
+        this.fixedEnergy = fixedEnergy;
     }
 
     public Date getCreatedAt() {

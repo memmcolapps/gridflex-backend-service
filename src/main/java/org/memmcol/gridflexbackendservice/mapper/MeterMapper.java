@@ -49,7 +49,7 @@ public interface MeterMapper {
             "latitude, longitude, created_by, description, approve_status) " +
             "VALUES (#{orgId}, #{meterId}, #{ctRatioNum}, #{ctRatioDenom}, #{voltRatioNum}, #{voltRatioDenom}, #{multiplier}, #{meterRating}, #{initialReading}, " +
             "#{dial}, #{latitude}, #{longitude}, #{createdBy}, #{description}, 'pending')")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMDMeterInfoVersion(MDMeterInfo request);
 
     @Insert("INSERT INTO md_meters_info " +
@@ -100,11 +100,12 @@ public interface MeterMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "approveStatus", column = "approve_status"),
             @Result(property = "energyType", column = "energy_type"),
-            @Result(property = "fixedType", column = "fixed_type"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
             @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterType", column = "meter_type"),
@@ -118,16 +119,16 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "customer", column = "customer_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "customer", column = "customer_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
             @Result(property = "meterAssignLocation", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
-            @Result(property = "mdMeterInfo", column = "id",
+            @Result(property = "mdMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
-            @Result(property = "paymentMode", column = "id",
+            @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
-            @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+//            @Result(property = "manufacturer", column = "meter_manufacturer",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
     Meter findByIdVersion(UUID meterId, UUID orgId);
 
@@ -140,16 +141,18 @@ public interface MeterMapper {
 
     @Update("UPDATE meters " +
             "SET meter_number = #{meterNumber}, sim_number = #{simNumber}, meter_category = #{meterCategory}, meter_class = #{meterClass}, " +
-            "meter_type = #{meterType}, approve_status = #{approveStatus}, status = #{status}," +
+            "meter_type = #{meterType}, approve_status = #{approveStatus}, status = #{status}, node_id = #{nodeId}, account_number = #{accountNumber}, " +
             "old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, new_krn = #{newKrn}, old_tariff_index = #{oldTariffIndex}, " +
-            "new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt} WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
+            "new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt}, energy_type = #{energyType}, fixed_energy = #{fixedEnergy}, " +
+            "tariff = #{tariff}, dss = #{dss} WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
     int approveMeter(Meter request);
 
     @Update("UPDATE meters_version " +
             "SET meter_number = #{meterNumber}, sim_number = #{simNumber}, meter_category = #{meterCategory}, meter_class = #{meterClass}, " +
             "meter_manufacturer = #{meterManufacturer}, meter_type = #{meterType}, old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, " +
             "new_krn = #{newKrn}, old_tariff_index = #{oldTariffIndex}, new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt} " +
-            "created_by = #{created_by}, description = #{description}, approveStatus = #{approveStatus} WHERE id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
+            "created_by = #{created_by}, description = #{description}, approveStatus = #{approveStatus} " +
+            " WHERE id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
     int updateMeterVersion(Meter request);
 
 //    @Update("UPDATE md_meters_info " +
@@ -171,7 +174,7 @@ public interface MeterMapper {
             "latitude = #{latitude}, longitude = #{longitude} WHERE id = #{meterId} AND org_id = #{orgId}")
     int updateMDMeterInfo(MDMeterInfo request);
 
-    @Update("UPDATE md_meters_info_version SET approve_status = #{approve_status}, approve_by = #{approveBy} " +
+    @Update("UPDATE md_meters_info_version SET approve_status = #{approveStatus}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND approve_status = 'pending' AND org_id = #{orgId}")
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
@@ -184,25 +187,17 @@ public interface MeterMapper {
             "updatedAt = #{updated_at} WHERE approve_status = #{approveStatus} AND orgId = #{org_id} AND meter_id = #{meterId}")
     int updatePrepaidMeterVersion(PaymentMode paymentMode);
 
-//    private UUID orgId;
-//    private UUID meterId;
-//    private Boolean status;
-//    private String meterCategory;
-//    private String creditPaymentMode;
-//    private String creditPaymentPlan;
-//    private String debitPaymentMode;
-//    private String debitPaymentPlan;
-//    private String migrationFrom;
-//    private Date createdAt;
-//    private Date updatedAt;
-
-    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.id = #{meterId}")
+    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+            "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "meterType", column = "meter_type"),
             @Result(property = "energyType", column = "energy_type"),
             @Result(property = "fixedType", column = "fixed_type"),
             @Result(property = "meterCategory", column = "meter_category"),
@@ -228,15 +223,17 @@ public interface MeterMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
-    Meter getMeter(UUID orgId, UUID meterId);
+    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber);
 
 
-    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.approve_status = 'pending' AND m.org_id = #{orgId} AND m.id = #{meterId}")
+    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+            "WHERE m.approve_status = 'pending' AND m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber}) ")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "energyType", column = "energy_type"),
             @Result(property = "fixedType", column = "fixed_type"),
@@ -254,120 +251,16 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "customer", column = "customer_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-            @Result(property = "meterAssignLocation", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
-            @Result(property = "mdMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
-            @Result(property = "paymentMode", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
-            @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
-    })
-    Meter getVersionMeter(UUID orgId, UUID meterId);
-
-    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.meter_number = #{meterNumber}")
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "simNumber", column = "sim_number"),
-            @Result(property = "energyType", column = "energy_type"),
-            @Result(property = "fixedType", column = "fixed_type"),
-            @Result(property = "meterCategory", column = "meter_category"),
-            @Result(property = "meterClass", column = "meter_class"),
-            @Result(property = "meterType", column = "meter_type"),
-            @Result(property = "approveStatus", column = "approve_status"),
-            @Result(property = "oldSgc", column = "old_sgc"),
-            @Result(property = "newSgc", column = "new_sgc"),
-            @Result(property = "oldKrn", column = "old_krn"),
-            @Result(property = "newKrn", column = "new_krn"),
-            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-            @Result(property = "newTariffIndex", column = "new_tariff_index"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "customer", column = "customer_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-            @Result(property = "meterAssignLocation", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
-            @Result(property = "mdMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
-            @Result(property = "paymentMode", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
-            @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
-    })
-    Meter getMeterNumber(UUID orgId, String meterNumber);
-
-
-    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.approve_status = 'pending' AND m.org_id = #{orgId} AND m.meter_number = #{meterNumber}")
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "simNumber", column = "sim_number"),
-            @Result(property = "energyType", column = "energy_type"),
-            @Result(property = "fixedType", column = "fixed_type"),
-            @Result(property = "meterCategory", column = "meter_category"),
-            @Result(property = "meterClass", column = "meter_class"),
-            @Result(property = "meterType", column = "meter_type"),
-            @Result(property = "approveStatus", column = "approve_status"),
-            @Result(property = "oldSgc", column = "old_sgc"),
-            @Result(property = "newSgc", column = "new_sgc"),
-            @Result(property = "oldKrn", column = "old_krn"),
-            @Result(property = "newKrn", column = "new_krn"),
-            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-            @Result(property = "newTariffIndex", column = "new_tariff_index"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "customer", column = "customer_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-            @Result(property = "meterAssignLocation", column = "id",
+            @Result(property = "meterAssignLocation", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
-            @Result(property = "mdMeterInfo", column = "id",
+            @Result(property = "mdMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
-            @Result(property = "paymentMode", column = "id",
+            @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
-    Meter getVersionMeterNumber(UUID orgId, String meterNumber);
-
-
-    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.account_number = #{accountNumber}")
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "simNumber", column = "sim_number"),
-            @Result(property = "energyType", column = "energy_type"),
-            @Result(property = "fixedType", column = "fixed_type"),
-            @Result(property = "meterCategory", column = "meter_category"),
-            @Result(property = "meterClass", column = "meter_class"),
-            @Result(property = "meterType", column = "meter_type"),
-            @Result(property = "approveStatus", column = "approve_status"),
-            @Result(property = "oldSgc", column = "old_sgc"),
-            @Result(property = "newSgc", column = "new_sgc"),
-            @Result(property = "oldKrn", column = "old_krn"),
-            @Result(property = "newKrn", column = "new_krn"),
-            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-            @Result(property = "newTariffIndex", column = "new_tariff_index"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "customer", column = "customer_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-            @Result(property = "meterAssignLocation", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
-            @Result(property = "mdMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
-            @Result(property = "paymentMode", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
-            @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
-    })
-    Meter getAccountNumber(UUID orgId, String accountNumber);
+    Meter getVersionMeter(UUID orgId, UUID meterId, String meterNumber);
 
 
     @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
@@ -447,11 +340,11 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "customer", column = "customer_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-            @Result(property = "meterAssignLocation", column = "id",
+            @Result(property = "meterAssignLocation", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
-            @Result(property = "mdMeterInfo", column = "id",
+            @Result(property = "mdMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
-            @Result(property = "paymentMode", column = "id",
+            @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
@@ -615,7 +508,7 @@ public interface MeterMapper {
             @Result(property = "ctRatioNum", column = "ct_ratio_num"),
             @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
             @Result(property = "voltRatioNum", column = "volt_ratio_num"),
-            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+            @Result(property = "voltRatioDenom", column = "volt_ratio_denom"),
             @Result(property = "meterRating", column = "meter_rating"),
             @Result(property = "initialReading", column = "initial_reading"),
             @Result(property = "createdBy", column = "created_by"),
@@ -634,60 +527,35 @@ public interface MeterMapper {
     })
     Manufacturer getMeterManufacturer(UUID meter_manufacturer);
 
-//    @Update("UPDATE meters SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
-//            "updated_at = #{updatedAt}, status = 'assigned', tariff = #{tariff} WHERE id = #{meterId} AND org_id = #{orgId}")
-//    void assignedMeterToCustomer(AssignMeterToCustomer request);
-
-//    @Update("UPDATE meters_version SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
-//            "updated_at = #{updatedAt}, status = 'assigned', approve_status = 'pending', tariff = #{tariff}, old_meter_number = #{oldMeterNumber}" +
-//            "created_by = #{createdBy}, description = #{description}, new_meter_number = #{newMeterNumber}, type = #{type} " +
-//            "WHERE approve_status = 'pending' AND id = #{meterId} AND org_id = #{orgId}")
-int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
-//    @Insert("INSERT INTO meters_version " +
-//            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, cin, dss, tariff, old_meter_number, new_meter_number, " +
-//            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, account_number) " +
-//            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, 'pending', 'assigned', #{customerId}, #{cin}, #{dssAssetId}, #{tariff}, #{oldMeterNumber}, #{newMeterNumber} " +
-//            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{createdBy}, #{description}, #{meterId}, #{accountNumber})")
-//    @Options(useGeneratedKeys = true, keyProperty = "id")
-//    int insertAssignedVersionMeterToCustomer(Meter meter, AssignMeterToCustomer request);
-
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
             "approve_status, status, customer_id, cin, dss, tariff, meter_number, old_meter_number, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, type, " +
             "created_at, updated_at, type, created_by, description, meter_id, account_number) " +
             "VALUES (" +
             "#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
-            "'pending', 'assigned', #{request.customerId}, #{request.cin}, #{request.dssAssetId}, #{meter.tariff}, #{request.newMeterNumber}, #{request.oldMeterNumber}, " +
-            "#{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "'pending', 'assigned', #{request.customerId}, #{request.cin}, #{request.dssAssetId}, #{meter.tariff}, #{request.newMeterNumber}, " +
+            "#{request.oldMeterNumber}, #{meter.type}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{request.createdAt}, #{request.updatedAt}, #{meter.type}, #{request.createdBy}, #{request.description}, #{meter.id}, #{request.accountNumber})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignedVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
 
-
-//    @Insert("UPDATE meters_version_version SET " +
-//            "sim_number = #{meter.simNumber}, meter_category = #{meter.meterCategory}, meter_class =  #{meter.meterClass}, " +
-//            "meter_manufacturer = #{meter.meterManufacturer}, meter_type = #{meter.meterType}, approve_status = 'pending', status = 'assigned', " +
-//            "customer_id = #{request.customerId}, cin = #{request.cin}, dss = #{request.dssAssetId}, tariff = #{request.tariff}, meter_number = #{meter.meterNumber}, " +
-//            "old_meter_number = #{meter.oldMeterNumber}, old_sgc = #{meter.oldSgc}, new_sgc = #{meter.newSgc}, old_krn = #{meter.oldKrn}, new_krn = #{meter.newKrn}, " +
-//            "old_tariff_index = #{meter.oldTariffIndex}, new_tariff_index = #{meter.newTariffIndex}, updated_at = #{request.updatedAt}, type = #{meter.type}, " +
-//            "created_by = #{request.createdBy}, description = #{request.description}, meter_id =  #{meter.id}, account_number =  #{request.accountNumber}) " +
-//            "WHERE orgId = #{request.org_id} AND meter_id = #{meter.id} AND WHERE ")
-//    @Options(useGeneratedKeys = true, keyProperty = "id")
-//    int assignedVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
-
-
-//    @Insert("INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at) " +
-//            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt})")
-//    void assignMeterToLocation(AssignMeterToCustomer request);
+    @Insert("INSERT INTO meters_version (" +
+            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
+            "approve_status, status, customer_id, cin, dss, tariff, meter_number, old_meter_number, " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, type, fixed_energy" +
+            "created_at, updated_at, type, created_by, description, meter_id, account_number, energy_type) " +
+            "VALUES (" +
+            "#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
+            "'pending', 'assigned', #{request.customerId}, #{request.cin}, #{request.dssAssetId}, #{meter.tariff}, #{request.newMeterNumber}, " +
+            "#{request.oldMeterNumber}, #{meter.type}, #{request.fixedEnergy}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{request.createdAt}, #{request.updatedAt}, #{meter.type}, #{request.createdBy}, #{request.description}, #{meter.id}, #{request.accountNumber}, #{request.energyType})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int assignedVirtualVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
 
     @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, approve_status, created_by, updated_by, description) " +
             "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt}, 'pending', #{createdBy}, #{updatedBy}, #{description})")
     int assignVersionMeterToLocation(AssignMeterToCustomer request);
-
-//    @Insert("INSERT INTO payment_mode (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status)" +
-//            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, #{status})")
-//    void assignPaymentMode(AssignMeterToCustomer request);
 
     @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, approve_status, created_by, approve_by, description)" +
             "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, 'pending', #{createdBy}, #{approveBy}, #{description})")
@@ -723,24 +591,20 @@ int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
 
 
     @Insert("INSERT INTO meters_version (" +
-            "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
-            "approve_status, status, tariff, meter_number, node_id" +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, " +
-            "created_at, updated_at, type, created_by, description, meter_id, account_number) " +
-            "VALUES (#{meter.orgId}, #{meter.meterNumber}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
-            "'pending', 'allocated', #{meter.tariff}, #{meter.meterNumber}, #{nodeId} " +
-            "#{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
-            "#{request.createdAt}, #{request.updatedAt}, #{meter.type}, #{request.createdBy}, #{request.description}, #{meter.id}, #{request.accountNumber})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("nodeId") UUID userId, @Param("desc") String description);
+            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
+            "approve_status, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
+            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id) " +
+            "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
+            "#{meter.meterManufacturer}, #{meter.meterType}, 'pending', 'unassigned', #{meter.meterNumber}, " +
+            "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 
 
     @Update("UPDATE meters_version SET approve_status = #{approveStatus}, status = #{status}, approve_by = #{approveBy} " +
             "WHERE meter_number = #{meterNumber} AND approve_status = 'pending' ")
     int approvedMeterVersion(Meter meter);
-
-//    @Update("UPDATE meters SET ")
-//    int approveMeter(Meter meter);
 
     @Update("UPDATE meters_version SET approve_status = #{approve_status}, status = #{status}, approved_by = #{approveBy} WHERE meter_id = #{meterId} AND approve_status = 'pending'")
     int rejectedMeterVersion(Meter meter);
@@ -748,6 +612,154 @@ int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
     @Update("UPDATE md_meters_info_version SET approve_status = #{approve_status}, approved_by = #{approveBy} WHERE meter_id = #{meterId} AND approve_status = 'pending'")
     int rejectedMDMeterInfoVersion(MDMeterInfo mdMeterInfo);
 
-    @Update("UPDATE prepaid_mode_version SET approve_status = #{approve_status}, approved_by = #{approveBy} WHERE meter_id = #{meterId} AND approve_status = 'pending'")
+    @Update("UPDATE prepaid_mode_version SET approve_status = #{approve_status}, approved_by = #{approveBy}, status = false WHERE meter_id = #{meterId} AND approve_status = 'pending'")
     int rejectPrepaidMeterVersion(PaymentMode paymentMode);
+
+    @Delete("DELETE FROM meters WHERE id = #{meter_id} AND org_id = #{orgId} AND approve_status = 'pending'")
+    void removeMeter(Meter meter);
+
 }
+
+//    @Update("UPDATE meters SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
+//            "updated_at = #{updatedAt}, status = 'assigned', tariff = #{tariff} WHERE id = #{meterId} AND org_id = #{orgId}")
+//    void assignedMeterToCustomer(AssignMeterToCustomer request);
+
+//    @Update("UPDATE meters_version SET account_number = #{accountNumber}, cin = #{cin}, customer_id = #{customerId}, dss = #{dssAssetId}" +
+//            "updated_at = #{updatedAt}, status = 'assigned', approve_status = 'pending', tariff = #{tariff}, old_meter_number = #{oldMeterNumber}" +
+//            "created_by = #{createdBy}, description = #{description}, new_meter_number = #{newMeterNumber}, type = #{type} " +
+//            "WHERE approve_status = 'pending' AND id = #{meterId} AND org_id = #{orgId}")
+//int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
+//    @Insert("INSERT INTO meters_version " +
+//            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, cin, dss, tariff, old_meter_number, new_meter_number, " +
+//            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, account_number) " +
+//            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, 'pending', 'assigned', #{customerId}, #{cin}, #{dssAssetId}, #{tariff}, #{oldMeterNumber}, #{newMeterNumber} " +
+//            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{createdBy}, #{description}, #{meterId}, #{accountNumber})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    int insertAssignedVersionMeterToCustomer(Meter meter, AssignMeterToCustomer request);
+
+
+//    @Insert("INSERT INTO payment_mode (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status)" +
+//            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, #{status})")
+//    void assignPaymentMode(AssignMeterToCustomer request);
+
+
+//    @Insert("UPDATE meters_version_version SET " +
+//            "sim_number = #{meter.simNumber}, meter_category = #{meter.meterCategory}, meter_class =  #{meter.meterClass}, " +
+//            "meter_manufacturer = #{meter.meterManufacturer}, meter_type = #{meter.meterType}, approve_status = 'pending', status = 'assigned', " +
+//            "customer_id = #{request.customerId}, cin = #{request.cin}, dss = #{request.dssAssetId}, tariff = #{request.tariff}, meter_number = #{meter.meterNumber}, " +
+//            "old_meter_number = #{meter.oldMeterNumber}, old_sgc = #{meter.oldSgc}, new_sgc = #{meter.newSgc}, old_krn = #{meter.oldKrn}, new_krn = #{meter.newKrn}, " +
+//            "old_tariff_index = #{meter.oldTariffIndex}, new_tariff_index = #{meter.newTariffIndex}, updated_at = #{request.updatedAt}, type = #{meter.type}, " +
+//            "created_by = #{request.createdBy}, description = #{request.description}, meter_id =  #{meter.id}, account_number =  #{request.accountNumber}) " +
+//            "WHERE orgId = #{request.org_id} AND meter_id = #{meter.id} AND WHERE ")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    int assignedVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
+
+
+//    @Insert("INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at) " +
+//            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt})")
+//    void assignMeterToLocation(AssignMeterToCustomer request);
+
+
+//    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.meter_number = #{meterNumber}")
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "simNumber", column = "sim_number"),
+//            @Result(property = "energyType", column = "energy_type"),
+//            @Result(property = "fixedType", column = "fixed_type"),
+//            @Result(property = "meterCategory", column = "meter_category"),
+//            @Result(property = "meterClass", column = "meter_class"),
+//            @Result(property = "meterType", column = "meter_type"),
+//            @Result(property = "approveStatus", column = "approve_status"),
+//            @Result(property = "oldSgc", column = "old_sgc"),
+//            @Result(property = "newSgc", column = "new_sgc"),
+//            @Result(property = "oldKrn", column = "old_krn"),
+//            @Result(property = "newKrn", column = "new_krn"),
+//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "customer", column = "customer_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "meterAssignLocation", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
+//            @Result(property = "mdMeterInfo", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
+//            @Result(property = "paymentMode", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
+//            @Result(property = "manufacturer", column = "meter_manufacturer",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+//    })
+//    Meter getMeterNumber(UUID orgId, String meterNumber);
+
+
+//    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.approve_status = 'pending' AND m.org_id = #{orgId} AND m.meter_number = #{meterNumber}")
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "simNumber", column = "sim_number"),
+//            @Result(property = "energyType", column = "energy_type"),
+//            @Result(property = "fixedType", column = "fixed_type"),
+//            @Result(property = "meterCategory", column = "meter_category"),
+//            @Result(property = "meterClass", column = "meter_class"),
+//            @Result(property = "meterType", column = "meter_type"),
+//            @Result(property = "approveStatus", column = "approve_status"),
+//            @Result(property = "oldSgc", column = "old_sgc"),
+//            @Result(property = "newSgc", column = "new_sgc"),
+//            @Result(property = "oldKrn", column = "old_krn"),
+//            @Result(property = "newKrn", column = "new_krn"),
+//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+////            @Result(property = "customer", column = "customer_id",
+////                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "meterAssignLocation", column = "meter_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
+//            @Result(property = "mdMeterInfo", column = "meter_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
+//            @Result(property = "paymentMode", column = "meter_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
+//            @Result(property = "manufacturer", column = "meter_manufacturer",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+//    })
+//    Meter getVersionMeterNumber(UUID orgId, String meterNumber);
+
+//
+//    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND m.account_number = #{accountNumber}")
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "simNumber", column = "sim_number"),
+//            @Result(property = "energyType", column = "energy_type"),
+//            @Result(property = "fixedType", column = "fixed_type"),
+//            @Result(property = "meterCategory", column = "meter_category"),
+//            @Result(property = "meterClass", column = "meter_class"),
+//            @Result(property = "meterType", column = "meter_type"),
+//            @Result(property = "approveStatus", column = "approve_status"),
+//            @Result(property = "oldSgc", column = "old_sgc"),
+//            @Result(property = "newSgc", column = "new_sgc"),
+//            @Result(property = "oldKrn", column = "old_krn"),
+//            @Result(property = "newKrn", column = "new_krn"),
+//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "customer", column = "customer_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "meterAssignLocation", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
+//            @Result(property = "mdMeterInfo", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
+//            @Result(property = "paymentMode", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
+//            @Result(property = "manufacturer", column = "meter_manufacturer",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+//    })
+//    Meter getAccountNumber(UUID orgId, String accountNumber);

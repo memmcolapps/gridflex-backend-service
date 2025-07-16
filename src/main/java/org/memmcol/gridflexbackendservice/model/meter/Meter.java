@@ -26,7 +26,8 @@ public class Meter implements Serializable {
     private String tariff;
     private String type;
     private String energyType;
-    private String fixedType;
+    private String fixedEnergy;
+    private String dss;
     private String approveStatus;
     private String meterCategory;
     private String meterClass;
@@ -140,12 +141,20 @@ public class Meter implements Serializable {
         this.energyType = energyType;
     }
 
-    public String getFixedType() {
-        return fixedType;
+    public String getFixedEnergy() {
+        return fixedEnergy;
     }
 
-    public void setFixedType(String fixedType) {
-        this.fixedType = fixedType;
+    public void setFixedEnergy(String fixedEnergy) {
+        this.fixedEnergy = fixedEnergy;
+    }
+
+    public String getDss() {
+        return dss;
+    }
+
+    public void setDss(String dss) {
+        this.dss = dss;
     }
 
     public String getApproveStatus() {

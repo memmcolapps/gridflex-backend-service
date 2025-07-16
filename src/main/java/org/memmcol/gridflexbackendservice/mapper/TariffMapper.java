@@ -122,7 +122,7 @@ public interface TariffMapper {
     @Select("SELECT DISTINCT updated_at FROM tariffs WHERE org_id = #{orgId}")
     List<String> getUniqueModifiedDate(UUID orgId);
 
-    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} ORDER BY created_at DESC")
+    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'approved' ORDER BY created_at DESC")
     List<Tariff> GetTariffs(UUID orgId);
 
     @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND approve_status = 'pending' ORDER BY created_at DESC")

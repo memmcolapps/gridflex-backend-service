@@ -102,7 +102,7 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
-    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = {regionId}")
+    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "nodeId", column = "node_id"),

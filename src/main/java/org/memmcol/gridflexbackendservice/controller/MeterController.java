@@ -53,11 +53,11 @@ public class MeterController {
         }
     }
 
-    @GetMapping("/all-meters")
+    @GetMapping("/all")
     public ResponseEntity<?> getAllMeters(
-            @RequestParam(value = "type", required = false,  defaultValue = "") String type,
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "approveStatus", required = false,  defaultValue = "") String approveStatus,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "simNo", required = false, defaultValue = "") String simNo,
             @RequestParam(value = "manufacturer", required = false, defaultValue = "") String manufacturer,
@@ -68,14 +68,14 @@ public class MeterController {
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, type, meterClass, category, status, createdAt, customerId);
+            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, approveStatus, meterClass, category, status, createdAt, customerId);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
         }
     }
 
-    @GetMapping("/single-meter")
+    @GetMapping("/single")
     public ResponseEntity<?> getSingleMeter(
             @RequestParam(value = "meterId", required = false) UUID meterId,
             @RequestParam(value = "meterNumber", required = false) String meterNumber,
@@ -120,7 +120,7 @@ public class MeterController {
         }
     }
 
-    @PatchMapping("/approve")
+    @PutMapping("/approve")
     public ResponseEntity<Map<String, Object>> approveMeter(@RequestParam UUID meterVersionId, @RequestParam String approveState) {
         try {
             Map<String, Object> result =  service.approve(meterVersionId, approveState);
@@ -155,7 +155,7 @@ public class MeterController {
         }
     }
 
-    @PostMapping("/assign-meter")
+    @PostMapping("/assign")
     public ResponseEntity<Map<String, Object>> AssignMeter(
             AssignMeterToCustomer assignMeterToCustomer) {
         try {
@@ -178,7 +178,7 @@ public class MeterController {
         }
     }
 
-    @PatchMapping("/allocate-meter")
+    @PostMapping("/allocate")
     public ResponseEntity<?> allocatedMeter(
             @RequestParam(value = "meterNumber", required = true) String meterNumber,
             @RequestParam(value = "regionId", required = true) String regionId
