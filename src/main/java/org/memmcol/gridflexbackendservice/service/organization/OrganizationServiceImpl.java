@@ -287,8 +287,14 @@ public class OrganizationServiceImpl implements OrganizationService {
             // Calculate offset
             int offset = page * size;
 
+            List<Organization> organizations;
             // Get paginated data
-            List<Organization> organizations = organizationMapper.getOrganizations(size, offset);
+            if(size == 0){
+                organizations = organizationMapper.getAllOrganizations();
+            } else {
+                organizations = organizationMapper.getOrganizations(size, offset);
+            }
+
 
             long totalCount = organizationMapper.getOrganizationCount();
             int totalPages = (int) Math.ceil((double) totalCount / size);

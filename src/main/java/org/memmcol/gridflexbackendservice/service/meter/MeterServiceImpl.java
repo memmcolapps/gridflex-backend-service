@@ -115,7 +115,6 @@ public class MeterServiceImpl implements MeterService {
             request.setDescription(desc);
             request.setCreatedBy(um.getId());
 
-            int result;
             int result1;
             int result2;
             //insert meter to databases
@@ -576,6 +575,12 @@ public class MeterServiceImpl implements MeterService {
                         request.getNewMeterNumber() + " meter has a pending record that needs approval"
                 );
             }
+            if(request.getOldMeterNumber() != null || request.getOldMeterNumber().isEmpty()) {
+                Meter mainOldMeter = meterMapper.getMeter(user.getOrgId(), null, request.getOldMeterNumber(), null);
+                if (mainOldMeter == null) {
+                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+                }
+            }
 
             // Validate main meter record
             Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getNewMeterNumber(), null);
@@ -916,7 +921,7 @@ public class MeterServiceImpl implements MeterService {
 
             // Prepare audit log
             Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId());
-            user.setPassword(""); // remove password from audit
+            user.setPassword(null); // remove password from audit
 
             String description = capitalizeFirstLetter(meter.getMeterNumber()) + " meter " + approveStatus;
 

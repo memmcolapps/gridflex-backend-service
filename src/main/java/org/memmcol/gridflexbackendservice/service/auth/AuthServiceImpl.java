@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -18,8 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,19 +114,21 @@ public class AuthServiceImpl implements AuthService {
 		String ipAddress = getClientIp(httpServletRequest);
 		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
-			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			String isUser = "Unknown";
 
-			if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-				CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-				isUser = principal.getUsername();  // or principal.getEmail() if you named it that way
-			}
-
-			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(isUser);
-
-			if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-				throw new LockedException("User is disabled");
-			}
+			UserModel um = handleUserValidation();
+//			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//			String isUser = "Unknown";
+//
+//			if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+//				CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+//				isUser = principal.getUsername();  // or principal.getEmail() if you named it that way
+//			}
+//
+//			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(isUser);
+//
+//			if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
+//				throw new LockedException("User is disabled");
+//			}
 
 
 			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
@@ -137,7 +136,7 @@ public class AuthServiceImpl implements AuthService {
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}
-			if(!Objects.equals(isOperatorExist.getEmail(), isOperator.getEmail())){
+			if(!Objects.equals(um.getEmail(), isOperator.getEmail())){
 				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
 			}
 			if (!verifiedUsers.containsKey(username)) {
@@ -149,11 +148,11 @@ public class AuthServiceImpl implements AuthService {
 				return ResponseMap.response(status.getBlockCode(), user + " " + status.getBlockFailureDesc(), "");
 			}
 			isOperator.setPassword("");
-			isOperatorExist.setPassword("");
+			um.setPassword("");
 			// Remove OTP verification from cache after successful password reset
 			verifiedUsers.remove(username);
 //			handleCacheUpdate(isOperator);
-			AuditLog.setCreator(isOperatorExist);
+			AuditLog.setCreator(um);
 			AuditLog.setCreatedUser(isOperator);
 			AuditLog.setUserAgent(userAgent);
 			AuditLog.setIpAddress(ipAddress);

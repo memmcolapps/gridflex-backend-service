@@ -266,7 +266,6 @@ public class TariffServiceImpl implements TariffService {
             String approveStatus,
             String type
             ) {
-
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             UserModel um = handleUserValidation();

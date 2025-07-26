@@ -25,7 +25,7 @@ public class OrganizationController {
         this.organizationService = organizationService;
     }
 
-    @PostMapping("/create-organization")
+    @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> createOrganization(@RequestBody Organization organization) {
         try {
             Map<String, Object> result = organizationService.addOrganization(organization);
@@ -35,7 +35,7 @@ public class OrganizationController {
         }
     }
 
-    @PatchMapping("/update-organization")
+    @PatchMapping("/update")
     public ResponseEntity<Map<String, Object>> updateOrganization(@RequestBody Organization organization,
                                                                   @RequestParam UUID orgId) {
         try {
@@ -46,7 +46,7 @@ public class OrganizationController {
         }
     }
 
-    @GetMapping("get/all-organization")
+    @GetMapping("/get-all")
     public ResponseEntity<Map<String, Object>> getOrganization(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size) {
@@ -58,7 +58,7 @@ public class OrganizationController {
         }
     }
 
-    @GetMapping("get/single-organization")
+    @GetMapping("/get-single")
     public ResponseEntity<Map<String, Object>> getOrganizationById(@RequestParam UUID id) {
         try {
             Map<String, Object> result = organizationService.getOrganizationById(id);

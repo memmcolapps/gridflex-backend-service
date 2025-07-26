@@ -74,7 +74,7 @@ public interface OrganizationMapper {
     @Select("SELECT * FROM users WHERE email = #{email}")
     UserModel getUserByEmail(@Param("email") String email);
 
-    @Select("SELECT * FROM organizations ORDER BY created_at DESC LIMIT #{size} OFFSET #{offset}")
+    @Select("SELECT * FROM organizations ORDER BY created_at DESC ")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "businessName", column = "business_name"),
@@ -82,12 +82,28 @@ public interface OrganizationMapper {
             @Result(property = "businessType", column = "business_type"),
             @Result(property = "registrationNumber", column = "registration_number")
     })
+    List<Organization> getAllOrganizations();
+
+
+    @Select("SELECT * FROM organizations ORDER BY created_at DESC LIMIT #{size} OFFSET #{offset}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "businessName", column = "business_name"),
+            @Result(property = "businessContact", column = "business_contact"),
+            @Result(property = "businessType", column = "business_type"),
+            @Result(property = "registrationNumber", column = "registration_number"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
     List<Organization> getOrganizations(@Param("size") int size, @Param("offset") int offset);
 
     @Select("SELECT * FROM organizations WHERE id = #{id}")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "businessName", column = "business_name"),
+            @Result(property = "businessContact", column = "business_contact"),
+            @Result(property = "businessType", column = "business_type"),
+            @Result(property = "registrationNumber", column = "registration_number"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
