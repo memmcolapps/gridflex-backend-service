@@ -30,7 +30,7 @@ jobs:
       - name: Run app on server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            pkill -f 'java -jar' || true
+            pkill -f 'gridflex-backend-service.jar' || true
             nohup java -jar /opt/java-webservices/gridflex-backend-service.jar > /opt/java-webservices/gridflex.log 2>&1 &
           EOF
 
