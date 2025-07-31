@@ -153,6 +153,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24 hours
 				.sign(algorithm);
 
+		authMapper.updateLoginState(userDetails.getUsername());
+
 		UserModel user = authMapper.findAuthByUserEmail(userDetails.getUsername());
 		List<Node> nodes = authMapper.getNodeWithChildren(user.getNodeId(), user.getOrgId());
 

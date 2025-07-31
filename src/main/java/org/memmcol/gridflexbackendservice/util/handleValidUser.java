@@ -37,7 +37,7 @@ public class handleValidUser {
         }
 
         if (!user.getStatus()) {
-            throw new LockedException("User is blocked");
+            throw new LockedException("User is disabled");
         }
 
         return user;
