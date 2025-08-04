@@ -25,15 +25,15 @@ public class OrganizationController {
         this.organizationService = organizationService;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> createOrganization(@RequestBody Organization organization) {
-        try {
-            Map<String, Object> result = organizationService.addOrganization(organization);
-            return ResponseEntity.ok(result);
-        }catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @PostMapping("/create")
+//    public ResponseEntity<Map<String, Object>> createOrganization(@RequestBody Organization organization) {
+//        try {
+//            Map<String, Object> result = organizationService.addOrganization(organization);
+//            return ResponseEntity.ok(result);
+//        }catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     @PatchMapping("/update")
     public ResponseEntity<Map<String, Object>> updateOrganization(@RequestBody Organization organization,
