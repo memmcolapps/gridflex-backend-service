@@ -23,32 +23,20 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-      # https://eureka-service-production-6595.up.railway.app/eureka/ #memmcolapp railway address
-      # https://eureka-service-production.up.railway.app/eureka/ #my railway address
   instance:
-    prefer-ip-address: true
-    health-check-url-path: /actuator/health
-    health-check-interval-seconds: 10
-
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: health, info, prometheus
+    prefer-ip-address: true                # Register using IP instead of hostname
+    ip-address: ${spring.cloud.client.ip-address}  # Auto-detects service IP
+    instance-id: ${spring.application.name}:${server.port}
+    metadata-map:
+      management.port: ${management.server.port:${server.port}}
 
 management:
+  server:
+    port: ${server.port}  # Use same port for actuator unless you want a separate port
   endpoints:
     web:
       exposure:
         include: "*"
-  endpoint:
-    prometheus:
-      enabled: true
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-
 
 resilience4j:
   circuitbreaker:
@@ -59,3 +47,28 @@ resilience4j:
         minimum-number-of-calls: 5
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
+
+
+#  instance:
+#    prefer-ip-address: true
+#    health-check-url-path: /actuator/health
+#    health-check-interval-seconds: 10
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health, info, prometheus
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: "*"
+#  endpoint:
+#    prometheus:
+#      enabled: true
+#  prometheus:
+#    metrics:
+#      export:
+#        enabled: true

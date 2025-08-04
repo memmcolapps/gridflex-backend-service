@@ -77,40 +77,10 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 		// Fetch user details before authentication
 		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
-//		List<Node> nodes = authMapper.getNodeWithChildren(user.getNodeId(), user.getOrgId());
-////		if (nodes == null || nodes.isEmpty()) {
-////			return ResponseMap.response(status.getSuccessCode(), "No nodes found", "");
-////		}
-//
-//		Map<UUID, Node> nodeMap = new HashMap<>();
-//		Node root = null;
-//
-//		for (Node node : nodes) {
-//			node.setNodesTree(new ArrayList<>());
-//			nodeMap.put(node.getId(), node);
-//		}
-//
-//		for (Node node : nodes) {
-//			if (node.getId().equals(user.getNodeId())) {
-//				root = node; // this is the node we're querying for
-//			}
-//			if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
-//				Node parent = nodeMap.get(node.getParentId());
-//				parent.getNodesTree().add(node);
-//			}
-//		}
-//		user.setNod(root);
-//		if (user == null) {
-//			throw new UsernameNotFoundException("User not found");
-//		}
 
 		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
 		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
 		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
-		// Determine if user is admin or regular user
-//		boolean isAdmin = user.getUser().getStatus();
-//		String requiredHeaderKey = isAdmin ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
-//		String requiredHeaderValue = isAdmin ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 
 		// Validate the required header
 		String headerValue = request.getHeader(requiredHeaderKey);
@@ -135,7 +105,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			Authentication authentication) throws IOException, ServletException {
 		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal(); // use the provided authentication
 
-//		User user = (User) authentication.getPrincipal();// Add a custom header with the JWT token
 		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
 		String ipAddress = getClientIp(request);
