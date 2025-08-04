@@ -16,11 +16,11 @@ public class Organization implements Serializable {
 
     private String businessName;
 
-    private String businessType;
+//    private String businessType;
 
-    private String businessContact;
+    private String postalCode;
 
-    private String registrationNumber;
+    private String address;
 
     private String country;
 
@@ -28,7 +28,7 @@ public class Organization implements Serializable {
 
     private String city;
 
-    private String email;
+//    private String email;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -57,28 +57,20 @@ public class Organization implements Serializable {
         this.businessName = businessName;
     }
 
-    public String getBusinessType() {
-        return businessType;
+    public String getAddress() {
+        return address;
     }
 
-    public void setBusinessType(String businessType) {
-        this.businessType = businessType;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
-    public String getBusinessContact() {
-        return businessContact;
+    public String getPostalCode() {
+        return postalCode;
     }
 
-    public void setBusinessContact(String businessContact) {
-        this.businessContact = businessContact;
-    }
-
-    public String getRegistrationNumber() {
-        return registrationNumber;
-    }
-
-    public void setRegistrationNumber(String registrationNumber) {
-        this.registrationNumber = registrationNumber;
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
     }
 
     public String getCountry() {
@@ -103,14 +95,6 @@ public class Organization implements Serializable {
 
     public void setCity(String city) {
         this.city = city;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public Date getCreatedAt() {
