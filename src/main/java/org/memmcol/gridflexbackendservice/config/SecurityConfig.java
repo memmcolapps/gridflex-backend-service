@@ -78,6 +78,10 @@ public class  SecurityConfig {
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
 		adminAuthFilter.setFilterProcessesUrl("/auth/service/admin/login");
+//
+//		CustomAuthenticationFilter portalAuthFilter = new CustomAuthenticationFilter(
+//				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
+//		adminAuthFilter.setFilterProcessesUrl("/portal/auth/service/login");
 
 		// disable csrf
 		http.csrf((csrf) -> csrf.disable());
@@ -138,6 +142,7 @@ public class  SecurityConfig {
 //		http.addFilter(customAuthenticationFilter);
 		http.addFilter(userAuthFilter);
 		http.addFilter(adminAuthFilter);
+//		http.addFilter(portalAuthFilter);
 		http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 		http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 

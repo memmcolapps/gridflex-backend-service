@@ -44,6 +44,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 		Set<String> exemptPaths = Set.of(
 				"/auth/service/login",
 				"/auth/service/admin/login"
+//				"/portal/auth/service/login"
 		);
 
 		// If the path is exempt, skip the authorization filter
