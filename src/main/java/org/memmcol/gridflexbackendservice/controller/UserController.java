@@ -43,7 +43,7 @@ public class UserController {
     }
 
 //    @PreAuthorize("@permissionEvaluator.hasPermission(authentication, 'User List', 'view')")
-    @GetMapping("/all-users")
+    @GetMapping("/all")
     public ResponseEntity<?> getUsers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
@@ -62,7 +62,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/single-user")
+    @GetMapping("/single")
     public ResponseEntity<?> getUser(@RequestParam UUID userId) {
         try {
             Map<String, Object> result = service.getUser(userId);

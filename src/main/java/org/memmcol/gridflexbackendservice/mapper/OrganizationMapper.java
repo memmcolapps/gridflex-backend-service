@@ -77,8 +77,11 @@ public interface OrganizationMapper {
     @Select("SELECT * FROM organizations ORDER BY created_at DESC ")
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "imagePath", column = "image_path"),
             @Result(property = "businessName", column = "business_name"),
-            @Result(property = "postalCode", column = "postal_code")
+            @Result(property = "postalCode", column = "postal_code"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
     })
     List<Organization> getAllOrganizations();
 
@@ -86,6 +89,7 @@ public interface OrganizationMapper {
     @Select("SELECT * FROM organizations ORDER BY created_at DESC LIMIT #{size} OFFSET #{offset}")
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "imagePath", column = "image_path"),
             @Result(property = "businessName", column = "business_name"),
             @Result(property = "postalCode", column = "postal_code"),
             @Result(property = "createdAt", column = "created_at"),
@@ -96,6 +100,7 @@ public interface OrganizationMapper {
     @Select("SELECT * FROM organizations WHERE id = #{id}")
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "imagePath", column = "image_path"),
             @Result(property = "businessName", column = "business_name"),
             @Result(property = "postalCode", column = "postal_code"),
             @Result(property = "createdAt", column = "created_at"),

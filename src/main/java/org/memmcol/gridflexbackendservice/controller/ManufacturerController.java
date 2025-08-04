@@ -51,7 +51,7 @@ public class ManufacturerController {
 //        }
 //    }
 
-    @GetMapping("/single-manufacturer")
+    @GetMapping("/single")
     public ResponseEntity<?> getManufacturers(@RequestParam UUID id) {
         try {
             Map<String, Object> result = service.getManufacturer(id);
@@ -61,7 +61,7 @@ public class ManufacturerController {
         }
     }
 
-    @GetMapping("/all-manufacturers")
+    @GetMapping("/all")
     public ResponseEntity<?> getManufacturers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,

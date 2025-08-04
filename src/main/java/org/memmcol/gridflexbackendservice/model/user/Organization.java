@@ -28,6 +28,8 @@ public class Organization implements Serializable {
 
     private String city;
 
+    private String imageUrl;
+
 //    private String email;
 
     private Boolean status;
@@ -121,5 +123,13 @@ public class Organization implements Serializable {
 
     public void setStatus(Boolean status) {
         this.status = status;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

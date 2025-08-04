@@ -43,7 +43,7 @@ public class CustomerController {
         }
     }
 
-    @GetMapping("/all-customers")
+    @GetMapping("/all")
     public ResponseEntity<?> allCustomers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
@@ -61,7 +61,7 @@ public class CustomerController {
         }
     }
 
-    @GetMapping("/single-customer")
+    @GetMapping("/single")
     public ResponseEntity<?> singleCustomer(
             @RequestParam(value = "id", required = true) UUID id) {
         try {

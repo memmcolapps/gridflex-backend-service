@@ -25,7 +25,7 @@ public class AuditLogController {
     }
 
 
-    @GetMapping("/all-logs")
+    @GetMapping("/all")
     public ResponseEntity<?> getAuditLogs(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size
@@ -38,7 +38,7 @@ public class AuditLogController {
         }
     }
 
-    @GetMapping("/single-log")
+    @GetMapping("/single")
     public ResponseEntity<?> getAuditLogById(@RequestParam String id) {
         try {
             Map<String, Object> result = auditLogService.getAuditLogById(id);

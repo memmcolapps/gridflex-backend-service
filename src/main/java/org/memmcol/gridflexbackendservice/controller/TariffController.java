@@ -43,7 +43,7 @@ public class TariffController {
         }
     }
 
-    @GetMapping("/single-tariff")
+    @GetMapping("/single")
     public ResponseEntity<?> getTariff(
             @RequestParam(value = "tariffId", required = false) UUID tariffId,
             @RequestParam(value = "tariffVersionId", required = false) UUID tariffVersionId) {
@@ -55,7 +55,7 @@ public class TariffController {
         }
     }
 
-    @GetMapping("/all-tariff")
+    @GetMapping("/all")
     public ResponseEntity<?> filterTariff(
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "0") int size,

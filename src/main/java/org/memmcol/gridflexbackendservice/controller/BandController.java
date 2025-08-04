@@ -42,7 +42,7 @@ public class BandController {
         }
     }
 
-    @GetMapping("/all-band")
+    @GetMapping("/all")
     public ResponseEntity<?> getAllBands(
             @RequestParam(value = "type", required = false, defaultValue = "") String type
     ) {
@@ -54,7 +54,7 @@ public class BandController {
         }
     }
 
-    @GetMapping("/single-band")
+    @GetMapping("/single")
     public ResponseEntity<?> getSingleBand(
             @RequestParam(value = "bandId", required = false) UUID bandId,
             @RequestParam(value = "bandVersionId", required = false) UUID bandVersionId) {

@@ -41,12 +41,12 @@ public class OrganizationController {
         try {
             Map<String, Object> result = organizationService.updateOrganization(organization,orgId);
             return ResponseEntity.ok(result);
-        }catch (GlobalExceptionHandler.SQLServerException e) {
+        } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
     }
 
-    @GetMapping("/get-all")
+    @GetMapping("/all")
     public ResponseEntity<Map<String, Object>> getOrganization(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size) {
@@ -58,7 +58,7 @@ public class OrganizationController {
         }
     }
 
-    @GetMapping("/get-single")
+    @GetMapping("/single")
     public ResponseEntity<Map<String, Object>> getOrganizationById(@RequestParam UUID id) {
         try {
             Map<String, Object> result = organizationService.getOrganizationById(id);

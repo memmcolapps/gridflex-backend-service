@@ -68,7 +68,7 @@ public class NodeController {
         }
     }
 
-    @GetMapping("/single-node")
+    @GetMapping("/single")
     public ResponseEntity<Map<String, Object>> singleNode(@RequestParam UUID nodeId) {
 
         try {
@@ -81,7 +81,7 @@ public class NodeController {
     }
 
 
-    @GetMapping("/all-nodes")
+    @GetMapping("/all")
     public ResponseEntity<Map<String, Object>> fetchAllNodes() {
 
         try {

@@ -17,16 +17,16 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     private static final Map<String, List<String>> SUBMODULE_URI_MAP = Map.of(
 
             "full access", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
-                    "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
-                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single-user",
-                    "/user/service/all-users", "/user/service/change-state", "/user/service/update",  "/user/service/create",
+                    "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all",
+                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single",
+                    "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update",
-                    "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer", "/customer/service/bulk-upload",
+                    "/customer/service/change-state", "/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload",
                     "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
-                    "/node/service/single-node", "/node/service/all-nodes", "/manufacturer/service/create", "/manufacturer/service/update",
-                    "/manufacturer/service/single-manufacturer", "/manufacturer/service/all-manufacturers", "/audit-log/service/all-logs",
-                    "/audit-log/service/all-logs", "/audit-log/service/single-log","/debit-credit-adjustment/service/create",
+                    "/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update",
+                    "/manufacturer/service/single-manufacturer", "/manufacturer/service/all-manufacturers", "/audit-log/service/all",
+                    "/audit-log/service/single-log","/debit-credit-adjustment/service/create",
                     "/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept", "/debit-credit-adjustment/service/all",
                     "/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create", "/debt-setting/service/liability-cause/update",
                     "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single", "/debt-setting/service/liability-cause/approve",
@@ -34,24 +34,24 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
-                    "/band/service/all-band",  "/band/service/single-band", "/tariff/service/single-tariff", "/tariff/service/all-tariff",
+                    "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve", "/customer/service/create",
-                    "/customer/service/update", "/customer/service/change-state", "/customer/service/all-customers",  "/customer/service/single-customer",
+                    "/customer/service/update", "/customer/service/change-state", "/customer/service/all",  "/customer/service/single-customer",
                     "/customer/service/bulk-upload", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
-                    "/node/service/single-node", "/node/service/all-nodes"),
+                    "/node/service/single", "/node/service/all"),
 
             "band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
-                    "/band/service/all-band",  "/band/service/single-band"),
+                    "/band/service/all",  "/band/service/single"),
 
-            "tariff", List.of("/tariff/service/single-tariff", "/tariff/service/all-tariff",
+            "tariff", List.of("/tariff/service/single", "/tariff/service/all",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve"),
 
-            "user management", List.of("/user/service/single-user", "/user/service/all-users",
+            "user management", List.of("/user/service/single", "/user/service/all",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission"),
 
-            "users", List.of("/user/service/single-user", "/user/service/all-users",
+            "users", List.of("/user/service/single-user", "/user/service/all",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups",  "/user/service/create/group-permission")
     );
