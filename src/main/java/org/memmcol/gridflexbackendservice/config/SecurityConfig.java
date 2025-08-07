@@ -73,7 +73,7 @@ public class  SecurityConfig {
 
 		CustomAuthenticationFilter userAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
-		userAuthFilter.setFilterProcessesUrl("/auth/service/login");
+		userAuthFilter.setFilterProcessesUrl("/auth/service/user/login");
 
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);

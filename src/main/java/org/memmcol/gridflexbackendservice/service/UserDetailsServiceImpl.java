@@ -47,8 +47,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		}
 
 		if (!userDTO.getStatus() || !userDTO.getBusiness().getStatus()) {
-			log.info("User is blocked: {}", userDTO.getStatus());
-			throw new LockedException("User is disabled");
+			throw new LockedException("Access has been revoked");
 		}
 
 		Set<GrantedAuthority> authorities = new HashSet<>();

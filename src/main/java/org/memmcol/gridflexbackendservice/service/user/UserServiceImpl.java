@@ -224,6 +224,7 @@ public class UserServiceImpl implements  UserService {
                 return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
             }
             List<UserModel> enrichedUsers = new ArrayList<>();
+
 //            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
             List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId());
 

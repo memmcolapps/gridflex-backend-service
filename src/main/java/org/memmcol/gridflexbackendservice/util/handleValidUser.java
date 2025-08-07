@@ -37,7 +37,7 @@ public class handleValidUser {
         }
 
         if (!user.getStatus()) {
-            throw new LockedException("User is disabled");
+            throw new LockedException("Access has been revoked");
         }
 
         return user;

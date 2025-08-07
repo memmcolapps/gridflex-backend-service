@@ -50,6 +50,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND org_id = #{orgId} AND type = #{type}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "debit", property = "amount"),
