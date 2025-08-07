@@ -82,8 +82,8 @@ public class CustomerServiceImpl implements CustomerService {
     private final IMap<String, Object> auditCache;
 
     public CustomerServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.customerCache = hazelcastInstance.getMap("customer-Cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.customerCache = hazelcastInstance.getMap("customerCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
     @Transactional

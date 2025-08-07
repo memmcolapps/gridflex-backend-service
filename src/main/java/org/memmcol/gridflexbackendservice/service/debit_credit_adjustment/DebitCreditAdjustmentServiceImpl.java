@@ -67,8 +67,8 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     private String credit = "Credit Adjustment";
 
     public DebitCreditAdjustmentServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.debitCreditCache = hazelcastInstance.getMap("debit-credit-cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.debitCreditCache = hazelcastInstance.getMap("debitCreditCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
     @Override

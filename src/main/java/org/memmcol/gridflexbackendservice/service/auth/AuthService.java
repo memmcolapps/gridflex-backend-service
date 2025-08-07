@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public interface AuthService {
 
-	Map<String, Object> logout(String token, int expirySeconds, String username);
+	Map<String, Object> logout();
 
 //	Map<String, Object> forgetPassword(String username, String password, String retype_password);
 

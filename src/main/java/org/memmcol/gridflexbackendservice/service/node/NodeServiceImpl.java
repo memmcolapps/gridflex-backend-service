@@ -62,8 +62,8 @@ public class NodeServiceImpl implements NodeService {
     private final IMap<String, Object> auditCache;
 
     public NodeServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.nodeCache = hazelcastInstance.getMap("node-Cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.nodeCache = hazelcastInstance.getMap("nodeCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
     @Override

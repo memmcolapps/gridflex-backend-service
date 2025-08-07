@@ -78,8 +78,8 @@ public class MeterServiceImpl implements MeterService {
 
 
     public MeterServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.meterCache = hazelcastInstance.getMap("meter-Cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.meterCache = hazelcastInstance.getMap("meterCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
     @Override

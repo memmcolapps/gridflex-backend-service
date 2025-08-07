@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -66,47 +67,86 @@ public class AuthServiceImpl implements AuthService {
     private AuthMapper authMapper;
 
 	public AuthServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-		this.authCache = hazelcastInstance.getMap("auth-Cache");
-		this.auditCache = hazelcastInstance.getMap("audit-Cache");
-		this.otpCache = hazelcastInstance.getMap("otp-Cache");
-		this.verifiedUsers = hazelcastInstance.getMap("verified-Users");
+		this.authCache = hazelcastInstance.getMap("authCache");
+		this.auditCache = hazelcastInstance.getMap("auditCache");
+		this.otpCache = hazelcastInstance.getMap("otpCache");
+		this.verifiedUsers = hazelcastInstance.getMap("verifiedUsers");
 
 	}
 
-	@Override
-	public Map<String, Object> logout(String token, int expirySeconds, String username) {
+	public Map<String, Object> logout() {
+		ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
 		AuditLog auditNotificationDTO = new AuditLog();
-		String ipAddress = getClientIp(httpServletRequest);
-		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
-			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+			String ipAddress = getClientIp(httpServletRequest);
+			String userAgent = httpServletRequest.getHeader("User-Agent");
 
-			if (isOperatorExist == null) {
-				throw new GlobalExceptionHandler.NotFoundException(user + status.getNotFoundDesc());
+			// Extract raw token without decoding
+			String authorizationHeader = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
+			if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+				throw new RuntimeException("Authorization header is missing or malformed");
 			}
-			isOperatorExist.setPassword("");
-			operatorMapper.updateLogoutState(username);
-			blacklistToken(token, expirySeconds);
-			auditNotificationDTO.setCreator(isOperatorExist);
+			String rawToken = authorizationHeader.substring("Bearer ".length());
+
+			UserModel operator = handleUserValidation();
+			operator.setPassword("");
+			operatorMapper.updateLogoutState(operator.getEmail());
+
+			// Blacklist the raw token
+			blacklistToken(rawToken, 1800);
+
+			auditNotificationDTO.setCreator(operator);
 			auditNotificationDTO.setUserAgent(userAgent);
 			auditNotificationDTO.setIpAddress(ipAddress);
 			auditNotificationDTO.setDescription("Logged out");
 			auditNotificationDTO.setType("auth");
-			removeFromCache();
-//			authCache.remove("dashboard");
 			auditRepository.save(auditNotificationDTO);
+
 			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
+
 		} catch (Exception exception) {
-			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			exceptionErrorLogs.setDescription("Error occurred while logout");
-			exceptionErrorLogs.setError_message(exception.getMessage().trim());
-			exceptionErrorLogs.setError(exception.toString().trim());
-			exceptionAuditRepository.save(exceptionErrorLogs);
+			log.error("Error occurred while logout: {}", exception.getMessage(), exception);
+			errorLog.setDescription("Error occurred while logout");
+			errorLog.setError_message(exception.getMessage());
+			errorLog.setError(exception.toString());
+			exceptionAuditRepository.save(errorLog);
 			throw exception;
 		}
-
 	}
+//	@Override
+//	public Map<String, Object> logout(String token, int expirySeconds, String username) {
+//		AuditLog auditNotificationDTO = new AuditLog();
+//		String ipAddress = getClientIp(httpServletRequest);
+//		String userAgent = httpServletRequest.getHeader("User-Agent");
+//		try {
+//			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
+//
+//			if (isOperatorExist == null) {
+//				throw new GlobalExceptionHandler.NotFoundException(user + status.getNotFoundDesc());
+//			}
+//			isOperatorExist.setPassword("");
+//			operatorMapper.updateLogoutState(username);
+//			blacklistToken(token, expirySeconds);
+//			auditNotificationDTO.setCreator(isOperatorExist);
+//			auditNotificationDTO.setUserAgent(userAgent);
+//			auditNotificationDTO.setIpAddress(ipAddress);
+//			auditNotificationDTO.setDescription("Logged out");
+//			auditNotificationDTO.setType("auth");
+//			removeFromCache();
+////			authCache.remove("dashboard");
+//			auditRepository.save(auditNotificationDTO);
+//			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
+//		} catch (Exception exception) {
+//			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+//			exceptionErrorLogs.setDescription("Error occurred while logout");
+//			exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//			exceptionErrorLogs.setError(exception.toString().trim());
+//			exceptionAuditRepository.save(exceptionErrorLogs);
+//			throw exception;
+//		}
+//
+//	}
 
 
 	public Map<String, Object> handleForgetPassword(String username, String password) {
@@ -260,7 +300,6 @@ public class AuthServiceImpl implements AuthService {
 	private void blacklistToken(String token, int expirySeconds) {
 		authCache.put(token, true, expirySeconds, TimeUnit.SECONDS);
 	}
-
 
 	private void removeFromCache() {
 //		authCache.remove("dashboard");

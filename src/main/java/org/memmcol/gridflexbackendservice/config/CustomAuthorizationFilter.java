@@ -6,6 +6,8 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 //import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,6 +36,12 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 	private static final String ADMIN_HEADER_KEY = "custom";  // Custom header key
 	private static final String ADMIN_HEADER_VALUE = "ab@#1cD3fG!mNXyZ$%Kl78&OH@beeb$";
 	private static final String USER_HEADER_VALUE = "UvW$%12xYz!@#9LmNoP&*45QH@beeb&";
+
+	private final IMap<String, Object> authCache;
+
+	public CustomAuthorizationFilter(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
+		this.authCache = hazelcastInstance.getMap("authCache");
+	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -81,6 +90,12 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 			if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
 				try {
 					String token = authorizationHeader.substring("Bearer ".length());
+					// Check if token is blacklisted
+					if (Boolean.TRUE.equals(authCache.get(token))) {
+						handleException(response, new Exception("Token is blacklisted"),
+								"Token is blacklisted", HttpServletResponse.SC_UNAUTHORIZED);
+						return;
+					}
 					Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
 					JWTVerifier verifier = JWT.require(algorithm).build();
 					DecodedJWT decodedJWT = verifier.verify(token);

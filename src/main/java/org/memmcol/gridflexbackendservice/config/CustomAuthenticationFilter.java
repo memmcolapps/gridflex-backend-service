@@ -65,7 +65,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		this.authenticationManager = authenticationManager;
 		this.authMapper = authMapper;
 		this.auditRepository = auditRepository;
-		this.auditCache = hazelcastInstance.getMap("audit-Cache");
+		this.auditCache = hazelcastInstance.getMap("auditCache");
 //		this.authCache = hazelcastInstance.getMap("auth-Cache");
 	}
 

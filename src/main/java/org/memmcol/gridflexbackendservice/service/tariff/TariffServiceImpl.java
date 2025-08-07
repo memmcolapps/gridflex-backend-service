@@ -66,8 +66,8 @@ public class TariffServiceImpl implements TariffService {
     private String bandName = "Band";
 
     public TariffServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.tariffCache = hazelcastInstance.getMap("tariff-Cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.tariffCache = hazelcastInstance.getMap("tariffCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
     @Override

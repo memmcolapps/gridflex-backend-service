@@ -69,8 +69,8 @@ public class UserServiceImpl implements  UserService {
     private final IMap<String, Object> auditCache;
 
     public UserServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.userCache = hazelcastInstance.getMap("user-Cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
+        this.userCache = hazelcastInstance.getMap("userCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
     @Override
@@ -144,10 +144,6 @@ public class UserServiceImpl implements  UserService {
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
             // check if operator exist
@@ -200,10 +196,6 @@ public class UserServiceImpl implements  UserService {
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disable");
-            }
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
@@ -332,10 +324,6 @@ public class UserServiceImpl implements  UserService {
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
 
             Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
 

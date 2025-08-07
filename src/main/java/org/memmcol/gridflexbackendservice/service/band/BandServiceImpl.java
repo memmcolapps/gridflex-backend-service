@@ -66,9 +66,9 @@ public class BandServiceImpl implements BandService {
     private TariffMapper tariffMapper;
 
     public BandServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
-        this.bandCache = hazelcastInstance.getMap("band-Cache");
-        this.auditCache = hazelcastInstance.getMap("audit-Cache");
-        this.tariffCache = hazelcastInstance.getMap("tariff-Cache");
+        this.bandCache = hazelcastInstance.getMap("bandCache");
+        this.auditCache = hazelcastInstance.getMap("auditCache");
+        this.tariffCache = hazelcastInstance.getMap("tariffCache");
     }
 
     @Override
