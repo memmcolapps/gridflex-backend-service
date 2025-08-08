@@ -84,10 +84,6 @@ public class UserServiceImpl implements  UserService {
 
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
@@ -425,10 +421,6 @@ public class UserServiceImpl implements  UserService {
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
-
             UUID orgId =  um.getOrgId();
 
             Group group = new Group();
@@ -510,10 +502,6 @@ public class UserServiceImpl implements  UserService {
         try {
 
             UserModel um = handleUserValidation();
-
-            if (!Boolean.TRUE.equals(um.getStatus())) {
-                throw new LockedException("User is disabled");
-            }
 
             List<Group> groups = userMapper.getGroups(um.getOrgId());
             if (groups == null) {
