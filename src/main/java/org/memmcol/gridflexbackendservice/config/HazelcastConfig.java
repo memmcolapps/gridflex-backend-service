@@ -36,7 +36,7 @@ public class HazelcastConfig {
 //        .setMembersArrays.asList("192.168.1.100", "192.168.1.101"))
 
 		// Configure Verified Users Cache (Cleared After Password Change)
-		config.addMapConfig(new MapConfig("audit-Cache")
+		config.addMapConfig(new MapConfig("auditCache")
 //				.setTimeToLiveSeconds(86400)
 				.setMaxIdleSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
@@ -45,7 +45,7 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 
-		config.addMapConfig(new MapConfig("user-Cache")
+		config.addMapConfig(new MapConfig("userCache")
 //				.setTimeToLiveSeconds(86400)
 				.setMaxIdleSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
@@ -54,7 +54,7 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 
-		config.addMapConfig(new MapConfig("customer-Cache")
+		config.addMapConfig(new MapConfig("customerCache")
 //				.setTimeToLiveSeconds(86400)
 				.setMaxIdleSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
@@ -63,7 +63,7 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 
-		config.addMapConfig(new MapConfig("node-Cache")
+		config.addMapConfig(new MapConfig("nodeCache")
 //				.setTimeToLiveSeconds(86400)
 				.setMaxIdleSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
@@ -72,7 +72,7 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 
-		config.addMapConfig(new MapConfig("meter-Cache")
+		config.addMapConfig(new MapConfig("meterCache")
 //				.setTimeToLiveSeconds(86400)
 				.setMaxIdleSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
@@ -82,7 +82,7 @@ public class HazelcastConfig {
 				.setBackupCount(1));
 
 		// Configure OTP Cache (Expires in 60 Seconds)
-		config.addMapConfig(new MapConfig("otp-Cache")
+		config.addMapConfig(new MapConfig("otpCache")
 				.setTimeToLiveSeconds(60)
 				.setMaxIdleSeconds(60)
 				.setEvictionConfig(new EvictionConfig()
@@ -92,7 +92,7 @@ public class HazelcastConfig {
 				.setBackupCount(1));
 
 		// Configure Verified Users Cache (Cleared After Password Change)
-		config.addMapConfig(new MapConfig("verified-Users")
+		config.addMapConfig(new MapConfig("verifiedUsers")
 				.setTimeToLiveSeconds(60)
 				.setEvictionConfig(new EvictionConfig()
 						.setEvictionPolicy(EvictionPolicy.LRU)
@@ -101,7 +101,7 @@ public class HazelcastConfig {
 				.setBackupCount(1));
 
 		// Configure Band Cache
-		config.addMapConfig(new MapConfig("band-cache")
+		config.addMapConfig(new MapConfig("bandCache")
 				.setTimeToLiveSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
 						.setEvictionPolicy(EvictionPolicy.LRU)
@@ -112,7 +112,7 @@ public class HazelcastConfig {
 		config.getMapConfig("near-cache").setNearCacheConfig(nearCacheConfig);
 
 		// Configure Band Cache
-		config.addMapConfig(new MapConfig("debt-cache")
+		config.addMapConfig(new MapConfig("debtCache")
 				.setTimeToLiveSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
 						.setEvictionPolicy(EvictionPolicy.LRU)
@@ -120,7 +120,7 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 
-		config.addMapConfig(new MapConfig("debit-credit-cache")
+		config.addMapConfig(new MapConfig("debitCreditCache")
 				.setTimeToLiveSeconds(18000)
 				.setEvictionConfig(new EvictionConfig()
 						.setEvictionPolicy(EvictionPolicy.LRU)

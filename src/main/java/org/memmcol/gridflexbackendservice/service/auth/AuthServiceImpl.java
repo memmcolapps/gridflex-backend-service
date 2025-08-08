@@ -113,91 +113,43 @@ public class AuthServiceImpl implements AuthService {
 			throw exception;
 		}
 	}
-//	@Override
-//	public Map<String, Object> logout(String token, int expirySeconds, String username) {
-//		AuditLog auditNotificationDTO = new AuditLog();
-//		String ipAddress = getClientIp(httpServletRequest);
-//		String userAgent = httpServletRequest.getHeader("User-Agent");
-//		try {
-//			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-//
-//			if (isOperatorExist == null) {
-//				throw new GlobalExceptionHandler.NotFoundException(user + status.getNotFoundDesc());
-//			}
-//			isOperatorExist.setPassword("");
-//			operatorMapper.updateLogoutState(username);
-//			blacklistToken(token, expirySeconds);
-//			auditNotificationDTO.setCreator(isOperatorExist);
-//			auditNotificationDTO.setUserAgent(userAgent);
-//			auditNotificationDTO.setIpAddress(ipAddress);
-//			auditNotificationDTO.setDescription("Logged out");
-//			auditNotificationDTO.setType("auth");
-//			removeFromCache();
-////			authCache.remove("dashboard");
-//			auditRepository.save(auditNotificationDTO);
-//			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
-//		} catch (Exception exception) {
-//			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//			exceptionErrorLogs.setDescription("Error occurred while logout");
-//			exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//			exceptionErrorLogs.setError(exception.toString().trim());
-//			exceptionAuditRepository.save(exceptionErrorLogs);
-//			throw exception;
-//		}
-//
-//	}
 
 
-	public Map<String, Object> handleForgetPassword(String username, String password) {
+	public Map<String, Object> handleForgetPassword(UserModel isOperator, String password) {
 		AuditLog AuditLog = new AuditLog();
 		String ipAddress = getClientIp(httpServletRequest);
 		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
 
-			UserModel um = handleUserValidation();
-//			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//			String isUser = "Unknown";
+//			UserModel um = handleUserValidation();
+
+//			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
 //
-//			if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-//				CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-//				isUser = principal.getUsername();  // or principal.getEmail() if you named it that way
+//			if (isOperator == null) {
+//				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 //			}
-//
-//			UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(isUser);
-//
-//			if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-//				throw new LockedException("User is disabled");
+//			if(!Objects.equals(um.getEmail(), isOperator.getEmail())){
+//				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
 //			}
-
-
-			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
-
-			if (isOperator == null) {
-				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
-			}
-			if(!Objects.equals(um.getEmail(), isOperator.getEmail())){
-				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
-			}
-			if (!verifiedUsers.containsKey(username)) {
+			if (!verifiedUsers.containsKey(isOperator.getEmail())) {
 				return ResponseMap.response(status.getNotFoundCode(), "OTP verification required before password change", "");
 			}
 
-			int passwordChangeResult = operatorMapper.resetPassword(username, passwordEncoder.encode(password));
+			int passwordChangeResult = operatorMapper.resetPassword(isOperator.getEmail(), passwordEncoder.encode(password));
 			if (passwordChangeResult == 0) {
 				return ResponseMap.response(status.getBlockCode(), user + " " + status.getBlockFailureDesc(), "");
 			}
 			isOperator.setPassword("");
-			um.setPassword("");
+//			um.setPassword("");
 			// Remove OTP verification from cache after successful password reset
-			verifiedUsers.remove(username);
+			verifiedUsers.remove(isOperator.getEmail());
 //			handleCacheUpdate(isOperator);
-			AuditLog.setCreator(um);
-			AuditLog.setCreatedUser(isOperator);
+			AuditLog.setCreator(isOperator);
+//			AuditLog.setCreatedUser(isOperator);
 			AuditLog.setUserAgent(userAgent);
 			AuditLog.setIpAddress(ipAddress);
 			AuditLog.setDescription("Reset password");
-			AuditLog.setType("operator");
+			AuditLog.setType("auth");
 			auditRepository.save(AuditLog);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");
 
@@ -249,10 +201,6 @@ public class AuthServiceImpl implements AuthService {
 
 			UserModel um = handleUserValidation();
 
-			if (!Boolean.TRUE.equals(um.getStatus())) {
-				throw new LockedException("User is disable");
-			}
-
 			handleGenerateOtp(um.getEmail());
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
@@ -275,6 +223,11 @@ public class AuthServiceImpl implements AuthService {
 			if(!password.equals(retypePassword)){
 				return ResponseMap.response(status.getNotFoundCode(), "Passwords do not match", "");
 			}
+			UserModel isOperator = operatorMapper.findAuthByUserEmail(email);
+
+			if (isOperator == null) {
+				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
+			}
 			String storedOtp = otpCache.get(email);
 
 			if (storedOtp != null && storedOtp.equals(otp)) {
@@ -282,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
 
 				verifiedUsers.put(email, true, 2, TimeUnit.MINUTES);
 
-				return handleForgetPassword(email, password);
+				return handleForgetPassword(isOperator, password);
 
 			}
 			return ResponseMap.response(status.getNotFoundCode(), "OTP verification failed", "");
