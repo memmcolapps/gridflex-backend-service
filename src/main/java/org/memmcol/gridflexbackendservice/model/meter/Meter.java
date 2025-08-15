@@ -34,6 +34,7 @@ public class Meter implements Serializable {
     private UUID meterManufacturer;
     private String meterType;
     private String status;
+    private Boolean smartStatus;
     private String customerId;
     private String oldSgc;
     private String newSgc;
@@ -49,6 +50,7 @@ public class Meter implements Serializable {
     private MDMeterInfo mdMeterInfo;
     private PaymentMode paymentMode;
     private Manufacturer manufacturer;
+    private SmartMeterInfo smartMeter;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -213,6 +215,14 @@ public class Meter implements Serializable {
         this.status = status;
     }
 
+    public Boolean getSmartStatus() {
+        return smartStatus;
+    }
+
+    public void setSmartStatus(Boolean smartStatus) {
+        this.smartStatus = smartStatus;
+    }
+
     public String getCustomerId() {
         return customerId;
     }
@@ -347,5 +357,13 @@ public class Meter implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public SmartMeterInfo getSmartMeter() {
+        return smartMeter;
+    }
+
+    public void setSmartMeter(SmartMeterInfo smartMeter) {
+        this.smartMeter = smartMeter;
     }
 }

@@ -15,17 +15,18 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meters " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type) " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, smart_status) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{approveStatus}, #{status}, #{customerId}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type})")
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{smartStatus})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeter(Meter request);
 
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, created_by, description, meter_id) " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status" +
+            ") " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{approveStatus}, #{status}, #{customerId}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{createdBy}, #{description}, #{meterId})")
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{createdBy}, #{description}, #{meterId}, #{smartStatus})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
 
@@ -51,6 +52,11 @@ public interface MeterMapper {
             "#{dial}, #{latitude}, #{longitude}, #{createdBy}, #{description}, 'pending')")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMDMeterInfoVersion(MDMeterInfo request);
+
+    @Insert("INSERT INTO smart_meter_info_version " +
+            "(org_id, meter_id, meter_model, protocol, authentication, password, created_by, description) " +
+            "VALUES (orgId, meterId, meterModel, protocol, authentication, password, createdBy, description)")
+    int insertSmartMeterInfoVersion(SmartMeterInfo smartMeter);
 
     @Insert("INSERT INTO md_meters_info " +
             "(org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, latitude, longitude, created_at, updated_at) " +
@@ -91,7 +97,10 @@ public interface MeterMapper {
             @Result(property = "paymentMode", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeter", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+
     })
     Meter findById(UUID meterId, UUID orgId);
 
@@ -127,6 +136,9 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
             @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
+            @Result(property = "smartMeter", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
+
 //            @Result(property = "manufacturer", column = "meter_manufacturer",
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
@@ -155,18 +167,41 @@ public interface MeterMapper {
             " WHERE id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
     int updateMeterVersion(Meter request);
 
-//    @Update("UPDATE md_meters_info " +
+//    @Update("UPDATE md_meters_info_version " +
 //            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
 //            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
-//            "latitude = #{latitude}, longitude = #{longitude} WHERE id = #{id} AND org_id = #{orgId}")
-//    int updateMDMeterInfo(MDMeterInfo request);
+//            "latitude = #{latitude}, longitude = #{longitude}, approve_status = #{approve_status} " +
+//            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
+//    int updateMDMeterInfoVersion(MDMeterInfo request);
 
     @Update("UPDATE md_meters_info_version " +
-            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
-            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
-            "latitude = #{latitude}, longitude = #{longitude}, approve_status = #{approve_status} " +
+            "SET " +
+            "  <if test='ctRatioNum != null'>ct_ratio_num = #{ctRatioNum},</if>" +
+            "  <if test='ctRatioDenom != null'>ct_ratio_denom = #{ctRatioDenom},</if>" +
+            "  <if test='voltRatioNum != null'>volt_ratio_num = #{voltRatioNum},</if>" +
+            "  <if test='voltRatioDenom != null'>volt_ratio_denom = #{voltRatioDenom},</if>" +
+            "  <if test='multiplier != null'>multiplier = #{multiplier},</if>" +
+            "  <if test='description != null'>description = #{description},</if>" +
+            "  <if test='meterRating != null'>meter_rating = #{meterRating},</if>" +
+            "  <if test='initialReading != null'>initial_reading = #{initialReading},</if>" +
+            "  <if test='dial != null'>dial = #{dial},</if>" +
+            "  <if test='latitude != null'>latitude = #{latitude},</if>" +
+            "  <if test='longitude != null'>longitude = #{longitude},</if>" +
+            "  <if test='approveStatus != null'>approve_status = #{approveStatus},</if>" +
+            "  <if test='createdBy != null'>created_by = #{approveStatus},</if>" +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
     int updateMDMeterInfoVersion(MDMeterInfo request);
+
+    @Update("UPDATE smart_meter_info_version " +
+            "SET " +
+            "  <if test='meterModel != null'>meter_model = #{meterModel},</if>" +
+            "  <if test='protocol != null'>protocol = #{protocol},</if>" +
+            "  <if test='authentication != null'>authentication = #{authentication},</if>" +
+            "  <if test='password != null'>password = #{password},</if>" +
+            "  <if test='createdBy != null'>created_by = #{createdBy},</if>" +
+            "  <if test='description != null'>description = #{description},</if>" +
+            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND approve_status = 'pending'")
+    int updateSmartMeterInfoVersion(SmartMeterInfo request);
 
     @Update("UPDATE md_meters_info " +
             "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
@@ -221,7 +256,10 @@ public interface MeterMapper {
             @Result(property = "paymentMode", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeter", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+
     })
     Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber);
 
@@ -258,7 +296,10 @@ public interface MeterMapper {
             @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeter", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
+
     })
     Meter getVersionMeter(UUID orgId, UUID meterId, String meterNumber);
 
@@ -311,7 +352,9 @@ public interface MeterMapper {
             @Result(property = "paymentMode", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeter", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
     })
     List<Meter> getMeters(UUID orgId);
 
@@ -347,7 +390,10 @@ public interface MeterMapper {
             @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeter", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
+
     })
     List<Meter> getMetersVersion(UUID orgId);
 
@@ -362,25 +408,6 @@ public interface MeterMapper {
 
     @Update("UPDATE meters SET status = #{status} WHERE org_id = #{orgId} AND id = #{meterId}")
     int changeState(UUID meterId, String status, UUID orgId);
-
-//    @Update("UPDATE meters SET assigned = #{assigned} WHERE org_id = #{orgId} AND id = #{meterId}")
-//    int assignMeter(UUID meterId, Boolean assigned, UUID orgId);
-
-    @Update("UPDATE meters SET state = #{state} WHERE org_id = #{orgId} AND id = #{meterId}")
-    int activateMeter(UUID meterId, Boolean state, UUID orgId);
-
-//    @Select("SELECT * FROM substation_trans_feeder_lines WHERE org_id = #{orgId}")
-//    @Results({
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "phoneNo", column = "phone_number"),
-//            @Result(property = "contactPerson", column = "contact_person"),
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "regionId", column = "region_id"),
-//            @Result(property = "serialNo", column = "serial_no"),
-//            @Result(property = "createdAt", column = "created_at"),
-//            @Result(property = "updatedAt", column = "updated_at")
-//    })
-//    List<SubStationTransformerFeederLine>  getSubStationTransformerFeederLine(UUID orgId);
 
     @Select("SELECT * FROM manufacturers WHERE org_id = #{orgId}")
     @Results({
@@ -516,6 +543,27 @@ public interface MeterMapper {
     })
     MDMeterInfo getMDMeterInfoVersion(UUID meterId);
 
+    @Select("SELECT * FROM smart_meter_info_version WHERE meter_id = #{meterId} AND approve_status = 'pending'")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "meterModel", column = "meter_model"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdBy", column = "created_by"),
+            @Result(property = "approveBy", column = "approve_by"),
+    })
+    SmartMeterInfo getSmartMeterVersion(UUID meterId);
+
+    @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId} AND approve_status = 'pending'")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdBy", column = "created_by"),
+            @Result(property = "approveBy", column = "approve_by"),
+    })
+    SmartMeterInfo getSmartMeter(UUID meterId);
+
     @Select("SELECT * FROM manufacturers WHERE id = #{meter_manufacturer}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
@@ -580,7 +628,7 @@ public interface MeterMapper {
     })
     SubStationTransformerFeederLine verifyDss(String dss, UUID orgId);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE node_id = #{parentId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE parent_id = #{parentId} AND org_id = #{orgId}")
     SubStationTransformerFeederLine verifyFeederLine(UUID parentId, UUID orgId);
 
     @Update("UPDATE customers SET meter_assigned = #{meterAssigned}, tariff = #{tariff} WHERE id = #{cId}")
