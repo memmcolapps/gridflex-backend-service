@@ -28,11 +28,11 @@ public class Organization implements Serializable {
 
     private String city;
 
-    private String imageUrl;
-
-//    private String email;
+    private String image;
 
     private Boolean status;
+
+    private UserModel operator;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -125,11 +125,19 @@ public class Organization implements Serializable {
         this.status = status;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getImage() {
+        return image;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public UserModel getOperator() {
+        return operator;
+    }
+
+    public void setOperator(UserModel operator) {
+        this.operator = operator;
     }
 }

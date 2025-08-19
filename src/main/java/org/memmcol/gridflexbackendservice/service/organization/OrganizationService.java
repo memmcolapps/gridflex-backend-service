@@ -13,7 +13,7 @@ public interface OrganizationService {
 //    Map<String, Object> createDefaultPermission(UUID organizationId);
 //    Map<String, Object> createDefaultGroup(UUID organizationId);
 //    Map<String, Object> createDefaultGroupPermission(UUID organizationId);
-    Map<String, Object> getOrganization(int page,int size);
+//    Map<String, Object> getOrganization(int page,int size);
     Map<String, Object> getOrganizationById(UUID id);
     Map<String, Object> updateOrganization(Organization organization, UUID orgId);
 }

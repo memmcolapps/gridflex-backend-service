@@ -25,16 +25,6 @@ public class OrganizationController {
         this.organizationService = organizationService;
     }
 
-//    @PostMapping("/create")
-//    public ResponseEntity<Map<String, Object>> createOrganization(@RequestBody Organization organization) {
-//        try {
-//            Map<String, Object> result = organizationService.addOrganization(organization);
-//            return ResponseEntity.ok(result);
-//        }catch (GlobalExceptionHandler.SQLServerException e) {
-//            return handleException(e);
-//        }
-//    }
-
     @PatchMapping("/update")
     public ResponseEntity<Map<String, Object>> updateOrganization(@RequestBody Organization organization,
                                                                   @RequestParam UUID orgId) {
@@ -42,18 +32,6 @@ public class OrganizationController {
             Map<String, Object> result = organizationService.updateOrganization(organization,orgId);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        }
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<Map<String, Object>> getOrganization(
-            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
-            @RequestParam(value = "size", required = false,  defaultValue = "0") int size) {
-        try {
-            Map<String, Object> result = organizationService.getOrganization(page,size);
-            return ResponseEntity.ok(result);
-        }catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
     }
@@ -72,3 +50,27 @@ public class OrganizationController {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
 }
+
+
+//    @PostMapping("/create")
+//    public ResponseEntity<Map<String, Object>> createOrganization(@RequestBody Organization organization) {
+//        try {
+//            Map<String, Object> result = organizationService.addOrganization(organization);
+//            return ResponseEntity.ok(result);
+//        }catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
+
+
+//    @GetMapping("/all")
+//    public ResponseEntity<Map<String, Object>> getOrganization(
+//            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+//            @RequestParam(value = "size", required = false,  defaultValue = "0") int size) {
+//        try {
+//            Map<String, Object> result = organizationService.getOrganization(page,size);
+//            return ResponseEntity.ok(result);
+//        }catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }

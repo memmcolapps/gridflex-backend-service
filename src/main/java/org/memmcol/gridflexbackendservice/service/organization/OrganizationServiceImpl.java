@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
 import java.sql.Timestamp;
@@ -56,6 +57,104 @@ public class OrganizationServiceImpl implements OrganizationService {
         this.exceptionAuditRepository = exceptionAuditRepository;
         this.userMapper = userMapper;
     }
+
+
+    @Override
+    public Map<String, Object> getOrganizationById(UUID id) {
+        try {
+            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+            Organization result = organizationMapper.getOrganizationById(id);
+
+            if(result == null){
+                throw new GlobalExceptionHandler.NotFoundException("Organization not found");
+            }
+            if (result.getImage() != null) {
+                // Convert relative path to full URL
+                String fullUrl = baseUrl + result.getImage();
+                result.setImage(fullUrl);
+            }
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    "Organization "+status.getDesc(),
+                    result
+            );
+
+        } catch (Exception exception) {
+            log.error("Error fetching organization {}: {}", id, exception.getMessage(), exception);
+
+            ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
+            errorLog.setDescription("Error fetching organization");
+            errorLog.setError_message(exception.getMessage());
+            errorLog.setError(exception.toString());
+            exceptionAuditRepository.save(errorLog);
+
+            return ResponseMap.response(
+                    status.getFailCode(),
+                    "Failed to fetch organization",
+                    Map.of(
+                            "error", exception.getMessage(),
+                            "organizationId", id
+                    )
+            );
+        }
+    }
+
+    @Override
+    public Map<String, Object> updateOrganization(Organization organization, UUID orgId) {
+
+        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
+        try {
+            Organization originalData = organizationMapper.getOrganizationById(orgId);
+//                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + orgId));
+
+            organization.setId(orgId);
+            organizationMapper.updateOrganizationSelective(organization);
+
+            Organization updatedData = organizationMapper.getOrganizationById(orgId);
+//                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + orgId));
+
+            Map<String, Map<String, String>> changes = new HashMap<>();
+
+            addChangeIfDifferent("businessName", originalData.getBusinessName(), updatedData.getBusinessName(), changes);
+            addChangeIfDifferent("businessType", originalData.getPostalCode(), updatedData.getPostalCode(), changes);
+            addChangeIfDifferent("registrationNumber", originalData.getAddress(), updatedData.getAddress(), changes);
+            addChangeIfDifferent("country", originalData.getCountry(), updatedData.getCountry(), changes);
+            addChangeIfDifferent("state", originalData.getState(), updatedData.getState(), changes);
+            addChangeIfDifferent("city", originalData.getCity(), updatedData.getCity(), changes);
+
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Organization updated Successfully",
+                    "");
+
+        } catch (Exception exception) {
+            log.error("Error updating organization: {}", exception.getMessage(), exception);
+
+            // Log error details
+            errorLog.setDescription("Error updating organization");
+            errorLog.setError_message(exception.getMessage());
+            errorLog.setError(exception.toString());
+            exceptionAuditRepository.save(errorLog);
+            return ResponseMap.response(
+                    status.getFailCode(),
+                    "Failed to update organization",
+                    exception.getMessage());
+        }
+
+    }
+
+    private void addChangeIfDifferent(String fieldName, String oldValue, String newValue,
+                                      Map<String, Map<String, String>> changes) {
+        if (!Objects.equals(oldValue, newValue)) {
+            changes.put(fieldName, Map.of(
+                    "old", oldValue != null ? oldValue : "null",
+                    "new", newValue != null ? newValue : "null"
+            ));
+        }
+    }
+}
+
 
 //    @Override
 //    public Map<String, Object> addOrganization(Organization organization) {
@@ -280,152 +379,58 @@ public class OrganizationServiceImpl implements OrganizationService {
 //        }
 //    }
 
-    @Override
-    public Map<String, Object> getOrganization(int page, int size) {
-        try {
-
-            // Calculate offset
-            int offset = page * size;
-
-            List<Organization> organizations;
-            // Get paginated data
-            if(size == 0){
-                organizations = organizationMapper.getAllOrganizations();
-            } else {
-                organizations = organizationMapper.getOrganizations(size, offset);
-            }
-
-
-            long totalCount = organizationMapper.getOrganizationCount();
-            int totalPages = (int) Math.ceil((double) totalCount / size);
-
-            Map<String, Object> paginationData = new HashMap<>();
-            paginationData.put("content", organizations);
-            paginationData.put("pageNumber", page);
-            paginationData.put("pageSize", size);
-            paginationData.put("totalElements", totalCount);
-            paginationData.put("totalPages", totalPages);
-            paginationData.put("isFirst", page == 0);
-            paginationData.put("isLast", (offset + size) >= totalCount);
-
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Organizations retrieved successfully",
-                    paginationData
-            );
-
-        } catch (Exception exception) {
-            log.error("Error fetching organizations - Page: {}, Size: {}: {}",
-                    page, size, exception.getMessage(), exception);
-
-            ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-            errorLog.setDescription("Error fetching organizations");
-            errorLog.setError_message(exception.getMessage());
-            errorLog.setError(exception.toString());
-            exceptionAuditRepository.save(errorLog);
-
-            return ResponseMap.response(
-                    status.getFailCode(),
-                    "Failed to fetch organizations",
-                    Map.of(
-                            "error", exception.getMessage(),
-                            "page", page,
-                            "size", size
-                    )
-            );
-        }
-    }
-
-    @Override
-    public Map<String, Object> getOrganizationById(UUID id) {
-        try {
-            Optional<Organization> result = organizationMapper.getOrganizationById(id);
-
-            if (result.isEmpty()) {
-                return ResponseMap.response(
-                        status.getNotFoundCode(),
-                        "Organization not found with ID: " + id,
-                        Map.of("organizationId", id)
-                );
-            }
-
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Organization retrieved successfully",
-                    result
-            );
-
-        } catch (Exception exception) {
-            log.error("Error fetching organization {}: {}", id, exception.getMessage(), exception);
-
-            ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-            errorLog.setDescription("Error fetching organization");
-            errorLog.setError_message(exception.getMessage());
-            errorLog.setError(exception.toString());
-            exceptionAuditRepository.save(errorLog);
-
-            return ResponseMap.response(
-                    status.getFailCode(),
-                    "Failed to fetch organization",
-                    Map.of(
-                            "error", exception.getMessage(),
-                            "organizationId", id
-                    )
-            );
-        }
-    }
-
-    @Override
-    public Map<String, Object> updateOrganization(Organization organization, UUID orgId) {
-
-        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-        try {
-            Organization originalData = organizationMapper.getOrganizationById(orgId)
-                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + orgId));
-
-            organization.setId(orgId);
-            organizationMapper.updateOrganizationSelective(organization);
-
-            Organization updatedData = organizationMapper.getOrganizationById(orgId)
-                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + orgId));
-
-            Map<String, Map<String, String>> changes = new HashMap<>();
-
-            addChangeIfDifferent("businessName", originalData.getBusinessName(), updatedData.getBusinessName(), changes);
-            addChangeIfDifferent("businessType", originalData.getPostalCode(), updatedData.getPostalCode(), changes);
-            addChangeIfDifferent("registrationNumber", originalData.getAddress(), updatedData.getAddress(), changes);
-            addChangeIfDifferent("country", originalData.getCountry(), updatedData.getCountry(), changes);
-            addChangeIfDifferent("state", originalData.getState(), updatedData.getState(), changes);
-            addChangeIfDifferent("city", originalData.getCity(), updatedData.getCity(), changes);
-
-
-            return ResponseMap.response(status.getSuccessCode(),
-                    "Organization updated Successfully",
-                    "");
-
-        } catch (Exception exception) {
-            log.error("Error updating organization: {}", exception.getMessage(), exception);
-
-            // Log error details
-            errorLog.setDescription("Error updating organization");
-            errorLog.setError_message(exception.getMessage());
-            errorLog.setError(exception.toString());
-            exceptionAuditRepository.save(errorLog);
-            return ResponseMap.response(
-                    status.getFailCode(),
-                    "Failed to update organization",
-                    exception.getMessage());
-        }
-
-    }
-
-    private void addChangeIfDifferent(String fieldName, String oldValue, String newValue,
-                                      Map<String, Map<String, String>> changes) {
-        if (!Objects.equals(oldValue, newValue)) {
-            changes.put(fieldName, Map.of(
-                    "old", oldValue != null ? oldValue : "null",
-                    "new", newValue != null ? newValue : "null"
-            ));
-        }
-    }
-}
+//    @Override
+//    public Map<String, Object> getOrganization(int page, int size) {
+//        try {
+//
+//            // Calculate offset
+//            int offset = page * size;
+//
+//            List<Organization> organizations;
+//            // Get paginated data
+//            if(size == 0){
+//                organizations = organizationMapper.getAllOrganizations();
+//            } else {
+//                organizations = organizationMapper.getOrganizations(size, offset);
+//            }
+//
+//
+//            long totalCount = organizationMapper.getOrganizationCount();
+//            int totalPages = (int) Math.ceil((double) totalCount / size);
+//
+//            Map<String, Object> paginationData = new HashMap<>();
+//            paginationData.put("content", organizations);
+//            paginationData.put("pageNumber", page);
+//            paginationData.put("pageSize", size);
+//            paginationData.put("totalElements", totalCount);
+//            paginationData.put("totalPages", totalPages);
+//            paginationData.put("isFirst", page == 0);
+//            paginationData.put("isLast", (offset + size) >= totalCount);
+//
+//            return ResponseMap.response(
+//                    status.getSuccessCode(),
+//                    "Organizations retrieved successfully",
+//                    paginationData
+//            );
+//
+//        } catch (Exception exception) {
+//            log.error("Error fetching organizations - Page: {}, Size: {}: {}",
+//                    page, size, exception.getMessage(), exception);
+//
+//            ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
+//            errorLog.setDescription("Error fetching organizations");
+//            errorLog.setError_message(exception.getMessage());
+//            errorLog.setError(exception.toString());
+//            exceptionAuditRepository.save(errorLog);
+//
+//            return ResponseMap.response(
+//                    status.getFailCode(),
+//                    "Failed to fetch organizations",
+//                    Map.of(
+//                            "error", exception.getMessage(),
+//                            "page", page,
+//                            "size", size
+//                    )
+//            );
+//        }
+//    }
