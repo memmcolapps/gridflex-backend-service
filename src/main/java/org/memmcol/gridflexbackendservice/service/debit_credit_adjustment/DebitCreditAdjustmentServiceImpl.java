@@ -35,7 +35,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentService {
     private static final Logger log = LoggerFactory.getLogger(TariffServiceImpl.class);
@@ -71,6 +70,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createDebitAdjustment(DebitCreditAdjust request) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -137,6 +137,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> reconcileDebt(UUID debitCreditAdjustmentId, String amount) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -205,6 +206,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getMeterAndLiabilityCause(String meterNumber, String accountNumber) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -245,6 +247,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustments(
             int page, int size, String customerId, String accountNumber,
@@ -327,6 +330,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustment(UUID meterId, String type) {
         try {

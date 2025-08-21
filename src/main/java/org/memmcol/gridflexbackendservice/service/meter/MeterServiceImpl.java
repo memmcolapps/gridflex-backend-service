@@ -45,7 +45,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class MeterServiceImpl implements MeterService {
     private static final Logger log = LoggerFactory.getLogger(CustomerServiceImpl.class);
@@ -86,6 +85,7 @@ public class MeterServiceImpl implements MeterService {
         this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createMeter(Meter request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -186,6 +186,7 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateMeter(Meter request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -298,6 +299,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllMeters(
             int page, int size, String meterNumber, String simNo, String manufacturer, String approveStatus,
@@ -417,6 +419,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -467,6 +470,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID meterId, String state, String reason) throws MissingServletRequestParameterException {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -532,6 +536,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getManufacturers() {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -553,6 +558,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> singleCustomer(String customerId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -588,6 +594,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -691,7 +698,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
+    @Transactional
     @Override
     public Map<String, Object> migrate(PaymentMode request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -755,7 +762,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
+    @Transactional
     @Override
     public Map<String, Object> approve(UUID meterVersionId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditLog = new AuditLog();
@@ -888,7 +895,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
+    @Transactional
     @Override
     public Map<String, Object> allocateMeter(String meterNumber, String regionId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

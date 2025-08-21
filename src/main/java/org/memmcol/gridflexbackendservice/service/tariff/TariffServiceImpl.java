@@ -32,7 +32,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class TariffServiceImpl implements TariffService {
     private static final Logger log = LoggerFactory.getLogger(TariffServiceImpl.class);
@@ -70,6 +69,7 @@ public class TariffServiceImpl implements TariffService {
         this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createTariff(Tariff tariff) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -125,6 +125,7 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> manageTariffStatus(UUID tariffVersionId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -252,7 +253,7 @@ public class TariffServiceImpl implements TariffService {
 //
 //    }
 
-
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getFilterTariffs(
             int page, int size,
@@ -351,6 +352,7 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> bulkApproveTariff(BulkApprovalRequest request) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -408,6 +410,7 @@ public class TariffServiceImpl implements TariffService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateTariff(Tariff tariff) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -469,6 +472,7 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getTariff(UUID tariffId, UUID tariffVersionId) {
         try {

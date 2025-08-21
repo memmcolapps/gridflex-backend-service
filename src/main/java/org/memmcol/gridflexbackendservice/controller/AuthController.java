@@ -77,9 +77,9 @@ public class AuthController {
     }
 
     @PostMapping("/forget-password")
-    public ResponseEntity<?> verifyOtp(@RequestParam String username, @RequestParam String password, @RequestParam String retype_password, @RequestParam String otp) {
+    public ResponseEntity<?> verifyOtp(@RequestParam String username, @RequestParam String password, @RequestParam String otp) {
         try {
-        Map<String, Object> result = service.verifyOtp(username, otp, password, retype_password);
+        Map<String, Object> result = service.verifyOtp(username, otp, password);
         return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

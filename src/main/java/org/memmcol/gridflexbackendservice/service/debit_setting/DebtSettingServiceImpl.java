@@ -37,7 +37,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
 @Service
-@Transactional
 public class DebtSettingServiceImpl implements DebtSettingService {
     private static final Logger log = LoggerFactory.getLogger(TariffServiceImpl.class);
 
@@ -69,6 +68,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createLiabilityCause(LiabilityCause request) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -123,6 +123,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateLiabilityCause(LiabilityCause request) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -180,6 +181,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getLiabilityCauses(String type) {
         try {
@@ -214,6 +216,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getLiabilityCause(UUID id, UUID lcVersionId) {
         try {
@@ -257,6 +260,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> manageLiabilityCauseState(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -329,6 +333,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createPercentage(PercentageRange request) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -385,6 +390,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updatePercentage(PercentageRange request) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -442,6 +448,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllPercentages(String type) {
         try {
@@ -476,6 +483,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getPercentage(UUID id, UUID percentageVersionId) {
         try {
@@ -519,6 +527,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> managePercentageState(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();

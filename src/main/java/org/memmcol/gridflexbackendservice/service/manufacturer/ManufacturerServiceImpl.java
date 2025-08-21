@@ -2,12 +2,10 @@ package org.memmcol.gridflexbackendservice.service.manufacturer;
 
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
-import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
+//import jakarta.transaction.Transactional;
 import org.memmcol.gridflexbackendservice.mapper.ManufacturerMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
@@ -21,10 +19,8 @@ import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -36,7 +32,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class ManufacturerServiceImpl implements ManufacturerService {
 
@@ -61,6 +56,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
     private String manfacturerName = "Manufacturer";
 
+    @Transactional
     @Override
     public Map<String, Object> createManufacturer(Manufacturer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -105,6 +101,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateManufacturer(Manufacturer request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -149,6 +146,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getManufacturer(UUID id) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -174,6 +172,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String contactPerson, String dateAdded) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

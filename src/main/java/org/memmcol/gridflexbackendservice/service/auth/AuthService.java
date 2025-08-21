@@ -11,7 +11,7 @@ public interface AuthService {
 
 	Map<String, Object> generateOtp(String username);
 
-	Map<String, Object> verifyOtp(String username, String otp, String password, String retypePassword);
+	Map<String, Object> verifyOtp(String username, String otp, String password);
 
     Map<String, Object> profile(UUID userId);
 }

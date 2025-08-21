@@ -35,7 +35,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class UserServiceImpl implements  UserService {
 
@@ -73,6 +72,7 @@ public class UserServiceImpl implements  UserService {
         this.auditCache = hazelcastInstance.getMap("auditCache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createUser(CreateUserRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -131,6 +131,7 @@ public class UserServiceImpl implements  UserService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateUser(CreateUserRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -184,6 +185,7 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getUsers(
             String firstname, String lastname, String email, String permission,
@@ -314,6 +316,7 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getUser(UUID userId) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -371,6 +374,7 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> changeState(UUID userId, Boolean state) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -412,7 +416,7 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
-
+    @Transactional
     public Map<String, Object> createGroupPermission(CreateGroupRequest request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
@@ -496,6 +500,7 @@ public class UserServiceImpl implements  UserService {
 
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getGroups() {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

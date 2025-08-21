@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class AuthServiceImpl implements AuthService {
 	private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
@@ -115,6 +114,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 
+	@Transactional
 	public Map<String, Object> handleForgetPassword(UserModel isOperator, String password) {
 		AuditLog AuditLog = new AuditLog();
 		String ipAddress = getClientIp(httpServletRequest);
@@ -169,7 +169,8 @@ public class AuthServiceImpl implements AuthService {
 		return handleGenerateOtp(username);
 	}
 
-	private Map<String, Object>  handleGenerateOtp(String username) {
+	@Transactional
+	public Map<String, Object>  handleGenerateOtp(String username) {
 		String otp = String.format("%04d", random.nextInt(10000));
 
 		String emailServiceUrl = "http://localhost:8081/smarte/email/api/send";
@@ -194,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
 		return ResponseMap.response(status.getSuccessCode(), "OTP generated and sent successfully", "");
 	}
 
-
+	@Transactional(readOnly = true)
 	@Override
 	public Map<String, Object> profile(UUID userId) {
 		try {
@@ -218,11 +219,8 @@ public class AuthServiceImpl implements AuthService {
 		}
 	}
 
-	public  Map<String, Object>  verifyOtp(String email, String otp, String password, String retypePassword) {
+	public  Map<String, Object>  verifyOtp(String email, String otp, String password) {
 		try {
-			if(!password.equals(retypePassword)){
-				return ResponseMap.response(status.getNotFoundCode(), "Passwords do not match", "");
-			}
 			UserModel isOperator = operatorMapper.findAuthByUserEmail(email);
 
 			if (isOperator == null) {

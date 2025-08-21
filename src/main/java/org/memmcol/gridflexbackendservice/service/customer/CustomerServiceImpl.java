@@ -171,7 +171,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> allCustomers(
             int page, int size, String firstname, String lastname,
@@ -264,7 +264,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> singleCustomer(UUID id) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -297,6 +297,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> changeState(UUID customerId, String state, String reason) throws MissingServletRequestParameterException {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

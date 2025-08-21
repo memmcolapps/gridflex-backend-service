@@ -1,14 +1,9 @@
 package org.memmcol.gridflexbackendservice.service.organization;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
-import org.apache.commons.lang.RandomStringUtils;
-import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
+
 import org.memmcol.gridflexbackendservice.mapper.OrganizationMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
-import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -17,12 +12,9 @@ import org.memmcol.gridflexbackendservice.util.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
@@ -34,7 +26,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 
 
 @Service
-@Transactional
 public class OrganizationServiceImpl implements OrganizationService {
 
 
@@ -58,7 +49,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         this.userMapper = userMapper;
     }
 
-
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getOrganizationById(UUID id) {
         try {
@@ -100,6 +91,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateOrganization(Organization organization, UUID orgId) {
 

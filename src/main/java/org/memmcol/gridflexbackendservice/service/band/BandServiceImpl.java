@@ -32,7 +32,6 @@ import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeF
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
 
-@Transactional
 @Service
 public class BandServiceImpl implements BandService {
     private static final Logger log = LoggerFactory.getLogger(BandServiceImpl.class);
@@ -71,6 +70,7 @@ public class BandServiceImpl implements BandService {
         this.tariffCache = hazelcastInstance.getMap("tariffCache");
     }
 
+    @Transactional
     @Override
     public Map<String, Object> createBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -134,6 +134,7 @@ public class BandServiceImpl implements BandService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateBand(Band band) {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -196,7 +197,7 @@ public class BandServiceImpl implements BandService {
         }
     }
 
-
+    @Transactional
     @Override
     public Map<String, Object> manageBandState(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
@@ -272,6 +273,7 @@ public class BandServiceImpl implements BandService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getBands(String type) {
         try {
@@ -306,6 +308,7 @@ public class BandServiceImpl implements BandService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getBand(UUID bandId, UUID bandVersionId) {
         try {
