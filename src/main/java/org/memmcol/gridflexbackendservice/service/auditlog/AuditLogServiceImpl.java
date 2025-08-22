@@ -1,6 +1,5 @@
 package org.memmcol.gridflexbackendservice.service.auditlog;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
@@ -8,7 +7,7 @@ import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
-import org.memmcol.gridflexbackendservice.util.ResponseProperties;
+import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

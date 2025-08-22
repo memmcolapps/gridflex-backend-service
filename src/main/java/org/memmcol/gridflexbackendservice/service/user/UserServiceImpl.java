@@ -14,12 +14,11 @@ import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
-import org.memmcol.gridflexbackendservice.util.ResponseProperties;
+import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,7 @@ import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
-import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
 public class UserServiceImpl implements  UserService {

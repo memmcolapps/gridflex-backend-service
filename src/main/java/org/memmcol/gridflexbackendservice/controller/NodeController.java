@@ -4,7 +4,7 @@ import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.service.node.NodeService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
-import org.memmcol.gridflexbackendservice.util.ResponseProperties;
+import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

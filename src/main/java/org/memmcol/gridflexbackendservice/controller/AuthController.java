@@ -11,7 +11,7 @@ import org.memmcol.gridflexbackendservice.service.auth.AuthService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
-import org.memmcol.gridflexbackendservice.util.ResponseProperties;
+import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 
 import java.util.Map;
 import java.util.UUID;

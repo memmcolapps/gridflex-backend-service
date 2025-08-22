@@ -28,6 +28,7 @@ import javax.security.sasl.AuthenticationException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.SQLTransientConnectionException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -164,7 +165,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataAccessException.class)
 	public ResponseEntity<?> handleDataAccessException(DataAccessException ex) {
 		ex.printStackTrace();
-		String msg = "There's a problem with accessing some data [See server logs for more details]";
+//		String msg = "There's a problem with accessing some data [See server logs for more details]";
+		String msg = "Database error occurred. Please contact support. [See server logs for more details]";
 		errorMessage.put("responsecode", "112");
 		errorMessage.put("responsedesc", msg);
 		errorMessage.put("responsedata", "");
@@ -267,6 +269,26 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
 	}
 
+	@ExceptionHandler(LockedException.class)
+	public ResponseEntity<?> handleLockedException(LockedException ex) {
+		ex.printStackTrace();
+		String msg = "User is blocked";
+		errorMessage.put("responsecode", "122");
+		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsedata", "");
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+	}
+
+	@ExceptionHandler(UsernameNotFoundException.class)
+	public ResponseEntity<?> handleUsernameNotFoundException(LockedException ex) {
+		ex.printStackTrace();
+//		String msg = "User not found";
+		errorMessage.put("responsecode", "123");
+		errorMessage.put("responsedesc", ex.getMessage());
+		errorMessage.put("responsedata", "");
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+	}
+
 	@ExceptionHandler(UncategorizedSQLException.class)
 	public ResponseEntity<Object> handleUncategorizedSQLException(UncategorizedSQLException ex, WebRequest request) {
 		ex.printStackTrace();
@@ -336,24 +358,14 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
-	@ExceptionHandler(LockedException.class)
-	public ResponseEntity<?> handleLockedException(LockedException ex) {
+	// Handles when HikariCP can’t provide a connection in time
+	@ExceptionHandler(SQLTransientConnectionException.class)
+	public ResponseEntity<?> handleConnectionPoolExhaustion(SQLTransientConnectionException ex) {
 		ex.printStackTrace();
-		String msg = "User is blocked";
-		errorMessage.put("responsecode", "122");
-		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsecode", "130");
+		errorMessage.put("responsedesc", "Database is busy, please try again later.");
 		errorMessage.put("responsedata", "");
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-	}
-
-	@ExceptionHandler(UsernameNotFoundException.class)
-	public ResponseEntity<?> handleUsernameNotFoundException(LockedException ex) {
-		ex.printStackTrace();
-//		String msg = "User not found";
-		errorMessage.put("responsecode", "123");
-		errorMessage.put("responsedesc", ex.getMessage());
-		errorMessage.put("responsedata", "");
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorMessage);
 	}
 
 //

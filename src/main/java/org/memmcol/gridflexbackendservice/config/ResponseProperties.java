@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.util;
+package org.memmcol.gridflexbackendservice.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 

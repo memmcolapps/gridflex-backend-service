@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.config;
+package org.memmcol.gridflexbackendservice.components;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;

@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.config;
+package org.memmcol.gridflexbackendservice.components;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

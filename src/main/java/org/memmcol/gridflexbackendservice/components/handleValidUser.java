@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.util;
+package org.memmcol.gridflexbackendservice.components;
 
 
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;

@@ -1,21 +1,17 @@
 package org.memmcol.gridflexbackendservice.service.manufacturer;
 
-import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
 //import jakarta.transaction.Transactional;
 import org.memmcol.gridflexbackendservice.mapper.ManufacturerMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
-import org.memmcol.gridflexbackendservice.model.node.Node;
-import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
-import org.memmcol.gridflexbackendservice.service.user.UserServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
-import org.memmcol.gridflexbackendservice.util.ResponseProperties;
+import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +26,7 @@ import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
-import static org.memmcol.gridflexbackendservice.util.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
 public class ManufacturerServiceImpl implements ManufacturerService {
