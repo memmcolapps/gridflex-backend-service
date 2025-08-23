@@ -109,7 +109,7 @@ public class HazelcastConfig {
 						.setSize(1000))
 				.setBackupCount(1));
 		// Set up Near Cache
-		config.getMapConfig("near-cache").setNearCacheConfig(nearCacheConfig);
+//		config.getMapConfig("near-cache").setNearCacheConfig(nearCacheConfig);
 
 		// Configure Band Cache
 		config.addMapConfig(new MapConfig("debtCache")

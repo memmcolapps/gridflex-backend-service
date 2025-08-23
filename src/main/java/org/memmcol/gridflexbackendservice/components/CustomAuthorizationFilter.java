@@ -51,7 +51,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 		// Define exempt paths where authorization is not required
 		Set<String> exemptPaths = Set.of(
-				"/auth/service/login",
+//				"/auth/service/login",
 				"/auth/service/admin/login",
 				"/actuator/prometheus"
 		);

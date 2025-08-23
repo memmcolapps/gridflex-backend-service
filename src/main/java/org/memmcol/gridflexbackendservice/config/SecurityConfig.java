@@ -73,9 +73,9 @@ public class  SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-		CustomAuthenticationFilter userAuthFilter = new CustomAuthenticationFilter(
-				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
-		userAuthFilter.setFilterProcessesUrl("/auth/service/user/login");
+//		CustomAuthenticationFilter userAuthFilter = new CustomAuthenticationFilter(
+//				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
+//		userAuthFilter.setFilterProcessesUrl("/auth/service/user/login");
 
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
@@ -95,7 +95,7 @@ public class  SecurityConfig {
 
 		 // Authorization
 		http.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers("/auth/service/login/**", "/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
+				.requestMatchers("/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
 						"/auth/service/forget-password/**", "/actuator/prometheus"
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
@@ -142,7 +142,7 @@ public class  SecurityConfig {
 
 
 //		http.addFilter(customAuthenticationFilter);
-		http.addFilter(userAuthFilter);
+//		http.addFilter(userAuthFilter);
 		http.addFilter(adminAuthFilter);
 //		http.addFilter(portalAuthFilter);
 		http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

@@ -78,22 +78,22 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		// Fetch user details before authentication
 		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
 
-		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
-		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
-		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
+//		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
+//		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
+//		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 
 		// Validate the required header
-		String headerValue = request.getHeader(requiredHeaderKey);
-		if (headerValue == null || !headerValue.equals(requiredHeaderValue)) {
-			throw new BadCredentialsException("Missing or invalid authentication header: " + requiredHeaderKey);
+		String headerValue = request.getHeader(ADMIN_HEADER_KEY);
+		if (headerValue == null || !headerValue.equals(ADMIN_HEADER_VALUE)) {
+			throw new BadCredentialsException("Missing or invalid authentication header: " + ADMIN_HEADER_KEY);
 		}
 
-		// Dynamically set service URL
-		if (isSuperAdmin.equalsIgnoreCase("Full Access")) {
-			setFilterProcessesUrl("/auth/service/admin/login");
-		} else {
-			setFilterProcessesUrl("/auth/service/login");
-		}
+//		// Dynamically set service URL
+//		if (isSuperAdmin.equalsIgnoreCase("Full Access")) {
+//			setFilterProcessesUrl("/auth/service/admin/login");
+//		} else {
+//			setFilterProcessesUrl("/auth/service/login");
+//		}
 		
 		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
 		
