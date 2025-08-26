@@ -199,7 +199,7 @@ public class BandServiceImpl implements BandService {
 
     @Transactional
     @Override
-    public Map<String, Object> manageBandState(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
+    public Map<String, Object> approve(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         String ipAddress = getClientIp(httpServletRequest);

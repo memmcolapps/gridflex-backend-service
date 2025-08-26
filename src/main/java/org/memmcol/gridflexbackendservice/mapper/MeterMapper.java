@@ -14,27 +14,29 @@ import java.util.UUID;
 public interface MeterMapper {
 
     @Insert("INSERT INTO meters " +
-            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, smart_status) " +
-            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{approveStatus}, #{status}, #{customerId}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{smartStatus})")
+            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, status, customer_id, " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, smart_status, activate_status, meter_model) " +
+            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{status}, #{customerId}, " +
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{smartStatus}, #{activateStatus}, #{meterModel})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeter(Meter request);
 
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status" +
-            ") " +
+            "activate_status, meter_model) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{approveStatus}, #{status}, #{customerId}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{createdBy}, #{description}, #{meterId}, #{smartStatus})")
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{type}, #{createdBy}, #{description}, #{meterId}, " +
+            "#{smartStatus}, #{activateStatus}, #{meterModel})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
 
     @Insert("INSERT INTO meters " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, energy_type, fixed_type, created_at, updated_at, type) " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, energy_type, fixed_type, created_at, updated_at, type, activate_status, meter_model) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{approveStatus}, #{status}, #{customerId}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{energyType}, #{fixedType}, #{createdAt}, #{updatedAt}, #{type})")
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{energyType}, #{fixedType}, #{createdAt}, #{updatedAt}, #{type}," +
+            "#{activateStatus}, #{meterModel})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertVirtualMeter(Meter request);
 
@@ -144,6 +146,47 @@ public interface MeterMapper {
     })
     Meter findByIdVersion(UUID meterId, UUID orgId);
 
+
+    @Select("SELECT * FROM meters WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "energyType", column = "energy_type"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+////            @Result(property = "customer", column = "customer_id",
+////                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "meterAssignLocation", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
+//            @Result(property = "mdMeterInfo", column = "meter_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
+//            @Result(property = "paymentMode", column = "meter_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
+//            @Result(property = "smartMeter", column = "meter_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
+//
+////            @Result(property = "manufacturer", column = "meter_manufacturer",
+////                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+    })
+    Meter findByMeterNumber(String meterNumber, UUID orgId);
+
 //    @Update("UPDATE meters " +
 //            "SET meter_number = #{meterNumber}, sim_number = #{simNumber}, meter_category = #{meterCategory}, meter_class = #{meterClass}, " +
 //            "meter_manufacturer = #{meterManufacturer}, meter_type = #{meterType}, old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, " +
@@ -214,13 +257,18 @@ public interface MeterMapper {
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
     @Update("UPDATE payment_mode_version SET status = true, approve_status = #{approveStatus}, approve_by = #{approveBy}, updatedAt = #{updated_at} " +
-            "WHERE approve_status = #{approveStatus} AND orgId = #{org_id} AND meter_id = #{meterId} AND approve_status = 'pending'")
+            "WHERE approve_status = #{approveStatus} AND orgId = #{orgId} AND meter_id = #{meterId} AND approve_status = 'pending'")
     int approvePrepaidMeterVersion(PaymentMode paymentMode);
 
     @Update("UPDATE payment_mode SET status = true, meter_category = #{meterCategory}, credit_payment_mode = #{creditPaymentMode}, " +
             "credit_payment_plan = #{creditPaymentPlan}, debit_payment_mode = #{debitPaymentMode}, debit_payment_plan = #{debitPaymentPlan}, " +
-            "updatedAt = #{updated_at} WHERE approve_status = #{approveStatus} AND orgId = #{org_id} AND meter_id = #{meterId}")
+            "updatedAt = #{updated_at} WHERE orgId = #{orgId} AND meter_id = #{meterId}")
     int updatePrepaidMeterVersion(PaymentMode paymentMode);
+
+    @Insert("INSERT INTO payment_mode (meter_id, org_id, status, meter_category,credit_payment_mode, credit_payment_plan, debit_payment_mode, " +
+            "debit_payment_plan, updatedAt, createdAt) VALUES (#{meterId}, #{orgId}, true, #{meterCategory}, #{creditPaymentMode}, #{creditPaymentPlan}, " +
+            "#{debitPaymentMode}, #{debitPaymentPlan})")
+    int insertPrepaidMeterVersion(PaymentMode paymentMode);
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")

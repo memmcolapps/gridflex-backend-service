@@ -48,8 +48,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve"),
 
             "user management", List.of("/user/service/single", "/user/service/all",
-                    "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups",  "/user/service/create/group-permission"),
+                    "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/groups",
+                    "/user/service/create/group-permission", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
+                    "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
+                    "/node/service/single", "/node/service/all"),
 
             "users", List.of("/user/service/single-user", "/user/service/all",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",

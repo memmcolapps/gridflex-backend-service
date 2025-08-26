@@ -68,11 +68,11 @@ public class BandController {
 
 
     @PutMapping("/approve")
-    public ResponseEntity<?> manageBandState(
+    public ResponseEntity<?> approve(
             @RequestParam UUID bandId,
             @RequestParam String approveStatus) {
         try {
-            Map<String, Object> result = service.manageBandState(bandId, approveStatus);
+            Map<String, Object> result = service.approve(bandId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

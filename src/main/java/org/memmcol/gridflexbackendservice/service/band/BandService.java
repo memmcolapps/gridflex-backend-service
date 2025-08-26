@@ -13,7 +13,7 @@ public interface BandService {
 
     Map<String, Object> getBands(String type);
 
-    Map<String, Object> manageBandState(UUID bandId, String approveStatus) throws MissingServletRequestParameterException;
+    Map<String, Object> approve(UUID bandId, String approveStatus) throws MissingServletRequestParameterException;
 
     Map<String, Object> getBand(UUID bandId, UUID bandVersionId);
 }

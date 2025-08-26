@@ -31,9 +31,11 @@ public class Meter implements Serializable {
     private String approveStatus;
     private String meterCategory;
     private String meterClass;
-    private UUID meterManufacturer;
+    private String meterModel;
     private String meterType;
-    private String status;
+    private UUID meterManufacturer;
+    private Boolean activateStatus;
+    private Boolean status;
     private Boolean smartStatus;
     private String customerId;
     private String oldSgc;
@@ -207,11 +209,19 @@ public class Meter implements Serializable {
         this.meterType = meterType;
     }
 
-    public String getStatus() {
+    public Boolean getActivateStatus() {
+        return activateStatus;
+    }
+
+    public void setActivateStatus(Boolean activateStatus) {
+        this.activateStatus = activateStatus;
+    }
+
+    public Boolean getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Boolean status) {
         this.status = status;
     }
 
@@ -365,5 +375,13 @@ public class Meter implements Serializable {
 
     public void setSmartMeter(SmartMeterInfo smartMeter) {
         this.smartMeter = smartMeter;
+    }
+
+    public String getMeterModel() {
+        return meterModel;
+    }
+
+    public void setMeterModel(String meterModel) {
+        this.meterModel = meterModel;
     }
 }
