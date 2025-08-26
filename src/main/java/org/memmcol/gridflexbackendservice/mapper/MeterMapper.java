@@ -60,6 +60,11 @@ public interface MeterMapper {
             "VALUES (orgId, meterId, meterModel, protocol, authentication, password, createdBy, description)")
     int insertSmartMeterInfoVersion(SmartMeterInfo smartMeter);
 
+    @Insert("INSERT INTO smart_meter_info_version " +
+            "(org_id, meter_id, meter_model, protocol, authentication, password, created_by, description) " +
+            "VALUES (orgId, meterId, meterModel, protocol, authentication, password, createdBy, description)")
+    int insertSmartMeterInfo(SmartMeterInfo smartMeter);
+
     @Insert("INSERT INTO md_meters_info " +
             "(org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, latitude, longitude, created_at, updated_at) " +
             "VALUES (#{orgId}, #{meterId}, #{ctRatioNum}, #{ctRatioDenom}, #{voltRatioNum}, #{voltRatioDenom}, #{multiplier}, #{meterRating}, #{initialReading}, " +
@@ -196,7 +201,7 @@ public interface MeterMapper {
 
     @Update("UPDATE meters " +
             "SET meter_number = #{meterNumber}, sim_number = #{simNumber}, meter_category = #{meterCategory}, meter_class = #{meterClass}, " +
-            "meter_type = #{meterType}, approve_status = #{approveStatus}, status = #{status}, node_id = #{nodeId}, account_number = #{accountNumber}, " +
+            "meter_type = #{meterType}, activate_status = #{activateStatus}, status = #{status}, node_id = #{nodeId}, account_number = #{accountNumber}, " +
             "old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, new_krn = #{newKrn}, old_tariff_index = #{oldTariffIndex}, " +
             "new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt}, energy_type = #{energyType}, fixed_energy = #{fixedEnergy}, " +
             "tariff = #{tariff}, dss = #{dss} WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
