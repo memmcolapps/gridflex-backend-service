@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.auditlog;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
 public class AuditLogServiceImpl implements AuditLogService {
@@ -43,7 +46,10 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     public Map<String, Object> getAuditLog(int page, int size) {
         try {
+            UserModel um = handleUserValidation();
             Map<String, Object> response = new HashMap<>();
+
+            System.out.println("organization Id:  "+um.getOrgId());
 
             // If page or size is null, 0, or less than 1, fetch all
             if (page < 0 || size <= 0) {

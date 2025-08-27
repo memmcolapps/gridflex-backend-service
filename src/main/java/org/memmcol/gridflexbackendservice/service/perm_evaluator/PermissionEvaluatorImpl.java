@@ -39,23 +39,27 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/customer/service/update", "/customer/service/change-state", "/customer/service/all",  "/customer/service/single-customer",
                     "/customer/service/bulk-upload", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
-                    "/node/service/single", "/node/service/all"),
+                    "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log"),
 
             "band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
-                    "/band/service/all",  "/band/service/single"),
+                    "/band/service/all",  "/band/service/single", "/audit-log/service/all",
+                    "/audit-log/service/single-log"),
 
             "tariff", List.of("/tariff/service/single", "/tariff/service/all",
-                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve"),
+                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve", "/audit-log/service/all",
+                    "/audit-log/service/single-log"),
 
             "user management", List.of("/user/service/single", "/user/service/all",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/groups",
                     "/user/service/create/group-permission", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
-                    "/node/service/single", "/node/service/all"),
+                    "/node/service/single", "/node/service/all", "/audit-log/service/all",
+                    "/audit-log/service/single-log"),
 
             "users", List.of("/user/service/single-user", "/user/service/all",
                     "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups",  "/user/service/create/group-permission")
+                    "/user/service/groups",  "/user/service/create/group-permission", "/audit-log/service/all",
+                    "/audit-log/service/single-log")
     );
 
     @Override
