@@ -69,7 +69,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
             } else {
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-                Page<AuditLog> pagedResult = auditRepository.findAllByOrderByCreatedAtDesc(pageable);
+                Page<AuditLog> pagedResult = auditRepository.findAllByCreator_OrgIdOrderByCreatedAtDesc(um.getOrgId(),pageable);
 
                 List<AuditLogDto> result = pagedResult.getContent().stream()
                         .map(log -> new AuditLogDto(
@@ -108,7 +108,10 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     public Map<String, Object> getAuditLogById(String id) {
         try{
-            Optional<AuditLog> result = auditRepository.findById(id);
+            UserModel um = handleUserValidation();
+            UUID orgId = um.getOrgId();
+
+            Optional<AuditLog> result = auditRepository.findByIdAndCreator_OrgId(id, orgId);
             if (result.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("Log Not Found");
             }

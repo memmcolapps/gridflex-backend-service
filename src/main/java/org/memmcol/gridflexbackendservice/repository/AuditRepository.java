@@ -8,11 +8,13 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface AuditRepository extends MongoRepository<AuditLog, String> {
     List<AuditLog> findAllByCreator_OrgId(UUID orgId);
-    Page<AuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<AuditLog> findAllByCreator_OrgIdOrderByCreatedAtDesc(UUID orgId,Pageable pageable);
+    Optional<AuditLog> findByIdAndCreator_OrgId(String id, UUID orgId);
 
 }
