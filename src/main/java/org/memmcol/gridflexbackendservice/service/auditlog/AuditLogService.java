@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.auditlog;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface AuditLogService {
 

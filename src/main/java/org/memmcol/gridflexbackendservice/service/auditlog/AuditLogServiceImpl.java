@@ -18,10 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
@@ -49,11 +46,9 @@ public class AuditLogServiceImpl implements AuditLogService {
             UserModel um = handleUserValidation();
             Map<String, Object> response = new HashMap<>();
 
-            System.out.println("organization Id:  "+um.getOrgId());
-
             // If page or size is null, 0, or less than 1, fetch all
             if (page < 0 || size <= 0) {
-                List<AuditLogDto> result = auditRepository.findAll()
+                List<AuditLogDto> result = auditRepository.findAllByCreator_OrgId(um.getOrgId())
                         .stream()
                         .map(log -> new AuditLogDto(
                                 log.getId(),
