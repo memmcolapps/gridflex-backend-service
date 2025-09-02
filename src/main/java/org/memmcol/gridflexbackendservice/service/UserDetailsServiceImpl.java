@@ -101,8 +101,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 		groupMap.put("modules", modulesList);
 		groupModulePermissionTree.add(groupMap);
-//			}
-//		}
 
 		String permissionsJson = "";
 		try {
@@ -112,8 +110,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			log.error("Error serializing permissions JSON", e);
 			throw new RuntimeException(e);
 		}
-		log.info("User found in the database: {}", userDTO.getEmail());
-//		authMapper.updateLoginState(email);
 		return new CustomUserDetails(
 				userDTO.getEmail(),
 				userDTO.getPassword(),
