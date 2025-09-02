@@ -513,13 +513,17 @@ public class UserServiceImpl implements  UserService {
 //                return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");
             }
 
-            List<GroupPermission> groupDTOs = groups.stream().map(group -> {
-                GroupPermission groupDTO = new GroupPermission();
+            List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
+                GroupWithPermissionsDTO groupDTO = new GroupWithPermissionsDTO();
                 groupDTO.setId(group.getId());
                 groupDTO.setGroupTitle(group.getGroupTitle());
                 groupDTO.setOrgId(group.getOrgId());
 
                 Permission permissions = userMapper.findPermissionsByGroup(group.getId(), um.getOrgId());
+
+                List<ModuleWithSubModules> moduleDTO = userMapper.getModule(group.getId());
+
+                groupDTO.setModules(moduleDTO);
 
                 groupDTO.setPermissions(permissions);
 

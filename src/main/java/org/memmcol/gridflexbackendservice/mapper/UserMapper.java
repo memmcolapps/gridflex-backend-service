@@ -1,11 +1,8 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.model.user.Module;
-import org.memmcol.gridflexbackendservice.model.user.Group;
-import org.memmcol.gridflexbackendservice.model.user.Permission;
-import org.memmcol.gridflexbackendservice.model.user.SubModule;
-import org.memmcol.gridflexbackendservice.model.user.UserModel;
 
 import java.util.Date;
 import java.util.List;
@@ -163,10 +160,33 @@ public interface UserMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "groupTitle", column = "title"),
-            @Result(property = "orgId", column = "org_id")
+            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "moduleAccess", column = "id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.UserMapper.getModule"))
     })
     List<Group> getGroups(UUID orgId);
+//        JOIN submodules sm ON sm.module_id = m.id
+    @Select("""
+        SELECT m.* 
+        FROM modules m
+        WHERE m.group_id = #{groupId}
+    """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "subModules", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.UserMapper.getSubModules"))
+    })
+    List<ModuleWithSubModules> getModule(@Param("groupId") UUID groupId);
 
+    @Select("SELECT id, name, access, org_id FROM submodules WHERE module_id = #{moduleId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "name", column = "name"),
+            @Result(property = "access", column = "access"),
+            @Result(property = "orgId", column = "org_id"),
+    })
+    List<SubModule> getSubModules(@Param("moduleId") UUID moduleId);
 
     @Update("UPDATE users SET status = #{state} WHERE id = CAST(#{userId} AS UUID)")
     int changeStatus(UUID userId, Boolean state);

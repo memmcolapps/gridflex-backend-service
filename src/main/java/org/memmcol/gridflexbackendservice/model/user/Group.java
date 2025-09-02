@@ -18,7 +18,7 @@ public class Group implements Serializable {
 
     private String groupTitle;
 
-//    private List<String> moduleAccess;
+//    private ModuleWithSubModules moduleAccess;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -70,5 +70,13 @@ public class Group implements Serializable {
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+//    public ModuleWithSubModules getModuleAccess() {
+//        return moduleAccess;
+//    }
+//
+//    public void setModuleAccess(ModuleWithSubModules moduleAccess) {
+//        this.moduleAccess = moduleAccess;
+//    }
 }
 
