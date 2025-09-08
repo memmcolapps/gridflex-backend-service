@@ -53,7 +53,10 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 		Set<String> exemptPaths = Set.of(
 				"/service/alerts",
 				"/auth/service/admin/login",
-				"/actuator/prometheus"
+				"/actuator/prometheus",
+				"/service/reports/summary",
+				"/service/trigger/daily",
+				"/service/trigger/monthly"
 		);
 
 		// If the path is exempt, skip the authorization filter

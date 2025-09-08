@@ -1,16 +1,13 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
-import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
-import org.memmcol.gridflexbackendservice.service.auditlog.AuditLogService;
+import org.memmcol.gridflexbackendservice.service.audit_log.AuditLogService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/audit-log/service")

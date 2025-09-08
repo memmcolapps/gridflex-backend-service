@@ -21,10 +21,9 @@ public interface UserMapper {
     @Update("""
         UPDATE users 
         SET firstname = #{firstname}, 
-            lastname = #{lastname}, 
+            lastname = #{lastname},
             email = #{email}, 
             node_id = #{nodeId},
-            password = #{password},
             updated_at = #{updatedAt} WHERE id = #{id} AND org_id = #{orgId}
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
