@@ -24,7 +24,6 @@ public interface UserMapper {
             lastname = #{lastname},
             email = #{email}, 
             phone_number = #{phoneNumber}, 
-            node_id = #{nodeId},
             updated_at = #{updatedAt} WHERE id = #{id} AND org_id = #{orgId}
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
