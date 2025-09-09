@@ -140,8 +140,8 @@ public class UserServiceImpl implements  UserService {
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
-//            UserModel operator = request.getUser();
-            request.setPassword(passwordEncoder.encode(request.getPassword()));
+////            UserModel operator = request.getUser();
+//            request.setPassword(passwordEncoder.encode(request.getPassword()));
             // check if operator exist
             UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
             if (isOperator == null){
