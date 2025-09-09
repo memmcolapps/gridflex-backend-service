@@ -425,7 +425,7 @@ public class ReportQueryService {
                     entity.setStatus("DOWN");
                     entity.setStartsAt(startsAt);
                     logRepository.save(entity);
-                    logger.info("📉 Service {} DOWN recorded at {}", service, startsAt);
+                    logger.info("Service {} DOWN recorded at {}", service, startsAt);
                 } else if ("resolved".equals(amStatus)) {
                     // Close last DOWN
                     ServiceAlertLog lastDown = logRepository
@@ -435,7 +435,7 @@ public class ReportQueryService {
                     if (lastDown != null && lastDown.getEndsAt() == null) {
                         lastDown.setEndsAt(endsAt != null ? endsAt : Instant.now());
                         logRepository.save(lastDown);
-                        logger.info("✅ Closed DOWN alert for service {} at {}", service, lastDown.getEndsAt());
+                        logger.info("Closed DOWN alert for service {} at {}", service, lastDown.getEndsAt());
                     }
                 }
             } else if ("ServiceUp".equals(alertName)) {
@@ -448,7 +448,7 @@ public class ReportQueryService {
                     if (lastDown != null && lastDown.getEndsAt() == null) {
                         lastDown.setEndsAt(startsAt);
                         logRepository.save(lastDown);
-                        logger.info("✅ Closed DOWN alert for service {} at {}", service, startsAt);
+                        logger.info("Closed DOWN alert for service {} at {}", service, startsAt);
                     }
 
                     // Insert UP
@@ -457,7 +457,7 @@ public class ReportQueryService {
                     upEntity.setStatus("UP");
                     upEntity.setStartsAt(startsAt);
                     logRepository.save(upEntity);
-                    logger.info("📈 Service {} UP recorded at {}", service, startsAt);
+                    logger.info("Service {} UP recorded at {}", service, startsAt);
 
                 } else if ("resolved".equals(amStatus)) {
                     // Close last UP
@@ -468,7 +468,7 @@ public class ReportQueryService {
                     if (lastUp != null && lastUp.getEndsAt() == null) {
                         lastUp.setEndsAt(endsAt != null ? endsAt : Instant.now());
                         logRepository.save(lastUp);
-                        logger.info("🔒 Closed UP alert for service {} at {}", service, lastUp.getEndsAt());
+                        logger.info("Closed UP alert for service {} at {}", service, lastUp.getEndsAt());
                     }
                 }
             }
