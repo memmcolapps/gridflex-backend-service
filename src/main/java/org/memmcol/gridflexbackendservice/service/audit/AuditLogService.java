@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.service.audit_log;
+package org.memmcol.gridflexbackendservice.service.audit;
 
 import java.util.Map;
 
