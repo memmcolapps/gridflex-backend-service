@@ -34,7 +34,7 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateUser(@RequestBody CreateUserRequest user) {
+    public ResponseEntity<?> updateUser(@RequestBody UserModel user) {
         try {
             Map<String, Object> result = service.updateUser(user);
             return ResponseEntity.ok(result);

@@ -132,7 +132,7 @@ public class UserServiceImpl implements  UserService {
 
     @Transactional
     @Override
-    public Map<String, Object> updateUser(CreateUserRequest request) {
+    public Map<String, Object> updateUser(UserModel request) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         try {
@@ -140,26 +140,26 @@ public class UserServiceImpl implements  UserService {
             String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
-            UserModel operator = request.getUser();
-            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
+//            UserModel operator = request.getUser();
+            request.setPassword(passwordEncoder.encode(request.getPassword()));
             // check if operator exist
-            UserModel isOperator = userMapper.findById(operator.getId(), um.getOrgId());
+            UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
             if (isOperator == null){
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
-            // check if groupId exist
-            UUID isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
-            if (isGroupId == null){
-                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
-            }
+//            // check if groupId exist
+//            UUID isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
+//            if (isGroupId == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+//            }
 
-            operator.setOrgId(um.getOrgId());
+            request.setOrgId(um.getOrgId());
 
             // Insert into operators
-            userMapper.updateUser(operator);
-            UUID userId = operator.getId();
-            userMapper.updateUserToGroup(userId, isGroupId, um.getOrgId());
+            userMapper.updateUser(request);
+            UUID userId = request.getId();
+//            userMapper.updateUserToGroup(userId, isGroupId, um.getOrgId());
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             String desc = "User edited";

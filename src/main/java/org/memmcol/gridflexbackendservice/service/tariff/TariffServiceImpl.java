@@ -258,7 +258,7 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> getFilterTariffs(
             int page, int size,
             String tariffName,
-            String tariffId,
+//            String tariffId,
             String tariffType,
             String tariffRate,
             String bandCode,
@@ -274,7 +274,7 @@ public class TariffServiceImpl implements TariffService {
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("tariffs_"+um.getOrgId());
             if (tariffName != null && !tariffName.isEmpty()) cacheKeyBuilder.append("_name_").append(tariffName);
-            if (tariffId != null && !tariffId.isEmpty()) cacheKeyBuilder.append("_tariffId_").append(tariffId);
+//            if (tariffId != null && !tariffId.isEmpty()) cacheKeyBuilder.append("_tariffId_").append(tariffId);
             if (tariffType != null && !tariffType.isEmpty()) cacheKeyBuilder.append("_type_").append(tariffType);
             if (tariffRate != null && !tariffRate.isEmpty()) cacheKeyBuilder.append("_rate_").append(tariffRate);
             if (bandCode != null && !bandCode.isEmpty()) cacheKeyBuilder.append("_band_").append(bandCode);

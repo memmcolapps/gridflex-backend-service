@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.user;
 import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
 //import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 
 import java.util.Map;
 import java.util.UUID;
@@ -10,7 +11,7 @@ import java.util.UUID;
 public interface UserService {
     Map<String, Object> createUser(CreateUserRequest request);
 
-    Map<String, Object> updateUser(CreateUserRequest user);
+    Map<String, Object> updateUser(UserModel user);
 
     Map<String, Object> getUser(UUID userId);
 

@@ -15,7 +15,7 @@ public interface TariffService {
 
 //    Map<String, Object> getTariffs(int page, int size);
 
-    Map<String, Object> getFilterTariffs(int page, int size, String tariffName, String tariffId, String tariffType,
+    Map<String, Object> getFilterTariffs(int page, int size, String tariffName, String tariffType,
                                          String tariffRate, String bandCode, Boolean status, String effectiveDate, String approveStatus, String type);
 
 //    Map<String, Object> getUniqueTariffId();
