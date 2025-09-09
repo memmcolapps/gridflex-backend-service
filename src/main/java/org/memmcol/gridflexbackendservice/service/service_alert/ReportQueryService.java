@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
@@ -26,13 +27,16 @@ public class ReportQueryService {
     public void calculateDailyReport(String serviceName, LocalDate date) {
         Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay;
-
         // If today → end is now, otherwise full day
         if (date.equals(LocalDate.now(ZoneOffset.UTC))) {
             endOfDay = Instant.now();
+            logger.info("1. startOfDay {} and endOfDay: {}", startOfDay, endOfDay);
         } else {
             endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            logger.info("2. startOfDay {} and endOfDay: {}", startOfDay, endOfDay);
         }
+
+        logger.info("startDay {} ond endDay {}", startOfDay, endOfDay);
 
         List<ServiceAlertLog> logs = logRepository.findByServiceNameAndStartsAtBetween(
                 serviceName, startOfDay, endOfDay
@@ -53,15 +57,15 @@ public class ReportQueryService {
             date = today; // update the report date
         }
 
+
         // still no logs → just stop
         if (logs.isEmpty()) {
             logger.info("No logs found at all for {} on {}", serviceName, date);
             return;
         }
-
         // check if report already exists → update instead of skipping
         Optional<UptimeReport> existingReportOpt = reportRepository
-                .findByServiceNameAndReportTypeAndCreatedAt(serviceName, "DAILY", date);
+                .findByServiceNameAndReportTypeAndCreatedAt(serviceName, "DAILY", date.toString());
 
         // Sort logs by startsAt
         logs.sort(Comparator.comparing(ServiceAlertLog::getStartsAt));
@@ -111,7 +115,7 @@ public class ReportQueryService {
         UptimeReport report = existingReportOpt.orElse(new UptimeReport());
         report.setServiceName(serviceName);
         report.setReportType("DAILY");
-        report.setCreatedAt(date);
+        report.setCreatedAt(date.toString());
         report.setUptimeMinutes(upMinutes);
         report.setDowntimeMinutes(downMinutes);
         report.setUptimePercent(percentage(upMinutes, totalMinutes));
@@ -142,13 +146,30 @@ public class ReportQueryService {
         YearMonth currentMonth = YearMonth.now(ZoneOffset.UTC);
         if (month.equals(currentMonth)) {
             monthEnd = Instant.now();
+            logger.info("1. monthStart {} and monthEnd: {}", monthStart, monthEnd);
         } else {
             monthEnd = month.plusMonths(1).atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            logger.info("2. monthStart {} and monthEnd {}", monthStart, monthEnd);
         }
 
         List<ServiceAlertLog> logs = logRepository.findByServiceNameAndStartsAtBetween(
                 serviceName, monthStart, monthEnd
         );
+
+        if (logs.isEmpty() && month.isBefore(YearMonth.now(ZoneOffset.UTC))) {
+            logger.info("No logs for {} in {}, retrying with current month", serviceName, month);
+
+            YearMonth current = YearMonth.now(ZoneOffset.UTC);
+            monthStart = current.atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            monthEnd = Instant.now();
+
+            logs = logRepository.findByServiceNameAndStartsAtBetween(
+                    serviceName, monthStart, monthEnd
+            );
+
+            month = current; // overwrite
+        }
+
 
         if (logs.isEmpty()) {
             logger.info("No logs for {} in {}", serviceName, month);
@@ -200,14 +221,15 @@ public class ReportQueryService {
 
         long downMinutes = Math.max(0, totalMinutes - upMinutes);
 
-        // 🔥 If report exists → update it, otherwise create new
+        String monthStr = month.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        // If report exists → update it, otherwise create new
         UptimeReport report = reportRepository
-                .findByServiceNameAndReportTypeAndCreatedAtMonth(serviceName, "MONTHLY", month)
+                .findByServiceNameAndReportTypeAndMonth(serviceName, "MONTHLY", monthStr)
                 .orElse(new UptimeReport());
 
         report.setServiceName(serviceName);
         report.setReportType("MONTHLY");
-        report.setCreatedAt(month.atDay(1)); // store as first day of month
+        report.setMonth(monthStr); // store as first day of month
         report.setUptimeMinutes(upMinutes);
         report.setDowntimeMinutes(downMinutes);
         report.setUptimePercent(percentage(upMinutes, totalMinutes));

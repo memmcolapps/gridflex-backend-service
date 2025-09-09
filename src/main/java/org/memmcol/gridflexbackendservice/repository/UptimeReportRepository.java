@@ -8,12 +8,8 @@ import java.time.YearMonth;
 import java.util.Optional;
 
 public interface UptimeReportRepository extends MongoRepository<UptimeReport, String> {
-    Optional<UptimeReport> findByServiceNameAndCreatedAt(String serviceName, LocalDate createdAt);
 
-    Optional<UptimeReport> findByServiceNameAndMonth(String serviceName, String month);
+    Optional<UptimeReport> findByServiceNameAndReportTypeAndCreatedAt(String serviceName, String daily, String date);
 
-    Optional<UptimeReport> findByServiceNameAndReportTypeAndCreatedAt(String serviceName, String daily, LocalDate date);
-
-    Optional<UptimeReport> findByServiceNameAndReportTypeAndCreatedAtMonth(String serviceName, String reportType, YearMonth month);
-
+    Optional<UptimeReport> findByServiceNameAndReportTypeAndMonth(String serviceName, String monthly, String string);
 }

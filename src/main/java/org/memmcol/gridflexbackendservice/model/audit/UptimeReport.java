@@ -19,8 +19,7 @@ public class UptimeReport implements Serializable {
     private String serviceName;
 
     private String reportType; // "DAILY" or "MONTHLY"
-
-    private LocalDate createdAt;     // used when DAILY
+    private String createdAt;     // used when DAILY
     private String month;    // used when MONTHLY
 
     private double uptimePercent;
@@ -52,11 +51,11 @@ public class UptimeReport implements Serializable {
         this.reportType = reportType;
     }
 
-    public LocalDate getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDate createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 
