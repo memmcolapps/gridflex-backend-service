@@ -252,7 +252,7 @@ public interface AuthMapper {
     void updateLogoutState(String email);
 
     @Update("UPDATE users SET password = #{password} WHERE Email = #{email}")
-    int resetPassword(String operator, String encode);
+    int resetPassword(String operator, String password);
 
     @Select("SELECT * FROM groups g INNER JOIN user_groups ug ON g.id = ug.group_id WHERE ug.user_id = #{userId}")
     @Results({

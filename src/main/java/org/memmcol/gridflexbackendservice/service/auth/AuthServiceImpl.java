@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
 
 			// Blacklist the raw token
 			blacklistToken(rawToken, 1800);
-
+//			handleAddCache(user);
 			auditNotificationDTO.setCreator(operator);
 			auditNotificationDTO.setUserAgent(userAgent);
 			auditNotificationDTO.setIpAddress(ipAddress);

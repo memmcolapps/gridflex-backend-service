@@ -185,7 +185,7 @@ public interface UserMapper {
     })
     List<SubModule> getSubModules(@Param("moduleId") UUID moduleId);
 
-    @Update("UPDATE users SET status = #{state} WHERE id = #{userId})")
+    @Update("UPDATE users SET status = #{state} WHERE id = #{userId}")
     int changeStatus(UUID userId, Boolean state);
 
     @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
