@@ -23,6 +23,7 @@ public interface UserMapper {
         SET firstname = #{firstname}, 
             lastname = #{lastname},
             email = #{email}, 
+            phoneNumber = #{phone_number}, 
             node_id = #{nodeId},
             updated_at = #{updatedAt} WHERE id = #{id} AND org_id = #{orgId}
     """)
