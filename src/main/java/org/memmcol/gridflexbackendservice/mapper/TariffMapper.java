@@ -9,12 +9,12 @@ import java.util.UUID;
 @Mapper
 public interface TariffMapper {
 
-    @Insert("INSERT INTO tariffs (name, tariff_id, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_at, updated_at) " +
+    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_at, updated_at) " +
             "VALUES (#{name}, #{tariff_id}, #{tariff_type}, #{tariff_rate}, #{band}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createTariff(Tariff tariff);
 
-    @Insert("INSERT INTO tariffs_version (name, t_id, tariff_id, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_by, description, created_at, updated_at) " +
+    @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_by, description, created_at, updated_at) " +
             "VALUES (#{name}, #{t_id}, #{tariff_id}, #{tariff_type}, #{tariff_rate}, #{band}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_by}, #{description}, #{created_at}, #{updated_at})")
     int createTariffVersion(Tariff tariff);
 
@@ -53,7 +53,7 @@ public interface TariffMapper {
 //    @Update("UPDATE tariffs_version SET approve_status = #{approveStatus}, status = true, approved_by = #{userId} WHERE id = #{tariffId} AND org_id = #{orgId}")
 //    void approveTariffVersion(Tariff tariff);
 
-    @Update("UPDATE tariffs SET name = #{name}, tariff_id = #{tariff_id}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
+    @Update("UPDATE tariffs SET name = #{name}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
             "status = #{status}, effective_date = #{effective_date}, approve_status = #{approve_status}, updated_at = #{updated_at} WHERE id = #{t_id} ")
     int approveTariff(Tariff tariff);
 
@@ -61,7 +61,7 @@ public interface TariffMapper {
             "updated_at = #{updated_at} WHERE t_id = #{t_id} AND approve_status = 'pending'")
     int updateTariffVersion(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET name = #{name}, tariff_id = #{tariff_id}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
+    @Update("UPDATE tariffs_version SET name = #{name}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
             "status = #{status}, effective_date = #{effective_date}, approve_status = #{approve_status}, created_by = #{created_by}, " +
             "description = #{description}, updated_at = #{updated_at} WHERE t_id = #{t_id} AND approve_status = 'pending'")
     int updateTariffVer(Tariff tariff);
