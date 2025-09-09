@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.controller;
 import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
 //import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.user.UserService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,9 +74,9 @@ public class UserController {
     }
 
     @PatchMapping("/change-state")
-    public ResponseEntity<?> changeState(@RequestParam UUID userId, @RequestParam Boolean status) {
+    public ResponseEntity<?> changeState(@RequestBody UserModel request) {
         try {
-            Map<String, Object> result = service.changeState(userId, status);
+            Map<String, Object> result = service.changeState(request.getId(), request.getStatus());
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

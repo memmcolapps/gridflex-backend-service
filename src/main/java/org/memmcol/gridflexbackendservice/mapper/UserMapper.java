@@ -23,7 +23,7 @@ public interface UserMapper {
         SET firstname = #{firstname}, 
             lastname = #{lastname},
             email = #{email}, 
-            phoneNumber = #{phone_number}, 
+            phone_number = #{phoneNumber}, 
             node_id = #{nodeId},
             updated_at = #{updatedAt} WHERE id = #{id} AND org_id = #{orgId}
     """)
@@ -42,7 +42,7 @@ public interface UserMapper {
     """)
     void updateUserToGroup(@Param("userId") UUID userId, @Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
-    @Select("SELECT * FROM users WHERE id = CAST(#{id} AS UUID)  AND org_id = #{orgId}")
+    @Select("SELECT * FROM users WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "firstname", column = "firstname"),

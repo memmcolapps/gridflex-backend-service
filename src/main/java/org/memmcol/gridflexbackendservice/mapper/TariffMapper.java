@@ -25,8 +25,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE id = #{id} AND org_id = #{orgId}")
     Tariff getTariff(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM tariffs WHERE name = #{name} AND org_id = #{orgId} OR tariff_id = #{tariffId}")
-    Tariff getTariffByName(String name, UUID orgId, String tariffId);
+    @Select("SELECT * FROM tariffs WHERE name = #{name} AND org_id = #{orgId}")
+    Tariff getTariffByName(String name, UUID orgId);
 
     @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND approve_status = 'pending' AND org_id = #{orgId} ")
     Tariff getTariffVersionByName(String name, UUID orgId);

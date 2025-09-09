@@ -30,7 +30,7 @@ public class Tariff implements Serializable {
 
     private UUID t_id;
 
-    private String tariff_id;
+//    private String tariff_id;
 
     private String tariff_type;
 
@@ -79,13 +79,13 @@ public class Tariff implements Serializable {
         this.name = name;
     }
 
-    public String getTariff_id() {
-        return tariff_id;
-    }
-
-    public void setTariff_id(String tariff_id) {
-        this.tariff_id = tariff_id;
-    }
+//    public String getTariff_id() {
+//        return tariff_id;
+//    }
+//
+//    public void setTariff_id(String tariff_id) {
+//        this.tariff_id = tariff_id;
+//    }
 
     public UUID getT_id() {
         return t_id;
