@@ -287,11 +287,11 @@ public class TariffServiceImpl implements TariffService {
 
             String cacheKey = cacheKeyBuilder.toString();
 
-            // Return from cache if available
-            Object cachedTariff = tariffCache.get(cacheKey);
-            if (cachedTariff != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedTariff);
-            }
+//            // Return from cache if available
+//            Object cachedTariff = tariffCache.get(cacheKey);
+//            if (cachedTariff != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedTariff);
+//            }
 
             List<Tariff> allTariffs;
             // Ideally, this should be a dynamic query in the mapper layer
@@ -521,7 +521,7 @@ public class TariffServiceImpl implements TariffService {
         for (String key : auditCache.keySet()) {
             if (key.startsWith("grid_flex_audit_log_page_")) {
                 auditCache.remove(key);
-            }
+            } //"tariffs_"+um.getOrgId()
         }
         for (String key : tariffCache.keySet()) {
             if (key.startsWith("tariffs_"+tariff.getOrg_id())) {
