@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
 import org.memmcol.gridflexbackendservice.model.user.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -302,8 +303,8 @@ public interface AuthMapper {
     List<SubModuleWithPermissions> findSubModulesWithPermissionsByModuleId(UUID moduleId);
 
 
-    @Update("UPDATE users SET active = true, last_active = CURRENT_TIMESTAMP WHERE email = #{email}")
-    void updateLoginState(String email);
+    @Update("UPDATE users SET active = true, last_active = #{now} WHERE email = #{email}")
+    void updateLoginState(String email, LocalDateTime now);
 
     @Select("SELECT * FROM users WHERE id = #{userId} AND org_id = #{orgId}")
     @Results({

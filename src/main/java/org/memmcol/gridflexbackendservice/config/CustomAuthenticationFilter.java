@@ -32,6 +32,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -122,7 +125,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24 hours
 				.sign(algorithm);
 
-		authMapper.updateLoginState(userDetails.getUsername());
+		authMapper.updateLoginState(userDetails.getUsername(), LocalDateTime.now(ZoneId.of("Africa/Lagos")));
 
 		UserModel user = authMapper.findAuthByUserEmail(userDetails.getUsername());
 		List<Node> nodes = authMapper.getNodeWithChildren(user.getNodeId(), user.getOrgId());
