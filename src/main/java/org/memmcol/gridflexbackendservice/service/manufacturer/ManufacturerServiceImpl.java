@@ -170,7 +170,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String contactPerson, String dateAdded) {
+    public Map<String, Object> getManufacturers(String name, String manufacturerId, String contactPerson, String dateAdded) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -209,27 +209,27 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             List<Manufacturer> filteredManufacturers = manufacturerStream.toList();
 
             // Pagination logic
-            int totalManufacturers = filteredManufacturers.size();
-            List<Manufacturer> paginatedManufacturers;
-            if (size == 0) {
-                paginatedManufacturers = filteredManufacturers; // Return all users
-            } else {
-                int fromIndex = Math.min(page * size, totalManufacturers);
-                int toIndex = Math.min(fromIndex + size, totalManufacturers);
-                paginatedManufacturers = filteredManufacturers.subList(fromIndex, toIndex);
-            }
+//            int totalManufacturers = filteredManufacturers.size();
+//            List<Manufacturer> paginatedManufacturers;
+//            if (size == 0) {
+//                paginatedManufacturers = filteredManufacturers; // Return all users
+//            } else {
+//                int fromIndex = Math.min(page * size, totalManufacturers);
+//                int toIndex = Math.min(fromIndex + size, totalManufacturers);
+//                paginatedManufacturers = filteredManufacturers.subList(fromIndex, toIndex);
+//            }
 
             // Prepare response with pagination metadata
-            Map<String, Object> response = new HashMap<>();
-            response.put("data", paginatedManufacturers);
-            response.put("totalData", totalManufacturers);
-            response.put("page", page);
-            response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedManufacturers.size() / size));
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("data", paginatedManufacturers);
+//            response.put("totalData", totalManufacturers);
+//            response.put("page", page);
+//            response.put("size", size);
+//            response.put("totalPages", (int) Math.ceil((double) paginatedManufacturers.size() / size));
 
 //            userCache.put(cacheKey, response);
 
-            return ResponseMap.response(status.getSuccessCode(), manfacturerName + "s " + status.getDesc(), response);
+            return ResponseMap.response(status.getSuccessCode(), manfacturerName + "s " + status.getDesc(), filteredManufacturers);
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching manufacturers: {}", exception.getMessage(), exception);

@@ -63,8 +63,6 @@ public class ManufacturerController {
 
     @GetMapping("/all")
     public ResponseEntity<?> getManufacturers(
-            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
-            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "name", required = false, defaultValue = "") String name,
             @RequestParam(value = "manufacturerId", required = false, defaultValue = "") String manufacturerId,
             @RequestParam(value = "contactPerson", required = false, defaultValue = "") String contactPerson,
@@ -72,7 +70,7 @@ public class ManufacturerController {
             @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt
     ) {
         try {
-            Map<String, Object> result = service.getManufacturers(page, size, name, manufacturerId, contactPerson, createdAt);
+            Map<String, Object> result = service.getManufacturers(name, manufacturerId, contactPerson, createdAt);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

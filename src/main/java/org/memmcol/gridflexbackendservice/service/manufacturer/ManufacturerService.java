@@ -15,5 +15,5 @@ public interface ManufacturerService {
 
     Map<String, Object> getManufacturer(UUID id);
 
-    Map<String, Object> getManufacturers(int page, int size, String name, String manufacturerId, String contactPerson, String dateAdded);
+    Map<String, Object> getManufacturers(String name, String manufacturerId, String contactPerson, String dateAdded);
 }

@@ -17,6 +17,9 @@ public class Manufacturer implements Serializable {
     private String name;
     private String contactPerson;
     private String state;
+    private String city;
+    private String street;
+    private String houseNo;
     private String email;
     private String phoneNo;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -62,21 +65,6 @@ public class Manufacturer implements Serializable {
         this.name = name;
     }
 
-//    public String getSgc() {
-//        return sgc;
-//    }
-//
-//    public void setSgc(String sgc) {
-//        this.sgc = sgc;
-//    }
-//
-//    public Boolean getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(Boolean status) {
-//        this.status = status;
-//    }
 
     public String getContactPerson() {
         return contactPerson;
@@ -124,5 +112,29 @@ public class Manufacturer implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getStreet() {
+        return street;
+    }
+
+    public void setStreet(String street) {
+        this.street = street;
+    }
+
+    public String getHouseNo() {
+        return houseNo;
+    }
+
+    public void setHouseNo(String houseNo) {
+        this.houseNo = houseNo;
     }
 }
