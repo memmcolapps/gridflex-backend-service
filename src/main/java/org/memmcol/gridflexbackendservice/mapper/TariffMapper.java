@@ -89,6 +89,9 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'approved' ORDER BY created_at DESC")
     List<Tariff> GetTariffs(UUID orgId);
 
+    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} ORDER BY created_at DESC")
+    List<Tariff> GetAllTariffs(UUID orgId);
+
     @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND approve_status = 'pending' ORDER BY created_at DESC")
     List<Tariff> GetPendingTariffs(UUID orgId);
 

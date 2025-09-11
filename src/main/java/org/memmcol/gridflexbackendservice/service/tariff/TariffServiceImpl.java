@@ -287,18 +287,18 @@ public class TariffServiceImpl implements TariffService {
 
             String cacheKey = cacheKeyBuilder.toString();
 
-//            // Return from cache if available
-//            Object cachedTariff = tariffCache.get(cacheKey);
-//            if (cachedTariff != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedTariff);
-//            }
+            // Return from cache if available
+            Object cachedTariff = tariffCache.get(cacheKey);
+            if (cachedTariff != null) {
+                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedTariff);
+            }
 
             List<Tariff> allTariffs;
             // Ideally, this should be a dynamic query in the mapper layer
             if(type.equalsIgnoreCase("pending")){
                 allTariffs = tariffMapper.GetPendingTariffs(um.getOrgId());
             } else {
-                allTariffs = tariffMapper.GetTariffs(um.getOrgId());
+                allTariffs = tariffMapper.GetAllTariffs(um.getOrgId());
             }
             List<Tariff> filteredTariffs = allTariffs.stream()
                     .filter(t -> tariffName == null || tariffName.isEmpty() || t.getName().equalsIgnoreCase(tariffName))
