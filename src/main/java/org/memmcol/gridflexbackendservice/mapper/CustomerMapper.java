@@ -16,7 +16,7 @@ public interface CustomerMapper {
             @Result(property = "phoneNumber", column = "phone_number"),
             @Result(property = "streetName", column = "street_name"),
             @Result(property = "houseNo", column = "house_no"),
-            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterAssigned", column = "meter_assigned"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
@@ -48,17 +48,17 @@ public interface CustomerMapper {
 
 //    Customer findByAccountNo(String accountNumber);
 
-    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, meter_number) " +
-            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat}, #{meterNumber})")
+    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) " +
+            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCustomer(Customer request);
 
     @Insert({
             "<script>",
-            "INSERT INTO customer (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, meter_number) ",
+            "INSERT INTO customer (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
             "VALUES",
             "<foreach collection='customers' item='c' separator=','>",
-            "(#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, ${vat}, #{meterNumber})",
+            "(#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, ${vat})",
             "</foreach>",
             "</script>"
     })
@@ -82,7 +82,7 @@ public interface CustomerMapper {
             @Result(property = "phoneNumber", column = "phone_number"),
             @Result(property = "streetName", column = "street_name"),
             @Result(property = "houseNo", column = "house_no"),
-            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterAssigned", column = "meter_assigned"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),

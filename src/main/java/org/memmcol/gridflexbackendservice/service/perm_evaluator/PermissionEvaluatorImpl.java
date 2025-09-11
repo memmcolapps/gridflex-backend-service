@@ -19,18 +19,17 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             "full access", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single",
-                    "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
+                    "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/group/change-state",
                     "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update",
                     "/customer/service/change-state", "/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload",
                     "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
                     "/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update",
-                    "/manufacturer/service/single", "/manufacturer/service/all", "/audit-log/service/all",
-                    "/audit-log/service/single-log","/debit-credit-adjustment/service/create",
-                    "/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept", "/debit-credit-adjustment/service/all",
-                    "/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create", "/debt-setting/service/liability-cause/update",
-                    "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single", "/debt-setting/service/liability-cause/approve",
-                    "/debt-setting/service/percentage-range/create", "/debt-setting/service/percentage-range/update",
+                    "/manufacturer/service/single", "/manufacturer/service/all", "/audit-log/service/all", "/audit-log/service/single-log",
+                    "/debit-credit-adjustment/service/create", "/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept",
+                    "/debit-credit-adjustment/service/all", "/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create",
+                    "/debt-setting/service/liability-cause/update", "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single",
+                    "/debt-setting/service/liability-cause/approve", "/debt-setting/service/percentage-range/create", "/debt-setting/service/percentage-range/update",
                     "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
@@ -62,12 +61,12 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/audit-log/service/all", "/audit-log/service/single-log"),
 
             "user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups", "/user/service/create/group-permission", "/node/service/create/node/region-bhub-service-center",
+                    "/user/service/groups", "/user/service/create/group-permission", "/node/service/create/node/region-bhub-service-center", "/user/service/group/change-state",
                     "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line",
                     "/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log"),
 
             "users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log")
+                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log", "/user/service/group/change-state")
     );
 
     @Override

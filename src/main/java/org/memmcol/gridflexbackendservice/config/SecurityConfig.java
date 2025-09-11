@@ -104,7 +104,7 @@ public class  SecurityConfig {
 						"/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state",
 						"/tariff/service/bulk-approve","/user/service/single-user", "/user/service/all",
 						"/user/service/change-state", "/user/service/update",  "/user/service/create",
-						"/user/service/groups",  "/user/service/create/group-permission",
+						"/user/service/groups",  "/user/service/create/group-permission", "/user/service/group/change-state",
 						"/customer/service/create", "/customer/service/update", "/customer/service/change-state",
 						"/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload",
 						"/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",

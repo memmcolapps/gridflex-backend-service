@@ -190,4 +190,9 @@ public interface UserMapper {
     @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
     String getOrgId(UUID orgId);
 
+    @Select("SELECT * FROM user_groups WHERE group_id = #{groupId}")
+    UserGroup getUserGroup(UUID groupId);
+
+    @Update("UPDATE groups SET status = #{status} WHERE id = #{groupId}")
+    int changeGroupStatus(UUID groupId, Boolean status);
 }
