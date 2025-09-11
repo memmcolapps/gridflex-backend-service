@@ -18,6 +18,8 @@ public class Group implements Serializable {
 
     private String groupTitle;
 
+    private Boolean status;
+
 //    private ModuleWithSubModules moduleAccess;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -71,12 +73,12 @@ public class Group implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-//    public ModuleWithSubModules getModuleAccess() {
-//        return moduleAccess;
-//    }
-//
-//    public void setModuleAccess(ModuleWithSubModules moduleAccess) {
-//        this.moduleAccess = moduleAccess;
-//    }
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
 }
 

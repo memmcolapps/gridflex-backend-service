@@ -93,9 +93,12 @@ public class UserServiceImpl implements  UserService {
             }
 
             // check if groupId exist
-            UUID isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
+            Group isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
             if (isGroupId == null){
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+            }
+            if(isGroupId.getStatus()) {
+                throw new GlobalExceptionHandler.NotFoundException("Group deactivated and can not be assigned");
             }
 
             operator.setOrgId(um.getOrgId());
@@ -313,6 +316,7 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> changeGroupPermissionStatus(UUID groupId, Boolean state) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -320,27 +324,25 @@ public class UserServiceImpl implements  UserService {
         try {
             String ipAddress = getClientIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
-            UserModel um = handleUserValidation();
+            UserModel user = handleUserValidation();
 
             UserGroup verify = userMapper.getUserGroup(groupId);
             if(verify != null){
-                throw new GlobalExceptionHandler.NotFoundException("Cannot be deactivated because is in used.");
+                throw new GlobalExceptionHandler.NotFoundException("Cannot be deactivated because is in used");
             }
 
-            int insertState = userMapper.changeGroupStatus(groupId, state);
-            if(insertState == 0){
-                throw new GlobalExceptionHandler.NotFoundException("Failed to change group status.");
-            }
+            userMapper.changeGroupStatus(groupId, state);
+
             String desc = state ? "Group activated" : "Group deactivated";
 
-            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setCreator(user);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setUserAgent(userAgent);
             auditNotificationDTO.setIpAddress(ipAddress);
             auditNotificationDTO.setType("Group");
             auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), desc + " " + status.getDesc(), "");
-        }catch (Exception exception) {
+            return ResponseMap.response(status.getSuccessCode(), desc + " successfully", "");
+        } catch (Exception exception) {
             log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());

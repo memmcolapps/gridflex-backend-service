@@ -76,9 +76,9 @@ public interface UserMapper {
     UserModel findByEmail(@Param("email") String email, @Param("orgId") UUID orgId);
 
     @Select("""
-            SELECT id FROM groups WHERE id = #{groupId} AND org_id = #{orgId}
+            SELECT * FROM groups WHERE id = #{groupId} AND org_id = #{orgId}
             """)
-    UUID checkGroupId(@Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
+    Group checkGroupId(@Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
     @Select("""
             SELECT * FROM groups WHERE title = #{groupTitle}
@@ -191,8 +191,12 @@ public interface UserMapper {
     String getOrgId(UUID orgId);
 
     @Select("SELECT * FROM user_groups WHERE group_id = #{groupId}")
+    @Results({
+            @Result(property = "groupId", column = "group_id"),
+            @Result(property = "userId", column = "user_id"),
+    })
     UserGroup getUserGroup(UUID groupId);
 
     @Update("UPDATE groups SET status = #{status} WHERE id = #{groupId}")
-    int changeGroupStatus(UUID groupId, Boolean status);
+    void changeGroupStatus(UUID groupId, Boolean status);
 }
