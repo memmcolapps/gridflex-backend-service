@@ -15,6 +15,8 @@ public class GroupWithPermissionsDTO implements Serializable {
 
     private String groupTitle;
 
+    private Boolean status;
+
     private List<ModuleWithSubModules> modules;
 
     private Permission permissions;
@@ -60,4 +62,11 @@ public class GroupWithPermissionsDTO implements Serializable {
         this.permissions = permissions;
     }
 
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
 }

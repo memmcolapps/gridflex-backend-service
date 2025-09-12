@@ -16,4 +16,6 @@ public interface BandService {
     Map<String, Object> approve(UUID bandId, String approveStatus) throws MissingServletRequestParameterException;
 
     Map<String, Object> getBand(UUID bandId, UUID bandVersionId);
+
+    Map<String, Object> changeStatus(UUID bandId, Boolean status);
 }

@@ -353,6 +353,24 @@ public class BandServiceImpl implements BandService {
         }
     }
 
+    @Transactional
+    @Override
+    public Map<String, Object> changeStatus(UUID bandId, Boolean status) {
+        try {
+            UserModel um = handleUserValidation();
+            return Map.of();
+        }  catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+
+    }
+
     private void handleAddCache(Band band) {
         bandCache.remove(band.getId().toString()+"_"+band.getOrgId());
         tariffCache.clear();
