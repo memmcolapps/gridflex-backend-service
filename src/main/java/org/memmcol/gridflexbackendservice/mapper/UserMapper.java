@@ -1,11 +1,14 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.model.user.Module;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
@@ -199,4 +202,8 @@ public interface UserMapper {
 
     @Update("UPDATE groups SET status = #{status} WHERE id = #{groupId}")
     void changeGroupStatus(UUID groupId, Boolean status);
+
+    @Insert("INSERT INTO incident_report (message, org_id, status, user_id, created_at) " +
+            "VALUES (#{message}, #{orgId}, #{status}, #{userId}, #{createdAt})")
+    int insertIncidentReport(IncidentReport incidentReport);
 }

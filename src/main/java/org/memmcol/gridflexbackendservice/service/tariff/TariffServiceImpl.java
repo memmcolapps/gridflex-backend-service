@@ -91,7 +91,7 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
             }
 
-            Band isBand = bandMapper.getApprovedBandById(tariff.getBand(), um.getOrgId());
+            Band isBand = bandMapper.getApprovedBandById(tariff.getBandId(), um.getOrgId());
             if (isBand == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found or not approved or deactivated" );
             }
@@ -423,7 +423,7 @@ public class TariffServiceImpl implements TariffService {
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
-            Band isBand = bandMapper.getBandById(tariff.getBand(), um.getOrgId());
+            Band isBand = bandMapper.getBandById(tariff.getBandId(), um.getOrgId());
             if (isBand == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }

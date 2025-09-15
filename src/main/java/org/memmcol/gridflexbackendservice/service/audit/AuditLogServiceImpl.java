@@ -1,8 +1,10 @@
 package org.memmcol.gridflexbackendservice.service.audit;
 
+import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -29,6 +31,9 @@ public class AuditLogServiceImpl implements AuditLogService {
     private static final Logger log = LoggerFactory.getLogger(AuditLogServiceImpl.class);
 
     private final AuditRepository auditRepository;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Autowired
     private ResponseProperties status;
@@ -116,6 +121,30 @@ public class AuditLogServiceImpl implements AuditLogService {
                 throw new GlobalExceptionHandler.NotFoundException("Log Not Found");
             }
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), result);
+        } catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> incidentReport(IncidentReport incidentReport) {
+        try{
+            UserModel um = handleUserValidation();
+
+            incidentReport.setOrgId(um.getOrgId());
+            incidentReport.setUser(um.getId());
+
+            int result = userMapper.insertIncidentReport(incidentReport);
+            if (result == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Incident report failed");
+            }
+            return ResponseMap.response(status.getSuccessCode(), status.getRegDesc(), "");
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);

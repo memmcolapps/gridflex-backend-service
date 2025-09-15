@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.model.tariff;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
@@ -38,11 +39,13 @@ public class Tariff implements Serializable {
 
     public String tariff_rate;
 
-    private UUID band;
+    private UUID bandId;
 
     private Boolean status;
 
     private String approve_status;
+
+    private Band band;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date created_at;
@@ -143,11 +146,19 @@ public class Tariff implements Serializable {
         this.tariff_rate = tariff_rate;
     }
 
-    public UUID getBand() {
+    public UUID getBandId() {
+        return bandId;
+    }
+
+    public void setBandId(UUID bandId) {
+        this.bandId = bandId;
+    }
+
+    public Band getBand() {
         return band;
     }
 
-    public void setBand(UUID band) {
+    public void setBand(Band band) {
         this.band = band;
     }
 

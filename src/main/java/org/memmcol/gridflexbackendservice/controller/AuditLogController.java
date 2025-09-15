@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.service.audit.AuditLogService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,16 @@ public class AuditLogController {
     public ResponseEntity<?> getAuditLogById(@RequestParam String id) {
         try {
             Map<String, Object> result = auditLogService.getAuditLogById(id);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/incident/report")
+    public ResponseEntity<?> incidentReport(@RequestBody IncidentReport incidentReport) {
+        try {
+            Map<String, Object> result = auditLogService.incidentReport(incidentReport);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
