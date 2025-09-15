@@ -81,11 +81,12 @@ public class TariffController {
             @RequestParam UUID tId,
             @RequestParam String approveStatus) {
         try {
-            Map<String, Object> result = service.manageTariffStatus(tId, approveStatus);
+            Map<String, Object> result = service.approve(tId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
-        } catch (MissingServletRequestParameterException e) {
+        }
+        catch (MissingServletRequestParameterException e) {
             throw new RuntimeException(e);
         }
     }
@@ -94,6 +95,18 @@ public class TariffController {
     public ResponseEntity<?> bulkApproveTariff(@RequestBody BulkApprovalRequest tariffIds) {
         try {
             Map<String, Object> result = service.bulkApproveTariff(tariffIds);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PatchMapping("/change-state")
+    public ResponseEntity<?> changeState(
+            @RequestParam UUID id,
+            @RequestParam Boolean status) {
+        try {
+            Map<String, Object> result = service.changeStatus(id, status);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

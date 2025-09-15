@@ -85,14 +85,21 @@ public class TariffServiceImpl implements TariffService {
             if (isExist != null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getExistDesc());
             }
-            Band isBand = bandMapper.getBand(tariff.getBand());
-            if (isBand == null) {
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+
+            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
+            if(isVersionExist != null) {
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
             }
-            tariff.setApprove_status("pending");
+
+            Band isBand = bandMapper.getApprovedBandById(tariff.getBand(), um.getOrgId());
+            if (isBand == null) {
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found or yet to be approved" );
+            }
+            tariff.setApprove_status("Pending");
             tariff.setStatus(false);
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
+            tariff.setAction("Created");
             tariff.setDescription(desc);
             result = tariffMapper.createTariff(tariff);
             if (result == 0) {
@@ -127,7 +134,7 @@ public class TariffServiceImpl implements TariffService {
 
     @Transactional
     @Override
-    public Map<String, Object> manageTariffStatus(UUID tariffVersionId, String approveStatus) throws MissingServletRequestParameterException {
+    public Map<String, Object> approve(UUID tariffVersionId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         int result;
@@ -142,13 +149,12 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
 
-
             tariff.setOrg_id(um.getOrgId());
             tariff.setApproved_by(um.getId());
 
             if(approveStatus != null && approveStatus.contains("approve")) {
                 tariff.setApprove_status("Approved");
-                tariff.setStatus(true);
+                tariff.setStatus(false);
                 result = tariffMapper.approvedTariffVersion(tariff);
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
@@ -165,6 +171,19 @@ public class TariffServiceImpl implements TariffService {
                 result = tariffMapper.rejectedTariffVersion(tariff);
                 if (result == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
+                }
+
+                if(tariff.getAction().equalsIgnoreCase("created") && tariff.getApprove_status().equalsIgnoreCase("pending")){
+                    tariffMapper.deleteTariff(tariff.getId());
+                } else if(!tariff.getStatus() && tariff.getApprove_status().equalsIgnoreCase("pending")){
+                    tariff.setApprove_status("Deactivated");
+                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getId(), tariff.getUpdated_at());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
+                } else {
+                    tariff.setApprove_status("Approved");
+//                    tariff.setAction("Created");
+                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getId(), tariff.getUpdated_at());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " update failed");
                 }
                 desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
             }
@@ -198,60 +217,46 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
-//    @Override
-//    public Map<String, Object> getTariffs(int page, int size) {
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//       try {
-//           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//           String username = (authentication != null) ? authentication.getName() : "Unknown";
-//           Operator isOperatorExist = operatorMapper.findByAuthEmail(username);
-//           if (!isOperatorExist.isUstate()) {
-//               throw new LockedException("User is blocked");
-//           }
-//           String cacheKey = "tariffs_" + "_page_" + page + "_size_" + size; //+ "_startDate_" + startDate + "_endDate_" + endDate;
-//           Object cachedTariff = tariffCache.get(cacheKey);
-//
-//           if (cachedTariff != null) {
-//               return ResponseMap.response(status.getSuccessCode(), "Cached " + tariffName + "s " + status.getDesc(), cachedTariff);
-//           }
-//
-//           if(page >= 0 && size == 0) {
-//               List<Tariff> response = tariffMapper.GetTariffs();
-//               tariffCache.put(cacheKey, response);
-//               return ResponseMap.response(status.getSuccessCode(), "All  "+tariffName + "s " + status.getDesc(), response);
-//           }
-//           int offset = (page - 1) * size;
-//           int totalCount = tariffMapper.getTotalCount();
-//           int maxLimit = Math.min(size, totalCount - offset);
-//
-//           // No more records available
-//           if (maxLimit <= 0) {
-//               return ResponseMap.response(status.getSuccessCode(), "No more records available", "");
-//           }
-//           // Retrieve operator list based on size
-//           List<Tariff> isTariff = tariffMapper.GetTariffBySize(page, size);
-//
-//           if (isTariff == null) {
-//               return ResponseMap.response(status.getNotFoundCode(), tariffName + " " + status.getNotFoundDesc(), "");
-//           }
-//
-//           Map<String, Object> response = new HashMap<>();
-//           response.put("data", isTariff); // List of audits
-//           response.put("currentPage", page);
-//           response.put("totalItems", totalCount);
-//           response.put("totalPages", (int) Math.ceil((double) totalCount / size));
-//           tariffCache.put(cacheKey, response);
-//           return ResponseMap.response(status.getSuccessCode(), tariffName + "s " + status.getDesc(), response);
-//       } catch (Exception exception) {
-//           log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-//           exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-//           exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//           exceptionErrorLogs.setError(exception.toString());
-//           exceptionAuditRepository.save(exceptionErrorLogs);
-//           throw exception;
-//       }
-//
-//    }
+    @Override
+    public Map<String, Object> changeStatus(UUID id, Boolean state) {
+        try {
+            int result;
+            UserModel um = handleUserValidation();
+            Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
+            if(tariff == null){
+                throw new GlobalExceptionHandler.NotFoundException("Band not found");
+            }
+            Tariff isVersionExist = tariffMapper.getTariffVersionById(id, um.getOrgId());
+            tariff.setApprove_status("Pending");
+            tariff.setOrg_id(um.getOrgId());
+            tariff.setCreated_by(um.getId());
+            tariff.setStatus(state);
+            tariff.setAction(state ? "Activate" : "Deactivate");
+            String changeDescription = buildChangeStatusDescription(tariff, state);
+            tariff.setDescription(changeDescription);
+
+            if(isVersionExist != null && isVersionExist.getApprove_status().equalsIgnoreCase("pending")){
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
+            } else {
+                result = tariffMapper.createTariffVersion(tariff);
+                if(result == 0){
+                    throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());
+                }
+            }
+            int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getId(), tariff.getUpdated_at());
+            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " Activate " : " Deactivate ")+ "failed");
+
+            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
+        }  catch (Exception exception) {
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
+            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+            exceptionErrorLogs.setError(exception.toString().trim());
+            exceptionAuditRepository.save(exceptionErrorLogs);
+            throw exception;
+        }
+    }
 
     @Transactional(readOnly = true)
     @Override
@@ -272,14 +277,16 @@ public class TariffServiceImpl implements TariffService {
             UserModel um = handleUserValidation();
 
             // Build a unique cache key
-            StringBuilder cacheKeyBuilder = new StringBuilder("tariffs_"+um.getOrgId());
+            StringBuilder cacheKeyBuilder = new StringBuilder("tariffs_" + um.getOrgId());
             if (tariffName != null && !tariffName.isEmpty()) cacheKeyBuilder.append("_name_").append(tariffName);
 //            if (tariffId != null && !tariffId.isEmpty()) cacheKeyBuilder.append("_tariffId_").append(tariffId);
             if (tariffType != null && !tariffType.isEmpty()) cacheKeyBuilder.append("_type_").append(tariffType);
             if (tariffRate != null && !tariffRate.isEmpty()) cacheKeyBuilder.append("_rate_").append(tariffRate);
             if (bandCode != null && !bandCode.isEmpty()) cacheKeyBuilder.append("_band_").append(bandCode);
-            if (effectiveDate != null && !effectiveDate.isEmpty()) cacheKeyBuilder.append("_date_").append(effectiveDate);
-            if (approveStatus != null && !approveStatus.isEmpty()) cacheKeyBuilder.append("_status_").append(approveStatus);
+            if (effectiveDate != null && !effectiveDate.isEmpty())
+                cacheKeyBuilder.append("_date_").append(effectiveDate);
+            if (approveStatus != null && !approveStatus.isEmpty())
+                cacheKeyBuilder.append("_status_").append(approveStatus);
             if (type != null && !type.isEmpty()) cacheKeyBuilder.append("_type_").append(type);
             if (state != null) cacheKeyBuilder.append("_state_").append(state);
             cacheKeyBuilder.append("_page_").append(page);
@@ -295,7 +302,7 @@ public class TariffServiceImpl implements TariffService {
 
             List<Tariff> allTariffs;
             // Ideally, this should be a dynamic query in the mapper layer
-            if(type.equalsIgnoreCase("pending")){
+            if (type.equalsIgnoreCase("pending-state")) {
                 allTariffs = tariffMapper.GetPendingTariffs(um.getOrgId());
             } else {
                 allTariffs = tariffMapper.GetAllTariffs(um.getOrgId());
@@ -305,7 +312,7 @@ public class TariffServiceImpl implements TariffService {
 //                    .filter(t -> tariffId == null || tariffId.isEmpty() || t.getTariff_id().equalsIgnoreCase(tariffId))
                     .filter(t -> tariffType == null || tariffType.isEmpty() || t.getTariff_type().equalsIgnoreCase(tariffType))
                     .filter(t -> tariffRate == null || tariffRate.isEmpty() || t.getTariff_rate().equalsIgnoreCase(tariffRate))
-                    .filter(t -> bandCode == null || bandCode.isEmpty() || t.getBand().equalsIgnoreCase(bandCode))
+//                    .filter(t -> bandCode == null || bandCode.isEmpty() || t.getBand().equalsIgnoreCase(bandCode))
                     .filter(t -> effectiveDate == null || effectiveDate.isEmpty() || t.getEffective_date().equalsIgnoreCase(effectiveDate))
                     .filter(t -> approveStatus == null || approveStatus.isEmpty() || t.getApprove_status().equalsIgnoreCase(approveStatus))
                     .filter(t -> state == null || t.getStatus().equals(state))
@@ -332,7 +339,7 @@ public class TariffServiceImpl implements TariffService {
             response.put("totalPages", (int) Math.ceil((double) paginatedTariffs.size() / size));
 
             tariffCache.put(cacheKey, response);
-            return ResponseMap.response(status.getSuccessCode(),  "Tariffs "+status.getDesc(), response);
+            return ResponseMap.response(status.getSuccessCode(), "Tariffs " + status.getDesc(), response);
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
@@ -341,14 +348,6 @@ public class TariffServiceImpl implements TariffService {
             exceptionErrorLogs.setError(exception.toString().trim());
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
-        }
-    }
-
-    private Long parseLongOrNull(String value) {
-        try {
-            return (value != null && !value.isEmpty()) ? Long.parseLong(value) : null;
-        } catch (NumberFormatException e) {
-            return null;
         }
     }
 
@@ -425,25 +424,27 @@ public class TariffServiceImpl implements TariffService {
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
-            Band isBand = bandMapper.getBand(tariff.getBand());
+            Band isBand = bandMapper.getBandById(tariff.getBand(), um.getOrgId());
             if (isBand == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
 
             Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
 
-            tariff.setApprove_status("pending");
+            tariff.setApprove_status("Pending");
             tariff.setStatus(false);
+            tariff.setAction("Edited");
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
             String changeDescription = buildChangeDescription(isExist, tariff);
             tariff.setDescription(changeDescription);
 
             if(isVersionExist != null && isVersionExist.getApprove_status().equalsIgnoreCase("pending")){
-                result = tariffMapper.updateTariffVer(tariff);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
-                }
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
+//                result = tariffMapper.updateTariffVer(tariff);
+//                if (result == 0) {
+//                    throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
+//                }
             } else {
                 result = tariffMapper.createTariffVersion(tariff);
                 if (result == 0) {
@@ -556,6 +557,17 @@ public class TariffServiceImpl implements TariffService {
 
         if (!Objects.equals(oldTariff.getEffective_date(), newTariff.getEffective_date())) {
             changes.append(String.format("effective_date: '%s' → '%s' ", oldTariff.getEffective_date(), newTariff.getEffective_date()));
+        }
+
+        return changes.toString();
+    }
+
+    private String buildChangeStatusDescription(Tariff oldtariff, Boolean status) {
+        StringBuilder changes = new StringBuilder("Edited band ");
+        String oldState = oldtariff.getStatus() ? "activated" : "deactivated";
+        String newState = status ? "activated" : "deactivated";
+        if (!Objects.equals(oldtariff.getStatus(), status)) {
+            changes.append(String.format("status: '%s' → '%s' ", oldState, newState));
         }
 
         return changes.toString();

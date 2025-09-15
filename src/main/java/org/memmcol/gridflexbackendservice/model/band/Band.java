@@ -32,6 +32,10 @@ public class Band implements Serializable {
 
     private String approveStatus;
 
+    private String action;
+
+    private Boolean status;
+
     private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -108,6 +112,22 @@ public class Band implements Serializable {
 
     public void setApproveStatus(String approveStatus) {
         this.approveStatus = approveStatus;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
     }
 
     public String getDescription() {

@@ -30,7 +30,7 @@ public class Tariff implements Serializable {
 
     private UUID t_id;
 
-//    private String tariff_id;
+    private String action;
 
     private String tariff_type;
 
@@ -38,7 +38,7 @@ public class Tariff implements Serializable {
 
     public String tariff_rate;
 
-    private String band;
+    private UUID band;
 
     private Boolean status;
 
@@ -79,14 +79,6 @@ public class Tariff implements Serializable {
         this.name = name;
     }
 
-//    public String getTariff_id() {
-//        return tariff_id;
-//    }
-//
-//    public void setTariff_id(String tariff_id) {
-//        this.tariff_id = tariff_id;
-//    }
-
     public UUID getT_id() {
         return t_id;
     }
@@ -119,13 +111,13 @@ public class Tariff implements Serializable {
         this.description = description;
     }
 
-    //    public Long getTariff_index() {
-//        return tariff_index;
-//    }
-//
-//    public void setTariff_index(Long tariff_index) {
-//        this.tariff_index = tariff_index;
-//    }
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
 
     public String getTariff_type() {
         return tariff_type;
@@ -151,11 +143,11 @@ public class Tariff implements Serializable {
         this.tariff_rate = tariff_rate;
     }
 
-    public String getBand() {
+    public UUID getBand() {
         return band;
     }
 
-    public void setBand(String band) {
+    public void setBand(UUID band) {
         this.band = band;
     }
 

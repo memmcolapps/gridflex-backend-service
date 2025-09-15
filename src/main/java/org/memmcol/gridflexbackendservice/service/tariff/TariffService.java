@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface TariffService {
     Map<String, Object> createTariff(Tariff tariff);
 
-    Map<String, Object> manageTariffStatus(UUID tariffId, String approveStatus) throws MissingServletRequestParameterException;
+//    Map<String, Object> manageTariffStatus(UUID tariffId, String approveStatus) throws MissingServletRequestParameterException;
 
 //    Map<String, Object> getTariffs(int page, int size);
 
@@ -25,4 +25,8 @@ public interface TariffService {
     Map<String, Object> updateTariff(Tariff tariff);
 
     Map<String, Object> getTariff(UUID id, UUID tariffVersionId);
+
+    Map<String, Object> approve(UUID tId, String approveStatus) throws MissingServletRequestParameterException;;
+
+    Map<String, Object> changeStatus(UUID id, Boolean status);
 }
