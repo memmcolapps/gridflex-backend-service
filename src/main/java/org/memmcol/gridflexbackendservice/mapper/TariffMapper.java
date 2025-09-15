@@ -25,8 +25,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "band", column = "bandId",
+            @Result(property = "band_id", column = "band"),
+            @Result(property = "band", column = "band",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     Tariff getTariff(UUID id, UUID orgId);
@@ -44,8 +44,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE name = #{name} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "band", column = "bandId",
+            @Result(property = "band_id", column = "band"),
+            @Result(property = "band", column = "band",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     Tariff getTariffByName(String name, UUID orgId);
@@ -72,8 +72,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "band", column = "bandId",
+            @Result(property = "band_id", column = "band"),
+            @Result(property = "band", column = "band",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     List<Tariff> GetTariffs(UUID orgId);
@@ -81,8 +81,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} ORDER BY created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "band", column = "bandId",
+            @Result(property = "band_id", column = "band"),
+            @Result(property = "band", column = "band",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     List<Tariff> GetAllTariffs(UUID orgId);

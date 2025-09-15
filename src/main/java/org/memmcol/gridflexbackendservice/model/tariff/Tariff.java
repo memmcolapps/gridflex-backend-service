@@ -39,7 +39,7 @@ public class Tariff implements Serializable {
 
     public String tariff_rate;
 
-    private UUID bandId;
+    private UUID band_id;
 
     private Boolean status;
 
@@ -146,12 +146,12 @@ public class Tariff implements Serializable {
         this.tariff_rate = tariff_rate;
     }
 
-    public UUID getBandId() {
-        return bandId;
+    public UUID getBand_id() {
+        return band_id;
     }
 
-    public void setBandId(UUID bandId) {
-        this.bandId = bandId;
+    public void setBand_id(UUID band_id) {
+        this.band_id = band_id;
     }
 
     public Band getBand() {
