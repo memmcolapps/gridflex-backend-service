@@ -88,15 +88,15 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
             if(isVersionExist != null) {
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
             }
 
             Band isBand = bandMapper.getApprovedBandById(tariff.getBand(), um.getOrgId());
             if (isBand == null) {
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found or yet to be approved" );
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found or not approved or deactivated" );
             }
             tariff.setApprove_status("Pending");
-            tariff.setStatus(false);
+            tariff.setStatus(true);
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
             tariff.setAction("Created");
@@ -152,37 +152,40 @@ public class TariffServiceImpl implements TariffService {
             tariff.setOrg_id(um.getOrgId());
             tariff.setApproved_by(um.getId());
 
-            if(approveStatus != null && approveStatus.contains("approve")) {
-                tariff.setApprove_status("Approved");
-                tariff.setStatus(false);
-                result = tariffMapper.approvedTariffVersion(tariff);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
-                }
-                result = tariffMapper.approveTariff(tariff);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
-                }
-                desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
-            }
-            else if (approveStatus != null && approveStatus.contains("reject")){
-                tariff.setApprove_status("Rejected");
-                tariff.setStatus(false);
-                result = tariffMapper.rejectedTariffVersion(tariff);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
-                }
+            if(approveStatus != null && approveStatus.trim().equalsIgnoreCase("approve")) {
 
-                if(tariff.getAction().equalsIgnoreCase("created") && tariff.getApprove_status().equalsIgnoreCase("pending")){
-                    tariffMapper.deleteTariff(tariff.getId());
-                } else if(!tariff.getStatus() && tariff.getApprove_status().equalsIgnoreCase("pending")){
-                    tariff.setApprove_status("Deactivated");
-                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getId(), tariff.getUpdated_at());
-                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
-                } else {
+                tariff.setApprove_status("Approved");
+                tariff.setStatus(true);
+                result = tariffMapper.approvedTariffVersion(tariff);
+
+                if (result == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+
+                result = tariffMapper.approveTariff(tariff);
+                if (result == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
+
+                desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
+
+            } else if (approveStatus != null && approveStatus.trim().equalsIgnoreCase("reject")) {
+
+                result = tariffMapper.rejectedTariffVersion("Rejected", tariff.getAction(), tariff.getT_id(), tariff.getUpdated_at(), um.getId());
+
+                if (result == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "ed "+ status.getUpdateFailureDesc());
+
+                if(tariff.getAction().trim().equalsIgnoreCase("created") && tariff.getApprove_status().trim().equalsIgnoreCase("pending")){
+
+                    int d = tariffMapper.deleteTariff(tariff.getT_id());
+                    if(d == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " failed to delete");
+
+                } else if(!tariff.getStatus() && tariff.getApprove_status().trim().equalsIgnoreCase("pending")){
+
                     tariff.setApprove_status("Approved");
-//                    tariff.setAction("Created");
-                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getId(), tariff.getUpdated_at());
+                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getT_id(), tariff.getUpdated_at());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
+
+                } else {
+
+                    tariff.setApprove_status("Approved");
+                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getT_id(), tariff.getUpdated_at());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " update failed");
                 }
                 desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
@@ -204,8 +207,6 @@ public class TariffServiceImpl implements TariffService {
             auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
-
-
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -230,13 +231,14 @@ public class TariffServiceImpl implements TariffService {
             tariff.setApprove_status("Pending");
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
+            tariff.setT_id(id);
             tariff.setStatus(state);
             tariff.setAction(state ? "Activate" : "Deactivate");
             String changeDescription = buildChangeStatusDescription(tariff, state);
             tariff.setDescription(changeDescription);
 
-            if(isVersionExist != null && isVersionExist.getApprove_status().equalsIgnoreCase("pending")){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
+            if(isVersionExist != null){
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
             } else {
                 result = tariffMapper.createTariffVersion(tariff);
                 if(result == 0){
@@ -246,7 +248,7 @@ public class TariffServiceImpl implements TariffService {
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getAction(), tariff.getId(), tariff.getUpdated_at());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " Activate " : " Deactivate ")+ "failed");
 
-            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
+            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -270,8 +272,7 @@ public class TariffServiceImpl implements TariffService {
             Boolean state,
             String effectiveDate,
             String approveStatus,
-            String type
-            ) {
+            String type) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             UserModel um = handleUserValidation();
@@ -309,10 +310,8 @@ public class TariffServiceImpl implements TariffService {
             }
             List<Tariff> filteredTariffs = allTariffs.stream()
                     .filter(t -> tariffName == null || tariffName.isEmpty() || t.getName().equalsIgnoreCase(tariffName))
-//                    .filter(t -> tariffId == null || tariffId.isEmpty() || t.getTariff_id().equalsIgnoreCase(tariffId))
                     .filter(t -> tariffType == null || tariffType.isEmpty() || t.getTariff_type().equalsIgnoreCase(tariffType))
                     .filter(t -> tariffRate == null || tariffRate.isEmpty() || t.getTariff_rate().equalsIgnoreCase(tariffRate))
-//                    .filter(t -> bandCode == null || bandCode.isEmpty() || t.getBand().equalsIgnoreCase(bandCode))
                     .filter(t -> effectiveDate == null || effectiveDate.isEmpty() || t.getEffective_date().equalsIgnoreCase(effectiveDate))
                     .filter(t -> approveStatus == null || approveStatus.isEmpty() || t.getApprove_status().equalsIgnoreCase(approveStatus))
                     .filter(t -> state == null || t.getStatus().equals(state))
@@ -439,15 +438,12 @@ public class TariffServiceImpl implements TariffService {
             String changeDescription = buildChangeDescription(isExist, tariff);
             tariff.setDescription(changeDescription);
 
-            if(isVersionExist != null && isVersionExist.getApprove_status().equalsIgnoreCase("pending")){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
-//                result = tariffMapper.updateTariffVer(tariff);
-//                if (result == 0) {
-//                    throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
-//                }
+            if(isVersionExist != null){
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
             } else {
+                int res = tariffMapper.updateTariff("Pending", "Edited", tariff.getT_id(), tariff.getUpdated_at());
                 result = tariffMapper.createTariffVersion(tariff);
-                if (result == 0) {
+                if (result == 0 || res == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateFailureDesc());
                 }
             }

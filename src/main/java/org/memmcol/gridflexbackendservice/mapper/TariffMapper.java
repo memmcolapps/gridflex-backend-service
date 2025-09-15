@@ -27,36 +27,36 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE name = #{name} AND org_id = #{orgId}")
     Tariff getTariffByName(String name, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND approve_status = 'pending' AND org_id = #{orgId} ")
+    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND approve_status = 'Pending' AND org_id = #{orgId} ")
     Tariff getTariffVersionByName(String name, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND approve_status = 'pending'")
+    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND approve_status = 'Pending'")
     Tariff getTariffVersionById(UUID tariffId, UUID orgId);
 
     @Update("UPDATE tariffs SET name = #{name}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band}, " +
             "status = #{status}, effective_date = #{effective_date}, approve_status = #{approve_status}, updated_at = #{updated_at} WHERE id = #{t_id} ")
     int approveTariff(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, approved_by = #{approved_by}, updated_at = #{update_at} " +
-            "WHERE t_id = #{t_id} AND approve_status = 'pending'")
+    @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, approved_by = #{approved_by}, updated_at = #{updated_at} " +
+            "WHERE t_id = #{t_id} AND approve_status = 'Pending'")
     int approvedTariffVersion(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, status = #{status}, approved_by = #{approveBy} " +
-            "WHERE t_id = #{t_id} AND approve_status = 'pending'")
-    int rejectedTariffVersion(Tariff tariff);
+    @Update("UPDATE tariffs_version SET approve_status = #{approveStatus}, action = #{action}, approved_by = #{approveBy} " +
+            "WHERE t_id = #{id} AND approve_status = 'Pending'")
+    int rejectedTariffVersion(String approveStatus, String action, UUID id, Date updatedAt, UUID approveBy);
 
 
-    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'approved' ORDER BY created_at DESC")
+    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
     List<Tariff> GetTariffs(UUID orgId);
 
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} ORDER BY created_at DESC")
     List<Tariff> GetAllTariffs(UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND approve_status = 'pending' ORDER BY created_at DESC")
+    @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND approve_status = 'Pending' ORDER BY created_at DESC")
     List<Tariff> GetPendingTariffs(UUID orgId);
 
-    @Delete("DELETE FROM tariffs WHERE id = #{id}")
-    void deleteTariff(UUID id);
+    @Delete("DELETE FROM tariffs WHERE id = #{id} AND approve_status = 'Pending'")
+    int deleteTariff(UUID id);
 
     @Update({
             "<script>",

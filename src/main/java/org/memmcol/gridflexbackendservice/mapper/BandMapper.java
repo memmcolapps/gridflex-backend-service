@@ -58,7 +58,7 @@ public interface BandMapper {
     })
     Band getBandById(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'Approved'")
+    @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'Approved' AND status = true")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "approveStatus", column = "approve_status"),

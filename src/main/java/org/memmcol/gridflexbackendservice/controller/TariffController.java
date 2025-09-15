@@ -103,10 +103,10 @@ public class TariffController {
 
     @PatchMapping("/change-state")
     public ResponseEntity<?> changeState(
-            @RequestParam UUID id,
+            @RequestParam UUID bandId,
             @RequestParam Boolean status) {
         try {
-            Map<String, Object> result = service.changeStatus(id, status);
+            Map<String, Object> result = service.changeStatus(bandId, status);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
