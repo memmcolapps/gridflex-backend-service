@@ -212,21 +212,26 @@ public class BandServiceImpl implements BandService {
             }
             band.setApproveBy(um.getId());
             if(approveStatus != null && approveStatus.equalsIgnoreCase("approve")) {
-                String ap = "Approved";
-                band.setApproveStatus(ap);
-                band.setStatus(true);
+
+//                String ap = "Approved";
+//                band.setApproveStatus(ap);
+//                band.setStatus(true);
+                if (!band.getStatus()) {
+                    band.setApproveStatus("Deactivated");
+                } else {
+                    band.setApproveStatus("Approved");
+                }
 
                 //update band in band version table
                 result = bandMapper.updateBandVersion(band);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ ap + "d "+ status.getUpdateFailureDesc());
-                }
+                if (result == 0) throw new GlobalExceptionHandler.NotFoundException(bandName +" Approved "+ status.getUpdateFailureDesc());
+
 
                 //update band in band table
                 result = bandMapper.approveBand(band);
-                if (result == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(bandName +" "+ ap + "d "+ status.getUpdateFailureDesc());
-                }
+                    if (result == 0) throw new GlobalExceptionHandler.NotFoundException(bandName +" Approved "+ status.getUpdateFailureDesc());
+//                }
+
                 desc = capitalizeFirstLetter(band.getName()) + " " + band.getApproveStatus();
 
             }

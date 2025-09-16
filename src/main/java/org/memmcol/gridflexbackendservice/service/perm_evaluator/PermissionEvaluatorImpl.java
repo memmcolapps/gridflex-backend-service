@@ -25,7 +25,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
                     "/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update",
-                    "/manufacturer/service/single", "/manufacturer/service/all", "/audit-log/service/all", "/audit-log/service/single-log",
+                    "/manufacturer/service/single", "/manufacturer/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
                     "/debit-credit-adjustment/service/create", "/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept",
                     "/debit-credit-adjustment/service/all", "/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create",
                     "/debt-setting/service/liability-cause/update", "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single",
@@ -38,35 +38,38 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/customer/service/update", "/customer/service/change-state", "/customer/service/all",  "/customer/service/single-customer",
                     "/customer/service/bulk-upload", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
-                    "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report"),
 
             "customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
-                    "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report"),
 
             "debt management", List.of("/debit-credit-adjustment/service/create",
                     "/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept", "/debit-credit-adjustment/service/all",
                     "/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create", "/debt-setting/service/liability-cause/update",
                     "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single", "/debt-setting/service/liability-cause/approve",
                     "/debt-setting/service/percentage-range/create", "/debt-setting/service/percentage-range/update", "/debt-setting/service/percentage-range/all",
-                    "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve", "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve", "/audit-log/service/all", "/audit-log/service/single-log",
+                    "/audit-log/service/incident/report"),
 
             "organization", List.of("/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
-                    "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report"),
 
             "band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/band/service/all",  "/band/service/single",
-                    "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report"),
 
             "tariff", List.of("/tariff/service/single", "/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve",
-                    "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report"),
 
             "user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups", "/user/service/create/group-permission", "/node/service/create/node/region-bhub-service-center", "/user/service/group/change-state",
                     "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line",
-                    "/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log"),
+                    "/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
+                    "/audit-log/service/single-log", "/audit-log/service/incident/report"),
 
             "users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log", "/user/service/group/change-state")
+                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log",
+                    "/user/service/group/change-state", "/audit-log/service/incident/report")
     );
 
     @Override
@@ -74,8 +77,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return false;
             }
-
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 11");
             // Fetch the principal and check its type
             Object principal = authentication.getPrincipal();
             if (!(principal instanceof CustomUserPrincipal)) {

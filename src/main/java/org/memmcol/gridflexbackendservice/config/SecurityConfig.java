@@ -110,7 +110,7 @@ public class  SecurityConfig {
 						"/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
 						"/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
 						"/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update",
-						"/manufacturer/service/single", "/manufacturer/service/all", "/audit-log/service/all",
+						"/manufacturer/service/single", "/manufacturer/service/all", "/audit-log/service/all", "/audit-log/service/incident/report",
 						"/audit-log/service/single","/debit-credit-adjustment/service/create",
 						"/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept", "/debit-credit-adjustment/service/all",
 						"/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create", "/debt-setting/service/liability-cause/update",

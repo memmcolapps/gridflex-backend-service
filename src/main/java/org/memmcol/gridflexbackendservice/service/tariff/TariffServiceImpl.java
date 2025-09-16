@@ -154,8 +154,13 @@ public class TariffServiceImpl implements TariffService {
 
             if(approveStatus != null && approveStatus.trim().equalsIgnoreCase("approve")) {
 
-                tariff.setApprove_status("Approved");
-                tariff.setStatus(true);
+//                tariff.setApprove_status("Approved");
+//                tariff.setStatus(true);
+                if (!tariff.getStatus()) {
+                    tariff.setApprove_status("Deactivated");
+                } else {
+                    tariff.setApprove_status("Approved");
+                }
                 result = tariffMapper.approvedTariffVersion(tariff);
 
                 if (result == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
@@ -233,7 +238,7 @@ public class TariffServiceImpl implements TariffService {
             tariff.setCreated_by(um.getId());
             tariff.setT_id(id);
             tariff.setStatus(state);
-            tariff.setAction(state ? "Activate" : "Deactivate");
+            tariff.setAction(state ? "Activated" : "Deactivated");
             String changeDescription = buildChangeStatusDescription(tariff, state);
             tariff.setDescription(changeDescription);
 

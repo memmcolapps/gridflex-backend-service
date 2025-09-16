@@ -14,7 +14,7 @@ public class IncidentReport implements Serializable {
     private String message;
     private UUID orgId;
     private Boolean status;
-    private UUID user;
+    private UUID userId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -54,12 +54,12 @@ public class IncidentReport implements Serializable {
         this.status = status;
     }
 
-    public UUID getUser() {
-        return user;
+    public UUID getUserId() {
+        return userId;
     }
 
-    public void setUser(UUID user) {
-        this.user = user;
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
     public Date getCreatedAt() {

@@ -138,13 +138,14 @@ public class AuditLogServiceImpl implements AuditLogService {
             UserModel um = handleUserValidation();
 
             incidentReport.setOrgId(um.getOrgId());
-            incidentReport.setUser(um.getId());
+            incidentReport.setUserId(um.getId());
+            incidentReport.setStatus(false);
 
             int result = userMapper.insertIncidentReport(incidentReport);
             if (result == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Incident report failed");
             }
-            return ResponseMap.response(status.getSuccessCode(), status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), "Incident Report "+status.getRegDesc(), "");
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
