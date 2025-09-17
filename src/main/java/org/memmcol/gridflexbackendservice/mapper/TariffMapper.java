@@ -11,15 +11,15 @@ import java.util.UUID;
 @Mapper
 public interface TariffMapper {
 
-    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_at, updated_at, action) " +
-            "VALUES (#{name}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at}, #{action})")
+    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_at, updated_at) " +
+            "VALUES (#{name}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createTariff(Tariff tariff);
 
     @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, " +
-            "created_by, description, created_at, updated_at, action) " +
+            "created_by, description, created_at, updated_at) " +
             "VALUES (#{name}, #{t_id}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}," +
-            " #{created_by}, #{description}, #{created_at}, #{updated_at}, #{action})")
+            " #{created_by}, #{description}, #{created_at}, #{updated_at})")
     int createTariffVersion(Tariff tariff);
 
     @Select("SELECT * FROM tariffs WHERE id = #{id} AND org_id = #{orgId}")
@@ -53,7 +53,9 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND approve_status = 'Pending' AND org_id = #{orgId} ")
     Tariff getTariffVersionByName(String name, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND approve_status = 'Pending'")
+    @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     Tariff getTariffVersionById(UUID tariffId, UUID orgId);
 
     @Update("UPDATE tariffs SET name = #{name}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band_id}, " +
@@ -61,12 +63,14 @@ public interface TariffMapper {
     int approveTariff(Tariff tariff);
 
     @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, approved_by = #{approved_by}, updated_at = #{updated_at} " +
-            "WHERE t_id = #{t_id} AND approve_status = 'Pending'")
+            "WHERE t_id = #{t_id} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     int approvedTariffVersion(Tariff tariff);
 
-    @Update("UPDATE tariffs_version SET approve_status = #{approveStatus}, action = #{action}, approved_by = #{approveBy} " +
-            "WHERE t_id = #{id} AND approve_status = 'Pending'")
-    int rejectedTariffVersion(String approveStatus, String action, UUID id, Date updatedAt, UUID approveBy);
+    @Update("UPDATE tariffs_version SET approve_status = #{approveStatus}, approved_by = #{approveBy} " +
+            "WHERE t_id = #{id} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+    int rejectedTariffVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
 
 
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
@@ -87,7 +91,10 @@ public interface TariffMapper {
     })
     List<Tariff> GetAllTariffs(UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND approve_status = 'Pending' ORDER BY created_at DESC")
+    @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated') " +
+            "ORDER BY created_at DESC")
     List<Tariff> GetPendingTariffs(UUID orgId);
 
     @Delete("DELETE FROM tariffs WHERE id = #{id} AND approve_status = 'Pending'")
@@ -98,11 +105,10 @@ public interface TariffMapper {
             "UPDATE tariffs",
             "SET "+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
-                    " <if test='action != null'> action = #{action},</if>"+
                     "  updated_at = #{updatedAt}"+
                     " WHERE id = #{id} "+
                     "</script>"
     })
-    int updateTariff(String approveStatus, String action, UUID id, Date updatedAt);
+    int updateTariff(String approveStatus, UUID id, Date updatedAt);
 }
 

@@ -31,8 +31,6 @@ public class Tariff implements Serializable {
 
     private UUID t_id;
 
-    private String action;
-
     private String tariff_type;
 
     private String effective_date;
@@ -112,14 +110,6 @@ public class Tariff implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
     }
 
     public String getTariff_type() {

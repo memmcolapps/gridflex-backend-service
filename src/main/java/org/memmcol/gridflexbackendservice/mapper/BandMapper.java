@@ -10,13 +10,13 @@ import java.util.UUID;
 @Mapper
 public interface BandMapper {
 
-    @Insert("INSERT INTO bands (name, hour, approve_status, status, action, org_id, created_at, updated_at) " +
-            "VALUES (#{name}, #{hour}, #{approveStatus}, #{status}, #{action}, #{orgId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO bands (name, hour, approve_status, status, org_id, created_at, updated_at) " +
+            "VALUES (#{name}, #{hour}, #{approveStatus}, #{status}, #{orgId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createBand(Band band);
 
-    @Insert("INSERT INTO bands_version (band_id, name, hour, status, action, org_id, created_at, updated_at, created_by, description, approve_status) " +
-            "VALUES (#{bandId}, #{name}, #{hour}, #{status}, #{action}, #{orgId}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{approveStatus})")
+    @Insert("INSERT INTO bands_version (band_id, name, hour, status, org_id, created_at, updated_at, created_by, description, approve_status) " +
+            "VALUES (#{bandId}, #{name}, #{hour}, #{status}, #{orgId}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{approveStatus})")
     int createBandVersion(Band band);
 
     @Select("SELECT * FROM bands WHERE org_id = #{orgId}")
@@ -28,7 +28,9 @@ public interface BandMapper {
     })
     List<Band> fetchBands(UUID orgId);
 
-    @Select("SELECT * FROM bands_version WHERE org_id = #{orgId} AND approve_status = 'Pending'")
+    @Select("SELECT * FROM bands_version WHERE org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || " +
+            "approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bandId", column = "band_id"),
@@ -79,7 +81,9 @@ public interface BandMapper {
 //    })
 //    Band getBandVersionById(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM bands_version WHERE band_id = #{bandId} AND org_id = #{orgId} AND approve_status = 'Pending'")
+    @Select("SELECT * FROM bands_version WHERE band_id = #{bandId} AND org_id = #{orgId} " +
+            "AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' || " +
+            "approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bandId", column = "band_id"),
@@ -119,14 +123,15 @@ public interface BandMapper {
             "<script>",
             "UPDATE bands_version",
             "SET "+
-                    "  <if test='name != null'> name = #{name},</if>"+
-                    "  <if test='hour != null'> hour = #{hour},</if>"+
+                    " <if test='name != null'> name = #{name},</if>"+
+                    " <if test='hour != null'> hour = #{hour},</if>"+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
                     " <if test='action != null'> action = #{action},</if>"+
                     " <if test='status != null'> status = #{status},</if>"+
                     " <if test='approveBy != null'> approve_by = #{approveBy},</if>"+
                     "  updated_at = #{updatedAt}"+
-                    " WHERE band_id = #{bandId} AND approve_status = 'Pending' "+
+                    " WHERE band_id = #{bandId} AND approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+                    " || approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')"+
                     "</script>"
     })
     int updateBandVersion(Band band);
@@ -153,31 +158,27 @@ public interface BandMapper {
             "UPDATE bands",
             "<set>",
             "   <if test='approveStatus != null'> approve_status = #{approveStatus}, </if>",
-            "   <if test='action != null'> action = #{action}, </if>",
             "  updated_at = #{updatedAt}"+
             "</set>",
             "WHERE id = #{bandId}",
             "</script>"
     })
     int updateBand(@Param("approveStatus") String approveStatus,
-                    @Param("action") String action,
                     @Param("bandId") UUID bandId,
                     Date updatedAt);
 
-//    @Update("UPDATE bands_version SET updated_at = #{band.updatedAt}, approve_by = #{approveBy}, approve_status = #{band.approveStatus} " +
-//            "approve_by = #{approveBy} WHERE band_id = #{band.bandId}")
     @Update({
             "<script>",
             "UPDATE bands_version",
             "SET "+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
-                    " <if test='action != null'> action = #{action},</if>"+
                     " <if test='approveBy != null'> approve_by = #{approveBy},</if>"+
                     "  updated_at = #{updatedAt}"+
-                    " WHERE band_id = #{bandId} AND approve_status = 'Pending'"+
+                    " WHERE band_id = #{bandId} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+                    " || approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')"+
                     "</script>"
     })
-    int rejectedBandVersion(String approveStatus, String action, UUID bandId, Date updatedAt, UUID approveBy);
+    int rejectedBandVersion(String approveStatus, UUID bandId, Date updatedAt, UUID approveBy);
 
     @Select("SELECT * FROM bands_version WHERE name = #{name} AND org_id = #{orgId} AND approve_status = 'Pending'")
     @Results({
@@ -194,7 +195,7 @@ public interface BandMapper {
     @Update("UPDATE bands SET status = #{status} WHERE id = #{bandId}")
     void changeStatus(UUID bandId, Boolean status);
 
-    @Delete("DELETE FROM bands WHERE id = #{bandId} AND approve_status = 'Pending'")
+    @Delete("DELETE FROM bands WHERE id = #{bandId} AND approve_status = 'Pending-created'")
     int deleteBand(UUID bandId);
 
 //    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
