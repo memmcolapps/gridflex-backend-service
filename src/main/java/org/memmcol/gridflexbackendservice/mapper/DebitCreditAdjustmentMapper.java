@@ -21,6 +21,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "meter_id", property = "meterId"),
@@ -28,7 +29,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt"),
             @Result(property = "liabilityCause", column = "liability_cause_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCause")),
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCauseById")),
             @Result(property = "meter", column = "meter_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
             @Result(property = "payment", column = "id",
@@ -39,8 +40,9 @@ public interface DebitCreditAdjustmentMapper {
     @Select("SELECT * FROM meters WHERE id = #{meterId}")
     Meter getMeterById(UUID meterId);
 
-    @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId}")
+    @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} AND approve_status = 'Approved'")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -68,6 +70,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -77,6 +80,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE org_id = #{orgId} AND type = #{type}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "meter_id", property = "meterId"),
             @Result(column = "debit", property = "amount"),
@@ -94,6 +98,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM credit_debit_payment WHERE credit_debit_adj_id = #{debitCreditAdjustmentId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "credit_debit_adj_id", property = "creditDebitAdjId"),
             @Result(column = "payment_method", property = "paymentMethod"),

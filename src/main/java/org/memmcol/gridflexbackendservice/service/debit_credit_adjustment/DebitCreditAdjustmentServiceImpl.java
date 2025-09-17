@@ -354,6 +354,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     }
 
     private void handleAddCache(DebitCreditAdjust debitCreditAdjustment) {
+
         debitCreditCache.remove(debitCreditAdjustment.getId().toString()+"_"+debitCreditAdjustment.getOrgId());
         for (String key : auditCache.keySet()) {
             if (key.startsWith("grid_flex_audit_log_page_")) {
