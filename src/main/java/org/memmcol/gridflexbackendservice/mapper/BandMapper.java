@@ -104,7 +104,6 @@ public interface BandMapper {
                     "  <if test='hour != null'> hour = #{hour},</if>"+
                     "  <if test='description != null'> description = #{description},</if>"+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
-                    " <if test='action != null'> action = #{action},</if>"+
                     " <if test='createdBy != null'> created_by = #{createdBy},</if>"+
                     "  updated_at = #{updatedAt}"+
                     " WHERE band_id = #{bandId} AND approve_status = 'pending'"+
@@ -122,20 +121,15 @@ public interface BandMapper {
             "<script>",
             "UPDATE bands_version",
             "SET "+
-                    " <if test='name != null'> name = #{name},</if>"+
-                    " <if test='hour != null'> hour = #{hour},</if>"+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
-                    " <if test='action != null'> action = #{action},</if>"+
                     " <if test='approveBy != null'> approve_by = #{approveBy},</if>"+
                     "  updated_at = #{updatedAt}"+
-                    " WHERE band_id = #{bandId} AND approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+                    " WHERE band_id = #{bandId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
                     " OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')"+
                     "</script>"
     })
     int updateBandVersion(Band band);
 
-//    @Update("UPDATE bands SET name = #{name}, hour = #{hour}, updated_at = #{updatedAt}, " +
-//            "approve_status = #{approveStatus} WHERE id = #{bandId}")
     @Update({
             "<script>",
             "UPDATE bands",

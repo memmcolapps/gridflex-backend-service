@@ -213,12 +213,6 @@ public class BandServiceImpl implements BandService {
             band.setApproveBy(um.getId());
             if(approveStatus != null && approveStatus.equalsIgnoreCase("approve")) {
 
-//                if (!band.getStatus()) {
-//                    band.setApproveStatus("Deactivated");
-//                } else {
-//                    band.setApproveStatus("Approved");
-//                }
-
                 if (band.getApproveStatus().equals("Pending-deactivated")) {
                     band.setApproveStatus("Deactivated");
                 } else {
@@ -233,27 +227,30 @@ public class BandServiceImpl implements BandService {
                 //update band in band table
                 result = bandMapper.approveBand(band);
                     if (result == 0) throw new GlobalExceptionHandler.NotFoundException(bandName +" Approved "+ status.getUpdateFailureDesc());
-//                }
 
                 desc = capitalizeFirstLetter(band.getName()) + " " + band.getApproveStatus();
 
             }
             else if (approveStatus != null && approveStatus.trim().equalsIgnoreCase("reject")) {
 
+                // Reject band
                 int s = bandMapper.rejectedBandVersion("Rejected", band.getBandId(), band.getUpdatedAt(), um.getId());
                 if(s == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " rejection failed");
 
                 if(band.getApproveStatus().trim().equalsIgnoreCase("Pending-created")){
+                    // Delete band if just created
                     int d = bandMapper.deleteBand(band.getBandId());
                     if(d == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " failed to delete");
 
                 } else if (band.getApproveStatus().trim().contains("Pending-deactivated")) {
                     band.setApproveStatus("Approved");
+                    // Fallback to Approve if deactivate rejected
                     int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
                 }
                 else {
                     band.setApproveStatus("Approved");
+                    // Fallback to Approve if rejected
                     int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " update failed");
                 }
@@ -275,7 +272,8 @@ public class BandServiceImpl implements BandService {
             auditNotificationDTO.setCreatedBand(newBand);
             auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(), band.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
+            return ResponseMap.response(status.getSuccessCode(), band.getName() + " " +
+                    (capitalizeFirstLetter(approveStatus) + " Successfully"), "");
 
 
 
