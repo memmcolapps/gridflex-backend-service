@@ -533,11 +533,11 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException("At least one of meterId, meterNumber, or accountNumber must be provided.");
             }
 
-            Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
+//            Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
 
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + meterName + " " + status.getDesc(), cachedUser);
-            }
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + meterName + " " + status.getDesc(), cachedUser);
+//            }
 
             if(meterNumber != null){
                 meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber);
