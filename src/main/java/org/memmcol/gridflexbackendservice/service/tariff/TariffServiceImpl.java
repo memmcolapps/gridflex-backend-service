@@ -154,8 +154,6 @@ public class TariffServiceImpl implements TariffService {
 
             if(approveStatus != null && approveStatus.trim().equalsIgnoreCase("approve")) {
 
-//                tariff.setApprove_status("Approved");
-//                tariff.setStatus(true);
                 if (tariff.getApprove_status().equals("Pending-deactivated")) {
                     tariff.setApprove_status("Deactivated");
                 } else {
