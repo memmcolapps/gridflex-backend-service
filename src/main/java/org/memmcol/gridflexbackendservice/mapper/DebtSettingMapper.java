@@ -67,8 +67,8 @@ public interface DebtSettingMapper {
     LiabilityCause getSingleLcVersionById(UUID lcVersionId, UUID orgId);
 
     @Select("SELECT * FROM liability_cause_version WHERE org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
@@ -103,8 +103,8 @@ public interface DebtSettingMapper {
     int rejectedLiabilityVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
 
     @Select("SELECT * FROM liability_cause_version WHERE liability_cause_id = #{liabilityCauseId} AND org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
@@ -127,20 +127,9 @@ public interface DebtSettingMapper {
     })
     int updateLiabilityCause(String approveStatus, UUID liabilityCauseId, Date updatedAt);
 
-    @Delete("DELETE FROM liability_cause WHERE id = #{id} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
-            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+    @Delete("DELETE FROM liability_cause WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int deleteLiabilityCause(UUID liabilityCauseId);
-
-//    @Select("SELECT * FROM debt_percentage WHERE percentage = #{percentage} AND org_id = #{orgId} OR code = #{code}")
-//    @Results({
-//            @Result(column = "org_id", property = "orgId"),
-//            @Result(column = "approve_status", property = "approveStatus"),
-//            @Result(column = "AmountStartRange", property = "amount_start_range"),
-//            @Result(column = "AmountEndRange", property = "amount_end_range"),
-//            @Result(column = "created_at", property = "createdAt"),
-//            @Result(column = "updated_at", property = "updatedAt")
-//    })
-//    PercentageRange getPercentageByName(String percentage, String code, UUID orgId);
 
     @Insert("INSERT INTO debt_percentage (percentage, code, approve_status, org_id, created_at, updated_at, amount_start_range, amount_end_range, band_id) " +
             "VALUES (#{percentage}, #{code}, #{status}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt}, #{amountStartRange}, #{amountEndRange}, #{bandId})")
@@ -169,8 +158,8 @@ public interface DebtSettingMapper {
     PercentageRange getPercentageById(UUID id, UUID orgId);
 
     @Select("SELECT * FROM debt_percentage_version WHERE percentage = #{percentage} AND org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "band_id", property = "bandId"),
@@ -189,8 +178,8 @@ public interface DebtSettingMapper {
 
     @Update("UPDATE debt_percentage_version SET percentage = #{percentage}, code = #{code}, status = #{status}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, " +
             "amount_start_range = #{amountStartRange}, amount_end_range = #{amountEndRange}, band_id = #{bandId}, created_by = #{createdBy}, description = #{description} " +
-            "WHERE debt_percentage_id = #{percentageId} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "WHERE debt_percentage_id = #{percentageId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
     int updatePercentageVer(PercentageRange request);
 
     @Select("SELECT * FROM bands WHERE id = #{bandId} AND org_id = #{orgId} AND approve_status = 'Approved'")
@@ -298,7 +287,7 @@ public interface DebtSettingMapper {
     })
     int updatePercentage(String approveStatus, UUID liabilityCauseId, Date updatedAt);
 
-    @Delete("DELETE FROM debt_percentage WHERE id = #{id} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
-            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+    @Delete("DELETE FROM debt_percentage WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int deletePercentage(UUID percentageId);
 }

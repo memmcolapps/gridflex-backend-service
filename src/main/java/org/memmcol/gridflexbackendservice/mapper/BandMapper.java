@@ -29,8 +29,8 @@ public interface BandMapper {
     List<Band> fetchBands(UUID orgId);
 
     @Select("SELECT * FROM bands_version WHERE org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || " +
-            "approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR " +
+            "approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bandId", column = "band_id"),
@@ -82,8 +82,8 @@ public interface BandMapper {
 //    Band getBandVersionById(UUID id, UUID orgId);
 
     @Select("SELECT * FROM bands_version WHERE band_id = #{bandId} AND org_id = #{orgId} " +
-            "AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' || " +
-            "approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+            "AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR " +
+            "approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bandId", column = "band_id"),
@@ -128,8 +128,8 @@ public interface BandMapper {
                     " <if test='action != null'> action = #{action},</if>"+
                     " <if test='approveBy != null'> approve_by = #{approveBy},</if>"+
                     "  updated_at = #{updatedAt}"+
-                    " WHERE band_id = #{bandId} AND approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
-                    " || approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')"+
+                    " WHERE band_id = #{bandId} AND approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+                    " OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')"+
                     "</script>"
     })
     int updateBandVersion(Band band);
@@ -170,15 +170,15 @@ public interface BandMapper {
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
                     " <if test='approveBy != null'> approve_by = #{approveBy},</if>"+
                     "  updated_at = #{updatedAt}"+
-                    " WHERE band_id = #{bandId} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
-                    " || approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')"+
+                    " WHERE band_id = #{bandId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+                    " OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')"+
                     "</script>"
     })
     int rejectedBandVersion(String approveStatus, UUID bandId, Date updatedAt, UUID approveBy);
 
     @Select("SELECT * FROM bands_version WHERE name = #{name} AND org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
-            " || approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            " OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bandId", column = "band_id"),
