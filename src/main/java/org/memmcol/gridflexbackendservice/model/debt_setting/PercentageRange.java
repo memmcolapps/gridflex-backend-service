@@ -21,7 +21,7 @@ public class PercentageRange implements Serializable {
     private Band band;
     private String amountStartRange;
     private String amountEndRange;
-    private Boolean status;
+//    private Boolean status;
     private String approveStatus;
     private UUID createdBy;
     private UUID approveBy;
@@ -110,13 +110,13 @@ public class PercentageRange implements Serializable {
         this.amountEndRange = amountEndRange;
     }
 
-    public Boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
+//    public Boolean getStatus() {
+//        return status;
+//    }
+//
+//    public void setStatus(Boolean status) {
+//        this.status = status;
+//    }
 
     public String getApproveStatus() {
         return approveStatus;

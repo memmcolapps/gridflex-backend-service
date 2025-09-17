@@ -96,7 +96,7 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found, not approved or deactivated" );
             }
             tariff.setApprove_status("Pending-created");
-            tariff.setStatus(true);
+//            tariff.setStatus(true);
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
 //            tariff.setAction("Created");
@@ -156,7 +156,7 @@ public class TariffServiceImpl implements TariffService {
 
 //                tariff.setApprove_status("Approved");
 //                tariff.setStatus(true);
-                if (!tariff.getStatus()) {
+                if (tariff.getApprove_status().equals("Pending-deactivated")) {
                     tariff.setApprove_status("Deactivated");
                 } else {
                     tariff.setApprove_status("Approved");
@@ -181,7 +181,7 @@ public class TariffServiceImpl implements TariffService {
                     int d = tariffMapper.deleteTariff(tariff.getT_id());
                     if(d == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " failed to delete");
 
-                } else if(!tariff.getStatus() && tariff.getApprove_status().trim().contains("Pending")){
+                } else if(tariff.getApprove_status().trim().contains("Pending-deactivated")){
 
                     tariff.setApprove_status("Approved");
                     int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
@@ -223,6 +223,7 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID id, Boolean state) {
         try {
@@ -230,14 +231,14 @@ public class TariffServiceImpl implements TariffService {
             UserModel um = handleUserValidation();
             Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
             if(tariff == null){
-                throw new GlobalExceptionHandler.NotFoundException("Band not found");
+                throw new GlobalExceptionHandler.NotFoundException("Tariff not found");
             }
             Tariff isVersionExist = tariffMapper.getTariffVersionById(id, um.getOrgId());
             tariff.setApprove_status("Pending-"+(state ? "activated" : "deactivated"));
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
             tariff.setT_id(id);
-            tariff.setStatus(state);
+//            tariff.setStatus(state);
 //            tariff.setAction(state ? "Activated" : "Deactivated");
             String changeDescription = buildChangeStatusDescription(tariff, state);
             tariff.setDescription(changeDescription);
@@ -270,11 +271,9 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> getFilterTariffs(
             int page, int size,
             String tariffName,
-//            String tariffId,
             String tariffType,
             String tariffRate,
             String bandCode,
-            Boolean state,
             String effectiveDate,
             String approveStatus,
             String type) {
@@ -294,7 +293,7 @@ public class TariffServiceImpl implements TariffService {
             if (approveStatus != null && !approveStatus.isEmpty())
                 cacheKeyBuilder.append("_status_").append(approveStatus);
             if (type != null && !type.isEmpty()) cacheKeyBuilder.append("_type_").append(type);
-            if (state != null) cacheKeyBuilder.append("_state_").append(state);
+//            if (state != null) cacheKeyBuilder.append("_state_").append(state);
             cacheKeyBuilder.append("_page_").append(page);
             cacheKeyBuilder.append("_size_").append(size);
 
@@ -319,7 +318,6 @@ public class TariffServiceImpl implements TariffService {
                     .filter(t -> tariffRate == null || tariffRate.isEmpty() || t.getTariff_rate().equalsIgnoreCase(tariffRate))
                     .filter(t -> effectiveDate == null || effectiveDate.isEmpty() || t.getEffective_date().equalsIgnoreCase(effectiveDate))
                     .filter(t -> approveStatus == null || approveStatus.isEmpty() || t.getApprove_status().equalsIgnoreCase(approveStatus))
-                    .filter(t -> state == null || t.getStatus().equals(state))
                     .collect(Collectors.toList());
 
 
@@ -371,7 +369,7 @@ public class TariffServiceImpl implements TariffService {
                         throw new GlobalExceptionHandler.NotFoundException(status.getNotFoundDesc());
                     }
                     t.setApprove_status("approved");
-                    t.setStatus(true);
+//                    t.setStatus(true);
                     t.setApproved_by(um.getId());
 
                     // update tariff version main table
@@ -436,8 +434,6 @@ public class TariffServiceImpl implements TariffService {
             Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
 
             tariff.setApprove_status("Pending-edited");
-            tariff.setStatus(false);
-//            tariff.setAction("Edited");
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
             String changeDescription = buildChangeDescription(isExist, tariff);
@@ -564,10 +560,10 @@ public class TariffServiceImpl implements TariffService {
     }
 
     private String buildChangeStatusDescription(Tariff oldtariff, Boolean status) {
-        StringBuilder changes = new StringBuilder("Edited band ");
-        String oldState = oldtariff.getStatus() ? "activated" : "deactivated";
+        StringBuilder changes = new StringBuilder("Edited tariff ");
+        String oldState = oldtariff.getApprove_status().trim().equalsIgnoreCase("Approved") ? "activated" : "deactivated";
         String newState = status ? "activated" : "deactivated";
-        if (!Objects.equals(oldtariff.getStatus(), status)) {
+        if (!Objects.equals(oldtariff.getApprove_status(), newState)) {
             changes.append(String.format("status: '%s' → '%s' ", oldState, newState));
         }
 

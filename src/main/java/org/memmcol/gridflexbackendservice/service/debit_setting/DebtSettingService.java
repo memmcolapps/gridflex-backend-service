@@ -16,7 +16,7 @@ public interface DebtSettingService {
 
     Map<String, Object> getLiabilityCause(UUID id, UUID lcVersionId);
 
-    Map<String, Object> manageLiabilityCauseState(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException;
+    Map<String, Object> approveLiabilityCause(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException;
 
     Map<String, Object> createPercentage(PercentageRange request);
 
@@ -26,5 +26,9 @@ public interface DebtSettingService {
 
     Map<String, Object> getPercentage(UUID id, UUID percentageVersionId);
 
-    Map<String, Object> managePercentageState(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException;
+    Map<String, Object> approvePercentage(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException;
+
+    Map<String, Object> liabilityCauseChangeState(UUID id, Boolean status);
+
+    Map<String, Object> parcentageChangeState(UUID id, Boolean status);
 }

@@ -63,13 +63,13 @@ public class TariffController {
             @RequestParam(value = "tariffType", required = false, defaultValue = "") String tariffType,
             @RequestParam(value = "tariffRate", required = false, defaultValue = "") String tariffRate,
             @RequestParam(value = "bandCode", required = false, defaultValue = "") String bandCode,
-            @RequestParam(value = "status", required = false, defaultValue = "") Boolean status,
+//            @RequestParam(value = "status", required = false, defaultValue = "") Boolean status,
             @RequestParam(value = "effectiveDate", required = false, defaultValue = "") String effectiveDate,
             @RequestParam(value = "approveStatus", required = false, defaultValue = "") String approveStatus,
             @RequestParam(value = "type", required = false, defaultValue = "") String type
     ) {
         try {
-            Map<String, Object> result = service.getFilterTariffs(page, size, tariffName, tariffType, tariffRate, bandCode, status, effectiveDate, approveStatus, type);
+            Map<String, Object> result = service.getFilterTariffs(page, size, tariffName, tariffType, tariffRate, bandCode, effectiveDate, approveStatus, type);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -16,7 +16,6 @@ public class LiabilityCause implements Serializable {
     private UUID orgId;
     private String name;
     private String code;
-    private Boolean status;
     private String approveStatus;
     private UUID createdBy;
     private UUID approveBy;
@@ -71,14 +70,6 @@ public class LiabilityCause implements Serializable {
 
     public void setCode(String code) {
         this.code = code;
-    }
-
-    public Boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
     }
 
     public String getApproveStatus() {

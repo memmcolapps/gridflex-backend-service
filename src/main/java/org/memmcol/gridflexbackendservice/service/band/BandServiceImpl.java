@@ -95,7 +95,7 @@ public class BandServiceImpl implements BandService {
             band.setApproveStatus("Pending-created");
             band.setCreatedBy(um.getId());
 //            band.setAction("Created");
-            band.setStatus(true);
+//            band.setStatus(true);
             band.setDescription(desc);
             result = bandMapper.createBand(band);
             if(result == 0){
@@ -150,7 +150,7 @@ public class BandServiceImpl implements BandService {
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
 //            band.setAction("Edited");
-            band.setStatus(true);
+//            band.setStatus(true);
             String changeDescription = buildChangeDescription(isExist, band);
             band.setDescription(changeDescription);
 
@@ -213,10 +213,13 @@ public class BandServiceImpl implements BandService {
             band.setApproveBy(um.getId());
             if(approveStatus != null && approveStatus.equalsIgnoreCase("approve")) {
 
-//                String ap = "Approved";
-//                band.setApproveStatus(ap);
-//                band.setStatus(true);
-                if (!band.getStatus()) {
+//                if (!band.getStatus()) {
+//                    band.setApproveStatus("Deactivated");
+//                } else {
+//                    band.setApproveStatus("Approved");
+//                }
+
+                if (band.getApproveStatus().equals("Pending-deactivated")) {
                     band.setApproveStatus("Deactivated");
                 } else {
                     band.setApproveStatus("Approved");
@@ -244,7 +247,7 @@ public class BandServiceImpl implements BandService {
                     int d = bandMapper.deleteBand(band.getBandId());
                     if(d == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " failed to delete");
 
-                } else if (!band.getStatus() && band.getApproveStatus().trim().contains("Pending")) {
+                } else if (band.getApproveStatus().trim().contains("Pending-deactivated")) {
                     band.setApproveStatus("Approved");
                     int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
@@ -381,7 +384,7 @@ public class BandServiceImpl implements BandService {
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
             band.setBandId(bandId);
-            band.setStatus(state);
+//            band.setStatus(state);
 //            band.setAction(state ? "Activated" : "Deactivated");
             String changeDescription = buildChangeStatusDescription(band, state);
             band.setDescription(changeDescription);
@@ -426,9 +429,9 @@ public class BandServiceImpl implements BandService {
 
     private String buildChangeStatusDescription(Band oldBand, Boolean status) {
         StringBuilder changes = new StringBuilder("Edited band ");
-        String oldState = oldBand.getStatus() ? "activated" : "deactivated";
+        String oldState = oldBand.getApproveStatus().trim().equalsIgnoreCase("Approved") ? "activated" : "deactivated";
         String newState = status ? "activated" : "deactivated";
-        if (!Objects.equals(oldBand.getStatus(), status)) {
+        if (!Objects.equals(oldBand.getApproveStatus(), newState)) {
             changes.append(String.format("status: '%s' → '%s' ", oldState, newState));
         }
 

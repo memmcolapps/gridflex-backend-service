@@ -11,12 +11,12 @@ import java.util.UUID;
 @Mapper
 public interface TariffMapper {
 
-    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, created_at, updated_at) " +
+    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, effective_date, approve_status, org_id, created_at, updated_at) " +
             "VALUES (#{name}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createTariff(Tariff tariff);
 
-    @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band, status, effective_date, approve_status, org_id, " +
+    @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band, effective_date, approve_status, org_id, " +
             "created_by, description, created_at, updated_at) " +
             "VALUES (#{name}, #{t_id}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}," +
             " #{created_by}, #{description}, #{created_at}, #{updated_at})")
@@ -97,7 +97,8 @@ public interface TariffMapper {
             "ORDER BY created_at DESC")
     List<Tariff> GetPendingTariffs(UUID orgId);
 
-    @Delete("DELETE FROM tariffs WHERE id = #{id} AND approve_status = 'Pending'")
+    @Delete("DELETE FROM tariffs WHERE id = #{id} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     int deleteTariff(UUID id);
 
     @Update({

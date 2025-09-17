@@ -10,13 +10,13 @@ import java.util.UUID;
 @Mapper
 public interface BandMapper {
 
-    @Insert("INSERT INTO bands (name, hour, approve_status, status, org_id, created_at, updated_at) " +
-            "VALUES (#{name}, #{hour}, #{approveStatus}, #{status}, #{orgId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO bands (name, hour, approve_status, org_id, created_at, updated_at) " +
+            "VALUES (#{name}, #{hour}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createBand(Band band);
 
-    @Insert("INSERT INTO bands_version (band_id, name, hour, status, org_id, created_at, updated_at, created_by, description, approve_status) " +
-            "VALUES (#{bandId}, #{name}, #{hour}, #{status}, #{orgId}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{approveStatus})")
+    @Insert("INSERT INTO bands_version (band_id, name, hour, org_id, created_at, updated_at, created_by, description, approve_status) " +
+            "VALUES (#{bandId}, #{name}, #{hour}, #{orgId}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{approveStatus})")
     int createBandVersion(Band band);
 
     @Select("SELECT * FROM bands WHERE org_id = #{orgId}")
@@ -60,7 +60,7 @@ public interface BandMapper {
     })
     Band getBandById(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'Approved' AND status = true")
+    @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'Approved'")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "approveStatus", column = "approve_status"),
@@ -105,7 +105,6 @@ public interface BandMapper {
                     "  <if test='description != null'> description = #{description},</if>"+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
                     " <if test='action != null'> action = #{action},</if>"+
-                    " <if test='status != null'> status = #{status},</if>"+
                     " <if test='createdBy != null'> created_by = #{createdBy},</if>"+
                     "  updated_at = #{updatedAt}"+
                     " WHERE band_id = #{bandId} AND approve_status = 'pending'"+
@@ -127,7 +126,6 @@ public interface BandMapper {
                     " <if test='hour != null'> hour = #{hour},</if>"+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
                     " <if test='action != null'> action = #{action},</if>"+
-                    " <if test='status != null'> status = #{status},</if>"+
                     " <if test='approveBy != null'> approve_by = #{approveBy},</if>"+
                     "  updated_at = #{updatedAt}"+
                     " WHERE band_id = #{bandId} AND approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
@@ -145,8 +143,6 @@ public interface BandMapper {
                     "  <if test='name != null'> name = #{name},</if>"+
                     "  <if test='hour != null'> hour = #{hour},</if>"+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
-                    " <if test='action != null'> action = #{action},</if>"+
-                    " <if test='status != null'> status = #{status},</if>"+
                     "  updated_at = #{updatedAt}"+
                     " WHERE id = #{bandId} "+
                     "</script>"
@@ -180,7 +176,9 @@ public interface BandMapper {
     })
     int rejectedBandVersion(String approveStatus, UUID bandId, Date updatedAt, UUID approveBy);
 
-    @Select("SELECT * FROM bands_version WHERE name = #{name} AND org_id = #{orgId} AND approve_status = 'Pending'")
+    @Select("SELECT * FROM bands_version WHERE name = #{name} AND org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            " || approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "bandId", column = "band_id"),

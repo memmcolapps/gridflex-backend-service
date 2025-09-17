@@ -39,7 +39,7 @@ public class Tariff implements Serializable {
 
     private UUID band_id;
 
-    private Boolean status;
+//    private Boolean status;
 
     private String approve_status;
 
@@ -152,13 +152,13 @@ public class Tariff implements Serializable {
         this.band = band;
     }
 
-    public Boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
+//    public Boolean getStatus() {
+//        return status;
+//    }
+//
+//    public void setStatus(Boolean status) {
+//        this.status = status;
+//    }
 
 
     public String getApprove_status() {

@@ -72,12 +72,24 @@ public class DebtSettingController {
             @RequestParam UUID liabilityCauseId,
             @RequestParam String approveStatus) {
         try {
-            Map<String, Object> result = service.manageLiabilityCauseState(liabilityCauseId, approveStatus);
+            Map<String, Object> result = service.approveLiabilityCause(liabilityCauseId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         } catch (MissingServletRequestParameterException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @PatchMapping("/liability-cause/change-state")
+    public ResponseEntity<?> liabilityCauseChangeState(
+            @RequestParam UUID id,
+            @RequestParam Boolean status) {
+        try {
+            Map<String, Object> result = service.liabilityCauseChangeState(id, status);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
         }
     }
 
@@ -127,11 +139,11 @@ public class DebtSettingController {
     }
 
     @PutMapping("/percentage-range/approve")
-    public ResponseEntity<?> managePercentageState(
+    public ResponseEntity<?> approvePercentage(
             @RequestParam UUID percentageId,
             @RequestParam String approveStatus) {
         try {
-            Map<String, Object> result = service.managePercentageState(percentageId, approveStatus);
+            Map<String, Object> result = service.approvePercentage(percentageId, approveStatus);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -140,7 +152,17 @@ public class DebtSettingController {
         }
     }
 
-
+    @PatchMapping("/percentage-range/change-state")
+    public ResponseEntity<?> percentageChangeState(
+            @RequestParam UUID id,
+            @RequestParam Boolean status) {
+        try {
+            Map<String, Object> result = service.parcentageChangeState(id, status);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);

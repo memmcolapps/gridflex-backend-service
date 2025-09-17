@@ -34,7 +34,7 @@ public class Band implements Serializable {
 
 //    private String action;
 
-    private Boolean status;
+//    private Boolean status;
 
     private String description;
 
@@ -122,13 +122,13 @@ public class Band implements Serializable {
 //        this.action = action;
 //    }
 
-    public Boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
+//    public Boolean getStatus() {
+//        return status;
+//    }
+//
+//    public void setStatus(Boolean status) {
+//        this.status = status;
+//    }
 
     public String getDescription() {
         return description;
