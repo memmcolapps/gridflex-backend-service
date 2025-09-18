@@ -139,7 +139,6 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(request.getLiabilityCauseId(), um.getOrgId());
 
             request.setApproveStatus("Pending-edited");
-//            request.setStatus(false);
             request.setOrgId(um.getOrgId());
             request.setCreatedBy(um.getId());
             String changeDescription = buildChangeDescription(isExist, request);
@@ -147,10 +146,6 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             if(isVersionExist != null ){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
-//                result = debtMapper.updateLiabilityCauseVer(request);
-//                if (result == 0) {
-//                    throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getUpdateFailureDesc());
-//                }
             } else {
                 result = debtMapper.createLiabilityCauseVersion(request);
                 if (result == 0) {

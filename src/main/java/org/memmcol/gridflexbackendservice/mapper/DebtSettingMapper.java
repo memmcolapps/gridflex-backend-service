@@ -16,6 +16,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM liability_cause WHERE name = #{name} AND org_id = #{orgId} OR code = #{code}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -34,6 +35,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM liability_cause WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -47,6 +49,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM liability_cause_version WHERE name = #{name} AND approve_status = 'pending' AND code = #{code} AND org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -56,6 +59,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM liability_cause_version WHERE id = #{lcVersionId} AND org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "approve_status", property = "approveStatus"),
@@ -70,6 +74,7 @@ public interface DebtSettingMapper {
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
             "OR approve_status = 'Pending-deactivated')")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "approve_status", property = "approveStatus"),
@@ -82,6 +87,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId} ")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -106,6 +112,7 @@ public interface DebtSettingMapper {
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
             "OR approve_status = 'Pending-deactivated')")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "approve_status", property = "approveStatus"),
@@ -132,16 +139,17 @@ public interface DebtSettingMapper {
     int deleteLiabilityCause(UUID liabilityCauseId);
 
     @Insert("INSERT INTO debt_percentage (percentage, code, approve_status, org_id, created_at, updated_at, amount_start_range, amount_end_range, band_id) " +
-            "VALUES (#{percentage}, #{code}, #{status}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt}, #{amountStartRange}, #{amountEndRange}, #{bandId})")
+            "VALUES (#{percentage}, #{code}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt}, #{amountStartRange}, #{amountEndRange}, #{bandId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createPercentageRange(PercentageRange request);
 
     @Insert("INSERT INTO debt_percentage_version (debt_percentage_id, percentage, code, approve_status, org_id, created_at, updated_at, amount_start_range, amount_end_range, created_by, band_id, description) " +
-                   "VALUES (#{percentageId}, #{percentage}, #{code}, #{status}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt}, #{amountStartRange}, #{amountEndRange}, #{createdBy}, #{bandId}, #{description})")
+                   "VALUES (#{percentageId}, #{percentage}, #{code}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt}, #{amountStartRange}, #{amountEndRange}, #{createdBy}, #{bandId}, #{description})")
     int createPercentageVersion(PercentageRange request);
 
     @Select("SELECT * FROM debt_percentage WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "band_id", property = "bandId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
@@ -161,6 +169,7 @@ public interface DebtSettingMapper {
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
             "OR approve_status = 'Pending-deactivated')")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "band_id", property = "bandId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
@@ -176,7 +185,7 @@ public interface DebtSettingMapper {
     })
     PercentageRange getPercentageVersionByName(String percentage, UUID orgId);
 
-    @Update("UPDATE debt_percentage_version SET percentage = #{percentage}, code = #{code}, status = #{status}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, " +
+    @Update("UPDATE debt_percentage_version SET percentage = #{percentage}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, " +
             "amount_start_range = #{amountStartRange}, amount_end_range = #{amountEndRange}, band_id = #{bandId}, created_by = #{createdBy}, description = #{description} " +
             "WHERE debt_percentage_id = #{percentageId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
             "OR approve_status = 'Pending-deactivated')")
@@ -185,9 +194,11 @@ public interface DebtSettingMapper {
     @Select("SELECT * FROM bands WHERE id = #{bandId} AND org_id = #{orgId} AND approve_status = 'Approved'")
     Band getBand(UUID bandId, UUID orgId);
 
-    @Select("SELECT * FROM debt_percentage_version WHERE org_id = #{orgId} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+    @Select("SELECT * FROM debt_percentage_version WHERE org_id = #{orgId} " +
+            "AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
+            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
             @Result(column = "approve_status", property = "approveStatus"),
@@ -204,6 +215,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM debt_percentage WHERE org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
             @Result(column = "approve_status", property = "approveStatus"),
@@ -220,6 +232,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM debt_percentage_version WHERE id = #{percentageVersionId} AND org_id = #{orgId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
             @Result(column = "band_id", property = "bandId"),
@@ -237,6 +250,7 @@ public interface DebtSettingMapper {
 
     @Select("SELECT * FROM bands WHERE id = #{bandId}")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "created_at", property = "createdAt"),
@@ -250,6 +264,7 @@ public interface DebtSettingMapper {
             "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
             "|| approve_status = 'Pending-deactivated')")
     @Results({
+            @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
             @Result(column = "approve_status", property = "approveStatus"),
