@@ -12,13 +12,13 @@ import java.util.UUID;
 public interface TariffMapper {
 
     @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, effective_date, approve_status, org_id, created_at, updated_at) " +
-            "VALUES (#{name}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
+            "VALUES (#{name}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createTariff(Tariff tariff);
 
     @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band, effective_date, approve_status, org_id, " +
             "created_by, description, created_at, updated_at) " +
-            "VALUES (#{name}, #{t_id}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{status}, #{effective_date}, #{approve_status}, #{org_id}," +
+            "VALUES (#{name}, #{t_id}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{effective_date}, #{approve_status}, #{org_id}," +
             " #{created_by}, #{description}, #{created_at}, #{updated_at})")
     int createTariffVersion(Tariff tariff);
 
@@ -50,7 +50,9 @@ public interface TariffMapper {
     })
     Tariff getTariffByName(String name, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND approve_status = 'Pending' AND org_id = #{orgId} ")
+    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     Tariff getTariffVersionByName(String name, UUID orgId);
 
     @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND " +
