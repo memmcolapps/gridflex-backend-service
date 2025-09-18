@@ -195,8 +195,8 @@ public interface DebtSettingMapper {
     Band getBand(UUID bandId, UUID orgId);
 
     @Select("SELECT * FROM debt_percentage_version WHERE org_id = #{orgId} " +
-            "AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' " +
-            "|| approve_status = 'Pending-activated' || approve_status = 'Pending-deactivated')")
+            "AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -261,8 +261,8 @@ public interface DebtSettingMapper {
     Band getBandById(UUID bandId);
 
     @Select("SELECT * FROM debt_percentage_version WHERE debt_percentage_id = #{percentageId} AND org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -278,8 +278,9 @@ public interface DebtSettingMapper {
     PercentageRange getPercentageVersionById(UUID percentageId, UUID orgId);
 
     @Update("UPDATE debt_percentage_version SET approve_by = #{approveBy}, updated_at = #{updatedAt}, approve_status = #{approveStatus} " +
-            "WHERE debt_percentage_id = #{percentageId} AND org_id = #{orgId} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "WHERE debt_percentage_id = #{percentageId} AND org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
     int approvePercentageVersion(PercentageRange percentage);
 
     @Update("UPDATE debt_percentage SET percentage = #{percentage}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, " +
@@ -287,8 +288,8 @@ public interface DebtSettingMapper {
     int approvePercentage(PercentageRange percentage);
 
     @Update("UPDATE debt_percentage_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
-            "WHERE debt_percentage_id = #{percentageId} AND approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "WHERE debt_percentage_id = #{percentageId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int rejectedPercentageVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
 
     @Update({
