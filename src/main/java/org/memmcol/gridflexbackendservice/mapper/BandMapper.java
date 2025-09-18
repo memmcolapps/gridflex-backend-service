@@ -10,8 +10,8 @@ import java.util.UUID;
 @Mapper
 public interface BandMapper {
 
-    @Insert("INSERT INTO bands (name, hour, approve_status, status org_id, created_at, updated_at) " +
-            "VALUES (#{name}, #{hour}, #{approveStatus} #{orgId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO bands (name, hour, approve_status, org_id, created_at, updated_at) " +
+            "VALUES (#{name}, #{hour}, #{approveStatus}, #{orgId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createBand(Band band);
 
