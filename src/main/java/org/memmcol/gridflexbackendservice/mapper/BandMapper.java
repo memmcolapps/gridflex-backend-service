@@ -204,11 +204,6 @@ public interface BandMapper {
 
 
     @Select("SELECT COUNT(*) FROM debt_percentage WHERE band_id = #{bandId}")
-    @Results({
-            @Result(column = "id", property = "id"),
-            @Result(column = "org_id", property = "orgId"),
-            @Result(column = "debt_percentage_id", property = "percentageId"),
-    })
     int getPercentageBandById(UUID bandId);
 
 //    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")

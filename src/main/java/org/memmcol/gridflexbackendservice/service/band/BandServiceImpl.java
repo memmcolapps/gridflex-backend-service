@@ -109,7 +109,7 @@ public class BandServiceImpl implements BandService {
 
             Band bandByName = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(bandByName);
+//            handleAddCache(bandByName);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setUserAgent(userAgent);
@@ -167,7 +167,7 @@ public class BandServiceImpl implements BandService {
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
 
 
-            handleAddCache(bandById);
+//            handleAddCache(bandById);
 
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
@@ -261,7 +261,7 @@ public class BandServiceImpl implements BandService {
             }
 
             Band newBand = bandMapper.getBandById(band.getId(), um.getOrgId());
-            handleAddCache(band);
+//            handleAddCache(band);
             um.setPassword("");
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
@@ -328,18 +328,18 @@ public class BandServiceImpl implements BandService {
         try {
             UserModel um = handleUserValidation();
 
-            Object cachedBand = null;
-
-            if(bandId != null){
-                cachedBand = bandCache.get(bandId.toString());
-            }
-            if(bandVersionId != null){
-                cachedBand = bandCache.get(bandVersionId.toString());
-            }
-
-            if (cachedBand != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + " " + status.getDesc(), cachedBand);
-            }
+//            Object cachedBand = null;
+//
+//            if(bandId != null){
+//                cachedBand = bandCache.get(bandId.toString());
+//            }
+//            if(bandVersionId != null){
+//                cachedBand = bandCache.get(bandVersionId.toString());
+//            }
+//
+//            if (cachedBand != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + " " + status.getDesc(), cachedBand);
+//            }
             Band result = null;
             if(bandId != null){
                 result = bandMapper.getBandById(bandId, um.getOrgId());
@@ -353,7 +353,7 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
 
-            handleAddCache(result);
+//            handleAddCache(result);
 
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {

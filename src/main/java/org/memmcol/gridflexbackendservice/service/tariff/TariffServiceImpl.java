@@ -113,7 +113,7 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariffByName = tariffMapper.getTariff(tariff.getId(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(tariffByName);
+//            handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(desc);
             auditNotificationDTO.setType(tariffName);
@@ -259,7 +259,7 @@ public class TariffServiceImpl implements TariffService {
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getId(), tariff.getUpdated_at());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activate " : " deactivate ")+ "failed");
             Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
-            handleAddCache(tariffByName);
+//            handleAddCache(tariffByName);
             um.setPassword("");
             handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(um);
@@ -467,7 +467,7 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(tariffByName);
+//            handleAddCache(tariffByName);
             auditNotificationDTO.setCreator(um);
             auditNotificationDTO.setDescription(changeDescription);
             auditNotificationDTO.setType(tariffName);
@@ -491,17 +491,17 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> getTariff(UUID tariffId, UUID tariffVersionId) {
         try {
             UserModel um = handleUserValidation();
-            Object cachedTariff = null;
-            if(tariffId != null) {
-                cachedTariff = tariffCache.get(tariffId.toString());
-            }
-            if(tariffVersionId != null){
-                cachedTariff = tariffCache.get(tariffVersionId.toString());
-            }
-
-            if (cachedTariff != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + tariffName + " " + status.getDesc(), cachedTariff);
-            }
+//            Object cachedTariff = null;
+//            if(tariffId != null) {
+//                cachedTariff = tariffCache.get(tariffId.toString());
+//            }
+//            if(tariffVersionId != null){
+//                cachedTariff = tariffCache.get(tariffVersionId.toString());
+//            }
+//
+//            if (cachedTariff != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + tariffName + " " + status.getDesc(), cachedTariff);
+//            }
             Tariff result = null;
 
             if(tariffId != null){
@@ -516,7 +516,7 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
 
-            handleAddCache(result);
+//            handleAddCache(result);
 
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getDesc(), result);
         } catch (Exception exception) {
