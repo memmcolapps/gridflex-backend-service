@@ -651,7 +651,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
             int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getId(), liabilityCause.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
-
+            LiabilityCause lca = debtMapper.getLiabilityCauseById(id, um.getOrgId());
+//            um.setPassword("");
+            handleAddCache(lca);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -691,6 +693,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
             int u = debtMapper.updatePercentage(percentage.getApproveStatus(), percentage.getId(), percentage.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
+
+            PercentageRange percentageRange = debtMapper.getPercentageById(id, um.getOrgId());
+//            um.setPassword("");
+            handleAddPercentageCache(percentageRange);
 
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
         }  catch (Exception exception) {

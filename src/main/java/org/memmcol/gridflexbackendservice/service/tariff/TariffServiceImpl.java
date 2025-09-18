@@ -236,8 +236,7 @@ public class TariffServiceImpl implements TariffService {
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
             tariff.setT_id(id);
-//            tariff.setStatus(state);
-//            tariff.setAction(state ? "Activated" : "Deactivated");
+
             String changeDescription = buildChangeStatusDescription(tariff, state);
             tariff.setDescription(changeDescription);
 
@@ -251,7 +250,8 @@ public class TariffServiceImpl implements TariffService {
             }
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getId(), tariff.getUpdated_at());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activate " : " deactivate ")+ "failed");
-
+            Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
+            handleAddCache(tariffByName);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
