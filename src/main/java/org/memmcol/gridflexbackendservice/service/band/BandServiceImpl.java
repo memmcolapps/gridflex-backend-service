@@ -13,6 +13,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+//import org.memmcol.gridflexbackendservice.util.HandleCatchError;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -120,8 +121,10 @@ public class BandServiceImpl implements BandService {
             auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+//            HandleCatchError.catchError(exception);
+            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
             exceptionErrorLogs.setError_message(exception.getMessage().trim());
             exceptionErrorLogs.setError(exception.toString().trim());
@@ -312,6 +315,7 @@ public class BandServiceImpl implements BandService {
             bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
+//            HandleCatchError.catchError(exception);
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             exceptionErrorLogs.setDescription("Error occurred while trying to create band");
@@ -382,8 +386,6 @@ public class BandServiceImpl implements BandService {
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
             band.setBandId(bandId);
-//            band.setStatus(state);
-//            band.setAction(state ? "Activated" : "Deactivated");
             String changeDescription = buildChangeStatusDescription(band, state);
             band.setDescription(changeDescription);
 
@@ -395,7 +397,8 @@ public class BandServiceImpl implements BandService {
             }
             int u = bandMapper.updateBand(band.getApproveStatus(), band.getId(), band.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " "+ status.getUpdateFailureDesc());
-
+            Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
+            handleAddCache(bandById);
             return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activate " : " Deactivate ")+ "Successfully", "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

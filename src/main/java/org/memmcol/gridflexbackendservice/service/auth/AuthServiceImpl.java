@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+//import org.memmcol.gridflexbackendservice.util.HandleCatchError;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -102,11 +103,13 @@ public class AuthServiceImpl implements AuthService {
 			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
 
 		} catch (Exception exception) {
-			log.error("Error occurred while logout: {}", exception.getMessage(), exception);
-			errorLog.setDescription("Error occurred while logout");
-			errorLog.setError_message(exception.getMessage());
-			errorLog.setError(exception.toString());
-			exceptionAuditRepository.save(errorLog);
+			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+			exceptionErrorLogs.setDescription("Error occurred while changing operator password");
+			exceptionErrorLogs.setError_message(exception.getMessage().trim());
+			exceptionErrorLogs.setError(exception.toString().trim());
+			exceptionAuditRepository.save(exceptionErrorLogs);
+//			HandleCatchError.catchError(exception);
 			throw exception;
 		}
 	}
