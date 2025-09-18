@@ -146,8 +146,12 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariff = tariffMapper.getTariffVersionById(tariffVersionId, um.getOrgId());
             if(tariff == null) {
-                throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException("Tariff either have no pending state or not found");
             }
+//            Band isBand = bandMapper.checkBandStatus(tariff.getBand_id(), um.getOrgId());
+//            if (isBand == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Approval failed because the band assign to this tariff is either on pending state or deactivated");
+//            }
 
             tariff.setOrg_id(um.getOrgId());
             tariff.setApproved_by(um.getId());
@@ -163,6 +167,7 @@ public class TariffServiceImpl implements TariffService {
 
                 if (result == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
 
+                System.out.println(">>>>>>>>>>>>>>::: "+tariff.getBand_id());
                 result = tariffMapper.approveTariff(tariff);
                 if (result == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName +" "+ approveStatus + "d "+ status.getUpdateFailureDesc());
 
@@ -224,6 +229,9 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID id, Boolean state) {
+        AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = getClientIp(httpServletRequest);
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
             UserModel um = handleUserValidation();
@@ -252,6 +260,15 @@ public class TariffServiceImpl implements TariffService {
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activate " : " deactivate ")+ "failed");
             Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             handleAddCache(tariffByName);
+            um.setPassword("");
+            handleAddCache(tariffByName);
+            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setDescription(changeDescription);
+            auditNotificationDTO.setType(tariffName);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setCreatedTariff(tariffByName);
+            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -295,13 +312,13 @@ public class TariffServiceImpl implements TariffService {
             cacheKeyBuilder.append("_page_").append(page);
             cacheKeyBuilder.append("_size_").append(size);
 
-            String cacheKey = cacheKeyBuilder.toString();
-
-            // Return from cache if available
-            Object cachedTariff = tariffCache.get(cacheKey);
-            if (cachedTariff != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedTariff);
-            }
+//            String cacheKey = cacheKeyBuilder.toString();
+//
+//            // Return from cache if available
+//            Object cachedTariff = tariffCache.get(cacheKey);
+//            if (cachedTariff != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedTariff);
+//            }
 
             List<Tariff> allTariffs;
             // Ideally, this should be a dynamic query in the mapper layer
@@ -338,7 +355,7 @@ public class TariffServiceImpl implements TariffService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedTariffs.size() / size));
 
-            tariffCache.put(cacheKey, response);
+//            tariffCache.put(cacheKey, response);
             return ResponseMap.response(status.getSuccessCode(), "Tariffs " + status.getDesc(), response);
 
         } catch (Exception exception) {
@@ -424,9 +441,10 @@ public class TariffServiceImpl implements TariffService {
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
-            Band isBand = bandMapper.getBandById(tariff.getBand_id(), um.getOrgId());
+//            Band isBand = bandMapper.getBandById(tariff.getBand_id(), um.getOrgId());
+            Band isBand = bandMapper.getApprovedBandById(tariff.getBand_id(), um.getOrgId());
             if (isBand == null) {
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found, not approved or deactivated" );
             }
 
             Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());

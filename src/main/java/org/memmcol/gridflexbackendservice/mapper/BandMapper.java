@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 
 import java.util.Date;
 import java.util.List;
@@ -68,6 +69,17 @@ public interface BandMapper {
             @Result(property = "updatedAt", column = "updated_at")
     })
     Band getApprovedBandById(UUID id, UUID orgId);
+
+    @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId}  AND " +
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR " +
+            "approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Band checkBandStatus(UUID id, UUID orgId);
 
 //    @Select("SELECT * FROM bands_version WHERE id = #{id} AND org_id = #{orgId}")
 //    @Results({
@@ -189,6 +201,15 @@ public interface BandMapper {
 
     @Delete("DELETE FROM bands WHERE id = #{bandId} AND approve_status = 'Pending-created'")
     int deleteBand(UUID bandId);
+
+
+    @Select("SELECT COUNT(*) FROM debt_percentage WHERE band_id = #{bandId}")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+    })
+    int getPercentageBandById(UUID bandId);
 
 //    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
 //    String getOrgId(UUID orgId);

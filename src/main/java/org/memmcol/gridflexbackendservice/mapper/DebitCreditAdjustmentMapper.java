@@ -60,7 +60,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt"),
             @Result(property = "liabilityCause", column = "liability_cause_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCause")),
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCauseById")),
             @Result(property = "meter", column = "meter_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
             @Result(property = "payment", column = "id",

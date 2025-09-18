@@ -298,12 +298,13 @@ public interface DebtSettingMapper {
             "SET "+
                     " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
                     "  updated_at = #{updatedAt}"+
-                    " WHERE id = #{liabilityCauseId} "+
+                    " WHERE id = #{percentageId} "+
                     "</script>"
     })
-    int updatePercentage(String approveStatus, UUID liabilityCauseId, Date updatedAt);
+    int updatePercentage(String approveStatus, UUID percentageId, Date updatedAt);
 
     @Delete("DELETE FROM debt_percentage WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int deletePercentage(UUID percentageId);
+
 }

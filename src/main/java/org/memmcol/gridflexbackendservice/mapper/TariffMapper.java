@@ -11,12 +11,12 @@ import java.util.UUID;
 @Mapper
 public interface TariffMapper {
 
-    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band, effective_date, approve_status, org_id, created_at, updated_at) " +
+    @Insert("INSERT INTO tariffs (name, tariff_type, tariff_rate, band_id, effective_date, approve_status, org_id, created_at, updated_at) " +
             "VALUES (#{name}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{effective_date}, #{approve_status}, #{org_id}, #{created_at}, #{updated_at})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createTariff(Tariff tariff);
 
-    @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band, effective_date, approve_status, org_id, " +
+    @Insert("INSERT INTO tariffs_version (name, t_id, tariff_type, tariff_rate, band_id, effective_date, approve_status, org_id, " +
             "created_by, description, created_at, updated_at) " +
             "VALUES (#{name}, #{t_id}, #{tariff_type}, #{tariff_rate}, #{band_id}, #{effective_date}, #{approve_status}, #{org_id}," +
             " #{created_by}, #{description}, #{created_at}, #{updated_at})")
@@ -25,8 +25,7 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "band_id", column = "band"),
-            @Result(property = "band", column = "band",
+            @Result(property = "band", column = "band_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     Tariff getTariff(UUID id, UUID orgId);
@@ -60,8 +59,8 @@ public interface TariffMapper {
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     Tariff getTariffVersionById(UUID tariffId, UUID orgId);
 
-    @Update("UPDATE tariffs SET name = #{name}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band = #{band_id}, " +
-            "status = #{status}, effective_date = #{effective_date}, approve_status = #{approve_status}, updated_at = #{updated_at} WHERE id = #{t_id} ")
+    @Update("UPDATE tariffs SET name = #{name}, tariff_type = #{tariff_type}, tariff_rate = #{tariff_rate}, band_id = #{band_id}, " +
+            "effective_date = #{effective_date}, approve_status = #{approve_status}, updated_at = #{updated_at} WHERE id = #{t_id} ")
     int approveTariff(Tariff tariff);
 
     @Update("UPDATE tariffs_version SET approve_status = #{approve_status}, approved_by = #{approved_by}, updated_at = #{updated_at} " +
@@ -87,8 +86,7 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} ORDER BY created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "band_id", column = "band"),
-            @Result(property = "band", column = "band",
+            @Result(property = "band", column = "band_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     List<Tariff> GetAllTariffs(UUID orgId);
@@ -113,5 +111,9 @@ public interface TariffMapper {
                     "</script>"
     })
     int updateTariff(String approveStatus, UUID id, Date updatedAt);
+
+    @Select("SELECT COUNT(*) FROM tariffs WHERE band_id = #{bandId} AND org_id = #{orgId}")
+    int getTariffBandById(UUID bandId, UUID orgId);
+
 }
 

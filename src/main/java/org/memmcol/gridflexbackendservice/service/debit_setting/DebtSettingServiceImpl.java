@@ -147,8 +147,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(isVersionExist != null ){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
             } else {
+                int res = debtMapper.updateLiabilityCause("Pending-edited", request.getLiabilityCauseId(), request.getUpdatedAt());
                 result = debtMapper.createLiabilityCauseVersion(request);
-                if (result == 0) {
+                if (result == 0 || res == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getUpdateFailureDesc());
                 }
             }
@@ -267,7 +268,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseVersionById(liabilityCauseId, um.getOrgId());
             if(liabilityCause == null) {
-                throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(lc+" either have no pending state or not found");
             }
 
 
@@ -416,25 +417,24 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
-
+            Band band = debtMapper.getBand(request.getBandId(), um.getOrgId());
+            if (band == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Band is either not found, not approved or deactivated" );
+            }
             PercentageRange isVersionExist = debtMapper.getPercentageVersionByName(request.getPercentage(), um.getOrgId());
 
             request.setApproveStatus("Pending-edited");
-//            request.setStatus(false);
             request.setOrgId(um.getOrgId());
             request.setCreatedBy(um.getId());
             String changeDescription = buildPercentageChangeDescription(isExist, request);
             request.setDescription(changeDescription);
 
             if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ " have a pending status needs to be cleared");
-//                result = debtMapper.updatePercentageVer(request);
-//                if (result == 0) {
-//                    throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getUpdateFailureDesc());
-//                }
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ "percentage code have a pending status needs to be cleared");
             } else {
+                int res = debtMapper.updatePercentage("Pending-edited", request.getPercentageId(), request.getUpdatedAt());
                 result = debtMapper.createPercentageVersion(request);
-                if (result == 0) {
+                if (result == 0 || res == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getUpdateFailureDesc());
                 }
             }
@@ -553,7 +553,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             PercentageRange percentage = debtMapper.getPercentageVersionById(percentageId, um.getOrgId());
             if(percentage == null) {
-                throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(pr+" either have no pending state or not found");
             }
             percentage.setOrgId(um.getOrgId());
             percentage.setApproveBy(um.getId());
@@ -626,6 +626,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Override
     public Map<String, Object> liabilityCauseChangeState(UUID id, Boolean state) {
+        AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = getClientIp(httpServletRequest);
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
             UserModel um = handleUserValidation();
@@ -654,6 +657,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             LiabilityCause lca = debtMapper.getLiabilityCauseById(id, um.getOrgId());
 //            um.setPassword("");
             handleAddCache(lca);
+            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setDescription(changeDescription);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setType(pr);
+            auditNotificationDTO.setLiabilityCause(lca);
+            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -668,13 +678,17 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Override
     public Map<String, Object> parcentageChangeState(UUID id, Boolean state) {
+        AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = getClientIp(httpServletRequest);
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
             UserModel um = handleUserValidation();
             PercentageRange percentage = debtMapper.getPercentageById(id, um.getOrgId());
             if(percentage == null){
-                throw new GlobalExceptionHandler.NotFoundException("Band not found");
+                throw new GlobalExceptionHandler.NotFoundException("Band "+status.getNotFoundDesc());
             }
+
             LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(id, um.getOrgId());
             percentage.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             percentage.setOrgId(um.getOrgId());
@@ -695,9 +709,16 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
 
             PercentageRange percentageRange = debtMapper.getPercentageById(id, um.getOrgId());
-//            um.setPassword("");
             handleAddPercentageCache(percentageRange);
-
+            um.setPassword("");
+            handleAddPercentageCache(percentageRange);
+            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setDescription(changeDescription);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setType(pr);
+            auditNotificationDTO.setPercentageRange(percentageRange);
+            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();

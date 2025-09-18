@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -24,10 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
@@ -152,8 +150,6 @@ public class BandServiceImpl implements BandService {
             band.setApproveStatus("Pending-edited");
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
-//            band.setAction("Edited");
-//            band.setStatus(true);
             String changeDescription = buildChangeDescription(isExist, band);
             band.setDescription(changeDescription);
 
@@ -211,7 +207,7 @@ public class BandServiceImpl implements BandService {
             Band band = bandMapper.getBandVersionById(bandId, um.getOrgId());
 
             if(band == null) {
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException("Band either have no pending state or not found");
             }
             band.setApproveBy(um.getId());
             if(approveStatus != null && approveStatus.equalsIgnoreCase("approve")) {
@@ -296,12 +292,12 @@ public class BandServiceImpl implements BandService {
         try {
             UserModel um = handleUserValidation();
 
-            String cacheKey = "bands_"+um.getOrgId()+type;
-            Object cachedBand = bandCache.get(cacheKey);
+//            String cacheKey = "bands_"+um.getOrgId()+type;
+//            Object cachedBand = bandCache.get(cacheKey);
 
-            if (cachedBand != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + "s " + status.getDesc(), cachedBand);
-            }
+//            if (cachedBand != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + bandName + "s " + status.getDesc(), cachedBand);
+//            }
             List<Band> result;
             if(type.equalsIgnoreCase("pending-state")) {
                 result = bandMapper.fetchBandsVersion(um.getOrgId());
@@ -312,7 +308,7 @@ public class BandServiceImpl implements BandService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
-            bandCache.put(cacheKey, result);
+//            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
 //            HandleCatchError.catchError(exception);
@@ -374,13 +370,31 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID bandId, Boolean state) {
+        AuditLog auditNotificationDTO = new AuditLog();
+        String ipAddress = getClientIp(httpServletRequest);
+        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
             UserModel um = handleUserValidation();
             Band band = bandMapper.getBandById(bandId, um.getOrgId());
             if(band == null){
-                throw new GlobalExceptionHandler.NotFoundException("Band not found");
+                throw new GlobalExceptionHandler.NotFoundException("Band "+status.getNotFoundDesc());
             }
+
+            if(!state){
+                List<String> errors = new ArrayList<>();
+                int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
+                if(tariff > 0)  errors.add(tariff + " tariffs and ");
+
+                int percentageRange = bandMapper.getPercentageBandById(bandId);
+                if(percentageRange > 0) errors.add(percentageRange + " percentage range set");
+
+                if (!errors.isEmpty()) {
+                    throw new GlobalExceptionHandler.NotFoundException
+                            ("Band can not be deactivated because is currently in use by "+errors);
+                }
+            }
+
             Band isVersionExist = bandMapper.getBandVersionById(bandId, um.getOrgId());
             band.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             band.setOrgId(um.getOrgId());
@@ -399,6 +413,15 @@ public class BandServiceImpl implements BandService {
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " "+ status.getUpdateFailureDesc());
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             handleAddCache(bandById);
+            um.setPassword("");
+            auditNotificationDTO.setCreator(um);
+            auditNotificationDTO.setDescription(changeDescription);
+            auditNotificationDTO.setUserAgent(userAgent);
+            auditNotificationDTO.setIpAddress(ipAddress);
+            auditNotificationDTO.setType(bandName);
+            auditNotificationDTO.setCreatedBand(bandById);
+//			authCache.remove("dashboard");
+            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activate " : " Deactivate ")+ "Successfully", "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
