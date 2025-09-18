@@ -435,6 +435,14 @@ public class BandServiceImpl implements BandService {
 
     }
 
+    @Override
+    public Map<String, Object> clearCache() {
+        tariffCache.clear(); // Clear the cache
+        bandCache.clear();
+        auditCache.clear();
+        return ResponseMap.response(status.getSuccessCode(), "Cache cleared successfully", "");
+    }
+
     private void handleAddCache(Band band) {
         bandCache.remove(band.getId().toString()+"_"+band.getOrgId());
         tariffCache.clear();

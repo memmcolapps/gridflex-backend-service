@@ -18,4 +18,6 @@ public interface BandService {
     Map<String, Object> getBand(UUID bandId, UUID bandVersionId);
 
     Map<String, Object> changeStatus(UUID bandId, Boolean status);
+
+    Map<String, Object> clearCache();
 }

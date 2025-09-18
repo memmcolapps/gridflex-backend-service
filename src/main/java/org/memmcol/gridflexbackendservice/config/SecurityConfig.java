@@ -97,7 +97,7 @@ public class  SecurityConfig {
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
 						"/auth/service/forget-password/**", "/actuator/prometheus", "/service/alerts", "/service/reports/summary",
-						"/service/trigger/daily", "/service/trigger/monthly"
+						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache"
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
 						"/band/service/all",  "/band/service/single", "/tariff/service/single",

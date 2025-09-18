@@ -56,7 +56,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				"/actuator/prometheus",
 				"/service/reports/summary",
 				"/service/trigger/daily",
-				"/service/trigger/monthly"
+				"/service/trigger/monthly",
+				"/band/service/clear-cache"
 		);
 
 		// If the path is exempt, skip the authorization filter

@@ -93,6 +93,17 @@ public class BandController {
         }
     }
 
+    @GetMapping("/clear-cache")
+    public ResponseEntity<?> clearCache() {
+        try {
+            Map<String, Object> result = service.clearCache();
+            return ResponseEntity.ok(result);
+
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
