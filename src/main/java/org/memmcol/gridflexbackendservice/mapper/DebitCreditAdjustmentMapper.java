@@ -66,7 +66,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt")
     })
-    LiabilityCause getLiabilityCauseById(UUID liabilityCauseId);
+    LiabilityCause getLiabilityCauseById(UUID liabilityCauseId, UUID orgId);
 
     @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} AND " +
             "(approve_status = 'Approved' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-deactivated')")
