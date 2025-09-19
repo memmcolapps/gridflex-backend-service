@@ -384,6 +384,7 @@ public class BandServiceImpl implements BandService {
             if(!state){
                 List<String> errors = new ArrayList<>();
                 int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
+                System.out.println(">>>>>>>>>>>>>::: "+tariff);
                 if(tariff > 0)  errors.add(tariff + " tariffs");
 
                 int percentageRange = bandMapper.getPercentageBandById(bandId);
