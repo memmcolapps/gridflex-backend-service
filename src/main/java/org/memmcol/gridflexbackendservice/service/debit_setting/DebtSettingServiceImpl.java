@@ -3,10 +3,12 @@ package org.memmcol.gridflexbackendservice.service.debit_setting;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
@@ -52,6 +54,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
+
+    @Autowired
+    private DebitCreditAdjustmentMapper debitCreditAdjustmentMapper;
 
     private final IMap<String, Object> debtCache;
 
@@ -357,17 +362,27 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             String desc = request.getPercentage()+ "% newly created";
             UserModel um = handleUserValidation();
 
+            PercentageRange isExist = debtMapper.getPercentageByCode(request.getCode(), um.getOrgId());
+            if (isExist != null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Percentage range " + status.getExistDesc());
+            }
+
+            PercentageRange isVersionExist = debtMapper.getPercentageVersionByCode(request.getCode(), um.getOrgId());
+            if(isVersionExist != null) {
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ " have a pending status that needs to be cleared");
+            }
+
             Band band = debtMapper.getBand(request.getBandId(), um.getOrgId());
             if (band == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Band is either not found, not approved or deactivated" );
             }
 
-//            request.setStatus(false); //inactive
             request.setApproveStatus("Pending-created");
             request.setCreatedBy(um.getId());
             request.setDescription(desc);
             request.setBandId(request.getBandId());
             request.setOrgId(um.getOrgId());
+
             result = debtMapper.createPercentageRange(request);
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
@@ -634,7 +649,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             UserModel um = handleUserValidation();
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(id, um.getOrgId());
             if(liabilityCause == null){
-                throw new GlobalExceptionHandler.NotFoundException("Band not found");
+                throw new GlobalExceptionHandler.NotFoundException("Liability cause "+status.getNotFoundDesc());
+            }
+            if(state){
+                DebitCreditAdjust resp = debitCreditAdjustmentMapper.getDebitAdjustmentByStatus(liabilityCause.getId(), um.getOrgId());
+                if (resp != null) {
+                    throw new GlobalExceptionHandler.NotFoundException(lc+" can not be deactivated because is currently in use by debit or credit adjustment" );
+                }
             }
             LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(id, um.getOrgId());
             liabilityCause.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
@@ -689,7 +710,15 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException("Band "+status.getNotFoundDesc());
             }
 
-            LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(id, um.getOrgId());
+            if(state){
+                Band isBand = debtMapper.getBand(percentage.getBandId(), um.getOrgId());
+                if (isBand == null) {
+                    throw new GlobalExceptionHandler.NotFoundException("Band is either not found, not approved or deactivated" );
+                }
+            }
+
+
+            PercentageRange isVersionExist = debtMapper.getPercentageById(id, um.getOrgId());
             percentage.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             percentage.setOrgId(um.getOrgId());
             percentage.setCreatedBy(um.getId());
@@ -698,7 +727,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             percentage.setDescription(changeDescription);
 
             if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
+                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ "code have a pending status needs to be cleared");
             } else {
                 result = debtMapper.createPercentageVersion(percentage);
                 if(result == 0){

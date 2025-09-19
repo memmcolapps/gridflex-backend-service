@@ -203,7 +203,7 @@ public interface BandMapper {
     int deleteBand(UUID bandId);
 
 
-    @Select("SELECT COUNT(*) FROM debt_percentage WHERE band_id = #{bandId}")
+    @Select("SELECT COUNT(*) FROM debt_percentage WHERE band_id = #{bandId} AND approve_status != 'Deactivated'")
     int getPercentageBandById(UUID bandId);
 
 //    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")

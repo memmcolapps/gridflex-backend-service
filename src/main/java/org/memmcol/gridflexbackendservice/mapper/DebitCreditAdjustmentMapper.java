@@ -37,10 +37,28 @@ public interface DebitCreditAdjustmentMapper {
     })
     DebitCreditAdjust getDebitAdjustmentById(UUID id, UUID orgId);
 
+    @Select("SELECT * FROM credit_debit_adjustment WHERE id = #{id} AND org_id = #{orgId} AND status != 'PAID'")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "meter_id", property = "meterId"),
+            @Result(column = "debit", property = "amount"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "liabilityCause", column = "liability_cause_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCauseById")),
+            @Result(property = "meter", column = "meter_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
+            @Result(property = "payment", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
+    })
+    DebitCreditAdjust getDebitAdjustmentByStatus(UUID id, UUID orgId);
+
     @Select("SELECT * FROM meters WHERE id = #{meterId}")
     Meter getMeterById(UUID meterId);
 
-    @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} AND approve_status = 'Approved'")
+    @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} AND approve_status = 'Approved' AND org_id = #{orgId}")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -48,7 +66,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt")
     })
-    LiabilityCause getLiabilityCauseById(UUID liabilityCauseId);
+    LiabilityCause getLiabilityCauseById(UUID liabilityCauseId, UUID orgId);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND org_id = #{orgId} AND type = #{type}")
     @Results({
@@ -68,7 +86,7 @@ public interface DebitCreditAdjustmentMapper {
     })
     List<DebitCreditAdjust> getDebitAdjustmentByMeterId(@Param("id") UUID id, @Param("orgId") UUID orgId, @Param("type") String type);
 
-    @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId}")
+    @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId} AND approve_status = 'Approved'")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -88,7 +106,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt"),
             @Result(property = "liabilityCause", column = "liability_cause_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCause")),
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLiabilityCauseById")),
             @Result(property = "meter", column = "meter_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
             @Result(property = "payment", column = "id",

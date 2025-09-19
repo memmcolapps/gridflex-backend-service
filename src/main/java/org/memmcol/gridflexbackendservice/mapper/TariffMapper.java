@@ -25,6 +25,7 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "band_id", column = "band_id"),
             @Result(property = "band", column = "band_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
@@ -43,6 +44,7 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE name = #{name} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "band_id", column = "band_id"),
             @Result(property = "band_id", column = "band"),
             @Result(property = "band", column = "band",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
@@ -77,8 +79,8 @@ public interface TariffMapper {
     @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "band_id", column = "band"),
-            @Result(property = "band", column = "band",
+            @Result(property = "band_id", column = "band_id"),
+            @Result(property = "band", column = "band_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     List<Tariff> GetTariffs(UUID orgId);
@@ -112,7 +114,7 @@ public interface TariffMapper {
     })
     int updateTariff(String approveStatus, UUID id, Date updatedAt);
 
-    @Select("SELECT COUNT(*) FROM tariffs WHERE band_id = #{bandId} AND org_id = #{orgId}")
+    @Select("SELECT COUNT(*) FROM tariffs WHERE band_id = #{bandId} AND org_id = #{orgId} AND approve_status != 'Deactivated'")
     int getTariffBandById(UUID bandId, UUID orgId);
 
 }

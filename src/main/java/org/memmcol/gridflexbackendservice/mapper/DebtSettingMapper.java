@@ -192,6 +192,12 @@ public interface DebtSettingMapper {
     int updatePercentageVer(PercentageRange request);
 
     @Select("SELECT * FROM bands WHERE id = #{bandId} AND org_id = #{orgId} AND approve_status = 'Approved'")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
     Band getBand(UUID bandId, UUID orgId);
 
     @Select("SELECT * FROM debt_percentage_version WHERE org_id = #{orgId} " +
@@ -307,4 +313,38 @@ public interface DebtSettingMapper {
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int deletePercentage(UUID percentageId);
 
+
+    @Select("SELECT * FROM debt_percentage WHERE org_id = #{orgId} AND code = #{code}")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "amount_start_range", property = "amountStartRange"),
+            @Result(column = "amount_end_range", property = "amountEndRange"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
+    })
+    PercentageRange getPercentageByCode(String code, UUID orgId);
+
+    @Select("SELECT * FROM debt_percentage_version WHERE code = #{code} AND org_id = #{orgId} AND " +
+            "(approve_status != 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
+            "OR approve_status = 'Pending-deactivated')")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "amount_start_range", property = "amountStartRange"),
+            @Result(column = "amount_end_range", property = "amountEndRange"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    PercentageRange getPercentageVersionByCode(String code, UUID orgId);
 }

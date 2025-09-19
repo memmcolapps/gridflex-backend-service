@@ -96,7 +96,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
-            LiabilityCause liabilityCause = mapper.getLiabilityCauseById(request.getLiabilityCauseId());
+            LiabilityCause liabilityCause = mapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
             if (liabilityCause == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause not found");
             }
@@ -253,6 +253,14 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             String customerName, String meterNumber, BigDecimal balance, String type) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
+            String db;
+            if("credit".equals(type) ){
+                db = credit;
+            } else if(debit.equalsIgnoreCase(type)){
+                db = debit;
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
+            }
             UserModel um = handleUserValidation();
 
             // Build a unique cache key
@@ -271,7 +279,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             // Return from cache if available
             Object cachedDebitCreditAdjustment = debitCreditCache.get(cacheKey);
             if (cachedDebitCreditAdjustment != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached tariffs " + status.getDesc(), cachedDebitCreditAdjustment);
+                return ResponseMap.response(status.getSuccessCode(), "Cached " + db + status.getDesc(), cachedDebitCreditAdjustment);
             }
 
             List<DebitCreditAdjust> allDebitCreditAdjustment;
