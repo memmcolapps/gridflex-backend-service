@@ -13,6 +13,7 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -28,7 +29,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import java.util.*;
 
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
-import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+//import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
@@ -46,6 +47,9 @@ public class BandServiceImpl implements BandService {
 
     @Autowired
     private AuditRepository auditRepository;
+
+    @Autowired
+    private GenericHandler genericHandler;
 
     @Autowired
     private HttpServletRequest httpServletRequest;
@@ -72,10 +76,8 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> createBand(Band band) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             String desc = capitalizeFirstLetter(band.getName())+ " created";
             UserModel um = handleUserValidation();
@@ -93,8 +95,6 @@ public class BandServiceImpl implements BandService {
             band.setOrgId(um.getOrgId());
             band.setApproveStatus("Pending-created");
             band.setCreatedBy(um.getId());
-//            band.setAction("Created");
-//            band.setStatus(true);
             band.setDescription(desc);
             result = bandMapper.createBand(band);
             if(result == 0){
@@ -109,24 +109,13 @@ public class BandServiceImpl implements BandService {
 
             Band bandByName = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             um.setPassword("");
+
+            AuditLog auditLog = buildAuditLog(um, desc, bandName, bandByName, metadata);
+            auditRepository.save(auditLog);
 //            handleAddCache(bandByName);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(bandName);
-            auditNotificationDTO.setCreatedBand(bandByName);
-            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//            HandleCatchError.catchError(exception);
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating band");
             throw exception;
         }
 
@@ -135,10 +124,8 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> updateBand(Band band) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
 
@@ -170,22 +157,12 @@ public class BandServiceImpl implements BandService {
 //            handleAddCache(bandById);
 
             um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(bandName);
-            auditNotificationDTO.setCreatedBand(bandById);
-//			authCache.remove("dashboard");
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, changeDescription, bandName, bandById, metadata);
+            auditRepository.save(auditLog);
+////			authCache.remove("dashboard");
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "edited band");
             throw exception;
         }
     }
@@ -194,9 +171,7 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> approve(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
         AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         int result;
         String desc = "";
         try {
@@ -263,25 +238,15 @@ public class BandServiceImpl implements BandService {
             Band newBand = bandMapper.getBandById(band.getId(), um.getOrgId());
 //            handleAddCache(band);
             um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(bandName);
-            auditNotificationDTO.setCreatedBand(newBand);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, bandName, newBand, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), band.getName() + " " +
                     (capitalizeFirstLetter(approveStatus) + " Successfully"), "");
 
-
-
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "approve band");
             throw exception;
         }
     }
@@ -311,13 +276,7 @@ public class BandServiceImpl implements BandService {
 //            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
-//            HandleCatchError.catchError(exception);
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+           genericHandler.logAndSaveException(exception, "fetch bands");
             throw exception;
         }
     }
@@ -357,12 +316,8 @@ public class BandServiceImpl implements BandService {
 
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetch band");
             throw exception;
         }
     }
@@ -370,11 +325,9 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID bandId, Boolean state) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
             Band band = bandMapper.getBandById(bandId, um.getOrgId());
             if(band == null){
@@ -384,7 +337,6 @@ public class BandServiceImpl implements BandService {
             if(!state){
                 List<String> errors = new ArrayList<>();
                 int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
-                System.out.println(">>>>>>>>>>>>>::: "+tariff);
                 if(tariff > 0)  errors.add(tariff + " tariffs");
 
                 int percentageRange = bandMapper.getPercentageBandById(bandId);
@@ -415,22 +367,13 @@ public class BandServiceImpl implements BandService {
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             handleAddCache(bandById);
             um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(bandName);
-            auditNotificationDTO.setCreatedBand(bandById);
 //			authCache.remove("dashboard");
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, changeDescription, bandName, bandById, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activate " : " Deactivate ")+ "Successfully", "");
         }  catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "change band state");
             throw exception;
         }
 
@@ -442,6 +385,19 @@ public class BandServiceImpl implements BandService {
         bandCache.clear();
         auditCache.clear();
         return ResponseMap.response(status.getSuccessCode(), "Cache cleared successfully", "");
+    }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setCreatedBand(createdEntity instanceof Band ? (Band) createdEntity : null);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 
     private void handleAddCache(Band band) {

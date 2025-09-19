@@ -17,9 +17,11 @@ import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -38,7 +40,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+//import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 
 
 @RequiredArgsConstructor
@@ -52,6 +54,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	private IMap<String, Boolean> auditCache;
 
+	private GenericHandler genericHandler;
+
 //	private IMap<String, Boolean> authCache;
 
 	// Define the required headers
@@ -63,12 +67,13 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	public CustomAuthenticationFilter(
 			AuthenticationManager authenticationManager,
-			AuthMapper authMapper,
-			AuditRepository auditRepository, HazelcastInstance hazelcastInstance) {
+			AuthMapper authMapper, AuditRepository auditRepository,
+			HazelcastInstance hazelcastInstance, GenericHandler genericHandler) {
 		this.authenticationManager = authenticationManager;
 		this.authMapper = authMapper;
 		this.auditRepository = auditRepository;
 		this.auditCache = hazelcastInstance.getMap("auditCache");
+		this.genericHandler = genericHandler;
 //		this.authCache = hazelcastInstance.getMap("auth-Cache");
 	}
 
@@ -79,7 +84,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		String password = request.getParameter("password");
 
 		// Fetch user details before authentication
-		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
+//		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
 
 //		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
 //		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
@@ -110,8 +115,9 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
-		String ipAddress = getClientIp(request);
-		String userAgent = request.getHeader("User-Agent");
+		Map<String, String> metadata = genericHandler.extractRequestMetadata(request);
+//		String ipAddress = getClientIp(request);
+//		String userAgent = request.getHeader("User-Agent");
 		ObjectMapper mapper = new ObjectMapper();
 		List<Map<String, Object>> permissionTree = mapper.readValue(userDetails.getPermissionTreeJson(), List.class);
 
@@ -150,10 +156,12 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		auditNotificationDTO.setCreator(user);
 		user.setNodes(root);
 		user.setPassword("");
-		auditNotificationDTO.setDescription("Logged in");
-		auditNotificationDTO.setUserAgent(userAgent);
-		auditNotificationDTO.setIpAddress(ipAddress);
-		auditNotificationDTO.setType("auth");
+		AuditLog auditLog = buildAuditLog(user, "Logged in", "auth", null, metadata);
+		auditRepository.save(auditLog);
+//		auditNotificationDTO.setDescription("Logged in");
+//		auditNotificationDTO.setUserAgent(userAgent);
+//		auditNotificationDTO.setIpAddress(ipAddress);
+//		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {
 				auditCache.remove(key);
@@ -176,6 +184,18 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.writeValue(response.getOutputStream(), resp);
 
+	}
+
+	private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
+		AuditLog log = new AuditLog();
+		log.setCreator(creator);
+		log.setDescription(description);
+		log.setType(type);
+		log.setIpAddress(metadata.get("ipAddress"));
+		log.setUserAgent(metadata.get("userAgent"));
+		log.setEndpoint(metadata.get("endpoint"));
+		log.setHttpMethod(metadata.get("httpMethod"));
+		return log;
 	}
 
 	@Override

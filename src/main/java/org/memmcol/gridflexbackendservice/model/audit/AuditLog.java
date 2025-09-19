@@ -11,6 +11,7 @@ import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.user.Organization;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -38,6 +39,10 @@ public class AuditLog implements Serializable {
 
     private String ipAddress;
 
+    private String endpoint;
+
+    private String httpMethod;
+
     private Customer createdCustomer;
 
     private UserModel createdUser;
@@ -59,6 +64,8 @@ public class AuditLog implements Serializable {
     private PercentageRange percentageRange;
 
     private DebitCreditAdjust debitCreditAdjust;
+
+    private Organization organization;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -217,5 +224,29 @@ public class AuditLog implements Serializable {
 
     public void setDebitCreditAdjust(DebitCreditAdjust debitCreditAdjust) {
         this.debitCreditAdjust = debitCreditAdjust;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public String getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(String httpMethod) {
+        this.httpMethod = httpMethod;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 }

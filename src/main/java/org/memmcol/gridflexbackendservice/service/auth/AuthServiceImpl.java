@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -46,6 +47,9 @@ public class AuthServiceImpl implements AuthService {
 	private AuditRepository auditRepository;
 
 	@Autowired
+	private GenericHandler genericHandler;
+
+	@Autowired
 	private ExceptionAuditRepository exceptionAuditRepository;
 
 	@Autowired private RestTemplate restTemplate;
@@ -73,11 +77,8 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	public Map<String, Object> logout() {
-		ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-		AuditLog auditNotificationDTO = new AuditLog();
 		try {
-			String ipAddress = getClientIp(httpServletRequest);
-			String userAgent = httpServletRequest.getHeader("User-Agent");
+			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
 			// Extract raw token without decoding
 			String authorizationHeader = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
@@ -93,23 +94,14 @@ public class AuthServiceImpl implements AuthService {
 			// Blacklist the raw token
 			blacklistToken(rawToken, 1800);
 //			handleAddCache(user);
-			auditNotificationDTO.setCreator(operator);
-			auditNotificationDTO.setUserAgent(userAgent);
-			auditNotificationDTO.setIpAddress(ipAddress);
-			auditNotificationDTO.setDescription("Logged out");
-			auditNotificationDTO.setType("auth");
-			auditRepository.save(auditNotificationDTO);
+			AuditLog auditLog = buildAuditLog(operator, "Logged out", "auth", metadata);
+			auditRepository.save(auditLog);
 
 			return ResponseMap.response(status.getSuccessCode(), "Logged out successfully", "");
 
 		} catch (Exception exception) {
-			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			exceptionErrorLogs.setDescription("Error occurred while changing operator password");
-			exceptionErrorLogs.setError_message(exception.getMessage().trim());
-			exceptionErrorLogs.setError(exception.toString().trim());
-			exceptionAuditRepository.save(exceptionErrorLogs);
-//			HandleCatchError.catchError(exception);
+			genericHandler.logAndSaveException(exception, "user logout");
 			throw exception;
 		}
 	}
@@ -118,9 +110,8 @@ public class AuthServiceImpl implements AuthService {
 	@Transactional
 	public Map<String, Object> handleForgetPassword(UserModel isOperator, String password) {
 		AuditLog AuditLog = new AuditLog();
-		String ipAddress = getClientIp(httpServletRequest);
-		String userAgent = httpServletRequest.getHeader("User-Agent");
 		try {
+			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
 //			UserModel um = handleUserValidation();
 
@@ -144,23 +135,14 @@ public class AuthServiceImpl implements AuthService {
 //			um.setPassword("");
 			// Remove OTP verification from cache after successful password reset
 			verifiedUsers.remove(isOperator.getEmail());
-//			handleCacheUpdate(isOperator);
-			AuditLog.setCreator(isOperator);
-//			AuditLog.setCreatedUser(isOperator);
-			AuditLog.setUserAgent(userAgent);
-			AuditLog.setIpAddress(ipAddress);
-			AuditLog.setDescription("Reset password");
-			AuditLog.setType("auth");
-			auditRepository.save(AuditLog);
+			AuditLog auditLog = buildAuditLog(isOperator, "Reset password", "auth", metadata);
+			auditRepository.save(auditLog);
+////			handleCacheUpdate(isOperator);
 			return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");
 
 		} catch (Exception exception) {
-			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			exceptionErrorLogs.setDescription("Error occurred while changing operator password");
-			exceptionErrorLogs.setError_message(exception.getMessage().trim());
-			exceptionErrorLogs.setError(exception.toString().trim());
-			exceptionAuditRepository.save(exceptionErrorLogs);
+			genericHandler.logAndSaveException(exception, "changing operator password");
 			throw exception;
 		}
 	}
@@ -183,12 +165,8 @@ public class AuthServiceImpl implements AuthService {
 					"message", "Your OTP code is: " + otp
 			), Void.class);
 		} catch (RestClientException emailException) {
-			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage().trim(), emailException);
-			exceptionErrorLogs.setDescription("Error occurred while generating OTP");
-			exceptionErrorLogs.setError_message(emailException.getMessage().trim());
-			exceptionErrorLogs.setError(emailException.toString().trim());
-			exceptionAuditRepository.save(exceptionErrorLogs);
+			genericHandler.logAndSaveException(emailException, "OTP mailer failed");
 			throw emailException;
 		}
 
@@ -241,16 +219,25 @@ public class AuthServiceImpl implements AuthService {
 		} catch (Exception exception){
 			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			exceptionErrorLogs.setDescription("Error occurred while verifying OTP");
-			exceptionErrorLogs.setError_message(exception.getMessage().trim());
-			exceptionErrorLogs.setError(exception.toString().trim());
-			exceptionAuditRepository.save(exceptionErrorLogs);
+			genericHandler.logAndSaveException(exception, "verify OTP");
 			throw exception;
 		}
 	}
 
 	private void blacklistToken(String token, int expirySeconds) {
 		authCache.put(token, true, expirySeconds, TimeUnit.SECONDS);
+	}
+
+	private AuditLog buildAuditLog(UserModel creator, String description, String type, Map<String, String> metadata) {
+		AuditLog log = new AuditLog();
+		log.setCreator(creator);
+		log.setDescription(description);
+		log.setType(type);
+		log.setIpAddress(metadata.get("ipAddress"));
+		log.setUserAgent(metadata.get("userAgent"));
+		log.setEndpoint(metadata.get("endpoint"));
+		log.setHttpMethod(metadata.get("httpMethod"));
+		return log;
 	}
 
 	private void removeFromCache() {

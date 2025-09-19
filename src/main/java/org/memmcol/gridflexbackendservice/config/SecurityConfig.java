@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.components.CustomAccessDeniedHandler;
 import org.memmcol.gridflexbackendservice.components.CustomAuthorizationFilter;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.service.perm_evaluator.PermissionEvaluator;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +54,9 @@ public class  SecurityConfig {
 	private PermissionEvaluator permissionEvaluator;
 
 	@Autowired
+	private GenericHandler genericHandler;
+
+	@Autowired
 	private ExceptionAuditRepository exceptionAuditRepository;
 
 	@Autowired
@@ -78,7 +82,7 @@ public class  SecurityConfig {
 //		userAuthFilter.setFilterProcessesUrl("/auth/service/user/login");
 
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
-				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
+				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance, genericHandler);
 		adminAuthFilter.setFilterProcessesUrl("/auth/service/admin/login");
 //
 //		CustomAuthenticationFilter portalAuthFilter = new CustomAuthenticationFilter(

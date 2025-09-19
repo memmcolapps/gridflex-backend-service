@@ -26,10 +26,9 @@ public class OrganizationController {
     }
 
     @PatchMapping("/update")
-    public ResponseEntity<Map<String, Object>> updateOrganization(@RequestBody Organization organization,
-                                                                  @RequestParam UUID orgId) {
+    public ResponseEntity<Map<String, Object>> updateOrganization(@RequestBody Organization organization) {
         try {
-            Map<String, Object> result = organizationService.updateOrganization(organization,orgId);
+            Map<String, Object> result = organizationService.updateOrganization(organization);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

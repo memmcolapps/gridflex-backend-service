@@ -12,6 +12,7 @@ import org.memmcol.gridflexbackendservice.model.user.Module;
 import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -31,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
-import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
@@ -57,8 +57,11 @@ public class UserServiceImpl implements  UserService {
     @Autowired
     private HttpServletRequest httpServletRequest;
 
-    @Autowired
+
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private GenericHandler genericHandler;
 
     private String userName = "User";
 
@@ -74,125 +77,201 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> createUser(CreateUserRequest request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
-
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             // check if operator exist
-            UserModel isOperator = userMapper.findByEmail(operator.getEmail(), um.getOrgId());
-            if (isOperator != null){
+            if (userMapper.findByEmail(operator.getEmail(), um.getOrgId()) != null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getExistDesc());
             }
 
             // check if groupId exist
             Group isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
-            if (isGroupId == null){
+            if (isGroupId == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
-            if(isGroupId.getStatus()) {
-                throw new GlobalExceptionHandler.NotFoundException("Group deactivated and can not be assigned");
+            if (isGroupId.getStatus()) {
+                throw new GlobalExceptionHandler.NotFoundException("Group deactivated and cannot be assigned");
             }
 
             operator.setOrgId(um.getOrgId());
-
-            // Insert into operators
             userMapper.insertUser(operator);
             UUID userId = operator.getId();
-            
             userMapper.assignUserToGroup(userId, request.getGroupId(), um.getOrgId());
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
-            String desc = "User newly created";
             user.setPassword("");
             handleAddCache(user);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(userName);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setCreatedUser(user);
-            auditRepository.save(auditNotificationDTO);
+
+            AuditLog auditLog = buildAuditLog(um, "User created", userName, user, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while creating user [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating user");
             throw exception;
         }
-
     }
+
 
     @Transactional
     @Override
     public Map<String, Object> updateUser(UserModel request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
-            // check if operator exist
             UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
-            if (isOperator == null){
+            if (isOperator == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
-//            // check if groupId exist
-//            UUID isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
-//            if (isGroupId == null){
-//                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
-//            }
-
             request.setOrgId(um.getOrgId());
-
-            // Insert into operators
             userMapper.updateUser(request);
             UUID userId = request.getId();
-//            userMapper.updateUserToGroup(userId, isGroupId, um.getOrgId());
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
-            String desc = "User edited";
             user.setPassword("");
             handleAddCache(user);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(userName);
-            auditNotificationDTO.setCreatedUser(user);
-            auditRepository.save(auditNotificationDTO);
+
+            AuditLog auditLog = buildAuditLog(um, "User edited", userName, user, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating user");
             throw exception;
         }
     }
+
+
+//    @Transactional
+//    @Override
+//    public Map<String, Object> createUser(CreateUserRequest request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//
+//            String ipAddress = getClientIp(httpServletRequest);
+//            String userAgent = httpServletRequest.getHeader("User-Agent");
+//            String endpoint = httpServletRequest.getRequestURI();
+//            String httpMethod = httpServletRequest.getMethod();
+//
+//            UserModel um = handleUserValidation();
+//
+//            UserModel operator = request.getUser();
+//            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
+//
+//            // check if operator exist
+//            UserModel isOperator = userMapper.findByEmail(operator.getEmail(), um.getOrgId());
+//            if (isOperator != null){
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getExistDesc());
+//            }
+//
+//            // check if groupId exist
+//            Group isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
+//            if (isGroupId == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+//            }
+//            if(isGroupId.getStatus()) {
+//                throw new GlobalExceptionHandler.NotFoundException("Group deactivated and can not be assigned");
+//            }
+//
+//            operator.setOrgId(um.getOrgId());
+//
+//            // Insert into operators
+//            userMapper.insertUser(operator);
+//            UUID userId = operator.getId();
+//
+//            userMapper.assignUserToGroup(userId, request.getGroupId(), um.getOrgId());
+//
+//            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+//            String desc = "User newly created";
+//            user.setPassword("");
+//            handleAddCache(user);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setType(userName);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setCreatedUser(user);
+//            auditNotificationDTO.setEndpoint(endpoint);
+//            auditNotificationDTO.setHttpMethod(httpMethod);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while creating user [ACTION]: {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//
+//    }
+//
+//    @Transactional
+//    @Override
+//    public Map<String, Object> updateUser(UserModel request) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        try {
+//            String ipAddress = getClientIp(httpServletRequest);
+//            String userAgent = httpServletRequest.getHeader("User-Agent");
+//            String endpoint = httpServletRequest.getRequestURI();
+//            String httpMethod = httpServletRequest.getMethod();
+//
+//            UserModel um = handleUserValidation();
+//
+//            // check if operator exist
+//            UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
+//            if (isOperator == null){
+//                throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
+//            }
+//
+//            request.setOrgId(um.getOrgId());
+//
+//            // Insert into operators
+//            userMapper.updateUser(request);
+//            UUID userId = request.getId();
+//
+//            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+//            String desc = "User edited";
+//            user.setPassword("");
+//            handleAddCache(user);
+//
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setType(userName);
+//            auditNotificationDTO.setCreatedUser(user);
+//            auditNotificationDTO.setEndpoint(endpoint);
+//            auditNotificationDTO.setHttpMethod(httpMethod);
+//            auditRepository.save(auditNotificationDTO);
+//
+//            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
+//        } catch (Exception exception) {
+//            log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//    }
 
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getUsers(
             String firstname, String lastname, String email, String permission,
             String dateAdded, String lastActive, int page, int size) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-
             UserModel um = handleUserValidation();
 
             // Build a unique cache key
@@ -308,10 +387,7 @@ public class UserServiceImpl implements  UserService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while filtering users");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetch users");
             throw exception;
         }
     }
@@ -319,11 +395,9 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> changeGroupPermissionStatus(UUID groupId, Boolean state) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
+
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
             UserGroup verify = userMapper.getUserGroup(groupId);
@@ -335,19 +409,12 @@ public class UserServiceImpl implements  UserService {
 
             String desc = state ? "Group activated" : "Group deactivated";
 
-            auditNotificationDTO.setCreator(user);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType("Group");
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(user, desc, "Group", null, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), desc + " successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "changing group permission status");
             throw exception;
         }
 
@@ -414,11 +481,8 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> changeState(UUID userId, Boolean state) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
 
@@ -435,31 +499,21 @@ public class UserServiceImpl implements  UserService {
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
             handleAddCache(user);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(userName);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setCreatedUser(user);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(user, desc, userName, user, metadata);
+            auditRepository.save(auditLog);
+
             return ResponseMap.response(status.getSuccessCode(), state ? " User activated successfully" : "User deactivated successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "changing user state");
             throw exception;
         }
     }
 
     @Transactional
     public Map<String, Object> createGroupPermission(CreateGroupRequest request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
             UUID orgId =  um.getOrgId();
@@ -517,21 +571,25 @@ public class UserServiceImpl implements  UserService {
             /// Assign permission to the group created
             userMapper.assignPermissionToGroup(groupId, permission.getId(), um.getOrgId());
 
-            String desc = capitalizeFirstLetter(request.getGroupTitle() + " newly created");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType("Group");
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setCreatedUser(user);
-            auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
+            String desc = capitalizeFirstLetter(request.getGroupTitle() + " created");
+            AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setType("Group");
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setEndpoint(endpoint);
+//            auditNotificationDTO.setHttpMethod(httpMethod);
+//            auditRepository.save(auditNotificationDTO);
+            return ResponseMap.response(status.getSuccessCode(),  "Group "+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
-            log.error("Error occurred while creating group [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "create group permission failed");
+//            log.error("Error occurred while creating group [ACTION]: {}", exception.getMessage().trim(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
 
@@ -548,7 +606,6 @@ public class UserServiceImpl implements  UserService {
             List<Group> groups = userMapper.getGroups(um.getOrgId());
             if (groups == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
-//                return ResponseMap.response(status.getNotFoundCode(), "Group " + status.getNotFoundDesc(), "");
             }
 
             List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
@@ -580,6 +637,19 @@ public class UserServiceImpl implements  UserService {
 
     }
 
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setCreatedUser(createdEntity instanceof UserModel ? (UserModel) createdEntity : null);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
+    }
 
     private void handleAddCache(UserModel user) {
         userCache.remove(user.getId().toString()+"_"+user.getOrgId());

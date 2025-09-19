@@ -9,11 +9,14 @@ import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -39,7 +42,7 @@ public class TariffServiceImpl implements TariffService {
     private TariffMapper tariffMapper;
 
     @Autowired
-    private AuthMapper operatorMapper;
+    private GenericHandler genericHandler;
 
     @Autowired
     private BandMapper bandMapper;
@@ -75,8 +78,7 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             String desc = tariff.getName()+" created";
             UserModel um = handleUserValidation();
@@ -111,23 +113,26 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getRegFailureDesc());
             }
 
-            Tariff tariffByName = tariffMapper.getTariff(tariff.getId(), um.getOrgId());
+            Tariff newTariff = tariffMapper.getTariff(tariff.getId(), um.getOrgId());
             um.setPassword("");
 //            handleAddCache(tariffByName);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(tariffName);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setCreatedTariff(tariffByName);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setType(tariffName);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setCreatedTariff(tariffByName);
+//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating tariff");
+//            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
     }
@@ -135,13 +140,10 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> approve(UUID tariffVersionId, String approveStatus) throws MissingServletRequestParameterException {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         int result;
         String desc = "";
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
             Tariff tariff = tariffMapper.getTariffVersionById(tariffVersionId, um.getOrgId());
@@ -206,22 +208,21 @@ public class TariffServiceImpl implements TariffService {
             Tariff newTariff = tariffMapper.getTariff(tariff.getId(), um.getOrgId());
             handleAddCache(tariff);
             um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType(tariffName);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setCreatedTariff(newTariff);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setType(tariffName);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setCreatedTariff(newTariff);
+//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "approving tariff");
             throw exception;
         }
     }
@@ -230,10 +231,9 @@ public class TariffServiceImpl implements TariffService {
     @Override
     public Map<String, Object> changeStatus(UUID id, Boolean state) {
         AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
             Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
@@ -271,17 +271,18 @@ public class TariffServiceImpl implements TariffService {
             }
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getId(), tariff.getUpdated_at());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activate " : " deactivate ")+ "failed");
-            Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
-//            handleAddCache(tariffByName);
+            Tariff newTariff = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(tariffByName);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setType(tariffName);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setCreatedTariff(tariffByName);
-            auditRepository.save(auditNotificationDTO);
+//            handleAddCache(newTariff);
+            AuditLog auditLog = buildAuditLog(um, changeDescription, tariffName, newTariff, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(changeDescription);
+//            auditNotificationDTO.setType(tariffName);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setCreatedTariff(tariffByName);
+//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
@@ -373,10 +374,7 @@ public class TariffServiceImpl implements TariffService {
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to filter tariffs");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching tariffs");
             throw exception;
         }
     }
@@ -445,8 +443,7 @@ public class TariffServiceImpl implements TariffService {
         AuditLog auditNotificationDTO = new AuditLog();
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
 
@@ -478,23 +475,15 @@ public class TariffServiceImpl implements TariffService {
                 }
             }
 
-            Tariff tariffByName = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
+            Tariff newTariff = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");
-//            handleAddCache(tariffByName);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setType(tariffName);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setCreatedTariff(tariffByName);
-            auditRepository.save(auditNotificationDTO);
+//            handleAddCache(newTariff);
+            AuditLog auditLog = buildAuditLog(um, changeDescription, tariffName, newTariff, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "editing tariff");
             throw exception;
         }
     }
@@ -533,14 +522,23 @@ public class TariffServiceImpl implements TariffService {
 
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching tariff");
             throw exception;
         }
+    }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Tariff createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setCreatedTariff(createdEntity);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 
     private void handleAddCache(Tariff tariff) {

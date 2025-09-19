@@ -1,11 +1,17 @@
 package org.memmcol.gridflexbackendservice.service.organization;
 
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.OrganizationMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
+import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.user.*;
+import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -19,6 +25,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
 import java.util.*;
+
+import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 
 @Service
@@ -34,7 +42,13 @@ public class OrganizationServiceImpl implements OrganizationService {
     private ResponseProperties status;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private GenericHandler genericHandler;
+
+    @Autowired
+    private AuditRepository auditRepository;
+
+    @Autowired
+    private HttpServletRequest httpServletRequest;
 
     // Other mappers can be added as needed
     public OrganizationServiceImpl(OrganizationMapper organizationMapper,
@@ -70,37 +84,23 @@ public class OrganizationServiceImpl implements OrganizationService {
         } catch (Exception exception) {
             log.error("Error fetching organization {}: {}", id, exception.getMessage(), exception);
 
-            ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-            errorLog.setDescription("Error fetching organization");
-            errorLog.setError_message(exception.getMessage());
-            errorLog.setError(exception.toString());
-            exceptionAuditRepository.save(errorLog);
-
-            return ResponseMap.response(
-                    status.getFailCode(),
-                    "Failed to fetch organization",
-                    Map.of(
-                            "error", exception.getMessage(),
-                            "organizationId", id
-                    )
-            );
+            genericHandler.logAndSaveException(exception, "fetching organization");
+            throw exception;
         }
     }
 
     @Transactional
     @Override
-    public Map<String, Object> updateOrganization(Organization organization, UUID orgId) {
+    public Map<String, Object> updateOrganization(Organization organization) {
 
-        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
         try {
-            Organization originalData = organizationMapper.getOrganizationById(orgId);
-//                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + orgId));
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel um = handleUserValidation();
+            Organization originalData = organizationMapper.getOrganizationById(um.getOrgId());
 
-            organization.setId(orgId);
             organizationMapper.updateOrganizationSelective(organization);
 
-            Organization updatedData = organizationMapper.getOrganizationById(orgId);
-//                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + orgId));
+            Organization updatedData = organizationMapper.getOrganizationById(um.getOrgId());
 
             Map<String, Map<String, String>> changes = new HashMap<>();
 
@@ -111,25 +111,29 @@ public class OrganizationServiceImpl implements OrganizationService {
             addChangeIfDifferent("state", originalData.getState(), updatedData.getState(), changes);
             addChangeIfDifferent("city", originalData.getCity(), updatedData.getCity(), changes);
 
-
-            return ResponseMap.response(status.getSuccessCode(),
-                    "Organization updated Successfully",
-                    "");
+            AuditLog auditLog = buildAuditLog(um, "Editing organization", "organization", organization, metadata);
+            auditRepository.save(auditLog);
+            return ResponseMap.response(status.getSuccessCode(), "Organization updated Successfully", "");
 
         } catch (Exception exception) {
             log.error("Error updating organization: {}", exception.getMessage(), exception);
-
-            // Log error details
-            errorLog.setDescription("Error updating organization");
-            errorLog.setError_message(exception.getMessage());
-            errorLog.setError(exception.toString());
-            exceptionAuditRepository.save(errorLog);
-            return ResponseMap.response(
-                    status.getFailCode(),
-                    "Failed to update organization",
-                    exception.getMessage());
+            genericHandler.logAndSaveException(exception, "editing tariff");
+            throw exception;
         }
 
+    }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Organization createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setOrganization(createdEntity);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 
     private void addChangeIfDifferent(String fieldName, String oldValue, String newValue,
@@ -142,283 +146,3 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 }
-
-
-//    @Override
-//    public Map<String, Object> addOrganization(Organization organization) {
-//
-//        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//
-//        try {
-//
-//            // Save to database
-//            organizationMapper.insertOrganization(organization);
-//            UUID orgId = organization.getId();
-//            String name = organization.getBusinessName();
-//            // Create root node
-//            Map<String, Object> rootNodeResponse = creatRootNode(orgId, name);
-//            UUID rootNodeId = (UUID) ((Map<?, ?>) rootNodeResponse.get("data")).get("id");
-//
-//            // Create Permissions
-//            createDefaultPermission(orgId);
-//            // Create Group
-//            createDefaultGroup(orgId);
-//            // Create Group Permissions
-//            createDefaultGroupPermission(orgId);
-//            // Create Default User
-//            createDefaultUser(orgId, rootNodeId);
-//
-//            return ResponseMap.response(
-//                    status.getSuccessCode(),
-//                    (organization.getBusinessName() + " Organization Created " + " Successfully"),
-//                    "");
-//
-//        } catch (Exception exception) {
-//            log.error("Error creating organization: {}", exception.getMessage(), exception);
-//
-//            // Log exception to audit system
-//            errorLog.setDescription("Error creating organization");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-////            throw new RuntimeException("Error creating organization: " + exception.getMessage(), exception);
-//            return ResponseMap.response(
-//                    status.getFailCode(),
-//                    "Failed to create " + organization.getBusinessName() + " Organization",
-//                    exception.getMessage()
-//            );
-//        }
-//    }
-
-
-//    @Override
-//    public Map<String, Object> creatRootNode(UUID organizationId, String name) {
-//
-//        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//        Map<String, Object> response = new HashMap<>();
-//        Node rootNode = new Node();
-//
-//        try {
-//
-//            rootNode.setName(name);
-//            rootNode.setOrgId(organizationId);
-//
-//            organizationMapper.insertNodes(rootNode);
-//
-//            Node savedNode = organizationMapper.getNodeByNameAndOrgId(name, organizationId);
-//
-//            response.put("success", true);
-//            response.put("message", "Root Node created successfully");
-//            response.put("data", Map.of(
-//                    "id", savedNode.getId(),
-//                    "name", savedNode.getName()
-//            ));
-//            return response;
-//        } catch (Exception exception) {
-//            log.error("Error adding node: {}", exception.getMessage(), exception);
-//
-//            errorLog.setDescription("Error creating Root Node");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-//            throw new RuntimeException("Error creating Root Node: " + exception.getMessage(), exception);
-//        }
-//    }
-
-//    @Override
-//    public Map<String, Object> createDefaultUser(UUID organizationId, UUID nodeId) {
-//
-//        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//        Map<String, Object> response = new HashMap<>();
-//        UserModel user = new UserModel();
-//
-//        try {
-//
-//            Organization organization = organizationMapper.getOrganizationById(organizationId)
-//                    .orElseThrow(()-> new RuntimeException("Organization not found with ID: " + organizationId));
-//
-//            user.setOrgId(organizationId);
-//            user.setFirstname("Admin");
-//            user.setLastname("Admin");
-//            user.setEmail(organization.getEmail());
-//            user.setNodeId(nodeId);
-//            user.setStatus(true);
-//            user.setActive(true);
-//
-//            user.setPassword(passwordEncoder.encode("Passw@rd0951"));
-//
-//            organizationMapper.insertUser(user);
-//
-//
-//            return response;
-//
-//        } catch (Exception exception) {
-//            log.error("Error creating default user: {}", exception.getMessage(), exception);
-//
-//            // Log error details
-//            errorLog.setDescription("Error creating default user");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-//            throw new RuntimeException("Error creating user: " + exception.getMessage(), exception);
-//
-//        }
-//
-//    }
-
-//    @Override
-//    public Map<String, Object> createDefaultPermission(UUID organizationId) {
-//
-//        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            Permission permission = new Permission();
-//
-//            permission.setView(true);
-//            permission.setEdit(true);
-//            permission.setApprove(true);
-//            permission.setDisable(true);
-//            permission.setOrgId(organizationId);
-//
-//            organizationMapper.insertPermission(permission);
-//
-//            response.put("success", true);
-//            response.put("message", "Permission created successfully");
-//            response.put("data", permission);
-//            return response;
-//
-//        } catch (Exception exception) {
-//            log.error("Error creating default Permission: {}", exception.getMessage(), exception);
-//
-//            // Log error details
-//            errorLog.setDescription("Error creating default Permission");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-//            throw new RuntimeException("Error creating Permission: " + exception.getMessage(), exception);
-//        }
-//    }
-
-//    @Override
-//    public Map<String, Object> createDefaultGroup(UUID organizationId) {
-//
-//        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            Group group = new Group();
-//
-//            group.setGroupTitle("Super Admin");
-//            group.setOrgId(organizationId);
-//
-//            organizationMapper.insertGroup(group);
-//
-//            response.put("success", true);
-//            response.put("message", "Default Group created successfully");
-//            response.put("data", group);
-//            return response;
-//
-//        } catch (Exception exception) {
-//            log.error("Error creating default Group: {}", exception.getMessage(), exception);
-//
-//            // Log error details
-//            errorLog.setDescription("Error creating default Group");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-//            throw new RuntimeException("Error creating default Group: " + exception.getMessage(), exception);
-//
-//        }
-//    }
-
-//    @Override
-//    public Map<String, Object> createDefaultGroupPermission(UUID organizationId) {
-//
-//        ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//
-//            Permission permission = organizationMapper.getPermissionByOrgId(organizationId);
-//            Group group = organizationMapper.getGroupByOrgId(organizationId);
-//
-//            organizationMapper.insertGroupPermission(group.getId(), permission.getId(), organizationId);
-//
-//            response.put("success", true);
-//            response.put("message", "Default Group Permission created successfully");
-//            return response;
-//
-//        } catch (Exception exception) {
-//            log.error("Error creating default Group Permission: {}", exception.getMessage(), exception);
-//
-//            // Log error details
-//            errorLog.setDescription("Error creating default Group Permission");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-//            throw new RuntimeException("Error creating Group Permission: " + exception.getMessage(), exception);
-//        }
-//    }
-
-//    @Override
-//    public Map<String, Object> getOrganization(int page, int size) {
-//        try {
-//
-//            // Calculate offset
-//            int offset = page * size;
-//
-//            List<Organization> organizations;
-//            // Get paginated data
-//            if(size == 0){
-//                organizations = organizationMapper.getAllOrganizations();
-//            } else {
-//                organizations = organizationMapper.getOrganizations(size, offset);
-//            }
-//
-//
-//            long totalCount = organizationMapper.getOrganizationCount();
-//            int totalPages = (int) Math.ceil((double) totalCount / size);
-//
-//            Map<String, Object> paginationData = new HashMap<>();
-//            paginationData.put("content", organizations);
-//            paginationData.put("pageNumber", page);
-//            paginationData.put("pageSize", size);
-//            paginationData.put("totalElements", totalCount);
-//            paginationData.put("totalPages", totalPages);
-//            paginationData.put("isFirst", page == 0);
-//            paginationData.put("isLast", (offset + size) >= totalCount);
-//
-//            return ResponseMap.response(
-//                    status.getSuccessCode(),
-//                    "Organizations retrieved successfully",
-//                    paginationData
-//            );
-//
-//        } catch (Exception exception) {
-//            log.error("Error fetching organizations - Page: {}, Size: {}: {}",
-//                    page, size, exception.getMessage(), exception);
-//
-//            ExceptionErrorLogs errorLog = new ExceptionErrorLogs();
-//            errorLog.setDescription("Error fetching organizations");
-//            errorLog.setError_message(exception.getMessage());
-//            errorLog.setError(exception.toString());
-//            exceptionAuditRepository.save(errorLog);
-//
-//            return ResponseMap.response(
-//                    status.getFailCode(),
-//                    "Failed to fetch organizations",
-//                    Map.of(
-//                            "error", exception.getMessage(),
-//                            "page", page,
-//                            "size", size
-//                    )
-//            );
-//        }
-//    }

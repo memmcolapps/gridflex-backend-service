@@ -3,7 +3,6 @@ package org.memmcol.gridflexbackendservice.service.debit_credit_adjustment;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
-import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
@@ -16,6 +15,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
-import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
@@ -39,7 +38,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     private static final Logger log = LoggerFactory.getLogger(TariffServiceImpl.class);
 
     @Autowired
-    private AuthMapper operatorMapper;
+    private GenericHandler genericHandler;
 
     @Autowired
     private DebitCreditAdjustmentMapper mapper;
@@ -72,11 +71,8 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Transactional
     @Override
     public Map<String, Object> createDebitAdjustment(DebitCreditAdjust request) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
 
             UserModel um = handleUserValidation();
@@ -112,13 +108,15 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
             um.setPassword("");
             handleAddCache(debitAdjustment);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType("debit-credit");
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setDebitCreditAdjust(debitAdjustment);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setType("debit-credit");
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setDebitCreditAdjust(debitAdjustment);
+//            auditRepository.save(auditNotificationDTO);
 
             if(request.getType().equalsIgnoreCase("credit")){
                 return ResponseMap.response(status.getSuccessCode(), credit + " " + status.getRegDesc(), "");
@@ -128,10 +126,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating debit-credit adjustment");
             throw exception;
         }
     }
@@ -143,8 +138,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
 
@@ -185,22 +179,13 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
             um.setPassword("");
             handleAddCache(debitAdjustment);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setType("debit-credit");
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setDebitCreditAdjust(debitAdjustment);
-            auditRepository.save(auditNotificationDTO);
-            // Optionally, you can log the payment in a separate table (e.g. payment log)
+            AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "reconcile dept");
             throw exception;
         }
     }
@@ -208,7 +193,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getMeterAndLiabilityCause(String meterNumber, String accountNumber) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             Meter meter = null;
             UserModel um = handleUserValidation();
@@ -238,10 +222,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             return ResponseMap.response(status.getSuccessCode(),  "Meter " + status.getDesc(), meterAndLiabilityCause);
         } catch (Exception exception) {
             log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetch transformer");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetch meter liability cause");
             throw exception;
         }
     }
@@ -251,7 +232,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     public Map<String, Object> getDebitAdjustments(
             int page, int size, String customerId, String accountNumber,
             String customerName, String meterNumber, BigDecimal balance, String type) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             String db;
             if("credit".equals(type) ){
@@ -329,10 +309,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to filter tariffs");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetch debit adjustment");
             throw exception;
         }
     }
@@ -359,6 +336,19 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
+    }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setDebitCreditAdjust(createdEntity instanceof DebitCreditAdjust ? (DebitCreditAdjust) createdEntity : null);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 
     private void handleAddCache(DebitCreditAdjust debitCreditAdjustment) {

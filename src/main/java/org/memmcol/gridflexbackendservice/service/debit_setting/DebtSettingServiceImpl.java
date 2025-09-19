@@ -16,6 +16,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -53,10 +54,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     private HttpServletRequest httpServletRequest;
 
     @Autowired
-    private ExceptionAuditRepository exceptionAuditRepository;
+    private DebitCreditAdjustmentMapper debitCreditAdjustmentMapper;
+
 
     @Autowired
-    private DebitCreditAdjustmentMapper debitCreditAdjustmentMapper;
+    private GenericHandler genericHandler;
 
     private final IMap<String, Object> debtCache;
 
@@ -74,11 +76,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> createLiabilityCause(LiabilityCause request) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             String desc = capitalizeFirstLetter(request.getName()) + " newly created";
             UserModel um = handleUserValidation();
@@ -106,20 +105,19 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(request.getId(), um.getOrgId());
             um.setPassword("");
             handleAddCache(liabilityCause);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(lc);
-            auditNotificationDTO.setLiabilityCause(liabilityCause);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, lc, liabilityCause, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setType(lc);
+//            auditNotificationDTO.setLiabilityCause(liabilityCause);
+//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating liability cause");
             throw exception;
         }
 
@@ -128,12 +126,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> updateLiabilityCause(LiabilityCause request) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
             LiabilityCause isExist = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
 
@@ -162,20 +157,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
             um.setPassword("");
             handleAddCache(liabilityCause);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(lc);
-            auditNotificationDTO.setLiabilityCause(liabilityCause);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, changeDescription, lc, liabilityCause, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "editing liability cause");
             throw exception;
         }
     }
@@ -205,12 +192,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching liability causes");
             throw exception;
         }
     }
@@ -249,12 +232,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching liability cause");
             throw exception;
         }
     }
@@ -262,13 +241,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> approveLiabilityCause(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         int result;
         String desc = "";
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseVersionById(liabilityCauseId, um.getOrgId());
@@ -330,22 +306,14 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             handleAddCache(liabilityCause);
             um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType("Liability Cause");
-            auditNotificationDTO.setLiabilityCause(newLc);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, lc, newLc, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), liabilityCause.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "approving liability cause");
             throw exception;
         }
     }
@@ -353,12 +321,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> createPercentage(PercentageRange request) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = request.getPercentage()+ "% newly created";
             UserModel um = handleUserValidation();
 
@@ -398,20 +363,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             um.setPassword("");
             handleAddPercentageCache(percentageRange);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(pr);
-            auditNotificationDTO.setPercentageRange(percentageRange);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, pr, percentageRange, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating percentage range");
             throw exception;
         }
 
@@ -420,12 +377,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> updatePercentage(PercentageRange request) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
             int result;
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
             PercentageRange isExist = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
 
@@ -457,20 +411,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             PercentageRange percentageRange = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
             um.setPassword("");
             handleAddPercentageCache(percentageRange);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(pr);
-            auditNotificationDTO.setPercentageRange(percentageRange);
-            auditRepository.save(auditNotificationDTO);
+
+            AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "editing percentage range");
             throw exception;
         }
     }
@@ -500,12 +447,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching percentage ranges");
             throw exception;
         }
     }
@@ -546,10 +489,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         } catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching percentage range");
             throw exception;
         }
     }
@@ -557,13 +497,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> approvePercentage(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         int result;
         String desc = "";
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
             PercentageRange percentage = debtMapper.getPercentageVersionById(percentageId, um.getOrgId());
@@ -619,32 +556,29 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             handleAddPercentageCache(percentage);
             um.setPassword("");
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(pr);
-            auditNotificationDTO.setPercentageRange(newPercentageRange);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, pr, newPercentageRange, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setType(pr);
+//            auditNotificationDTO.setPercentageRange(newPercentageRange);
+//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), capitalizeFirstLetter(approveStatus) +" successfully", "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching percentage range");
             throw exception;
         }
     }
 
     @Override
     public Map<String, Object> liabilityCauseChangeState(UUID id, Boolean state) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(id, um.getOrgId());
@@ -676,33 +610,21 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getId(), liabilityCause.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
             LiabilityCause lca = debtMapper.getLiabilityCauseById(id, um.getOrgId());
-//            um.setPassword("");
             handleAddCache(lca);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(pr);
-            auditNotificationDTO.setLiabilityCause(lca);
-            auditRepository.save(auditNotificationDTO);
+            um.setPassword("");
+            AuditLog auditLog = buildAuditLog(um, changeDescription, pr, lca, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
         }  catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "changing liability cause state");
             throw exception;
         }
     }
 
     @Override
     public Map<String, Object> parcentageChangeState(UUID id, Boolean state) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
             PercentageRange percentage = debtMapper.getPercentageById(id, um.getOrgId());
@@ -741,23 +663,29 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddPercentageCache(percentageRange);
             um.setPassword("");
             handleAddPercentageCache(percentageRange);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(changeDescription);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(pr);
-            auditNotificationDTO.setPercentageRange(percentageRange);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
         }  catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "changing state percentage range");
             throw exception;
         }
+    }
+
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setPercentageRange(createdEntity instanceof PercentageRange ? (PercentageRange) createdEntity : null);
+        log.setLiabilityCause(createdEntity instanceof LiabilityCause ? (LiabilityCause) createdEntity : null);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 
     private void handleAddCache(LiabilityCause liabilityCause) {

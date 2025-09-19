@@ -5,10 +5,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.ManufacturerMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -47,19 +50,16 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     private HttpServletRequest httpServletRequest;
 
     @Autowired
-    private ExceptionAuditRepository exceptionAuditRepository;
+    private GenericHandler genericHandler;
 
 
-    private String manfacturerName = "Manufacturer";
+    private String manufacturerName = "Manufacturer";
 
     @Transactional
     @Override
     public Map<String, Object> createManufacturer(Manufacturer request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             String desc = capitalizeFirstLetter(request.getName()) + "newly created";
             UserModel um = handleUserValidation();
@@ -67,7 +67,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
             if (isManufacturer != null){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manfacturerName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " " + status.getExistDesc());
             }
 
             request.setOrgId(um.getOrgId());
@@ -78,21 +78,14 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
 //            handleAddCache(user);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(manfacturerName);
-            auditNotificationDTO.setManufacturer(manufacturer);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, manufacturerName, manufacturer, metadata);
+            auditRepository.save(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(), manfacturerName + " " + status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating manufacturer");
+
             throw exception;
         }
     }
@@ -100,19 +93,15 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Transactional
     @Override
     public Map<String, Object> updateManufacturer(Manufacturer request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
-
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = capitalizeFirstLetter(request.getName()) + "edited";
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
             UserModel um = handleUserValidation();
 
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findById(request.getId(), um.getOrgId());
             if (isManufacturer == null){
-                throw new GlobalExceptionHandler.NotFoundException(manfacturerName + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " " + status.getNotFoundDesc());
             }
 
             request.setOrgId(um.getOrgId());
@@ -123,21 +112,20 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
 //            handleAddCache(user);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setType(manfacturerName);
-            auditNotificationDTO.setManufacturer(manufacturer);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, manufacturerName, manufacturer, metadata);
+            auditRepository.save(auditLog);
+//            auditNotificationDTO.setCreator(um);
+//            auditNotificationDTO.setDescription(desc);
+//            auditNotificationDTO.setUserAgent(userAgent);
+//            auditNotificationDTO.setIpAddress(ipAddress);
+//            auditNotificationDTO.setType(manfacturerName);
+//            auditNotificationDTO.setManufacturer(manufacturer);
+//            auditRepository.save(auditNotificationDTO);
 
-            return ResponseMap.response(status.getSuccessCode(), manfacturerName + " " + status.getUpdateDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while updating manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "editing manufacturer");
             throw exception;
         }
     }
@@ -145,8 +133,6 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getManufacturer(UUID id) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
 
             UserModel um = handleUserValidation();
@@ -154,16 +140,13 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             // check if operator exist
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
             if (manufacturer == null){
-                throw new GlobalExceptionHandler.NotFoundException(manfacturerName + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " " + status.getNotFoundDesc());
             }
 
-            return ResponseMap.response(status.getSuccessCode(), manfacturerName + " " + status.getDesc(), manufacturer);
+            return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getDesc(), manufacturer);
         } catch (Exception exception) {
             log.error("Error occurred while creating manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching manufacturer");
             throw exception;
         }
     }
@@ -208,15 +191,29 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
             List<Manufacturer> filteredManufacturers = manufacturerStream.toList();
 
-            return ResponseMap.response(status.getSuccessCode(), manfacturerName + "s " + status.getDesc(), filteredManufacturers);
+            return ResponseMap.response(status.getSuccessCode(), manufacturerName + "s " + status.getDesc(), filteredManufacturers);
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching manufacturers: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while filtering users");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetching manufacturers");
+//            exceptionErrorLogs.setDescription("Error occurred while filtering users");
+//            exceptionErrorLogs.setError_message(exception.getMessage());
+//            exceptionErrorLogs.setError(exception.toString());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
+    }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Manufacturer createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setManufacturer(createdEntity);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 }

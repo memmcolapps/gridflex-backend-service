@@ -13,10 +13,12 @@ import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.util.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -63,6 +65,9 @@ public class CustomerServiceImpl implements CustomerService {
     private AuthMapper operatorMapper;
 
     @Autowired
+    private GenericHandler genericHandler;
+
+    @Autowired
     private HttpServletRequest httpServletRequest;
 
     @Autowired
@@ -82,11 +87,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> createCustomer(Customer request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
 
@@ -105,23 +107,14 @@ public class CustomerServiceImpl implements CustomerService {
 
             Customer customer = customerMapper.findById(id, um.getOrgId());
             handleAddCache(customer);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(customerName);
-            auditNotificationDTO.setCreatedCustomer(customer);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, "", customerName, customer, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
-            exception.printStackTrace();
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating customer");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "creating customer");
             throw exception;
         }
     }
@@ -129,11 +122,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> updateCustomer(Customer request) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
-        String ipAddress = getClientIp(httpServletRequest);
-        String userAgent = httpServletRequest.getHeader("User-Agent");
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
 
@@ -144,22 +134,13 @@ public class CustomerServiceImpl implements CustomerService {
             Customer customer = customerMapper.findById(request.getId(), um.getOrgId());
 
             handleAddCache(customer);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription("Edited customer");
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setType(customerName);
-            auditNotificationDTO.setCreatedCustomer(customer);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, "Edited customer", "", customerName, customer, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
-            exception.printStackTrace();
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating customer");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "updating customer");
             throw exception;
         }
     }
@@ -248,11 +229,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
-            exception.printStackTrace();
-            exceptionErrorLogs.setDescription("Error occurred while filtering users");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
     }
@@ -281,11 +258,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), isCustomer);
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
-            exception.printStackTrace();
-            exceptionErrorLogs.setDescription("Error occurred while trying to creating customer");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
     }
@@ -293,9 +266,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> changeState(UUID customerId, String state, String reason) throws MissingServletRequestParameterException {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
 
@@ -318,21 +290,14 @@ public class CustomerServiceImpl implements CustomerService {
             Customer customer = customerMapper.findById(customerId, um.getOrgId());
 
             handleAddCache(customer);
-            auditNotificationDTO.setCreator(um);
-            auditNotificationDTO.setDescription(desc);
-            auditNotificationDTO.setReason(reason);
-            auditNotificationDTO.setType(customerName);
-            auditNotificationDTO.setCreatedCustomer(customer);
-            auditRepository.save(auditNotificationDTO);
+            AuditLog auditLog = buildAuditLog(um, desc, reason, customerName, customer, metadata);
+            auditRepository.save(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Customer " + state + " successfully", "");
             
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logAndSaveException(exception, "changing customer state");
             throw exception;
         }
     }
@@ -560,6 +525,19 @@ public class CustomerServiceImpl implements CustomerService {
 //        }
 //    }
 
+    private AuditLog buildAuditLog(UserModel creator, String description, String reason, String type, Object createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setReason(reason);
+        log.setType(type);
+        log.setCreatedCustomer(createdEntity instanceof Customer ? (Customer) createdEntity : null);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
+    }
 
     private Customer buildCustomer(String firstname, String lastname, String nin ,String phoneNumber, String email,
                                    String state, String city, String houseNo, String streetName, String vat) {
@@ -586,26 +564,6 @@ public class CustomerServiceImpl implements CustomerService {
         };
     }
 
-
-//    UserModel handleUserValidation() {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        String username = "Unknown";
-//
-//        if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
-//            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-//            username = principal.getUsername();  // or principal.getEmail() if you named it that way
-//        }
-//
-//        UserModel isOperatorExist = operatorMapper.findAuthByUserEmail(username);
-//
-//
-//        if (!Boolean.TRUE.equals(isOperatorExist.getStatus())) {
-//            throw new LockedException("User is disabled");
-//        }
-//
-//        return isOperatorExist;
-//    }
-
     private void handleAddCache(Customer customer) {
         customerCache.remove(customer.getId().toString()+"_"+customer.getOrgId());
         for (String key : auditCache.keySet()) {
@@ -621,185 +579,3 @@ public class CustomerServiceImpl implements CustomerService {
         customerCache.put(customer.getId().toString()+"_"+customer.getOrgId(), customer);  // Cache updated or deleted entity
     }
 }
-
-
-//                // Log a meaningful identifier of the customer
-//                String identifier = customer.getAccountNumber() != null
-//                        ? customer.getAccountNumber()
-//                        : customer.getFirstname() + " " + customer.getLastname();
-//                failedRecords.add(identifier + " - " + exception.getMessage());
-//
-//                exception.printStackTrace(); // Optional: keep logs for debugging
-//
-//                e.add(exception.toString());
-//                log.error("Error occurred while upload customer record [ACTION]: {}", exception.getMessage(), exception);
-
-
-
-///
-
-
-//    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
-//
-//        UserModel um = handleUserValidation();
-//
-//        String filename = file.getOriginalFilename();
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        List<Customer> customers;
-//        String identifier = "";
-//        assert filename != null;
-//        if (filename.endsWith(".csv")) {
-//            customers = parseCSV(file);
-//        } else if (filename.endsWith(".xlsx")) {
-//            customers = parseExcel(file);
-//        } else {
-//            throw new IllegalArgumentException("Unsupported file type");
-//        }
-//        System.out.println("Uploading " + customers.size() + " customers");
-//        customers.forEach(System.out::println);
-//
-//
-//
-//        List<String> failedRecords = new ArrayList<>();
-//        List<String> fullErrors = new ArrayList<>();
-//        int successCount = 0;
-//
-//        for (Customer customer : customers) {
-//            try {
-//                customer.setOrgId(um.getOrgId());
-//                customer.setStatus("inactive");
-//                customerMapper.insertCustomer(customer);
-//                successCount++;
-//            }
-//            catch (Exception exception) {
-//                // Build a full identifier string from unique keys
-//                identifier = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
-//                        customer.getCustomerId(),
-//                        customer.getEmail(),
-//                        customer.getNin(),
-////                        customer.getMeterNumber());
-//
-//                // Add to failed summary
-//                failedRecords.add(identifier + " - " + exception.getMessage()));
-//
-//                // Add full exception for audit
-//                fullErrors.add(identifier + " - " + exception);
-//
-//                exception.printStackTrace();
-//
-//                // Log in system
-//                log.error("Failed to upload customer [DATA]: {} | [ERROR]: {}", identifier, exception.getMessage(), exception);
-//
-//            }
-//        }
-//        if (!failedRecords.isEmpty()) {
-//            exceptionErrorLogs.setDescription("Error occurred while trying to upload customer record");
-//            exceptionErrorLogs.setError_message(String.join("; ", failedRecords));
-//            exceptionErrorLogs.setError(fullErrors.toString());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//        }
-//        return ResponseMap.response(
-//                status.getSuccessCode(),
-//                successCount + " of " + customers.size() + " " + customerName + "s " + status.getRegDesc(),
-//                failedRecords.isEmpty() ? "" : "Some records failed to upload. See error logs.");
-//
-//    }
-
-///-------
-
-//    @Override
-//    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
-//        UserModel um = handleUserValidation();
-//
-//        List<Customer> customers;
-//        String filename = file.getOriginalFilename();
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        String identifier = "";
-//        assert filename != null;
-//        if (filename.endsWith(".csv")) {
-//            customers = parseCSV(file);
-//        } else if (filename.endsWith(".xlsx")) {
-//            customers = parseExcel(file);
-//        } else {
-//            throw new IllegalArgumentException("Unsupported file type");
-//        }
-//
-//        int total = customers.size();
-//        int success = 0;
-//        List<String> failedRecords = new ArrayList<>();
-//
-//        for (int i = 0; i < total; i += BATCH_SIZE) {
-//            int end = Math.min(i + BATCH_SIZE, total);
-//            List<Customer> batch = customers.subList(i, end);
-//
-//            batch.forEach(customer -> {
-//                customer.setOrgId(um.getOrgId());
-//                customer.setStatus("inactive");
-//            });
-//
-//            try {
-//                customerMapper.bulkInsertCustomers(batch);
-//                success += batch.size();
-//            } catch (Exception e) {
-//                failedRecords.add("Batch " + i + "-" + end + " failed: " + e.getMessage());
-//            }
-//        }
-//
-//        if (!failedRecords.isEmpty()) {
-//            exceptionErrorLogs.setDescription("Error occurred while trying to upload customer record");
-//            exceptionErrorLogs.setError_message(String.join("; ", failedRecords));
-////            exceptionErrorLogs.setError(fullErrors.toString());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//        }
-//
-//        return ResponseMap.response(
-//        status.getSuccessCode(),
-//                success + " of " + customers.size() + " " + customerName + "s " + status.getRegDesc(),
-//        failedRecords.isEmpty() ? "" : "Some records failed to upload. See error logs.");
-//    }
-
-
-//    private List<Customer> parseCSV(MultipartFile file) throws IOException {
-//        List<Customer> customers = new ArrayList<>();
-//        Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
-//        Iterable<CSVRecord> records = CSVFormat.DEFAULT
-//                .withFirstRecordAsHeader()
-//                .parse(reader);
-//
-//        for (CSVRecord record : records) {
-//            customers.add(buildCustomer(record.get("firstname"),
-//                    record.get("lastname"),record.get("nin"), record.get("phoneNumber"), record.get("email"), record.get("state"),
-//                    record.get("city"), record.get("houseNo"), record.get("streetName"), record.get("vat")));
-//        }
-//
-//        return customers;
-//    }
-
-//    private List<Customer> parseExcel(MultipartFile file) throws IOException {
-//        List<Customer> customers = new ArrayList<>();
-//        Workbook workbook = new XSSFWorkbook(file.getInputStream());
-//        Sheet sheet = workbook.getSheetAt(0);
-//
-//        Iterator<Row> rowIterator = sheet.iterator();
-//        if (rowIterator.hasNext()) rowIterator.next(); // Skip header
-//
-//        while (rowIterator.hasNext()) {
-//            Row row = rowIterator.next();
-//
-//            customers.add(buildCustomer(
-//                    getCellValue(row.getCell(0)),
-//                    getCellValue(row.getCell(1)),
-//                    getCellValue(row.getCell(2)),
-//                    getCellValue(row.getCell(3)),
-//                    getCellValue(row.getCell(4)),
-//                    getCellValue(row.getCell(5)),
-//                    getCellValue(row.getCell(6)),
-//                    getCellValue(row.getCell(7)),
-//                    getCellValue(row.getCell(8)),
-//                    getCellValue(row.getCell(9))
-//            ));
-//        }
-//
-//        workbook.close();
-//        return customers;
-//    }

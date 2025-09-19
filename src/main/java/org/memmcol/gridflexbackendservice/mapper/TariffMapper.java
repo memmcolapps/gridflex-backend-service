@@ -97,6 +97,8 @@ public interface TariffMapper {
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated') " +
             "ORDER BY created_at DESC")
+    @Result(property = "band", column = "band_id",
+            one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     List<Tariff> GetPendingTariffs(UUID orgId);
 
     @Delete("DELETE FROM tariffs WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
