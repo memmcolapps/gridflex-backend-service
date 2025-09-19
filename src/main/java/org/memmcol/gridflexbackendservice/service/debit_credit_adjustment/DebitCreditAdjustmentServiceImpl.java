@@ -96,7 +96,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
-            LiabilityCause liabilityCause = mapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
+            LiabilityCause liabilityCause = mapper.getLiabilityCauseById(request.getLiabilityCauseId());
             if (liabilityCause == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause not found");
             }
@@ -256,7 +256,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             String db;
             if("credit".equals(type) ){
                 db = credit;
-            } else if(debit.equalsIgnoreCase(type)){
+            } else if("debit".equalsIgnoreCase(type)){
                 db = debit;
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
@@ -285,6 +285,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             List<DebitCreditAdjust> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
 
+            System.out.println(">>>>>>>>>>>>>>>>here :::"+type);
             allDebitCreditAdjustment = mapper.GetDebitCreditAdjustment(um.getOrgId(), type);
 
             List<DebitCreditAdjust> filteredDebitCreditAdjustment = allDebitCreditAdjustment.stream()
