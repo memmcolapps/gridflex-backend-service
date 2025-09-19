@@ -83,10 +83,10 @@ public class DebtSettingController {
 
     @PatchMapping("/liability-cause/change-state")
     public ResponseEntity<?> liabilityCauseChangeState(
-            @RequestParam UUID id,
+            @RequestParam UUID liabilityCauseId,
             @RequestParam Boolean status) {
         try {
-            Map<String, Object> result = service.liabilityCauseChangeState(id, status);
+            Map<String, Object> result = service.liabilityCauseChangeState(liabilityCauseId, status);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -154,10 +154,10 @@ public class DebtSettingController {
 
     @PatchMapping("/percentage-range/change-state")
     public ResponseEntity<?> percentageChangeState(
-            @RequestParam UUID id,
+            @RequestParam UUID percentageId,
             @RequestParam Boolean status) {
         try {
-            Map<String, Object> result = service.parcentageChangeState(id, status);
+            Map<String, Object> result = service.parcentageChangeState(percentageId, status);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

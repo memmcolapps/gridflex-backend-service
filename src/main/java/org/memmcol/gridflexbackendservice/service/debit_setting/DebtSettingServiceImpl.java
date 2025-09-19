@@ -614,7 +614,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, lca, metadata);
             auditRepository.save(auditLog);
-            return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), lc+ (state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             genericHandler.logAndSaveException(exception, "changing liability cause state");
             throw exception;
@@ -629,7 +629,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             UserModel um = handleUserValidation();
             PercentageRange percentage = debtMapper.getPercentageById(id, um.getOrgId());
             if(percentage == null){
-                throw new GlobalExceptionHandler.NotFoundException("Band "+status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(pr+" "+status.getNotFoundDesc());
             }
 
             if(state){
@@ -640,7 +640,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
 
 
-            PercentageRange isVersionExist = debtMapper.getPercentageById(id, um.getOrgId());
+            PercentageRange isVersionExist = debtMapper.getPercentageVersionById(id, um.getOrgId());
             percentage.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             percentage.setOrgId(um.getOrgId());
             percentage.setCreatedBy(um.getId());
@@ -665,7 +665,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddPercentageCache(percentageRange);
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
             auditRepository.save(auditLog);
-            return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), pr +(state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             genericHandler.logAndSaveException(exception, "changing state percentage range");
@@ -719,7 +719,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     }
 
     private String buildLcChangeStatusDescription(LiabilityCause liabilityCause, Boolean status) {
-        StringBuilder changes = new StringBuilder("Edited tariff ");
+        StringBuilder changes = new StringBuilder("Edited "+lc);
         String oldState = liabilityCause.getApproveStatus().trim().equalsIgnoreCase("Approved") ? "activated" : "deactivated";
         String newState = status ? "activated" : "deactivated";
         if (!Objects.equals(liabilityCause.getApproveStatus(), newState)) {
@@ -730,7 +730,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     }
 
     private String buildPrChangeStatusDescription(PercentageRange percentageRange, Boolean status) {
-        StringBuilder changes = new StringBuilder("Edited tariff ");
+        StringBuilder changes = new StringBuilder("Edited "+pr);
         String oldState = percentageRange.getApproveStatus().trim().equalsIgnoreCase("Approved") ? "activated" : "deactivated";
         String newState = status ? "activated" : "deactivated";
         if (!Objects.equals(percentageRange.getApproveStatus(), newState)) {

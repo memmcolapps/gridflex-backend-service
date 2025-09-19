@@ -283,7 +283,7 @@ public class TariffServiceImpl implements TariffService {
 //            auditNotificationDTO.setIpAddress(ipAddress);
 //            auditNotificationDTO.setCreatedTariff(tariffByName);
 //            auditRepository.save(auditNotificationDTO);
-            return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(), tariffName + (state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);

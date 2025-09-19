@@ -96,8 +96,8 @@ public interface DebtSettingMapper {
     List<LiabilityCause> getLiabilityCause(UUID orgId);
 
     @Update("UPDATE liability_cause_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
-            "WHERE liability_cause_id = #{liabilityCauseId} AND (approve_status = 'Pending-created' || approve_status = 'Pending-edited' || approve_status = 'Pending-activated' " +
-            "|| approve_status = 'Pending-deactivated')")
+            "WHERE liability_cause_id = #{liabilityCauseId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int approveLiabilityCauseVersion(LiabilityCause liabilityCause);
 
     @Update("UPDATE liability_cause SET name = #{name}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt} " +
@@ -106,7 +106,7 @@ public interface DebtSettingMapper {
 
     @Update("UPDATE liability_cause_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE liability_cause_id = #{liabilityCauseId}")
-    int rejectedLiabilityVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
+    int rejectedLiabilityVersion(String approveStatus, UUID liabilityCauseId, Date updatedAt, UUID approveBy);
 
     @Select("SELECT * FROM liability_cause_version WHERE liability_cause_id = #{liabilityCauseId} AND org_id = #{orgId} AND " +
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
@@ -296,7 +296,7 @@ public interface DebtSettingMapper {
     @Update("UPDATE debt_percentage_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE debt_percentage_id = #{percentageId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
-    int rejectedPercentageVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
+    int rejectedPercentageVersion(String approveStatus, UUID percentageId, Date updatedAt, UUID approveBy);
 
     @Update({
             "<script>",

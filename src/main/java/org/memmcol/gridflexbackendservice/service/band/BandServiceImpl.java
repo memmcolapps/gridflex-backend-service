@@ -370,7 +370,7 @@ public class BandServiceImpl implements BandService {
 //			authCache.remove("dashboard");
             AuditLog auditLog = buildAuditLog(um, changeDescription, bandName, bandById, metadata);
             auditRepository.save(auditLog);
-            return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activate " : " Deactivate ")+ "Successfully", "");
+            return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activated " : " Deactivated ")+ "Successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
             genericHandler.logAndSaveException(exception, "change band state");
