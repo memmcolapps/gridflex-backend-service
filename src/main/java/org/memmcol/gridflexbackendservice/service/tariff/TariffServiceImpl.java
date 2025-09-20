@@ -3,20 +3,17 @@ package org.memmcol.gridflexbackendservice.service.tariff;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
-import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
-import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
-import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
-import org.memmcol.gridflexbackendservice.util.GenericHandler;
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -31,8 +28,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.memmcol.gridflexbackendservice.util.GenericHandler.capitalizeFirstLetter;
-import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
+import static org.memmcol.gridflexbackendservice.components.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
@@ -75,8 +72,6 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> createTariff(Tariff tariff) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
@@ -98,10 +93,8 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found, not approved or deactivated" );
             }
             tariff.setApprove_status("Pending-created");
-//            tariff.setStatus(true);
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
-//            tariff.setAction("Created");
             tariff.setDescription(desc);
             result = tariffMapper.createTariff(tariff);
             if (result == 0) {
@@ -440,8 +433,6 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> updateTariff(Tariff tariff) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;

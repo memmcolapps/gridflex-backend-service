@@ -17,11 +17,9 @@ import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
-import org.memmcol.gridflexbackendservice.util.GenericHandler;
-import org.memmcol.gridflexbackendservice.util.ResponseMap;
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,18 +27,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
-//import static org.memmcol.gridflexbackendservice.util.GenericHandler.getClientIp;
+//import static org.memmcol.gridflexbackendservice.components.GenericHandler.getClientIp;
 
 
 @RequiredArgsConstructor
@@ -113,7 +109,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			Authentication authentication) throws IOException, ServletException {
 		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal(); // use the provided authentication
 
-		AuditLog auditNotificationDTO = new AuditLog();
+//		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
 		Map<String, String> metadata = genericHandler.extractRequestMetadata(request);
 //		String ipAddress = getClientIp(request);
@@ -153,7 +149,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 				parent.getNodesTree().add(node);
 			}
 		}
-		auditNotificationDTO.setCreator(user);
+//		auditNotificationDTO.setCreator(user);
 		user.setNodes(root);
 		user.setPassword("");
 		AuditLog auditLog = buildAuditLog(user, "Logged in", "auth", null, metadata);
@@ -168,7 +164,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			}
 		}
 //		authCache.remove("dashboard");
-		auditRepository.save(auditNotificationDTO);
+//		auditRepository.save(auditNotificationDTO);
 		Map<String, Object> resp = new HashMap<>();
 		Map<String, Object> token = new HashMap<>();
 		resp.put("responsecode", "000");

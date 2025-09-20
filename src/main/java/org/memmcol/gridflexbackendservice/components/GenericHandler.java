@@ -1,13 +1,9 @@
-package org.memmcol.gridflexbackendservice.util;
+package org.memmcol.gridflexbackendservice.components;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
-import org.memmcol.gridflexbackendservice.service.band.BandServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +13,6 @@ import java.util.Map;
 @Slf4j
 @Component
 public class GenericHandler {
-//    private static final Logger log = LoggerFactory.getLogger(GenericHandler.class);
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
@@ -28,7 +23,6 @@ public class GenericHandler {
     }
 
     public void logAndSaveException(Exception exception, String actionDescription) {
-//        log.error("Error occurred while {} [ACTION]: {}", actionDescription, exception.getMessage(), exception);
 
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         exceptionErrorLogs.setDescription("Error occurred while trying to " + actionDescription);

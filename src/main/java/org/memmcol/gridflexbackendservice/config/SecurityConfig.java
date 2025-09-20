@@ -7,7 +7,7 @@ import org.memmcol.gridflexbackendservice.components.CustomAccessDeniedHandler;
 import org.memmcol.gridflexbackendservice.components.CustomAuthorizationFilter;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.service.perm_evaluator.PermissionEvaluator;
-import org.memmcol.gridflexbackendservice.util.GenericHandler;
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
