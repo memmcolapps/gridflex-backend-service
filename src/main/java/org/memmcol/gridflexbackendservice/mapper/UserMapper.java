@@ -203,7 +203,7 @@ public interface UserMapper {
     @Update("UPDATE groups SET status = #{status} WHERE id = #{groupId}")
     void changeGroupStatus(UUID groupId, Boolean status);
 
-    @Insert("INSERT INTO incident_report (message, org_id, status, user_id, created_at) " +
-            "VALUES (#{message}, #{orgId}, #{status}, #{userId}, #{createdAt})")
-    int insertIncidentReport(IncidentReport incidentReport);
+    @Insert("INSERT INTO incident_report (message, org_id, status, user_id, created_at, updated_at, type) " +
+            "VALUES (#{message}, #{orgId}, #{status}, #{userId}, #{createdAt}, #{updatedAt}, #{type})")
+    void insertIncidentReport(IncidentReport incidentReport);
 }

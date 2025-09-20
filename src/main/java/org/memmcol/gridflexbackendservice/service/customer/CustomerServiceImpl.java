@@ -60,9 +60,6 @@ public class CustomerServiceImpl implements CustomerService {
     private AuditRepository auditRepository;
 
     @Autowired
-    private AuthMapper operatorMapper;
-
-    @Autowired
     private GenericHandler genericHandler;
 
     @Autowired
@@ -112,6 +109,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Creating customer Service failed");
             genericHandler.logAndSaveException(exception, "creating customer");
             throw exception;
         }
@@ -138,6 +136,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Editing customer Service failed");
             genericHandler.logAndSaveException(exception, "updating customer");
             throw exception;
         }
@@ -227,6 +226,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Fetching customers Service failed");
             genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
@@ -235,7 +235,6 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> singleCustomer(UUID id) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
             UserModel um = handleUserValidation();
@@ -256,6 +255,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), isCustomer);
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Fetching customer Service failed");
             genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
@@ -295,6 +295,7 @@ public class CustomerServiceImpl implements CustomerService {
             
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("changing customer status Service failed");
             genericHandler.logAndSaveException(exception, "changing customer state");
             throw exception;
         }

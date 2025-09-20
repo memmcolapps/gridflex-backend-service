@@ -114,6 +114,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("creating liability cause service failed");
             genericHandler.logAndSaveException(exception, "creating liability cause");
             throw exception;
         }
@@ -159,6 +160,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching liability cause service failed");
             genericHandler.logAndSaveException(exception, "editing liability cause");
             throw exception;
         }
@@ -190,6 +192,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("fetching liability cause services failed");
             genericHandler.logAndSaveException(exception, "fetching liability causes");
             throw exception;
         }
@@ -230,6 +233,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("fetching liability cause service failed");
             genericHandler.logAndSaveException(exception, "fetching liability cause");
             throw exception;
         }
@@ -310,6 +314,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("approve liability cause service failed");
             genericHandler.logAndSaveException(exception, "approving liability cause");
             throw exception;
         }
@@ -365,6 +370,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("creating percentage range service failed");
             genericHandler.logAndSaveException(exception, "creating percentage range");
             throw exception;
         }
@@ -414,6 +420,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("editing percentage range service failed");
             genericHandler.logAndSaveException(exception, "editing percentage range");
             throw exception;
         }
@@ -445,6 +452,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("fetching all percentage range service failed");
             genericHandler.logAndSaveException(exception, "fetching percentage ranges");
             throw exception;
         }
@@ -484,8 +492,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("fetching percentage range service failed");
             genericHandler.logAndSaveException(exception, "fetching percentage range");
             throw exception;
         }
@@ -567,6 +575,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("approve percentage range service failed");
             genericHandler.logAndSaveException(exception, "fetching percentage range");
             throw exception;
         }
@@ -613,6 +622,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc+ (state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
+            genericHandler.logIncidentReport("changing liability cause status service failed");
             genericHandler.logAndSaveException(exception, "changing liability cause state");
             throw exception;
         }
@@ -665,6 +675,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr +(state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Changing percentage range status service failed");
             genericHandler.logAndSaveException(exception, "changing state percentage range");
             throw exception;
         }

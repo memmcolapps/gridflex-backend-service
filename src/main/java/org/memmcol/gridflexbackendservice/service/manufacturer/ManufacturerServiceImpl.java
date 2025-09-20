@@ -80,6 +80,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating manufacturer [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Creating manufacturer service failed");
             genericHandler.logAndSaveException(exception, "creating manufacturer");
 
             throw exception;
@@ -121,6 +122,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while updating manufacturer [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Editing manufacturer service failed");
             genericHandler.logAndSaveException(exception, "editing manufacturer");
             throw exception;
         }
@@ -142,6 +144,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getDesc(), manufacturer);
         } catch (Exception exception) {
             log.error("Error occurred while creating manufacturer [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Fetching manufacturer service failed");
             genericHandler.logAndSaveException(exception, "fetching manufacturer");
             throw exception;
         }
@@ -191,11 +194,8 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching manufacturers: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Fetching all manufacturers service failed");
             genericHandler.logAndSaveException(exception, "fetching manufacturers");
-//            exceptionErrorLogs.setDescription("Error occurred while filtering users");
-//            exceptionErrorLogs.setError_message(exception.getMessage());
-//            exceptionErrorLogs.setError(exception.toString());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
     }

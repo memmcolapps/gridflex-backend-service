@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.audit;
 
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
@@ -39,7 +40,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     private ResponseProperties status;
 
     @Autowired
-    private ExceptionAuditRepository exceptionAuditRepository;
+    private GenericHandler genericHandler;
 
     public AuditLogServiceImpl(AuditRepository auditRepository) {
         this.auditRepository = auditRepository;
@@ -99,12 +100,8 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         } catch (Exception exception) {
             log.error("Error occurred while fetching audit logs: {}", exception.getMessage().trim(), exception);
-
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            exceptionErrorLogs.setDescription("Error occurred while fetching audit logs");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Fetching all audit log service failed");
+            genericHandler.logAndSaveException(exception, "creating band");
 
             throw exception;
         }
@@ -122,12 +119,9 @@ public class AuditLogServiceImpl implements AuditLogService {
             }
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Fetching audit log service failed");
+            genericHandler.logAndSaveException(exception, "fetching audit log ");
             throw exception;
         }
     }
@@ -140,19 +134,17 @@ public class AuditLogServiceImpl implements AuditLogService {
             incidentReport.setOrgId(um.getOrgId());
             incidentReport.setUserId(um.getId());
             incidentReport.setStatus(false);
+            incidentReport.setType("reported");
 
-            int result = userMapper.insertIncidentReport(incidentReport);
-            if (result == 0) {
-                throw new GlobalExceptionHandler.NotFoundException("Incident report failed");
-            }
+//            int result =
+            userMapper.insertIncidentReport(incidentReport);
+//            if (result == 0) {
+//                throw new GlobalExceptionHandler.NotFoundException("Incident report failed");
+//            }
             return ResponseMap.response(status.getSuccessCode(), "Incident Report "+status.getRegDesc(), "");
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Creating incident report service failed");
+            genericHandler.logAndSaveException(exception, "creating band");
             throw exception;
         }
     }

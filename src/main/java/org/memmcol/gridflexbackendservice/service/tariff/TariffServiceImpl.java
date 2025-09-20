@@ -121,11 +121,8 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Creating tariff service failed");
             genericHandler.logAndSaveException(exception, "creating tariff");
-//            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
     }
@@ -203,18 +200,12 @@ public class TariffServiceImpl implements TariffService {
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType(tariffName);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setCreatedTariff(newTariff);
-//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Approving tariff service failed");
             genericHandler.logAndSaveException(exception, "approving tariff");
             throw exception;
         }
@@ -223,7 +214,6 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID id, Boolean state) {
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
@@ -269,21 +259,11 @@ public class TariffServiceImpl implements TariffService {
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(um, changeDescription, tariffName, newTariff, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(changeDescription);
-//            auditNotificationDTO.setType(tariffName);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setCreatedTariff(tariffByName);
-//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), tariffName + (state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Changing tariff status service failed");
+            genericHandler.logAndSaveException(exception, "changing tariff status");
             throw exception;
         }
     }
@@ -299,7 +279,6 @@ public class TariffServiceImpl implements TariffService {
             String effectiveDate,
             String approveStatus,
             String type) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
             UserModel um = handleUserValidation();
 
@@ -367,6 +346,7 @@ public class TariffServiceImpl implements TariffService {
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Fetching all tariffs service failed");
             genericHandler.logAndSaveException(exception, "fetching tariffs");
             throw exception;
         }
@@ -474,6 +454,7 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Editing tariff service failed");
             genericHandler.logAndSaveException(exception, "editing tariff");
             throw exception;
         }
@@ -514,6 +495,7 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Fetching tariff service failed");
             genericHandler.logAndSaveException(exception, "fetching tariff");
             throw exception;
         }

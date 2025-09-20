@@ -126,6 +126,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Creating debit adjustment service failed");
             genericHandler.logAndSaveException(exception, "creating debit-credit adjustment");
             throw exception;
         }
@@ -183,6 +184,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Reconciliation dept service failed");
             genericHandler.logAndSaveException(exception, "reconcile dept");
             throw exception;
         }
@@ -220,6 +222,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             return ResponseMap.response(status.getSuccessCode(),  "Meter " + status.getDesc(), meterAndLiabilityCause);
         } catch (Exception exception) {
             log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Fetching meter & liability causes service failed");
             genericHandler.logAndSaveException(exception, "fetch meter liability cause");
             throw exception;
         }
@@ -307,7 +310,8 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
-            genericHandler.logAndSaveException(exception, "fetch debit adjustment");
+            genericHandler.logIncidentReport("Fetching debit adjustments service failed");
+            genericHandler.logAndSaveException(exception, "fetch debit adjustments");
             throw exception;
         }
     }
@@ -326,12 +330,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             return ResponseMap.response(status.getSuccessCode(), debit + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create band");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Fetching debit adjustment service failed");
+            genericHandler.logAndSaveException(exception, "fetch debit adjustment");
             throw exception;
         }
     }

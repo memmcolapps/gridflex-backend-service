@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -75,8 +76,8 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> createBand(Band band) {
         try {
-            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = capitalizeFirstLetter(band.getName())+ " created";
             UserModel um = handleUserValidation();
 
@@ -113,6 +114,7 @@ public class BandServiceImpl implements BandService {
 //            handleAddCache(bandByName);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
+            genericHandler.logIncidentReport("Creating band service failed");
             genericHandler.logAndSaveException(exception, "creating band");
             throw exception;
         }
@@ -160,6 +162,7 @@ public class BandServiceImpl implements BandService {
 ////			authCache.remove("dashboard");
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
+            genericHandler.logIncidentReport("Editing band service failed");
             genericHandler.logAndSaveException(exception, "edited band");
             throw exception;
         }
@@ -168,7 +171,6 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> approve(UUID bandId, String approveStatus) throws MissingServletRequestParameterException {
-        AuditLog auditNotificationDTO = new AuditLog();
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         int result;
         String desc = "";
@@ -244,6 +246,7 @@ public class BandServiceImpl implements BandService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("approving band service failed");
             genericHandler.logAndSaveException(exception, "approve band");
             throw exception;
         }
@@ -274,6 +277,7 @@ public class BandServiceImpl implements BandService {
 //            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
+            genericHandler.logIncidentReport("fetching all bands service failed");
            genericHandler.logAndSaveException(exception, "fetch bands");
             throw exception;
         }
@@ -315,6 +319,7 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("fetching band service failed");
             genericHandler.logAndSaveException(exception, "fetch band");
             throw exception;
         }
@@ -371,7 +376,8 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activated " : " Deactivated ")+ "Successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logAndSaveException(exception, "change band state");
+            genericHandler.logIncidentReport("changing band service status failed");
+            genericHandler.logAndSaveException(exception, "change band status");
             throw exception;
         }
 

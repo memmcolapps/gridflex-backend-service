@@ -52,12 +52,9 @@ public class UserServiceImpl implements  UserService {
     private AuthMapper operatorMapper;
 
     @Autowired
-    private ExceptionAuditRepository exceptionAuditRepository;
-
-    @Autowired
     private HttpServletRequest httpServletRequest;
 
-
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -112,6 +109,8 @@ public class UserServiceImpl implements  UserService {
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
+
+            genericHandler.logIncidentReport("Creating user service failed");
             genericHandler.logAndSaveException(exception, "creating user");
             throw exception;
         }
@@ -143,7 +142,9 @@ public class UserServiceImpl implements  UserService {
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
-            genericHandler.logAndSaveException(exception, "creating user");
+
+            genericHandler.logIncidentReport("Editing user service failed");
+            genericHandler.logAndSaveException(exception, "editing user");
             throw exception;
         }
     }
@@ -387,6 +388,8 @@ public class UserServiceImpl implements  UserService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
+
+            genericHandler.logIncidentReport("Fetching users service failed");
             genericHandler.logAndSaveException(exception, "fetch users");
             throw exception;
         }
@@ -414,6 +417,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), desc + " successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Changing group permission status service failed");
             genericHandler.logAndSaveException(exception, "changing group permission status");
             throw exception;
         }
@@ -423,7 +427,6 @@ public class UserServiceImpl implements  UserService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getUser(UUID userId) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
             UserModel um = handleUserValidation();
@@ -470,10 +473,8 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage().trim(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Fetching user service failed");
+            genericHandler.logAndSaveException(exception, "fetching user status");
             throw exception;
         }
     }
@@ -505,6 +506,8 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), state ? " User activated successfully" : "User deactivated successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
+
+            genericHandler.logIncidentReport("Changing user status service failed");
             genericHandler.logAndSaveException(exception, "changing user state");
             throw exception;
         }
@@ -574,22 +577,10 @@ public class UserServiceImpl implements  UserService {
             String desc = capitalizeFirstLetter(request.getGroupTitle() + " created");
             AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType("Group");
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setEndpoint(endpoint);
-//            auditNotificationDTO.setHttpMethod(httpMethod);
-//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(),  "Group "+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
+            genericHandler.logIncidentReport("Creating group permission service failed");
             genericHandler.logAndSaveException(exception, "create group permission failed");
-//            log.error("Error occurred while creating group [ACTION]: {}", exception.getMessage().trim(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
             throw exception;
         }
 
@@ -628,10 +619,8 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(),  "Group Permission " + status.getDesc(), groupDTOs);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Fetching groups service failed");
+            genericHandler.logAndSaveException(exception, "fetching groups status");
             throw exception;
         }
 

@@ -100,6 +100,7 @@ public class AuthServiceImpl implements AuthService {
 
 		} catch (Exception exception) {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+			genericHandler.logIncidentReport("Logout user service failed");
 			genericHandler.logAndSaveException(exception, "user logout");
 			throw exception;
 		}
@@ -108,7 +109,6 @@ public class AuthServiceImpl implements AuthService {
 
 	@Transactional
 	public Map<String, Object> handleForgetPassword(UserModel isOperator, String password) {
-		AuditLog AuditLog = new AuditLog();
 		try {
 			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
@@ -141,6 +141,7 @@ public class AuthServiceImpl implements AuthService {
 
 		} catch (Exception exception) {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+			genericHandler.logIncidentReport("Forget password service failed");
 			genericHandler.logAndSaveException(exception, "changing operator password");
 			throw exception;
 		}
@@ -165,6 +166,7 @@ public class AuthServiceImpl implements AuthService {
 			), Void.class);
 		} catch (RestClientException emailException) {
 			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage().trim(), emailException);
+			genericHandler.logIncidentReport("OTP mailer service failed");
 			genericHandler.logAndSaveException(emailException, "OTP mailer failed");
 			throw emailException;
 		}
@@ -187,12 +189,9 @@ public class AuthServiceImpl implements AuthService {
 
 			return ResponseMap.response(status.getNotFoundCode(), "User " + status.getDesc(), user);
 		} catch (Exception exception){
-			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			exceptionErrorLogs.setDescription("Error occurred while verifying OTP");
-			exceptionErrorLogs.setError_message(exception.getMessage().trim());
-			exceptionErrorLogs.setError(exception.toString().trim());
-			exceptionAuditRepository.save(exceptionErrorLogs);
+			genericHandler.logIncidentReport("Fetching user service failed");
+			genericHandler.logAndSaveException(exception, "fetching user ");
 			throw exception;
 		}
 	}
@@ -216,9 +215,9 @@ public class AuthServiceImpl implements AuthService {
 			}
 			return ResponseMap.response(status.getNotFoundCode(), "OTP verification failed", "");
 		} catch (Exception exception){
-			ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			genericHandler.logAndSaveException(exception, "verify OTP");
+			genericHandler.logIncidentReport("Verify OTP service failed");
+			genericHandler.logAndSaveException(exception, "verifying OTP");
 			throw exception;
 		}
 	}

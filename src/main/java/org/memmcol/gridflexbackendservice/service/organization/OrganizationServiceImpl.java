@@ -79,7 +79,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         } catch (Exception exception) {
             log.error("Error fetching organization {}: {}", id, exception.getMessage(), exception);
-
+            genericHandler.logIncidentReport("Fetching organization service failed");
             genericHandler.logAndSaveException(exception, "fetching organization");
             throw exception;
         }
@@ -113,7 +113,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         } catch (Exception exception) {
             log.error("Error updating organization: {}", exception.getMessage(), exception);
-            genericHandler.logAndSaveException(exception, "editing tariff");
+            genericHandler.logIncidentReport("Editing organization service failed");
+            genericHandler.logAndSaveException(exception, "editing organization");
             throw exception;
         }
 
