@@ -34,7 +34,7 @@ public interface CustomerMapper {
             @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterType", column = "meter_type"),
-            @Result(property = "approvedStatus", column = "approve_status"),
+            @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "ctRatioNum", column = "ct_ratio_num"),
             @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
             @Result(property = "voltRatioNum", column = "volt_ratio_num"),
