@@ -25,7 +25,7 @@ public class MDMeterInfo implements Serializable {
     private UUID createdBy;
     private UUID approveBy;
     private String description;
-    private String approveStatus;
+    private String meterStage;
 
     public UUID getId() {
         return id;
@@ -155,11 +155,11 @@ public class MDMeterInfo implements Serializable {
         this.description = description;
     }
 
-    public String getApproveStatus() {
-        return approveStatus;
+    public String getMeterStage() {
+        return meterStage;
     }
 
-    public void setApproveStatus(String approveStatus) {
-        this.approveStatus = approveStatus;
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
     }
 }

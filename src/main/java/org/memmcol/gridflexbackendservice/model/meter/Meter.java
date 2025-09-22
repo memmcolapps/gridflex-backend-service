@@ -28,14 +28,13 @@ public class Meter implements Serializable {
     private String energyType;
     private String fixedEnergy;
     private String dss;
-    private String approveStatus;
     private String meterCategory;
     private String meterClass;
     private String meterModel;
     private String meterType;
     private UUID meterManufacturer;
-    private Boolean activateStatus;
-    private Boolean status;
+    private String meterStage;
+    private String status;
     private Boolean smartStatus;
     private String customerId;
     private String oldSgc;
@@ -161,14 +160,6 @@ public class Meter implements Serializable {
         this.dss = dss;
     }
 
-    public String getApproveStatus() {
-        return approveStatus;
-    }
-
-    public void setApproveStatus(String approveStatus) {
-        this.approveStatus = approveStatus;
-    }
-
     public String getMeterCategory() {
         return meterCategory;
     }
@@ -209,19 +200,19 @@ public class Meter implements Serializable {
         this.meterType = meterType;
     }
 
-    public Boolean getActivateStatus() {
-        return activateStatus;
+    public String getMeterStage() {
+        return meterStage;
     }
 
-    public void setActivateStatus(Boolean activateStatus) {
-        this.activateStatus = activateStatus;
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
     }
 
-    public Boolean getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(Boolean status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

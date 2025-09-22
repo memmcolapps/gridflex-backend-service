@@ -21,7 +21,7 @@ public class SmartMeterInfo implements Serializable {
     private String authentication;
     private String password;
     private String description;
-    private String approveStatus;
+    private String meterStage;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -114,12 +114,12 @@ public class SmartMeterInfo implements Serializable {
         this.description = description;
     }
 
-    public String getApproveStatus() {
-        return approveStatus;
+    public String getMeterStage() {
+        return meterStage;
     }
 
-    public void setApproveStatus(String approveStatus) {
-        this.approveStatus = approveStatus;
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
     }
 
     public Date getCreatedAt() {
