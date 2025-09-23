@@ -119,6 +119,7 @@ public interface MeterMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
@@ -210,11 +211,23 @@ public interface MeterMapper {
 //            "old_sgc = #{oldSgc}, new_sgc = #{newSgc}, old_krn = #{oldKrn}, new_krn = #{newKrn}, old_tariff_index = #{oldTariffIndex}, " +
 //            "new_tariff_index = #{newTariffIndex}, updated_at = #{updatedAt}, energy_type = #{energyType}, fixed_energy = #{fixedEnergy}, " +
 //            "tariff = #{tariff}, dss = #{dss} WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
-    @Update("UPDATE meters " +
-            "SET " +
-            "  <if test='status != null'>status = #{status},</if>" +
-            "  <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
-            "WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
+
+//    @Update("UPDATE meters " +
+//            "SET " +
+//            "  <if test='status != null'>status = #{status},</if>" +
+//            "  <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
+//            "WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
+
+    @Update({
+            "<script>",
+            "UPDATE meters",
+            "SET "+
+                    " <if test='status != null'> status = #{status},</if>"+
+                    " <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
+                    "  updated_at = #{updatedAt}"+
+                    " WHERE meter_number = #{meterNumber} AND org_id = #{orgId} "+
+                    "</script>"
+    })
     int approveMeter(Meter request);
 
     @Update("UPDATE meters_version " +
@@ -268,16 +281,16 @@ public interface MeterMapper {
     @Update("UPDATE md_meters_info " +
             "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
             "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
-            "latitude = #{latitude}, longitude = #{longitude} WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
+            "latitude = #{latitude}, longitude = #{longitude} WHERE meter_id = #{meterId} AND org_id = #{orgId}")
     int updateMDMeterInfo(MDMeterInfo request);
 
-    @Update("UPDATE md_meters_info_version SET approve_status = #{approveStatus}, approve_by = #{approveBy} " +
-            "WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
+    @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
+            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
-    @Update("UPDATE payment_mode_version SET status = #{status}, approve_status = #{approveStatus}, approve_by = #{approveBy}, updatedAt = #{updated_at} " +
+    @Update("UPDATE payment_mode_version SET status = #{status}, meter_stage = #{meterStage}, approve_by = #{approveBy}, updatedAt = #{updated_at} " +
             "WHERE approve_status = #{approveStatus} AND orgId = #{orgId} AND meter_number = #{meterNumber} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
@@ -344,6 +357,7 @@ public interface MeterMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -437,12 +451,13 @@ public interface MeterMapper {
     List<Meter> getMeters(UUID orgId);
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-            "WHERE (m.meter_stage = 'Pending-created' OR m..meter_stage = 'Pending-edited' OR m.meter_stage = 'Pending-allocated' " +
+            "WHERE m.org_id = #{orgId} AND (m.meter_stage = 'Pending-created' OR m.meter_stage = 'Pending-edited' OR m.meter_stage = 'Pending-allocated' " +
             "OR m.meter_stage = 'Pending-assigned' OR m.meter_stage = 'Pending-detached' OR m.meter_stage = 'Pending-migrated') " +
-            "AND m.org_id = #{orgId} ORDER BY m.created_at DESC")
+            "ORDER BY m.created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -523,7 +538,6 @@ public interface MeterMapper {
     @Results({
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "assetId", column = "asset_id"),
 //            @Result(property = "simNumber", column = "sim_number"),
 //            @Result(property = "energyType", column = "energy_type"),
 //            @Result(property = "fixedType", column = "fixed_type"),
@@ -590,6 +604,7 @@ public interface MeterMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
             @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
             @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
@@ -636,6 +651,7 @@ public interface MeterMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "meterModel", column = "meter_model"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "createdBy", column = "created_by"),
@@ -649,7 +665,6 @@ public interface MeterMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
-            @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "createdBy", column = "created_by"),
             @Result(property = "approveBy", column = "approve_by"),
     })
@@ -741,7 +756,7 @@ public interface MeterMapper {
     int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 
 
-    @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy}, updated_at = #{updated_at} " +
+    @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE meter_number = #{meterNumber} AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int approvedMeterVersion(Meter meter);
