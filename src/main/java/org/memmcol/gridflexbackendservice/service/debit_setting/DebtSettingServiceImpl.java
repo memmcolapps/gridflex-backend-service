@@ -563,13 +563,6 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, pr, newPercentageRange, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setType(pr);
-//            auditNotificationDTO.setPercentageRange(newPercentageRange);
-//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), capitalizeFirstLetter(approveStatus) +" successfully", "");
 

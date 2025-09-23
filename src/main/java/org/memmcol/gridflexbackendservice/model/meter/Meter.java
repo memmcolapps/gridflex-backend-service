@@ -19,6 +19,7 @@ public class Meter implements Serializable {
     private UUID orgId;
     private UUID nodeId;
     private UUID meterId;
+    private String assetId;
     private String meterNumber;
     private String accountNumber;
     private String simNumber;
@@ -51,7 +52,7 @@ public class Meter implements Serializable {
     private MDMeterInfo mdMeterInfo;
     private PaymentMode paymentMode;
     private Manufacturer manufacturer;
-    private SmartMeterInfo smartMeter;
+    private SmartMeterInfo smartMeterInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -320,6 +321,14 @@ public class Meter implements Serializable {
         this.meterId = meterId;
     }
 
+    public String getAssetId() {
+        return assetId;
+    }
+
+    public void setAssetId(String assetId) {
+        this.assetId = assetId;
+    }
+
     public UUID getCreatedBy() {
         return createdBy;
     }
@@ -360,12 +369,12 @@ public class Meter implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public SmartMeterInfo getSmartMeter() {
-        return smartMeter;
+    public SmartMeterInfo getSmartMeterInfo() {
+        return smartMeterInfo;
     }
 
-    public void setSmartMeter(SmartMeterInfo smartMeter) {
-        this.smartMeter = smartMeter;
+    public void setSmartMeterInfo(SmartMeterInfo smartMeterInfo) {
+        this.smartMeterInfo = smartMeterInfo;
     }
 
     public String getMeterModel() {
