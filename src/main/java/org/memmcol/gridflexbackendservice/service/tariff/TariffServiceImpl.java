@@ -111,13 +111,6 @@ public class TariffServiceImpl implements TariffService {
 //            handleAddCache(tariffByName);
             AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType(tariffName);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setCreatedTariff(tariffByName);
-//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);

@@ -206,4 +206,28 @@ public interface UserMapper {
     @Insert("INSERT INTO incident_report (message, org_id, status, user_id, created_at, updated_at, type) " +
             "VALUES (#{message}, #{orgId}, #{status}, #{userId}, #{createdAt}, #{updatedAt}, #{type})")
     void insertIncidentReport(IncidentReport incidentReport);
+
+    @Select("SELECT * FROM incident_report WHERE org_id = #{orgId} ORDER BY created_at DESC ")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "organization", column = "org_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.UserMapper.getOrganization")),
+            @Result(property = "user", column = "user_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.UserMapper.getUser"))
+    })
+    List<IncidentReport> getIncidentReport(UUID orgId);
+
+
+    @Select("SELECT business_name FROM organizations WHERE id = #{org_id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "businessName", column = "business_name"),
+    })
+    Organization getOrganization(UUID org_id);
+
+    @Select("SELECT firstname, lastname FROM users WHERE id = #{org_id}")
+    UserModel getUser(UUID org_id);
 }
