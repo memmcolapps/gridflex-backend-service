@@ -96,7 +96,12 @@ public class MeterServiceImpl implements MeterService {
             validateMeterRequest(request, user);
 
             // --- Step 2: Insert Meter + Versions ---
-            insertMeterVersion(request);
+            int result1 = meterMapper.insertMeter(request);
+            request.setMeterId(request.getId());
+            int result2 = meterMapper.insertMeterVersion(request);
+            if (result1 == 0 || result2 == 0) {
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
+            }
             if ("md".trim().equalsIgnoreCase(request.getMeterClass())) {
                 insertMDMeterInfo(request, user);
             }
@@ -113,7 +118,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception ex) {
             log.error("Error creating meter: {}", ex.getMessage(), ex);
-            genericHandler.logIncidentReport("Creating meter service failed");
+//            genericHandler.logIncidentReport("Creating meter service failed");
             genericHandler.logAndSaveException(ex, "creating meter");
             throw ex;
         }
@@ -149,13 +154,14 @@ public class MeterServiceImpl implements MeterService {
         request.setCreatedBy(user.getId());
     }
 
-    private void insertMeterVersion(Meter request) {
-        int result1 = meterMapper.insertMeter(request);
-        int result2 = meterMapper.insertMeterVersion(request);
-        if (result1 == 0 || result2 == 0) {
-            throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
-        }
-    }
+//    private void insertMeterVersion(Meter request) {
+//        int result1 = meterMapper.insertMeter(request);
+//        request.setMeterId(request.getId());
+//        int result2 = meterMapper.insertMeterVersion(request);
+//        if (result1 == 0 || result2 == 0) {
+//            throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
+//        }
+//    }
 
     private void insertMDMeterInfo(Meter request, UserModel user) {
         request.getMdMeterInfo().setMeterId(request.getId());
@@ -171,14 +177,15 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void insertSmartMeterInfo(Meter request, UserModel user) {
-        request.getSmartMeter().setMeterId(request.getId());
-        request.getSmartMeter().setOrgId(user.getOrgId());
-        request.getSmartMeter().setCreatedBy(user.getId());
-        request.getSmartMeter().setMeterStage("Pending-created");
-        request.getSmartMeter().setDescription(capitalizeFirstLetter("Smart Meter Info created"));
-        request.getSmartMeter().setPassword(passwordEncoder.encode(request.getSmartMeter().getPassword()));
+        System.out.println(">>>>>>>>>>3:: "+request.getId());
+        request.getSmartMeterInfo().setMeterId(request.getId());
+        request.getSmartMeterInfo().setOrgId(user.getOrgId());
+        request.getSmartMeterInfo().setCreatedBy(user.getId());
+        request.getSmartMeterInfo().setMeterStage("Pending-created");
+        request.getSmartMeterInfo().setDescription(capitalizeFirstLetter("Smart Meter Info created"));
+        request.getSmartMeterInfo().setPassword(passwordEncoder.encode(request.getSmartMeterInfo().getPassword()));
 
-        int inserted = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeter());
+        int inserted = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());
         if (inserted == 0) {
             throw new GlobalExceptionHandler.NotFoundException(meterName + " Smart data " + status.getRegFailureDesc());
         }
@@ -241,14 +248,14 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // Handle smart meter-specific logic
-            if (request.getSmartMeter() != null) {
+            if (request.getSmartMeterInfo() != null) {
                 UUID meterId = request.getId();
-                request.getSmartMeter().setMeterId(meterId);
-                request.getSmartMeter().setOrgId(user.getOrgId());
-                request.getSmartMeter().setMeterStage("Pending-edited");
-                request.getSmartMeter().setDescription(buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeter(), request.getSmartMeter()));
+                request.getSmartMeterInfo().setMeterId(meterId);
+                request.getSmartMeterInfo().setOrgId(user.getOrgId());
+                request.getSmartMeterInfo().setMeterStage("Pending-edited");
+                request.getSmartMeterInfo().setDescription(buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeterInfo(), request.getSmartMeterInfo()));
                 int res = meterMapper.updateMeter("Pending-edited", request.getMeterNumber(), request.getUpdatedAt(), request.getStatus());
-                int mdResult2 = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeter());
+                int mdResult2 = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());
                 if (res == 0 || mdResult2 == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " MD data " + status.getUpdateFailureDesc());
                 }
@@ -335,11 +342,6 @@ public class MeterServiceImpl implements MeterService {
                 meterStream = meterStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
             }
 
-//            if (state != null && !state.isEmpty()) {
-//                meterStream = meterStream.filter(u -> u.getStatus() != null && u.getStatus());
-//            }
-
-
             if (createdAt != null && !createdAt.isEmpty()) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 LocalDate date = LocalDate.parse(createdAt, formatter);
@@ -380,10 +382,8 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while filtering users");
-            exceptionErrorLogs.setError_message(exception.getMessage());
-            exceptionErrorLogs.setError(exception.toString());
-            exceptionAuditRepository.save(exceptionErrorLogs);
+            genericHandler.logIncidentReport("Fetching meter service failed");
+            genericHandler.logAndSaveException(exception, "fetching meter");
             throw exception;
         }
     }
@@ -783,10 +783,10 @@ public class MeterServiceImpl implements MeterService {
             meter.getMdMeterInfo().setApproveBy(user.getId());
         }
 
-        if (meter.getSmartMeter() != null) {
-            meter.getSmartMeter().setMeterId(meterVersionId);
-            meter.getSmartMeter().setOrgId(user.getOrgId());
-            meter.getSmartMeter().setApproveBy(user.getId());
+        if (meter.getSmartMeterInfo() != null) {
+            meter.getSmartMeterInfo().setMeterId(meterVersionId);
+            meter.getSmartMeterInfo().setOrgId(user.getOrgId());
+            meter.getSmartMeterInfo().setApproveBy(user.getId());
         }
 
 //        boolean hasCustomer = meter.getCustomerId() != null;

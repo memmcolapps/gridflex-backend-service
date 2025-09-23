@@ -20,7 +20,7 @@ public class PaymentMode implements Serializable {
     private String debitPaymentMode;
     private String debitPaymentPlan;
     private String migrationFrom;
-    private String approveStatus;
+    private String meterStage;
     private Date createdAt;
     private Date updatedAt;
 
@@ -109,12 +109,12 @@ public class PaymentMode implements Serializable {
         this.migrationFrom = migrationFrom;
     }
 
-    public String getApproveStatus() {
-        return approveStatus;
+    public String getMeterStage() {
+        return meterStage;
     }
 
-    public void setApproveStatus(String approveStatus) {
-        this.approveStatus = approveStatus;
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
     }
 
     public Date getCreatedAt() {
