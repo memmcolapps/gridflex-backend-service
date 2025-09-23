@@ -57,7 +57,8 @@ public class MeterController {
     public ResponseEntity<?> getAllMeters(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
-            @RequestParam(value = "approveStatus", required = false,  defaultValue = "") String approveStatus,
+            @RequestParam(value = "type", required = false,  defaultValue = "") String type,
+            @RequestParam(value = "meterStage", required = false,  defaultValue = "") String meterStage,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "simNo", required = false, defaultValue = "") String simNo,
             @RequestParam(value = "manufacturer", required = false, defaultValue = "") String manufacturer,
@@ -68,7 +69,7 @@ public class MeterController {
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, approveStatus, meterClass, category, status, createdAt, customerId);
+            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterStage, meterClass, category, status, createdAt, customerId, type);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
