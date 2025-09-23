@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLogDto;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -143,6 +144,42 @@ public class AuditLogServiceImpl implements AuditLogService {
         } catch (Exception exception) {
             genericHandler.logIncidentReport("Creating incident report service failed");
             genericHandler.logAndSaveException(exception, "creating band");
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getIncidentReport(int page, int size) {
+        try {
+            UserModel um = handleUserValidation();
+
+            List<IncidentReport> filteredReports = userMapper.getIncidentReport(um.getOrgId());
+
+            // Pagination logic
+            int totalReports = filteredReports.size();
+            List<IncidentReport> paginatedReports;
+            if (size == 0) {
+                paginatedReports = filteredReports; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalReports);
+                int toIndex = Math.min(fromIndex + size, totalReports);
+                paginatedReports = filteredReports.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedReports);
+            response.put("totalData", totalReports);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedReports.size() / size));
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Incident reports fetched successfully", response
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logAndSaveException(exception, "fetching incident report");
             throw exception;
         }
     }

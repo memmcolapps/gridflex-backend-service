@@ -10,4 +10,6 @@ public interface AuditLogService {
     Map<String, Object> getAuditLogById(String id);
 
     Map<String, Object> incidentReport(IncidentReport incidentReport);
+
+    Map<String, Object> getIncidentReport(int page, int size);
 }

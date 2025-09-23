@@ -1,6 +1,8 @@
 package org.memmcol.gridflexbackendservice.model.audit;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.memmcol.gridflexbackendservice.model.user.Organization;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
@@ -16,6 +18,8 @@ public class IncidentReport implements Serializable {
     private Boolean status;
     private UUID userId;
     private String type;
+    private UserModel user;
+    private Organization organization;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -89,5 +93,21 @@ public class IncidentReport implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public UserModel getUser() {
+        return user;
+    }
+
+    public void setUser(UserModel user) {
+        this.user = user;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 }
