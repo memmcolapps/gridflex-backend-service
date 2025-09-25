@@ -347,7 +347,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             List<Meter> filteredMeters = meterStream.toList();
-            System.out.println(">>>>>>>>>>::: pppp: "+filteredMeters.get(0).getMeterNumber());
+
             // Pagination logic
             int totalMeters = filteredMeters.size();
             List<Meter> paginatedMeters;
