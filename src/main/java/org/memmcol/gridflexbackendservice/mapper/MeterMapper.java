@@ -367,7 +367,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
-            @Result(property = "smartMeterInfo", column = "meter_id",
+            @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
 
     })
@@ -471,7 +471,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
-            @Result(property = "smartMeterInfo", column = "meter_id",
+            @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
     })
     List<Meter> getMeters(UUID orgId);
@@ -691,8 +691,7 @@ public interface MeterMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
-            @Result(property = "createdBy", column = "created_by"),
-            @Result(property = "approveBy", column = "approve_by"),
+            @Result(property = "meterModel", column = "meter_model"),
     })
     SmartMeterInfo getSmartMeter(UUID meterId);
 

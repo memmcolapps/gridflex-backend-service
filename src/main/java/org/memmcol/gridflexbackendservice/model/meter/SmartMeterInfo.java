@@ -1,6 +1,8 @@
 package org.memmcol.gridflexbackendservice.model.meter;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Id;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SmartMeterInfo implements Serializable {
     @Id
     private UUID id;
@@ -19,6 +22,7 @@ public class SmartMeterInfo implements Serializable {
     private String meterModel;
     private String protocol;
     private String authentication;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String description;
     private String meterStage;
