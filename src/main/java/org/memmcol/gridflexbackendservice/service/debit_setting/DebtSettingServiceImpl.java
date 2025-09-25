@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
@@ -76,7 +75,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
-            String desc = capitalizeFirstLetter(request.getName()) + " newly created";
+            String desc = "Newly Added";
             UserModel um = handleUserValidation();
 
             LiabilityCause isExist = debtMapper.getLiabilityCauseByName(request.getName(), request.getCode(), um.getOrgId());
@@ -140,7 +139,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             request.setOrgId(um.getOrgId());
             request.setCreatedBy(um.getId());
             String changeDescription = buildChangeDescription(isExist, request);
-            request.setDescription(changeDescription);
+            request.setDescription("Liability Cause Edited");
 
             if(isVersionExist != null ){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
@@ -326,7 +325,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-            String desc = request.getPercentage()+ "% newly created";
+            String desc = "Newly Added";
             UserModel um = handleUserValidation();
 
             PercentageRange isExist = debtMapper.getPercentageByCode(request.getCode(), um.getOrgId());
@@ -399,7 +398,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             request.setOrgId(um.getOrgId());
             request.setCreatedBy(um.getId());
             String changeDescription = buildPercentageChangeDescription(isExist, request);
-            request.setDescription(changeDescription);
+            request.setDescription("Percentage Range Edited");
 
             if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ "percentage code have a pending status needs to be cleared");
@@ -596,7 +595,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             liabilityCause.setCreatedBy(um.getId());
             liabilityCause.setLiabilityCauseId(id);
             String changeDescription = buildLcChangeStatusDescription(liabilityCause, state);
-            liabilityCause.setDescription(changeDescription);
+            liabilityCause.setDescription(state ? "Liability Cause Activated" : "Liability Cause Deactivated");
 
             if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
@@ -646,7 +645,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             percentage.setCreatedBy(um.getId());
             percentage.setPercentageId(id);
             String changeDescription = buildPrChangeStatusDescription(percentage, state);
-            percentage.setDescription(changeDescription);
+            percentage.setDescription(state ? "Percentage Range Activated" : "Percentage Range Deactivated");
 
             if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ "code have a pending status needs to be cleared");
@@ -657,7 +656,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 }
             }
             int u = debtMapper.updatePercentage(percentage.getApproveStatus(), percentage.getId(), percentage.getUpdatedAt());
-            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
+            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activated " : " deactivated ")+ "failed");
 
             PercentageRange percentageRange = debtMapper.getPercentageById(id, um.getOrgId());
             handleAddPercentageCache(percentageRange);
@@ -724,7 +723,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         String oldState = liabilityCause.getApproveStatus().trim().equalsIgnoreCase("Approved") ? "activated" : "deactivated";
         String newState = status ? "activated" : "deactivated";
         if (!Objects.equals(liabilityCause.getApproveStatus(), newState)) {
-            changes.append(String.format("status: '%s' → '%s' ", oldState, newState));
+            changes.append(String.format(" status: '%s' → '%s' ", oldState, newState));
         }
 
         return changes.toString();
@@ -735,7 +734,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         String oldState = percentageRange.getApproveStatus().trim().equalsIgnoreCase("Approved") ? "activated" : "deactivated";
         String newState = status ? "activated" : "deactivated";
         if (!Objects.equals(percentageRange.getApproveStatus(), newState)) {
-            changes.append(String.format("status: '%s' → '%s' ", oldState, newState));
+            changes.append(String.format(" status: '%s' → '%s' ", oldState, newState));
         }
 
         return changes.toString();

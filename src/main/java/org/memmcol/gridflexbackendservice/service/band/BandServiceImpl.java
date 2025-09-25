@@ -78,7 +78,7 @@ public class BandServiceImpl implements BandService {
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-            String desc = capitalizeFirstLetter(band.getName())+ " created";
+            String desc = "Newly Added";
             UserModel um = handleUserValidation();
 
             Band isExist = bandMapper.getBand(band.getName());
@@ -138,7 +138,7 @@ public class BandServiceImpl implements BandService {
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
             String changeDescription = buildChangeDescription(isExist, band);
-            band.setDescription(changeDescription);
+            band.setDescription("Band Edited");
 
             Band isVersionExist = bandMapper.getBandVersionById(band.getBandId(), um.getOrgId());
 
@@ -357,7 +357,7 @@ public class BandServiceImpl implements BandService {
             band.setCreatedBy(um.getId());
             band.setBandId(bandId);
             String changeDescription = buildChangeStatusDescription(band, state);
-            band.setDescription(changeDescription);
+            band.setDescription(state ? "Band Activated" : "Band Deactivated");
 
             if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status that needs to be cleared");

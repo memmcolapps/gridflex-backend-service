@@ -75,7 +75,7 @@ public class TariffServiceImpl implements TariffService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
-            String desc = tariff.getName()+" created";
+            String desc = "Newly Added";
             UserModel um = handleUserValidation();
 
             Tariff isExist = tariffMapper.getTariffByName(tariff.getName(), um.getOrgId());
@@ -234,8 +234,7 @@ public class TariffServiceImpl implements TariffService {
             tariff.setT_id(id);
 
             String changeDescription = buildChangeStatusDescription(tariff, state);
-            tariff.setDescription(changeDescription);
-
+            tariff.setDescription(state ? "Tariff Activated" : "Tariff Deactivated");
 
             if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
@@ -246,7 +245,7 @@ public class TariffServiceImpl implements TariffService {
                 }
             }
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getId(), tariff.getUpdated_at());
-            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activate " : " deactivate ")+ "failed");
+            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activated " : " deactivated ")+ "failed");
             Tariff newTariff = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");
 //            handleAddCache(newTariff);
@@ -427,7 +426,7 @@ public class TariffServiceImpl implements TariffService {
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
             String changeDescription = buildChangeDescription(isExist, tariff);
-            tariff.setDescription(changeDescription);
+            tariff.setDescription("Tariff Edited");
 
             if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");

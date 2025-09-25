@@ -61,9 +61,26 @@ public interface MeterMapper {
     int insertSmartMeterInfoVersion(SmartMeterInfo smartMeter);
 
     @Insert("INSERT INTO smart_meter_info " +
-            "(org_id, meter_id, meter_model, protocol, authentication, password, created_by, description) " +
-            "VALUES (#{orgId}, #{meterId}, #{meterModel}, #{protocol}, #{authentication}, #{password}, #{createdBy}, #{description})")
+            "(org_id, meter_id, meter_model, protocol, authentication, password) " +
+            "VALUES (#{orgId}, #{meterId}, #{meterModel}, #{protocol}, #{authentication}, #{password})")
     int insertSmartMeterInfo(SmartMeterInfo smartMeter);
+
+//    @Insert("INSERT INTO smart_meter_info " +
+//            "(org_id, meter_id, meter_model, protocol, authentication, password, created_by) " +
+//            "VALUES (#{orgId}, #{meterId}, #{meterModel}, #{protocol}, #{authentication}, #{password}, #{createdBy})")
+    @Update({
+            "<script>",
+            "UPDATE smart_meter_info",
+            "SET "+
+                    " <if test='meterId != null'> meter_id = #{meterId},</if>"+
+                    " <if test='meterModel != null'> meter_model = #{meterModel},</if>"+
+                    " <if test='protocol != null'> protocol = #{protocol},</if>"+
+                    " <if test='authentication != null'> authentication = #{authentication},</if>"+
+                    " <if test='password != null'> password = #{password},</if>"+
+                    " WHERE meter_id = #{meter_id} "+
+                    "</script>"
+    })
+    int updateSmartMeterInfo(SmartMeterInfo smartMeter);
 
     @Insert("INSERT INTO md_meters_info " +
             "(org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, latitude, longitude, created_at, updated_at) " +
@@ -82,6 +99,7 @@ public interface MeterMapper {
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "energyType", column = "energy_type"),
             @Result(property = "fixedType", column = "fixed_type"),
             @Result(property = "meterCategory", column = "meter_category"),
@@ -125,6 +143,7 @@ public interface MeterMapper {
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "energyType", column = "energy_type"),
             @Result(property = "fixedEnergy", column = "fixed_energy"),
@@ -167,6 +186,7 @@ public interface MeterMapper {
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "energyType", column = "energy_type"),
             @Result(property = "fixedEnergy", column = "fixed_energy"),
             @Result(property = "meterCategory", column = "meter_category"),
@@ -247,41 +267,44 @@ public interface MeterMapper {
 
     @Update("UPDATE md_meters_info_version " +
             "SET " +
-            "  <if test='ctRatioNum != null'>ct_ratio_num = #{ctRatioNum},</if>" +
-            "  <if test='ctRatioDenom != null'>ct_ratio_denom = #{ctRatioDenom},</if>" +
-            "  <if test='voltRatioNum != null'>volt_ratio_num = #{voltRatioNum},</if>" +
-            "  <if test='voltRatioDenom != null'>volt_ratio_denom = #{voltRatioDenom},</if>" +
-            "  <if test='multiplier != null'>multiplier = #{multiplier},</if>" +
             "  <if test='description != null'>description = #{description},</if>" +
-            "  <if test='meterRating != null'>meter_rating = #{meterRating},</if>" +
-            "  <if test='initialReading != null'>initial_reading = #{initialReading},</if>" +
-            "  <if test='dial != null'>dial = #{dial},</if>" +
-            "  <if test='latitude != null'>latitude = #{latitude},</if>" +
-            "  <if test='longitude != null'>longitude = #{longitude},</if>" +
-            "  <if test='approveStatus != null'>approve_status = #{approveStatus},</if>" +
-            "  <if test='createdBy != null'>created_by = #{approveStatus},</if>" +
+            "  <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
+            "  <if test='approvedBy != null'>approve_by = #{approvedBy},</if>" +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int updateMDMeterInfoVersion(MDMeterInfo request);
+    int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
 
     @Update("UPDATE smart_meter_info_version " +
             "SET " +
-            "  <if test='meterModel != null'>meter_model = #{meterModel},</if>" +
-            "  <if test='protocol != null'>protocol = #{protocol},</if>" +
-            "  <if test='authentication != null'>authentication = #{authentication},</if>" +
-            "  <if test='password != null'>password = #{password},</if>" +
-            "  <if test='createdBy != null'>created_by = #{createdBy},</if>" +
+            "  <if test='approvedBy != null'>approved_by = #{approvedBy},</if>" +
             "  <if test='description != null'>description = #{description},</if>" +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int updateSmartMeterInfoVersion(SmartMeterInfo request);
+    int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
 
-    @Update("UPDATE md_meters_info " +
-            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
-            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
-            "latitude = #{latitude}, longitude = #{longitude} WHERE meter_id = #{meterId} AND org_id = #{orgId}")
+//    @Update("UPDATE md_meters_info " +
+//            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
+//            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
+//            "latitude = #{latitude}, longitude = #{longitude} WHERE meter_id = #{meterId} AND org_id = #{orgId}")
+    @Update({
+            "<script>",
+            "UPDATE md_meters_info",
+            "SET "+
+                    " <if test='ctRatioNum != null'> ct_ratio_num = #{ctRatioNum},</if>"+
+                    " <if test='ctRatioDenom != null'> ct_ratio_denom = #{ctRatioDenom},</if>"+
+                    " <if test='voltRatioNum != null'> volt_ratio_num = #{voltRatioNum},</if>"+
+                    " <if test='voltRatioDenom != null'> volt_ratio_denom = #{voltRatioDenom},</if>"+
+                    " <if test='multiplier != null'> multiplier = #{multiplier},</if>"+
+                    " <if test='meterRating != null'> meter_rating = #{meterRating},</if>"+
+                    " <if test='initialReading != null'> initial_reading = #{initialReading},</if>"+
+                    " <if test='password != null'> dial = #{password},</if>"+
+                    " <if test='latitude != null'> latitude = #{latitude},</if>"+
+                    " <if test='longitude != null'> longitude = #{longitude},</if>"+
+                    " WHERE meter_id = #{meter_id} AND org_id = #{orgId}"+
+                    "</script>"
+    })
     int updateMDMeterInfo(MDMeterInfo request);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
@@ -291,7 +314,7 @@ public interface MeterMapper {
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
     @Update("UPDATE payment_mode_version SET status = #{status}, meter_stage = #{meterStage}, approve_by = #{approveBy}, updatedAt = #{updated_at} " +
-            "WHERE approve_status = #{approveStatus} AND orgId = #{orgId} AND meter_number = #{meterNumber} AND " +
+            "WHERE meter_stage = #{meterStage} AND org_id = #{orgId} AND meter_number = #{meterNumber} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int approvePrepaidMeterVersion(PaymentMode paymentMode);
@@ -318,6 +341,7 @@ public interface MeterMapper {
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "meterType", column = "meter_type"),
             @Result(property = "energyType", column = "energy_type"),
             @Result(property = "fixedType", column = "fixed_type"),
@@ -370,6 +394,7 @@ public interface MeterMapper {
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterType", column = "meter_type"),
             @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "oldSgc", column = "old_sgc"),
             @Result(property = "newSgc", column = "new_sgc"),
             @Result(property = "oldKrn", column = "old_krn"),
@@ -427,6 +452,7 @@ public interface MeterMapper {
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterType", column = "meter_type"),
             @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "oldSgc", column = "old_sgc"),
             @Result(property = "newSgc", column = "new_sgc"),
             @Result(property = "oldKrn", column = "old_krn"),
@@ -470,6 +496,7 @@ public interface MeterMapper {
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterType", column = "meter_type"),
             @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "oldSgc", column = "old_sgc"),
             @Result(property = "newSgc", column = "new_sgc"),
             @Result(property = "oldKrn", column = "old_krn"),
@@ -540,6 +567,7 @@ public interface MeterMapper {
             @Result(property = "meterNumber", column = "meter_number"),
 //            @Result(property = "simNumber", column = "sim_number"),
 //            @Result(property = "energyType", column = "energy_type"),
+//            @Result(property = "smartStatus", column = "smart_status"),
 //            @Result(property = "fixedType", column = "fixed_type"),
 //            @Result(property = "meterCategory", column = "meter_category"),
 //            @Result(property = "meterClass", column = "meter_class"),
@@ -659,9 +687,7 @@ public interface MeterMapper {
     })
     SmartMeterInfo getSmartMeterVersion(UUID meterId);
 
-    @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -759,9 +785,9 @@ public interface MeterMapper {
     @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE meter_number = #{meterNumber} AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int approvedMeterVersion(Meter meter);
+    int approvedMeterVersion(String meterStage, String status, UUID approveBy, Date updatedAt, String meterNumber);
 
-    @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = 'Inactive', approved_by = #{approveBy} WHERE meter_number = #{meterNumber} " +
+    @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = 'Inactive', approve_by = #{approveBy} WHERE meter_number = #{meterNumber} " +
             "AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int rejectedMeterVersion(String meterStage, String meterNumber, Date updatedAt, UUID approveBy);
@@ -775,18 +801,30 @@ public interface MeterMapper {
     @Delete("DELETE FROM meters WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int removeMeter(String meterNumber);
+    int removeMeter(String meterNumber, UUID orgId);
 
-    @Delete("DELETE FROM md_meter_info WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+    @Delete("DELETE FROM md_meters_info_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int removeMDMeterInfo(UUID meterId);
+    int removeMDMeterInfo(UUID meterId, UUID orgId);
 
-    @Delete("DELETE FROM smart_meter_info WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+    @Delete("DELETE FROM smart_meter_info_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int removeSmartMeterInfo(UUID meterId);
+    int removeSmartMeterInfo(UUID meterId, UUID orgId);
+
+    @Delete("DELETE FROM payment_mode_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    int removePaymentModeInfo(UUID meterId, UUID orgId);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE meter_number = #{meterNumber}")
     int updateMeter(String meterStage, String meterNumber, Date updatedAt, String status);
+
+    @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
+            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    int approveSmartMeterInfoVersion(SmartMeterInfo smartMeterInfo);
+
 }
