@@ -192,6 +192,19 @@ public class MeterController {
         }
     }
 
+    @PostMapping("/detach")
+    public ResponseEntity<?> detachMeter(
+            @RequestParam(value = "meterId", required = true) UUID meterId,
+            @RequestParam(value = "reason", required = true) String reason
+    ) {
+        try {
+            Map<String, Object> result = service.detachMeter(meterId, reason);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }

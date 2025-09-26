@@ -14,13 +14,14 @@ public class AssignMeterToCustomer implements Serializable {
     private static final long serialVersionUID = 1L;
     private UUID id;
     private UUID meterId;
-    private String oldMeterNumber;
+//    private String oldMeterNumber;
     private String newMeterNumber;
     private UUID orgId;
     private String customerId;
     private String type;
-    private String tariff;
+    private UUID tariffId;
     private String dssAssetId;
+    private String feederAssetId;
     private String cin;
     private String accountNumber;
 
@@ -85,13 +86,13 @@ public class AssignMeterToCustomer implements Serializable {
         this.customerId = customerId;
     }
 
-    public String getOldMeterNumber() {
-        return oldMeterNumber;
-    }
-
-    public void setOldMeterNumber(String oldMeterNumber) {
-        this.oldMeterNumber = oldMeterNumber;
-    }
+//    public String getOldMeterNumber() {
+//        return oldMeterNumber;
+//    }
+//
+//    public void setOldMeterNumber(String oldMeterNumber) {
+//        this.oldMeterNumber = oldMeterNumber;
+//    }
 
     public String getNewMeterNumber() {
         return newMeterNumber;
@@ -109,12 +110,12 @@ public class AssignMeterToCustomer implements Serializable {
         this.type = type;
     }
 
-    public String getTariff() {
-        return tariff;
+    public UUID getTariffId() {
+        return tariffId;
     }
 
-    public void setTariff(String tariff) {
-        this.tariff = tariff;
+    public void setTariffId(UUID tariffId) {
+        this.tariffId = tariffId;
     }
 
     public String getDssAssetId() {
@@ -123,6 +124,14 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setDssAssetId(String dssAssetId) {
         this.dssAssetId = dssAssetId;
+    }
+
+    public String getFeederAssetId() {
+        return feederAssetId;
+    }
+
+    public void setFeederAssetId(String feederAssetId) {
+        this.feederAssetId = feederAssetId;
     }
 
     public String getCin() {
