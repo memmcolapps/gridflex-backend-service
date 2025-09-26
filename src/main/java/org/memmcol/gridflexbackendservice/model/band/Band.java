@@ -32,9 +32,7 @@ public class Band implements Serializable {
 
     private String approveStatus;
 
-//    private String action;
-
-//    private Boolean status;
+    private Band oldBandInfo;
 
     private String description;
 
@@ -114,21 +112,13 @@ public class Band implements Serializable {
         this.approveStatus = approveStatus;
     }
 
-//    public String getAction() {
-//        return action;
-//    }
-//
-//    public void setAction(String action) {
-//        this.action = action;
-//    }
+    public Band getOldBandInfo() {
+        return oldBandInfo;
+    }
 
-//    public Boolean getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(Boolean status) {
-//        this.status = status;
-//    }
+    public void setOldBandInfo(Band oldBandInfo) {
+        this.oldBandInfo = oldBandInfo;
+    }
 
     public String getDescription() {
         return description;

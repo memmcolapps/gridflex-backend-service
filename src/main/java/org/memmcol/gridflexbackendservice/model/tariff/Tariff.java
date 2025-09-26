@@ -39,11 +39,11 @@ public class Tariff implements Serializable {
 
     private UUID band_id;
 
-//    private Boolean status;
-
     private String approve_status;
 
     private Band band;
+
+    private Tariff oldTariffInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date created_at;
@@ -152,14 +152,13 @@ public class Tariff implements Serializable {
         this.band = band;
     }
 
-//    public Boolean getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(Boolean status) {
-//        this.status = status;
-//    }
+    public Tariff getOldTariffInfo() {
+        return oldTariffInfo;
+    }
 
+    public void setOldTariffInfo(Tariff oldTariffInfo) {
+        this.oldTariffInfo = oldTariffInfo;
+    }
 
     public String getApprove_status() {
         return approve_status;
