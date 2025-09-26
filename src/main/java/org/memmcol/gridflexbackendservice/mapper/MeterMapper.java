@@ -244,6 +244,7 @@ public interface MeterMapper {
             "SET "+
                     " <if test='status != null'> status = #{status},</if>"+
                     " <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
+                    " <if test='nodeId != null'>node_id = #{nodeId},</if>" +
                     "  updated_at = #{updatedAt}"+
                     " WHERE meter_number = #{meterNumber} AND org_id = #{orgId} "+
                     "</script>"
@@ -347,6 +348,7 @@ public interface MeterMapper {
             @Result(property = "fixedType", column = "fixed_type"),
             @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterModel", column = "meter_model"),
             @Result(property = "meterType", column = "meter_type"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "oldSgc", column = "old_sgc"),
@@ -770,13 +772,13 @@ public interface MeterMapper {
 
 
     @Insert("INSERT INTO meters_version (" +
-            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
-            "approve_status, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
-            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id) " +
+            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_model," +
+            "meter_stage, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
+            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status ) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
-            "#{meter.meterManufacturer}, #{meter.meterType}, 'pending', 'unassigned', #{meter.meterNumber}, " +
+            "#{meter.meterManufacturer}, #{meter.meterType}, #{meter.meterModel}, 'Pending-allocated', 'Active', #{meter.meterNumber}, " +
             "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
-            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id})")
+            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 

@@ -214,7 +214,6 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
 
-            System.out.println(">>>>>>>>>>>>>>>>>>>>:: "+tariff.getBand_id());
             if(tariff == null){
                 throw new GlobalExceptionHandler.NotFoundException("Tariff not found");
             }

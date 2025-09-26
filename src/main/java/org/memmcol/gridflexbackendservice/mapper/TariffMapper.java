@@ -99,7 +99,17 @@ public interface TariffMapper {
             "ORDER BY created_at DESC")
     @Result(property = "band", column = "band_id",
             one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
+    @Result(property = "oldTariffInfo", column = "t_id",
+            one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getTariffById"))
     List<Tariff> GetPendingTariffs(UUID orgId);
+
+    @Select("SELECT * FROM tariffs WHERE id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
+    })
+    Tariff getTariffById(UUID id);
 
     @Delete("DELETE FROM tariffs WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")

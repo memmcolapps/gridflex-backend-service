@@ -20,6 +20,7 @@ public class LiabilityCause implements Serializable {
     private UUID createdBy;
     private UUID approveBy;
     private String description;
+    private LiabilityCause oldLiabilityCauseInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -118,5 +119,13 @@ public class LiabilityCause implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LiabilityCause getOldLiabilityCauseInfo() {
+        return oldLiabilityCauseInfo;
+    }
+
+    public void setOldLiabilityCauseInfo(LiabilityCause oldLiabilityCauseInfo) {
+        this.oldLiabilityCauseInfo = oldLiabilityCauseInfo;
     }
 }

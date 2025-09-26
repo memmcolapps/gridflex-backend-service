@@ -109,11 +109,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			Authentication authentication) throws IOException, ServletException {
 		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal(); // use the provided authentication
 
-//		AuditLog auditNotificationDTO = new AuditLog();
 		Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
 		Map<String, String> metadata = genericHandler.extractRequestMetadata(request);
-//		String ipAddress = getClientIp(request);
-//		String userAgent = request.getHeader("User-Agent");
 		ObjectMapper mapper = new ObjectMapper();
 		List<Map<String, Object>> permissionTree = mapper.readValue(userDetails.getPermissionTreeJson(), List.class);
 
@@ -150,13 +147,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			}
 		}
 		user.setNodes(root);
-		user.setPassword("");
 		AuditLog auditLog = buildAuditLog(user, "Logged in", "auth", null, metadata);
 		auditRepository.save(auditLog);
-//		auditNotificationDTO.setDescription("Logged in");
-//		auditNotificationDTO.setUserAgent(userAgent);
-//		auditNotificationDTO.setIpAddress(ipAddress);
-//		auditNotificationDTO.setType("auth");
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {
 				auditCache.remove(key);

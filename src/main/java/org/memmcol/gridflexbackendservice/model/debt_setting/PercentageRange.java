@@ -21,11 +21,11 @@ public class PercentageRange implements Serializable {
     private Band band;
     private String amountStartRange;
     private String amountEndRange;
-//    private Boolean status;
     private String approveStatus;
     private UUID createdBy;
     private UUID approveBy;
     private String description;
+    private PercentageRange oldPercentageRangeInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -110,14 +110,6 @@ public class PercentageRange implements Serializable {
         this.amountEndRange = amountEndRange;
     }
 
-//    public Boolean getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(Boolean status) {
-//        this.status = status;
-//    }
-
     public String getApproveStatus() {
         return approveStatus;
     }
@@ -164,5 +156,13 @@ public class PercentageRange implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public PercentageRange getOldPercentageRangeInfo() {
+        return oldPercentageRangeInfo;
+    }
+
+    public void setOldPercentageRangeInfo(PercentageRange oldPercentageRangeInfo) {
+        this.oldPercentageRangeInfo = oldPercentageRangeInfo;
     }
 }

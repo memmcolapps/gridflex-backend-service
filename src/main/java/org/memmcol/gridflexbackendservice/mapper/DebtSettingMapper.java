@@ -4,11 +4,9 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Mapper
@@ -43,19 +41,19 @@ public interface DebtSettingMapper {
     })
     LiabilityCause getLiabilityCauseById(UUID id, UUID orgId);
 
-    @Update("UPDATE liability_cause_version SET name = #{name}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, description = #{description} " +
-            "WHERE liability_cause_id = #{liabilityCauseId} AND approve_status = 'pending'")
-    int updateLiabilityCauseVer(LiabilityCause request);
+//    @Update("UPDATE liability_cause_version SET name = #{name}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, description = #{description} " +
+//            "WHERE liability_cause_id = #{liabilityCauseId} AND approve_status = 'pending'")
+//    int updateLiabilityCauseVer(LiabilityCause request);
 
-    @Select("SELECT * FROM liability_cause_version WHERE name = #{name} AND approve_status = 'pending' AND code = #{code} AND org_id = #{orgId}")
-    @Results({
-            @Result(column = "id", property = "id"),
-            @Result(column = "org_id", property = "orgId"),
-            @Result(column = "approve_status", property = "approveStatus"),
-            @Result(column = "created_at", property = "createdAt"),
-            @Result(column = "updated_at", property = "updatedAt")
-    })
-    LiabilityCause getLiabilityCauseVersionByName(String name, UUID orgId);
+//    @Select("SELECT * FROM liability_cause_version WHERE name = #{name} AND approve_status = 'pending' AND code = #{code} AND org_id = #{orgId}")
+//    @Results({
+//            @Result(column = "id", property = "id"),
+//            @Result(column = "org_id", property = "orgId"),
+//            @Result(column = "approve_status", property = "approveStatus"),
+//            @Result(column = "created_at", property = "createdAt"),
+//            @Result(column = "updated_at", property = "updatedAt")
+//    })
+//    LiabilityCause getLiabilityCauseVersionByName(String name, UUID orgId);
 
     @Select("SELECT * FROM liability_cause_version WHERE id = #{lcVersionId} AND org_id = #{orgId}")
     @Results({
@@ -81,9 +79,21 @@ public interface DebtSettingMapper {
             @Result(column = "created_by", property = "createdBy"),
             @Result(column = "approve_by", property = "approveBy"),
             @Result(column = "created_at", property = "createdAt"),
-            @Result(column = "updated_at", property = "updatedAt")
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "oldLiabilityCauseInfo", column = "liability_cause_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getLcById")),
     })
     List<LiabilityCause> getLiabilityCauseVersion(UUID orgId);
+
+    @Select("SELECT * FROM liability_cause WHERE id = #{id} AND org_id = #{orgId}")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    LiabilityCause getLcById(UUID id, UUID orgId);
 
     @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId} ")
     @Results({
@@ -216,8 +226,27 @@ public interface DebtSettingMapper {
             @Result(column = "updated_at", property = "updatedAt"),
             @Result(property = "band", column = "band_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
+            @Result(property = "oldPercentageRangeInfo", column = "debt_percentage_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getPrById")),
     })
     List<PercentageRange> getPercentageVersion(UUID orgId);
+
+    @Select("SELECT * FROM debt_percentage WHERE id = #{percentageId}")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "amount_start_range", property = "amountStartRange"),
+            @Result(column = "amount_end_range", property = "amountEndRange"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
+    })
+    List<PercentageRange> getPrById(UUID percentageId);
 
     @Select("SELECT * FROM debt_percentage WHERE org_id = #{orgId}")
     @Results({

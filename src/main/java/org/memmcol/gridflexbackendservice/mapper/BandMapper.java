@@ -39,9 +39,20 @@ public interface BandMapper {
             @Result(property = "createdBy", column = "created_by"),
             @Result(property = "approveBy", column = "approve_by"),
             @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "oldBandInfo", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.BandMapper.getBandId"))
     })
     List<Band> fetchBandsVersion(UUID orgId);
+
+    @Select("SELECT * FROM bands WHERE id = #{id}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Band getBandId(UUID id);
 
     @Select("SELECT * FROM bands WHERE name = #{name}")
     @Results({
@@ -81,18 +92,6 @@ public interface BandMapper {
     })
     Band checkBandStatus(UUID id, UUID orgId);
 
-//    @Select("SELECT * FROM bands_version WHERE id = #{id} AND org_id = #{orgId}")
-//    @Results({
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "bandId", column = "band_id"),
-//            @Result(property = "approveStatus", column = "approve_status"),
-//            @Result(property = "createdBy", column = "created_by"),
-//            @Result(property = "approveBy", column = "approve_by"),
-//            @Result(property = "createdAt", column = "created_at"),
-//            @Result(property = "updatedAt", column = "updated_at")
-//    })
-//    Band getBandVersionById(UUID id, UUID orgId);
-
     @Select("SELECT * FROM bands_version WHERE band_id = #{bandId} AND org_id = #{orgId} " +
             "AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR " +
             "approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
@@ -123,12 +122,6 @@ public interface BandMapper {
     })
     int updateBandVer(Band band);
 
-//    @Update("UPDATE bands_version SET name = #{name}, hour = #{hour}, updated_at = #{updatedAt}, created_by = #{createdBy}, " +
-//            "description = #{description}, approve_status = #{approveStatus} WHERE band_id = #{bandId} AND approve_status = 'pending'")
-//    int updateBandVer(Band band);
-///--------------------
-//    @Update("UPDATE bands_version SET name = #{name}, hour = #{hour}, updated_at = #{updatedAt}, approve_by = #{approveBy}, " +
-//            "approve_status = #{approveStatus} WHERE band_id = #{bandId} AND approve_status = 'pending'")
     @Update({
             "<script>",
             "UPDATE bands_version",
