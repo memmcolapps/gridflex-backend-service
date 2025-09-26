@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -65,8 +64,6 @@ public class GenericHandler {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logIncidentReport(String msg) {
         IncidentReport incidentReport = new IncidentReport();
-//        incidentReport.setOrgId(UUID.fromString("92we4fdd-auto-auto-auto-1067322e0sq1"));
-//        incidentReport.setUserId(UUID.fromString("90rs4fdd-auto-auto-auto-1067322e91we"));
         incidentReport.setMessage(msg);
         incidentReport.setType("auto");
         incidentReport.setStatus(false);

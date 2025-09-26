@@ -85,7 +85,7 @@ public interface DebtSettingMapper {
     })
     List<LiabilityCause> getLiabilityCauseVersion(UUID orgId);
 
-    @Select("SELECT * FROM liability_cause WHERE id = #{id} AND org_id = #{orgId}")
+    @Select("SELECT * FROM liability_cause WHERE id = #{id}")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -93,7 +93,7 @@ public interface DebtSettingMapper {
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt")
     })
-    LiabilityCause getLcById(UUID id, UUID orgId);
+    LiabilityCause getLcById(UUID id);
 
     @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId} ")
     @Results({
