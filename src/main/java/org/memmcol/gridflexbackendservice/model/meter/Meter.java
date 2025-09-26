@@ -24,11 +24,11 @@ public class Meter implements Serializable {
     private String accountNumber;
     private String simNumber;
     private String cin;
-    private String tariff;
+    private UUID tariff;
     private String type;
     private String energyType;
     private String fixedEnergy;
-    private String dss;
+    private UUID dss;
     private String meterCategory;
     private String meterClass;
     private String meterModel;
@@ -129,11 +129,11 @@ public class Meter implements Serializable {
         this.type = type;
     }
 
-    public String getTariff() {
+    public UUID getTariff() {
         return tariff;
     }
 
-    public void setTariff(String tariff) {
+    public void setTariff(UUID tariff) {
         this.tariff = tariff;
     }
 
@@ -153,11 +153,11 @@ public class Meter implements Serializable {
         this.fixedEnergy = fixedEnergy;
     }
 
-    public String getDss() {
+    public UUID getDss() {
         return dss;
     }
 
-    public void setDss(String dss) {
+    public void setDss(UUID dss) {
         this.dss = dss;
     }
 

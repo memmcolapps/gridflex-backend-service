@@ -21,6 +21,7 @@ public class PaymentMode implements Serializable {
     private String debitPaymentPlan;
     private String migrationFrom;
     private String meterStage;
+    private String description;
     private Date createdAt;
     private Date updatedAt;
 
@@ -115,6 +116,14 @@ public class PaymentMode implements Serializable {
 
     public void setMeterStage(String meterStage) {
         this.meterStage = meterStage;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Date getCreatedAt() {

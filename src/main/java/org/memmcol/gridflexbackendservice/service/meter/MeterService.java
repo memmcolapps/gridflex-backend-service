@@ -38,4 +38,6 @@ public interface MeterService {
     Map<String, Object> migrate(PaymentMode paymentMode);
 
     Map<String, Object> approve(UUID meterVersionId, String approveState) throws MissingServletRequestParameterException;
+
+    Map<String, Object> detachMeter(UUID meterNumber, String reason);
 }
