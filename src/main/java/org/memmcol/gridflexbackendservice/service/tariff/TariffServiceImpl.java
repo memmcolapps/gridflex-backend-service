@@ -83,10 +83,10 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getExistDesc());
             }
 
-            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
-            if(isVersionExist != null) {
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
-            }
+//            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
+//            if(isExist.getApprove_status().contains("Pending")) {
+//                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
+//            }
 
             Band isBand = bandMapper.getApprovedBandById(tariff.getBand_id(), um.getOrgId());
             if (isBand == null) {
@@ -226,7 +226,21 @@ public class TariffServiceImpl implements TariffService {
             }
 
 
-            Tariff isVersionExist = tariffMapper.getTariffVersionById(id, um.getOrgId());
+//            if(!state){
+//                List<String> errors = new ArrayList<>();
+//                int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
+//                if(tariff > 0)  errors.add(tariff + " tariffs");
+//
+//                int percentageRange = bandMapper.getPercentageBandById(bandId);
+//                if(percentageRange > 0) errors.add(percentageRange + " percentage range set");
+//
+//                if (!errors.isEmpty()) {
+//                    throw new GlobalExceptionHandler.NotFoundException
+//                            ("Band can not be deactivated because is currently in use by "+errors);
+//                }
+//            }
+
+//            Tariff isVersionExist = tariffMapper.getTariffVersionById(id, um.getOrgId());
             tariff.setApprove_status("Pending-"+(state ? "activated" : "deactivated"));
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
@@ -235,8 +249,12 @@ public class TariffServiceImpl implements TariffService {
             String changeDescription = buildChangeStatusDescription(tariff, state);
             tariff.setDescription(state ? "Tariff Activated" : "Tariff Deactivated");
 
-            if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
+            if(tariff.getApprove_status().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
+            } else if(tariff.getApprove_status().contains("Deactivated") && !state){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff already deactivated");
+            } else if(tariff.getApprove_status().contains("Approved") && state){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff already activated");
             } else {
                 result = tariffMapper.createTariffVersion(tariff);
                 if(result == 0){
@@ -419,7 +437,7 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found, not approved or deactivated" );
             }
 
-            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
+//            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
 
             tariff.setApprove_status("Pending-edited");
             tariff.setOrg_id(um.getOrgId());
@@ -427,8 +445,10 @@ public class TariffServiceImpl implements TariffService {
             String changeDescription = buildChangeDescription(isExist, tariff);
             tariff.setDescription("Tariff Edited");
 
-            if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
+            if(isExist.getApprove_status().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
+            } else if(isExist.getApprove_status().contains("Deactivated")){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff is deactivated");
             } else {
                 int res = tariffMapper.updateTariff("Pending-edited", tariff.getT_id(), tariff.getUpdated_at());
                 result = tariffMapper.createTariffVersion(tariff);

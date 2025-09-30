@@ -47,6 +47,36 @@ public interface MeterMapper {
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMDMeterInfo(MDMeterInfo request);
 
+//    @Insert("INSERT INTO meter_assign_locations " +
+//            "(org_id, meter_id, state, city, house_no, street_name, approve_status, created_by, created_at, updated_at) " +
+//            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{approveStatus}, #{createdBy}, #{createdAt}, #{updatedAt}")
+////    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    int insertMeterLocation(MeterAssignLocation request);
+
+    @Insert("INSERT INTO meter_assign_locations " +
+            "(org_id, meter_id, state, city, house_no, street_name, created_at, updated_at) " +
+            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertMeterLocation(MeterAssignLocation request);
+
+    @Update({
+            "<script>",
+            "UPDATE meter_assign_locations",
+            "SET "+
+                    " <if test='state != null'> state = #{state},</if>"+
+                    " <if test='city != null'> city = #{city},</if>"+
+                    " <if test='house_no != null'> house_no = #{house_no},</if>"+
+                    " <if test='streetName != null'> street_name = #{streetName},</if>"+
+                    " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
+                    " <if test='createdBy != null'> created_by = #{createdBy},</if>"+
+                    " <if test='description != null'> description = #{description},</if>"+
+                    " <if test='createdAt != null'> created_at = #{createdAt},</if>"+
+                    " <if test='updatedAt != null'> updatedAt = #{updatedAt},</if>"+
+                    " WHERE meter_id = #{meter_id} AND org_id = #{orgId}"+
+                    "</script>"
+    })
+    int updateMeterLocation(MeterAssignLocation request);
+
     @Insert("INSERT INTO md_meters_info_version " +
             "(org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, " +
             "latitude, longitude, created_by, description, meter_stage) " +
@@ -68,19 +98,34 @@ public interface MeterMapper {
 //    @Insert("INSERT INTO smart_meter_info " +
 //            "(org_id, meter_id, meter_model, protocol, authentication, password, created_by) " +
 //            "VALUES (#{orgId}, #{meterId}, #{meterModel}, #{protocol}, #{authentication}, #{password}, #{createdBy})")
+//    @Update({
+//            "<script>",
+//            "UPDATE smart_meter_info",
+//            "SET "+
+//                    " <if test='meterId != null'> meter_id = #{meterId},</if>"+
+//                    " <if test='meterModel != null'> meter_model = #{meterModel},</if>"+
+//                    " <if test='protocol != null'> protocol = #{protocol},</if>"+
+//                    " <if test='authentication != null'> authentication = #{authentication},</if>"+
+//                    " <if test='password != null'> password = #{password},</if>"+
+//                    " WHERE meter_id = #{meter_id} "+
+//                    "</script>"
+//    })
+//    int updateSmartMeterInfo(SmartMeterInfo smartMeter);
     @Update({
             "<script>",
             "UPDATE smart_meter_info",
-            "SET "+
-                    " <if test='meterId != null'> meter_id = #{meterId},</if>"+
-                    " <if test='meterModel != null'> meter_model = #{meterModel},</if>"+
-                    " <if test='protocol != null'> protocol = #{protocol},</if>"+
-                    " <if test='authentication != null'> authentication = #{authentication},</if>"+
-                    " <if test='password != null'> password = #{password},</if>"+
-                    " WHERE meter_id = #{meter_id} "+
-                    "</script>"
+            "<trim prefix='SET' suffixOverrides=','>",
+            " <if test='meterId != null'> meter_id = #{meterId},</if>",
+            " <if test='meterModel != null'> meter_model = #{meterModel},</if>",
+            " <if test='protocol != null'> protocol = #{protocol},</if>",
+            " <if test='authentication != null'> authentication = #{authentication},</if>",
+            " <if test='password != null'> password = #{password},</if>",
+            "</trim>",
+            "WHERE meter_id = #{meterId}",
+            "</script>"
     })
     int updateSmartMeterInfo(SmartMeterInfo smartMeter);
+
 
     @Insert("INSERT INTO md_meters_info " +
             "(org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, latitude, longitude, created_at, updated_at) " +
@@ -162,7 +207,7 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
 //            @Result(property = "customer", column = "customer_id",
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-            @Result(property = "meterAssignLocation", column = "id",
+            @Result(property = "meterAssignLocation", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
             @Result(property = "mdMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
@@ -273,6 +318,23 @@ public interface MeterMapper {
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
 
+//    @Update({
+//            "<script>",
+//            "UPDATE md_meters_info_version",
+//            "<set>",
+//            "  <if test='description != null'>description = #{description},</if>",
+//            "  <if test='meterStage != null'>meter_stage = #{meterStage},</if>",
+//            "  <if test='approvedBy != null'>approve_by = #{approvedBy},</if>",
+//            "</set>",
+//            "WHERE meter_id = #{meterId} AND org_id = #{orgId}",
+//            "AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' ",
+//            "OR meter_stage = 'Pending-allocated' OR meter_stage = 'Pending-assigned' ",
+//            "OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')",
+//            "</script>"
+//    })
+//    int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
+
+
     @Update("UPDATE smart_meter_info_version " +
             "SET " +
             "  <if test='approvedBy != null'>approved_by = #{approvedBy},</if>" +
@@ -282,53 +344,115 @@ public interface MeterMapper {
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
 
-//    @Update("UPDATE md_meters_info " +
+//    @Update({
+//            "<script>",
+//            "UPDATE smart_meter_info_version",
+//            "<set>",
+//            "  <if test='approvedBy != null'>approved_by = #{approvedBy},</if>",
+//            "  <if test='description != null'>description = #{description},</if>",
+//            "</set>",
+//            "WHERE meter_id = #{meterId} AND org_id = #{orgId}",
+//            "AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' ",
+//            "OR meter_stage = 'Pending-allocated' OR meter_stage = 'Pending-assigned' ",
+//            "OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')",
+//            "</script>"
+//    })
+//    int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
+//    int updateSmartMeterInfoVersion(@Param("approvedBy") UUID approvedBy,
+//                                    @Param("description") String description,
+//                                    @Param("meterId") UUID meterId,
+//                                    @Param("orgId") UUID orgId);
+
+
+    //    @Update("UPDATE md_meters_info " +
 //            "SET ct_ratio_num = #{ctRatioNum}, ct_ratio_denom = #{ctRatioDenom}, volt_ratio_num = #{voltRatioNum}, volt_ratio_denom = #{voltRatioDenom}, " +
 //            "multiplier = #{multiplier}, meter_rating = #{meterRating}, initial_reading = #{initialReading}, dial = #{dial}, " +
 //            "latitude = #{latitude}, longitude = #{longitude} WHERE meter_id = #{meterId} AND org_id = #{orgId}")
+//    @Update({
+//            "<script>",
+//            "UPDATE md_meters_info",
+//            "SET "+
+//                    " <if test='ctRatioNum != null'> ct_ratio_num = #{ctRatioNum},</if>"+
+//                    " <if test='ctRatioDenom != null'> ct_ratio_denom = #{ctRatioDenom},</if>"+
+//                    " <if test='voltRatioNum != null'> volt_ratio_num = #{voltRatioNum},</if>"+
+//                    " <if test='voltRatioDenom != null'> volt_ratio_denom = #{voltRatioDenom},</if>"+
+//                    " <if test='multiplier != null'> multiplier = #{multiplier},</if>"+
+//                    " <if test='meterRating != null'> meter_rating = #{meterRating},</if>"+
+//                    " <if test='initialReading != null'> initial_reading = #{initialReading},</if>"+
+//                    " <if test='password != null'> dial = #{password},</if>"+
+//                    " <if test='latitude != null'> latitude = #{latitude},</if>"+
+//                    " <if test='longitude != null'> longitude = #{longitude},</if>"+
+//                    " WHERE meter_id = #{meter_id} AND org_id = #{orgId}"+
+//                    "</script>"
+//    })
+//    @Update({
+//            "<script>",
+//            "UPDATE md_meters_info",
+//            "<set>",
+//            " <if test='ctRatioNum != null'> ct_ratio_num = #{ctRatioNum},</if>",
+//            " <if test='ctRatioDenom != null'> ct_ratio_denom = #{ctRatioDenom},</if>",
+//            " <if test='voltRatioNum != null'> volt_ratio_num = #{voltRatioNum},</if>",
+//            " <if test='voltRatioDenom != null'> volt_ratio_denom = #{voltRatioDenom},</if>",
+//            " <if test='multiplier != null'> multiplier = #{multiplier},</if>",
+//            " <if test='meterRating != null'> meter_rating = #{meterRating},</if>",
+//            " <if test='initialReading != null'> initial_reading = #{initialReading},</if>",
+//            " <if test='password != null'> dial = #{password},</if>",
+//            " <if test='latitude != null'> latitude = #{latitude},</if>",
+//            " <if test='longitude != null'> longitude = #{longitude},</if>",
+//            "</set>",
+//            "WHERE meter_id = #{meterId} AND org_id = #{orgId}",
+//            "</script>"
+//    })
     @Update({
             "<script>",
             "UPDATE md_meters_info",
-            "SET "+
-                    " <if test='ctRatioNum != null'> ct_ratio_num = #{ctRatioNum},</if>"+
-                    " <if test='ctRatioDenom != null'> ct_ratio_denom = #{ctRatioDenom},</if>"+
-                    " <if test='voltRatioNum != null'> volt_ratio_num = #{voltRatioNum},</if>"+
-                    " <if test='voltRatioDenom != null'> volt_ratio_denom = #{voltRatioDenom},</if>"+
-                    " <if test='multiplier != null'> multiplier = #{multiplier},</if>"+
-                    " <if test='meterRating != null'> meter_rating = #{meterRating},</if>"+
-                    " <if test='initialReading != null'> initial_reading = #{initialReading},</if>"+
-                    " <if test='password != null'> dial = #{password},</if>"+
-                    " <if test='latitude != null'> latitude = #{latitude},</if>"+
-                    " <if test='longitude != null'> longitude = #{longitude},</if>"+
-                    " WHERE meter_id = #{meter_id} AND org_id = #{orgId}"+
-                    "</script>"
+            "<trim prefix='SET' suffixOverrides=','>",
+            " <if test='ctRatioNum != null'> ct_ratio_num = #{ctRatioNum},</if>",
+            " <if test='ctRatioDenom != null'> ct_ratio_denom = #{ctRatioDenom},</if>",
+            " <if test='voltRatioNum != null'> volt_ratio_num = #{voltRatioNum},</if>",
+            " <if test='voltRatioDenom != null'> volt_ratio_denom = #{voltRatioDenom},</if>",
+            " <if test='multiplier != null'> multiplier = #{multiplier},</if>",
+            " <if test='meterRating != null'> meter_rating = #{meterRating},</if>",
+            " <if test='initialReading != null'> initial_reading = #{initialReading},</if>",
+            " <if test='password != null'> dial = #{password},</if>",
+            " <if test='latitude != null'> latitude = #{latitude},</if>",
+            " <if test='longitude != null'> longitude = #{longitude},</if>",
+            "</trim>",
+            "WHERE meter_id = #{meterId} AND org_id = #{orgId}",
+            "</script>"
     })
     int updateMDMeterInfo(MDMeterInfo request);
 
-    @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
+    @Update("UPDATE md_meters_info_version SET meter_stage = 'Approved', approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
-    @Update("UPDATE payment_mode_version SET status = #{status}, meter_stage = #{meterStage}, approve_by = #{approveBy}, updatedAt = #{updated_at} " +
-            "WHERE meter_stage = #{meterStage} AND org_id = #{orgId} AND meter_number = #{meterNumber} AND " +
+    @Update("UPDATE meter_assign_locations_version SET meter_stage = 'Aprroved', approve_by = #{approveBy} " +
+            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    int approveMeterAssignLocationVersion(MeterAssignLocation meterAssignLocation);
+
+    @Update("UPDATE payment_mode_version SET status = #{status}, meter_stage = 'Approved', approve_by = #{approveBy}, updated_at = #{updatedAt} " +
+            "WHERE meter_stage = #{meterStage} AND org_id = #{orgId} AND meter_id = #{meterId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int approvePrepaidMeterVersion(PaymentMode paymentMode);
 
-    @Update("UPDATE payment_mode SET status = #{status}, meter_category = #{meterCategory}, credit_payment_mode = #{creditPaymentMode}, " +
+    @Update("UPDATE payment_mode SET status = #{status}, credit_payment_mode = #{creditPaymentMode}, " +
             "credit_payment_plan = #{creditPaymentPlan}, debit_payment_mode = #{debitPaymentMode}, debit_payment_plan = #{debitPaymentPlan}, " +
-            "updatedAt = #{updated_at} WHERE orgId = #{orgId} AND meter_id = #{meterId}")
+            "updated_at = #{updatedAt} WHERE org_id = #{orgId} AND meter_id = #{meterId}")
     int updatePrepaidMeterVersion(PaymentMode paymentMode);
 
-    @Insert("INSERT INTO payment_mode (meter_id, org_id, status, meter_category,credit_payment_mode, credit_payment_plan, debit_payment_mode, " +
-            "debit_payment_plan, updatedAt, createdAt) VALUES (#{meterId}, #{orgId}, true, #{meterCategory}, #{creditPaymentMode}, #{creditPaymentPlan}, " +
-            "#{debitPaymentMode}, #{debitPaymentPlan})")
+    @Insert("INSERT INTO payment_mode (meter_id, org_id, status, credit_payment_mode, credit_payment_plan, debit_payment_mode, " +
+            "debit_payment_plan, updated_at, created_at) " +
+            "VALUES (#{meterId}, #{orgId}, true, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt})")
     int insertPrepaidMeterVersion(PaymentMode paymentMode);
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-            "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
+            "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -370,7 +494,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
 
     })
-    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber);
+    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber, String cin);
 
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
@@ -416,7 +540,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
 
     })
-    Meter getVersionMeter(UUID orgId, UUID meterId, String meterNumber);
+    Meter getVersionMeter(UUID orgId, UUID meterId, String meterNumber, String cin);
 
 
     @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
@@ -544,7 +668,7 @@ public interface MeterMapper {
     List<Manufacturer> getManufacturers(UUID orgId);
 
 
-    @Select("SELECT * FROM customers WHERE customer_id = #{customerId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM customers WHERE customer_id = #{customerId} AND org_id = #{orgId} AND (status = 'Active' OR status = 'Inactive')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
@@ -552,8 +676,6 @@ public interface MeterMapper {
             @Result(property = "phoneNumber", column = "phone_number"),
             @Result(property = "streetName", column = "street_name"),
             @Result(property = "houseNo", column = "house_no"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "meter", column = "customer_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterId"))
 
@@ -562,32 +684,11 @@ public interface MeterMapper {
 
     @Select("SELECT * FROM meters WHERE customer_id = #{customerId}")
     @Results({
+            @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "meterNumber", column = "meter_number"),
-//            @Result(property = "simNumber", column = "sim_number"),
-//            @Result(property = "energyType", column = "energy_type"),
-//            @Result(property = "smartStatus", column = "smart_status"),
-//            @Result(property = "fixedType", column = "fixed_type"),
-//            @Result(property = "meterCategory", column = "meter_category"),
-//            @Result(property = "meterClass", column = "meter_class"),
-//            @Result(property = "meterType", column = "meter_type"),
-//            @Result(property = "approvedStatus", column = "approve_status"),
-//            @Result(property = "oldSgc", column = "old_sgc"),
-//            @Result(property = "newSgc", column = "new_sgc"),
-//            @Result(property = "oldKrn", column = "old_krn"),
-//            @Result(property = "newKrn", column = "new_krn"),
-//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
-//            @Result(property = "createdAt", column = "created_at"),
-//            @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "meterAssignLocation", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
-//            @Result(property = "mdMeterInfo", column = "id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
-//            @Result(property = "paymentMode", column = "id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
-//            @Result(property = "manufacturer", column = "meter_manufacturer",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
     List<Meter> getMeterId(String customerId);
 
@@ -596,17 +697,23 @@ public interface MeterMapper {
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "streetName", column = "street_name"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
     MeterAssignLocation getMeterAssignLocation(UUID meterId);
 
 
-    @Select("SELECT * FROM meter_assign_locations_version WHERE meter_id = #{meterId} AND approve_status = 'pending'")
+    @Select("SELECT * FROM meter_assign_locations_version WHERE meter_id = #{meterId} AND " +
+            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "meter_stage", column = "meterStage"),
+            @Result(property = "streetName", column = "street_name"),
+            @Result(property = "createdBy", column = "created_by"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
@@ -707,37 +814,56 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
-            "meter_stage, status, customer_id, cin, dss, tariff, meter_number, type," +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, " +
-            "created_at, updated_at, type, created_by, description, meter_id, account_number, dss, node_id) " +
+            "meter_stage, status, customer_id, cin, tariff, meter_number, type, smart_status," +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, meter_model," +
+            "created_at, updated_at, created_by, description, meter_id, account_number, dss, node_id) " +
             "VALUES (" +
-            "#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
-            "#{meter.meterStatge}, #{meter.status}, #{request.customerId}, #{request.cin}, #{meter.dss}, #{meter.tariff}, #{request.newMeterNumber}, " +
-            "#{meter.type}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
-            "#{request.createdAt}, #{request.updatedAt},#{request.createdBy}, #{request.description}, #{meter.id}, #{request.accountNumber}, " +
-            "#{meter.dss}, #{meter.nodeId})")
+            "#{orgId}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, " +
+            "#{meterStage}, #{status}, #{customerId}, #{cin}, #{tariffId}, #{newMeterNumber}, " +
+            "#{type}, #{smartStatus}, #{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, " +
+            "#{meterModel}, #{createdAt}, #{updatedAt},#{createdBy}, #{description}, #{meterId}, #{accountNumber}, " +
+            "#{dss}, #{nodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    int assignedVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
+    int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
+
+//    @Insert("INSERT INTO meters_version (" +
+//            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
+//            "meter_stage, status, customer_id, cin, dss, tariff, meter_number, type, meter_id," +
+//            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, fixed_energy, meter_model," +
+//            "created_at, updated_at, created_by, description, account_number, node_id, smart_status,) " +
+//            "VALUES (" +
+//            "#{orgId}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, " +
+//            "#{meterStatge}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{newMeterNumber}, " +
+//            "#{type}, #{meterId}, #{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, " +
+//            "#{fixedEnergy}, #{meterModel}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{accountNumber}, #{nodeId}, #{smartStatus})")
 
     @Insert("INSERT INTO meters_version (" +
-            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
-            "meter_stage, status, customer_id, cin, dss, tariff, meter_number, type," +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, fixed_energy" +
-            "created_at, updated_at, created_by, description, meter_id, account_number) " +
+            "org_id, meter_category, meter_stage, status, customer_id, cin, dss, tariff, meter_number, type, fixed_energy, meter_type, " +
+            "created_at, updated_at, description, created_by, meter_id, account_number, node_id, smart_status, sim_number, meter_model, meter_class) " +
             "VALUES (" +
-            "#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, #{meter.meterManufacturer}, #{meter.meterType}, " +
-            "#{meter.meterStatge}, #{meter.status}, #{request.customerId}, #{request.cin}, #{meter.dss}, #{meter.tariff}, #{request.newMeterNumber}, " +
-            "#{meter.type}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
-            "#{request.fixedEnergy}, #{request.createdAt}, #{request.updatedAt}, #{request.createdBy}, #{request.description}, #{meter.id}, #{request.accountNumber})")
+            "#{orgId}, #{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{newMeterNumber}, " +
+            "#{type}, #{fixedEnergy}, #{meterType}, #{createdAt}, #{updatedAt}, #{description}, #{createdBy}, #{meterId}, #{accountNumber}, #{nodeId}," +
+            "#{smartStatus}, #{simNumber}, #{meterModel}, #{meterClass})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    int assignedVirtualVersionMeterToCustomer(@Param("meter") Meter meter, @Param("request") AssignMeterToCustomer request);
+    int assignedVirtualVersionMeterToCustomer(AssignMeterToCustomer request);
 
-    @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, approve_status, created_by, updated_by, description) " +
-            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetNumber}, #{createdAt}, #{updatedAt}, 'Pending-created', #{createdBy}, #{updatedBy}, #{description})")
+
+    @Insert("INSERT INTO meters (" +
+            "org_id, meter_category, meter_stage, status, customer_id, cin, dss, tariff, meter_number, type, fixed_energy," +
+            "created_at, updated_at, account_number, node_id, smart_status, sim_number, meter_model, meter_class, meter_type) " +
+            "VALUES (" +
+            "#{orgId}, #{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{newMeterNumber}, " +
+            "#{type}, #{fixedEnergy}, #{createdAt}, #{updatedAt}, #{accountNumber}, #{nodeId}, #{smartStatus}, #{simNumber}, #{meterModel}, " +
+            "#{meterClass}, #{meterType})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertVirtualVersionMeterToCustomer(AssignMeterToCustomer request);
+
+    @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, meter_stage, description, created_by) " +
+            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, 'Pending-created', #{description}, #{createdBy})")
     int assignVersionMeterToLocation(AssignMeterToCustomer request);
 
-    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, approve_status, created_by, approve_by, description)" +
-            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, 'Pending-created', #{createdBy}, #{approveBy}, #{description})")
+    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
+            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, 'Pending-created', #{createdBy}, #{description})")
     int assignPaymentModeVersion(AssignMeterToCustomer request);
 
     @Insert("INSERT INTO payment_mode_version (org_id, meter_id, meter_category, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, description, status)" +
@@ -754,20 +880,20 @@ public interface MeterMapper {
     @Select("UPDATE meters set meter_stage = #{meterStage}, update_at = #{updateAt} WHERE org_id = #{orgId} AND id = {meterId}")
     void updateMeterCategory(UUID orgId, UUID meterId, String meterStage);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{dss} AND org_id = #{orgId}")
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} " +
+            "AND (type = 'dss' OR type = 'feeder line')")
     @Results({
             @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "phoneNo", column = "phone_number"),
-            @Result(property = "contactPerson", column = "contact_person"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "serialNo", column = "serial_no"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "parentId", column = "parent_id"),
     })
-    SubStationTransformerFeederLine verifyDss(String dss, UUID orgId);
+    SubStationTransformerFeederLine verifyDssFeeder(String assetId, UUID orgId);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE node_id = #{feederId} AND org_id = #{orgId}")
-    SubStationTransformerFeederLine verifyFeederLine(String feederId, UUID orgId);
+//    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{feederId} AND org_id = #{orgId}")
+//    @Results({
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//    })
+//    SubStationTransformerFeederLine verifyFeederLine(String feederId, UUID orgId);
 
     @Update("UPDATE customers SET meter_assigned = #{meterAssigned}, tariff = #{tariff} WHERE id = #{cId}")
     void updateCustomer(Boolean meterAssigned, String tariff, UUID cId);
@@ -809,6 +935,11 @@ public interface MeterMapper {
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int removeMeter(String meterNumber, UUID orgId);
 
+    @Update("UPDATE meter_assign_locations_version SET approve_status = #{approveStatus} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-allocated' " +
+            "OR approve_status = 'Pending-assigned' OR approve_status = 'Pending-detached' OR approve_status = 'Pending-migrated')")
+    int updateMeterAssignedLocation(String approveStatus, UUID meterId, UUID orgId, Date updatedAt);
+
     @Delete("DELETE FROM md_meters_info_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
@@ -819,19 +950,26 @@ public interface MeterMapper {
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int removeSmartMeterInfo(UUID meterId, UUID orgId);
 
-    @Delete("DELETE FROM payment_mode_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int removePaymentModeInfo(UUID meterId, UUID orgId);
+//    @Delete("DELETE FROM payment_mode_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+//            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+//            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+
+    @Update("UPDATE payment_mode_version SET meter_stage = meterStage WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+        "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+        "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    int removePaymentModeInfo(String meterStage, UUID meterId, UUID orgId);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE meter_number = #{meterNumber}")
     int updateMeter(String meterStage, String meterNumber, Date updatedAt, String status);
 
-    @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
+    @Update("UPDATE smart_meter_info_version SET meter_stage = 'Approved', approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int approveSmartMeterInfoVersion(SmartMeterInfo smartMeterInfo);
+
+    @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{id}")
+    int assignedMeterToCustomer(String meterStage, String status, UUID id, Date updatedAt);
 
 //    @Insert("INSERT INTO meters_version " +
 //            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +

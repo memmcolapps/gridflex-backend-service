@@ -82,11 +82,12 @@ public class MeterController {
             @RequestParam(value = "meterNumber", required = false) String meterNumber,
             @RequestParam(value = "accountNumber", required = false) String accountNumber,
             @RequestParam(value = "meterVersionId", required = false) UUID meterVersionId,
-            @RequestParam(value = "versionMeterNumber", required = false) String versionMeterNumber
+            @RequestParam(value = "versionMeterNumber", required = false) String versionMeterNumber,
+            @RequestParam(value = "cin", required = false) String cin
 
     ) {
         try {
-            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber, meterVersionId, versionMeterNumber);
+            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber, meterVersionId, versionMeterNumber, cin);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -157,8 +158,18 @@ public class MeterController {
     }
 
     @PostMapping("/assign")
-    public ResponseEntity<Map<String, Object>> AssignMeter(
-            AssignMeterToCustomer assignMeterToCustomer) {
+    public ResponseEntity<Map<String, Object>> ContinueAssignMeter(
+            @RequestBody AssignMeterToCustomer assignMeterToCustomer) {
+        try {
+            Map<String, Object> result = service.continueAssignMeter(assignMeterToCustomer);
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/cin/assign")
+    public ResponseEntity<Map<String, Object>> AssignMeter(@RequestBody AssignMeterToCustomer assignMeterToCustomer) {
         try {
             Map<String, Object> result = service.assignMeterToCustomer(assignMeterToCustomer);
             return ResponseEntity.ok(result);
@@ -167,7 +178,7 @@ public class MeterController {
         }
     }
 
-    @GetMapping("/single-customer")
+    @GetMapping("/customer")
     public ResponseEntity<?> singleCustomer(
             @RequestParam(value = "customerId", required = true) String customerId
     ) {

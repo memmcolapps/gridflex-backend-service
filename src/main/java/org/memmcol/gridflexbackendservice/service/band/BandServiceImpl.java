@@ -86,10 +86,10 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(bandName + " " + status.getExistDesc());
             }
 
-            Band isVersionExist = bandMapper.getVersionBand(band.getName(), um.getOrgId());
-            if(isVersionExist != null) {
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
-            }
+//            Band isVersionExist = bandMapper.getVersionBand(band.getName(), um.getOrgId());
+//            if(isVersionExist != null) {
+//                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
+//            }
 
             band.setOrgId(um.getOrgId());
             band.setApproveStatus("Pending-created");
@@ -140,11 +140,14 @@ public class BandServiceImpl implements BandService {
             String changeDescription = buildChangeDescription(isExist, band);
             band.setDescription("Band Edited");
 
-            Band isVersionExist = bandMapper.getBandVersionById(band.getBandId(), um.getOrgId());
+//            Band isVersionExist = bandMapper.getBandVersionById(band.getBandId(), um.getOrgId());
 
-            if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
-            } else {
+            if(isExist.getApproveStatus().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Band have a pending state that needs to be cleared");
+            } else if(isExist.getApproveStatus().contains("Deactivated")){
+                throw new GlobalExceptionHandler.NotFoundException("Band is deactivated");
+            }
+            else {
                 int res = bandMapper.updateBand("Pending-edited", band.getBandId(), band.getUpdatedAt());
                 result = bandMapper.createBandVersion(band);
                 if(result == 0 || res == 0){
@@ -351,7 +354,7 @@ public class BandServiceImpl implements BandService {
                 }
             }
 
-            Band isVersionExist = bandMapper.getBandVersionById(bandId, um.getOrgId());
+//            Band isVersionExist = bandMapper.getBandVersionById(bandId, um.getOrgId());
             band.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             band.setOrgId(um.getOrgId());
             band.setCreatedBy(um.getId());
@@ -359,8 +362,12 @@ public class BandServiceImpl implements BandService {
             String changeDescription = buildChangeStatusDescription(band, state);
             band.setDescription(state ? "Band Activated" : "Band Deactivated");
 
-            if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status that needs to be cleared");
+            if(band.getApproveStatus().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Band have a pending state that needs to be cleared");
+            } else if(band.getApproveStatus().contains("Deactivated") && !state){
+                throw new GlobalExceptionHandler.NotFoundException("Band already deactivated");
+            } else if(band.getApproveStatus().contains("Approved") && state){
+                throw new GlobalExceptionHandler.NotFoundException("Band already activated");
             } else {
                 result = bandMapper.createBandVersion(band);
                 if(result == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());

@@ -120,7 +120,10 @@ public class  SecurityConfig {
 						"/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create", "/debt-setting/service/liability-cause/update",
 						"/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single", "/debt-setting/service/liability-cause/approve",
 						"/debt-setting/service/percentage-range/create", "/debt-setting/service/percentage-range/update",
-						"/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve"
+						"/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
+						"/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-status", "/meter/service/approve",
+						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
+						"meter/service/allocate", "meter/service/detach"
 						)
 				.access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier
