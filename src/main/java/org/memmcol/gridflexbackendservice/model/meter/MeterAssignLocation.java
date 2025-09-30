@@ -21,7 +21,7 @@ public class MeterAssignLocation implements Serializable {
     private String meterStage;
     private String createdBy;
     private String updatedBy;
-    private String approveBy;
+    private UUID approveBy;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -130,11 +130,11 @@ public class MeterAssignLocation implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public String getApproveBy() {
+    public UUID getApproveBy() {
         return approveBy;
     }
 
-    public void setApproveBy(String approveBy) {
+    public void setApproveBy(UUID approveBy) {
         this.approveBy = approveBy;
     }
 }
