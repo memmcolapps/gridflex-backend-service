@@ -12,11 +12,16 @@ import java.util.UUID;
 public class MeterAssignLocation implements Serializable {
     @Id
     private UUID id;
+    private UUID orgId;
     private UUID meterId;
     private String state;
     private String city;
     private String houseNo;
     private String streetName;
+    private String meterStage;
+    private String createdBy;
+    private String updatedBy;
+    private String approveBy;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -35,6 +40,14 @@ public class MeterAssignLocation implements Serializable {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
 
     public UUID getMeterId() {
@@ -77,6 +90,30 @@ public class MeterAssignLocation implements Serializable {
         this.streetName = streetName;
     }
 
+    public String getMeterStage() {
+        return meterStage;
+    }
+
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -91,5 +128,13 @@ public class MeterAssignLocation implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getApproveBy() {
+        return approveBy;
+    }
+
+    public void setApproveBy(String approveBy) {
+        this.approveBy = approveBy;
     }
 }

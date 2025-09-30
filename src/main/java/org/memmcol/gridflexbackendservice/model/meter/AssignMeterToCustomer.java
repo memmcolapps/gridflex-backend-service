@@ -16,23 +16,38 @@ public class AssignMeterToCustomer implements Serializable {
     private UUID meterId;
 //    private String oldMeterNumber;
     private String newMeterNumber;
+    private String simNumber;
     private UUID orgId;
     private String customerId;
     private String type;
     private UUID tariffId;
     private String dssAssetId;
     private String feederAssetId;
+    private UUID dss;
+    private UUID nodeId;
     private String cin;
     private String accountNumber;
+    private String meterClass;
+    private String meterModel;
+    private String meterType;
+    private UUID meterManufacturer;
+    private Boolean smartStatus;
+    private String oldSgc;
+    private String newSgc;
+    private String oldKrn;
+    private String newKrn;
+    private Long oldTariffIndex;
+    private Long newTariffIndex;
 
     private String state;
     private String city;
     private String houseNo;
     private String streetName;
 
-    private String energyType;
     private String fixedEnergy;
     private String meterCategory;
+    private String meterStage;
+    private String status;
 
     private String creditPaymentMode;
     private String creditPaymentPlan;
@@ -54,6 +69,14 @@ public class AssignMeterToCustomer implements Serializable {
         createdAt = new Date();
     }
 
+    public String getSimNumber() {
+        return simNumber;
+    }
+
+    public void setSimNumber(String simNumber) {
+        this.simNumber = simNumber;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -70,6 +93,14 @@ public class AssignMeterToCustomer implements Serializable {
         this.meterId = meterId;
     }
 
+    public String getNewMeterNumber() {
+        return newMeterNumber;
+    }
+
+    public void setNewMeterNumber(String newMeterNumber) {
+        this.newMeterNumber = newMeterNumber;
+    }
+
     public UUID getOrgId() {
         return orgId;
     }
@@ -84,22 +115,6 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setCustomerId(String customerId) {
         this.customerId = customerId;
-    }
-
-//    public String getOldMeterNumber() {
-//        return oldMeterNumber;
-//    }
-//
-//    public void setOldMeterNumber(String oldMeterNumber) {
-//        this.oldMeterNumber = oldMeterNumber;
-//    }
-
-    public String getNewMeterNumber() {
-        return newMeterNumber;
-    }
-
-    public void setNewMeterNumber(String newMeterNumber) {
-        this.newMeterNumber = newMeterNumber;
     }
 
     public String getType() {
@@ -134,6 +149,22 @@ public class AssignMeterToCustomer implements Serializable {
         this.feederAssetId = feederAssetId;
     }
 
+    public UUID getDss() {
+        return dss;
+    }
+
+    public void setDss(UUID dss) {
+        this.dss = dss;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
     public String getCin() {
         return cin;
     }
@@ -148,6 +179,94 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setAccountNumber(String accountNumber) {
         this.accountNumber = accountNumber;
+    }
+
+    public String getMeterClass() {
+        return meterClass;
+    }
+
+    public void setMeterClass(String meterClass) {
+        this.meterClass = meterClass;
+    }
+
+    public String getMeterModel() {
+        return meterModel;
+    }
+
+    public void setMeterModel(String meterModel) {
+        this.meterModel = meterModel;
+    }
+
+    public String getMeterType() {
+        return meterType;
+    }
+
+    public void setMeterType(String meterType) {
+        this.meterType = meterType;
+    }
+
+    public UUID getMeterManufacturer() {
+        return meterManufacturer;
+    }
+
+    public void setMeterManufacturer(UUID meterManufacturer) {
+        this.meterManufacturer = meterManufacturer;
+    }
+
+    public Boolean getSmartStatus() {
+        return smartStatus;
+    }
+
+    public void setSmartStatus(Boolean smartStatus) {
+        this.smartStatus = smartStatus;
+    }
+
+    public String getOldSgc() {
+        return oldSgc;
+    }
+
+    public void setOldSgc(String oldSgc) {
+        this.oldSgc = oldSgc;
+    }
+
+    public String getNewSgc() {
+        return newSgc;
+    }
+
+    public void setNewSgc(String newSgc) {
+        this.newSgc = newSgc;
+    }
+
+    public String getOldKrn() {
+        return oldKrn;
+    }
+
+    public void setOldKrn(String oldKrn) {
+        this.oldKrn = oldKrn;
+    }
+
+    public String getNewKrn() {
+        return newKrn;
+    }
+
+    public void setNewKrn(String newKrn) {
+        this.newKrn = newKrn;
+    }
+
+    public Long getOldTariffIndex() {
+        return oldTariffIndex;
+    }
+
+    public void setOldTariffIndex(Long oldTariffIndex) {
+        this.oldTariffIndex = oldTariffIndex;
+    }
+
+    public Long getNewTariffIndex() {
+        return newTariffIndex;
+    }
+
+    public void setNewTariffIndex(Long newTariffIndex) {
+        this.newTariffIndex = newTariffIndex;
     }
 
     public String getState() {
@@ -182,36 +301,12 @@ public class AssignMeterToCustomer implements Serializable {
         this.streetName = streetName;
     }
 
-    public String getEnergyType() {
-        return energyType;
-    }
-
-    public void setEnergyType(String energyType) {
-        this.energyType = energyType;
-    }
-
     public String getFixedEnergy() {
         return fixedEnergy;
     }
 
     public void setFixedEnergy(String fixedEnergy) {
         this.fixedEnergy = fixedEnergy;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public String getMeterCategory() {
@@ -222,20 +317,28 @@ public class AssignMeterToCustomer implements Serializable {
         this.meterCategory = meterCategory;
     }
 
-    public String getDebitPaymentPlan() {
-        return debitPaymentPlan;
+    public String getMeterStage() {
+        return meterStage;
     }
 
-    public void setDebitPaymentPlan(String debitPaymentPlan) {
-        this.debitPaymentPlan = debitPaymentPlan;
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
     }
 
-    public String getDebitPaymentMode() {
-        return debitPaymentMode;
+    public String getStatus() {
+        return status;
     }
 
-    public void setDebitPaymentMode(String debitPaymentMode) {
-        this.debitPaymentMode = debitPaymentMode;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getCreditPaymentMode() {
+        return creditPaymentMode;
+    }
+
+    public void setCreditPaymentMode(String creditPaymentMode) {
+        this.creditPaymentMode = creditPaymentMode;
     }
 
     public String getCreditPaymentPlan() {
@@ -246,12 +349,20 @@ public class AssignMeterToCustomer implements Serializable {
         this.creditPaymentPlan = creditPaymentPlan;
     }
 
-    public String getCreditPaymentMode() {
-        return creditPaymentMode;
+    public String getDebitPaymentMode() {
+        return debitPaymentMode;
     }
 
-    public void setCreditPaymentMode(String creditPaymentMode) {
-        this.creditPaymentMode = creditPaymentMode;
+    public void setDebitPaymentMode(String debitPaymentMode) {
+        this.debitPaymentMode = debitPaymentMode;
+    }
+
+    public String getDebitPaymentPlan() {
+        return debitPaymentPlan;
+    }
+
+    public void setDebitPaymentPlan(String debitPaymentPlan) {
+        this.debitPaymentPlan = debitPaymentPlan;
     }
 
     public UUID getCreatedBy() {
@@ -276,5 +387,21 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

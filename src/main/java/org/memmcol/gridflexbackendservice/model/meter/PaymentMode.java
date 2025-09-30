@@ -24,6 +24,7 @@ public class PaymentMode implements Serializable {
     private String description;
     private Date createdAt;
     private Date updatedAt;
+    private String approveBy;
 
     public PaymentMode() {
         this.createdAt = new Date();
@@ -140,5 +141,13 @@ public class PaymentMode implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getApproveBy() {
+        return approveBy;
+    }
+
+    public void setApproveBy(String approveBy) {
+        this.approveBy = approveBy;
     }
 }

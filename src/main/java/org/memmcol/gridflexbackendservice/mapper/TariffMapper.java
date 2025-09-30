@@ -31,6 +31,15 @@ public interface TariffMapper {
     })
     Tariff getTariff(UUID id, UUID orgId);
 
+    @Select("SELECT * FROM tariffs WHERE id = #{id} AND approve_status = 'Approved'")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "band_id", column = "band_id"),
+//            @Result(property = "band", column = "band_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
+    })
+    Tariff getApproveTariff(UUID id);
+
     @Select("SELECT * FROM bands WHERE id = #{bandId}")
     @Results({
             @Result(property = "id", column = "id"),
@@ -76,7 +85,7 @@ public interface TariffMapper {
     int rejectedTariffVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
 
 
-    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
+    @Select("SELECT org_id, name, tariff_rate, band_id FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "band_id", column = "band_id"),
