@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/meters/reading")
+@RequestMapping("/meters/reading/service")
 public class MeterReadingSheetController {
 
     @Autowired
@@ -77,8 +77,6 @@ public class MeterReadingSheetController {
         search.setMeterNumber(meterNumber);
         search.setName(name);
         search.setTariffType(tariffType);
-
-
         search.setReadingType(readingType);
         search.setMonth(month);
         search.setYear(year);

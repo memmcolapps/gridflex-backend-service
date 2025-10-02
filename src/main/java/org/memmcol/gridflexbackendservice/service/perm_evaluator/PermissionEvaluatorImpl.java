@@ -33,7 +33,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-state", "/meter/service/approve",
                     "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
-                    "meter/service/allocate", "meter/service/detach"),
+                    "meter/service/allocate", "meter/service/detach", "/meters/reading/service/add","/meters/reading/service/generate", "/meters/reading/service/update",
+                    "/meters/reading/service/all"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all",
@@ -44,7 +45,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
                     "/audit-log/service/incident/report/get", "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
                     "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign",
-                    "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach"),
+                    "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach", "/meters/reading/service/add",
+                    "/meters/reading/service/generate","/meters/reading/service/update","/meters/reading/service/all"),
 
             "customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
                     "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
