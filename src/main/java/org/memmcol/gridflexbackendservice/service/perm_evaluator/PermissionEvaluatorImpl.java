@@ -31,7 +31,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/debt-setting/service/liability-cause/update", "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single",
                     "/debt-setting/service/liability-cause/approve", "/debt-setting/service/percentage-range/create", "/debt-setting/service/percentage-range/update",
                     "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
-                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-status", "/meter/service/approve",
+                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-state", "/meter/service/approve",
                     "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
                     "meter/service/allocate", "meter/service/detach"),
 
@@ -42,9 +42,9 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/customer/service/bulk-upload", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
                     "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
-                    "/audit-log/service/incident/report/get", "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-status", "/meter/service/approve",
-                    "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
-                    "meter/service/allocate", "meter/service/detach"),
+                    "/audit-log/service/incident/report/get", "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
+                    "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign",
+                    "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach"),
 
             "customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
                     "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",

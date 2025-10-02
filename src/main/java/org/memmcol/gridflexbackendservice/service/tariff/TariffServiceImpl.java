@@ -4,6 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
+import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
@@ -52,6 +53,9 @@ public class TariffServiceImpl implements TariffService {
 
     @Autowired
     private HttpServletRequest httpServletRequest;
+
+    @Autowired
+    private MeterMapper meterMapper;
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
@@ -226,21 +230,13 @@ public class TariffServiceImpl implements TariffService {
             }
 
 
-//            if(!state){
-//                List<String> errors = new ArrayList<>();
-//                int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
-//                if(tariff > 0)  errors.add(tariff + " tariffs");
-//
-//                int percentageRange = bandMapper.getPercentageBandById(bandId);
-//                if(percentageRange > 0) errors.add(percentageRange + " percentage range set");
-//
-//                if (!errors.isEmpty()) {
-//                    throw new GlobalExceptionHandler.NotFoundException
-//                            ("Band can not be deactivated because is currently in use by "+errors);
-//                }
-//            }
-
-//            Tariff isVersionExist = tariffMapper.getTariffVersionById(id, um.getOrgId());
+            if(!state){
+                int meter = meterMapper.getTariffMeterById(id, um.getOrgId());
+                if (meter > 0) {
+                    throw new GlobalExceptionHandler.NotFoundException
+                            ("tariff can not be deactivated because is currently in use by " + meter + " meters");
+                }
+            }
             tariff.setApprove_status("Pending-"+(state ? "activated" : "deactivated"));
             tariff.setOrg_id(um.getOrgId());
             tariff.setCreated_by(um.getId());
@@ -258,11 +254,11 @@ public class TariffServiceImpl implements TariffService {
             } else {
                 result = tariffMapper.createTariffVersion(tariff);
                 if(result == 0){
-                    throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateDesc());
                 }
             }
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getId(), tariff.getUpdated_at());
-            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + (state ? " activated " : " deactivated ")+ "failed");
+            if(u == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName + (state ? " activated " : " deactivated ")+ "failed");
             Tariff newTariff = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             um.setPassword("");
 //            handleAddCache(newTariff);
