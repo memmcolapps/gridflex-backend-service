@@ -58,6 +58,8 @@ public class AssignMeterToCustomer implements Serializable {
     private UUID updatedBy;
     private String description;
 
+    private Boolean activateStatus;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
@@ -403,5 +405,13 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getActivateStatus() {
+        return activateStatus;
+    }
+
+    public void setActivateStatus(Boolean activateStatus) {
+        this.activateStatus = activateStatus;
     }
 }

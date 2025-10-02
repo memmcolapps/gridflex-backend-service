@@ -94,10 +94,10 @@ public class MeterController {
         }
     }
 
-    @PatchMapping("/change-status")
+    @PatchMapping("/change-state")
     public ResponseEntity<Map<String, Object>> changeStatus(
             @RequestParam(required = true) UUID meterId,
-            @RequestParam(value = "status", required = true) String status,
+            @RequestParam(value = "status", required = true) Boolean status,
             @RequestParam(value = "reason", required = true) String reason
             ) {
         try {
