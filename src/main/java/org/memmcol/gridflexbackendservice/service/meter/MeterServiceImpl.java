@@ -1020,81 +1020,166 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleApproval(Meter meter, UserModel user, String approveStatus) {
-        String st = meter.getMeterStage();
+        // String st = meter.getMeterStage();
+        // meter.setApproveBy(user.getId());
+
         meter.setApproveBy(user.getId());
-        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-                && (meter.getMdMeterInfo() != null || meter.getSmartMeterInfo() != null)){
-            meter.setMeterStage("Created");
-            meter.setStatus("Active");
-            meter.getMdMeterInfo().setMeterStage("Created");
-            meter.getSmartMeterInfo().setMeterStage("Created");
-        } if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-                && (meter.getMdMeterInfo() == null || meter.getSmartMeterInfo() != null)){
-            meter.setMeterStage("Created");
-            meter.setStatus("Active");
-            meter.getSmartMeterInfo().setMeterStage("Created");
-        }
-        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-                && (meter.getMdMeterInfo() != null || meter.getSmartMeterInfo() == null)){
-            meter.setMeterStage("Created");
-            meter.setStatus("Active");
-            meter.getMdMeterInfo().setMeterStage("Created");
-        }
-        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-                && meter.getMdMeterInfo() == null && meter.getSmartMeterInfo() == null){
-            meter.setMeterStage("Created");
-            meter.setStatus("Active");
-        }
-        else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-assigned")){
+
+        String stage = meter.getMeterStage() != null ? meter.getMeterStage().trim() : "";
+        String stat = meter.getStatus() != null ? meter.getStatus().trim() : "";
+
+        // === Handle Pending-created cases ===
+        if (stage.equalsIgnoreCase("Pending-created")) {
+
+            if (meter.getMdMeterInfo() != null && meter.getSmartMeterInfo() != null) {
+                System.out.println("Case: both mdMeterInfo and smartMeterInfo present");
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+                meter.getMdMeterInfo().setMeterStage("Created");
+                meter.getSmartMeterInfo().setMeterStage("Created");
+
+            } else if (meter.getMdMeterInfo() == null && meter.getSmartMeterInfo() != null) {
+                System.out.println("Case: only smartMeterInfo present");
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+                meter.getSmartMeterInfo().setMeterStage("Created");
+
+            } else if (meter.getMdMeterInfo() != null && meter.getSmartMeterInfo() == null) {
+                System.out.println("Case: only mdMeterInfo present");
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+                meter.getMdMeterInfo().setMeterStage("Created");
+
+            } else {
+                System.out.println("Case: neither mdMeterInfo nor smartMeterInfo present");
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+            }
+
+        // === Handle Pending-assigned ===
+        } else if (stage.equalsIgnoreCase("Pending-assigned")) {
             meter.setMeterStage("Assigned");
             meter.setStatus("Active");
-        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-allocated")){
+
+        // === Handle Pending-allocated ===
+        } else if (stage.equalsIgnoreCase("Pending-allocated")) {
             meter.setMeterStage("Unassigned");
             meter.setStatus("Active");
-        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-detached")) {
+
+        // === Handle Pending-detached ===
+        } else if (stage.equalsIgnoreCase("Pending-detached")) {
             meter.setMeterStage("Unassigned");
             meter.setStatus("Deactivated");
-        }
-//        else if(meter.getStatus().trim().equalsIgnoreCase("Deactivated")) {
-////            meter.setMeterStage("");
-//            meter.setStatus("Deactivated");
-//        }
-        else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-migrated") && meter.getSmartMeterInfo() != null){
+
+        // === Handle Pending-migrated ===
+        } else if (stage.equalsIgnoreCase("Pending-migrated") && meter.getSmartMeterInfo() != null) {
             meter.getSmartMeterInfo().setMeterStage("Active");
             meter.getPaymentMode().setMeterStage("Active");
             meter.setMeterStage("Active");
             meter.setStatus("Active");
-        } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited"))
-                && meter.getCustomerId() == null && meter.getNodeId() != null) {
-            meter.setMeterStage("Unassigned");
-            meter.setStatus("Active");
-        } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited"))
-                && meter.getCustomerId() == null && meter.getNodeId() == null) {
-            meter.setMeterStage("Created");
-            meter.setStatus("Active");
-//            handleMeterInfoRejection(meter, user);
-        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited")
-                && meter.getCustomerId() != null && meter.getNodeId() != null) {
-            meter.setMeterStage("Assigned");
-            meter.setStatus("Active");
-        } else if(meter.getStatus().trim().equalsIgnoreCase("Pending-deactivated")) {
-            meter.setStatus("Deactivated");
-        } else if(meter.getStatus().trim().equalsIgnoreCase("Pending-activated")) {
-            meter.setStatus("Activated");
-        } else {
-            //pending-detached & pending-migrated
-//            meter.getMdMeterInfo().setMeterStage("Active");
-            meter.getPaymentMode().setMeterStage("Active");
-            meter.setMeterStage("Active");
-            meter.setStatus("Active");
-        }
+
+        // === Handle Pending-edited ===
+        } else if (stage.equalsIgnoreCase("Pending-edited")) {
+            if (meter.getCustomerId() == null && meter.getNodeId() != null) {
+                meter.setMeterStage("Unassigned");
+                meter.setStatus("Active");
+            } else if (meter.getCustomerId() == null && meter.getNodeId() == null) {
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+            } else if (meter.getCustomerId() != null && meter.getNodeId() != null) {
+                meter.setMeterStage("Assigned");
+                meter.setStatus("Active");
+            }
+
+            // === Handle Pending-deactivated ===
+            } else if (stat.equalsIgnoreCase("Pending-deactivated")) {
+                meter.setStatus("Deactivated");
+
+            // === Handle Pending-activated ===
+            } else if (stat.equalsIgnoreCase("Pending-activated")) {
+                meter.setStatus("Activated");
+
+            // === Default fallback ===
+            } else {
+                meter.getPaymentMode().setMeterStage("Active");
+                meter.setMeterStage("Active");
+                meter.setStatus("Active");
+            }
+
+
+//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
+//                && (meter.getMdMeterInfo() != null || meter.getSmartMeterInfo() != null)){
+//            System.out.println("meterStage>> "+meter.getMeterStage());
+//            System.out.println("getMdMeterInfo>> "+meter.getMdMeterInfo().getMeterStage());
+//            System.out.println("getSmartMeterInfo>> "+meter.getSmartMeterInfo().getMeterStage());
+//            meter.setMeterStage("Created");
+//            meter.setStatus("Active");
+//            meter.getMdMeterInfo().setMeterStage("Created");
+//            meter.getSmartMeterInfo().setMeterStage("Created");
+//        }
+//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
+//                && (meter.getMdMeterInfo() == null || meter.getSmartMeterInfo() != null)){
+//            meter.setMeterStage("Created");
+//            meter.setStatus("Active");
+//            meter.getSmartMeterInfo().setMeterStage("Created");
+//        }
+//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
+//                && (meter.getMdMeterInfo() != null || meter.getSmartMeterInfo() == null)){
+//            meter.setMeterStage("Created");
+//            meter.setStatus("Active");
+//            meter.getMdMeterInfo().setMeterStage("Created");
+//        }
+//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
+//                && meter.getMdMeterInfo() == null && meter.getSmartMeterInfo() == null){
+//            meter.setMeterStage("Created");
+//            meter.setStatus("Active");
+//        }
+//        else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-assigned")){
+//            meter.setMeterStage("Assigned");
+//            meter.setStatus("Active");
+//        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-allocated")){
+//            meter.setMeterStage("Unassigned");
+//            meter.setStatus("Active");
+//        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-detached")) {
+//            meter.setMeterStage("Unassigned");
+//            meter.setStatus("Deactivated");
+//        }
+//        else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-migrated") && meter.getSmartMeterInfo() != null){
+//            meter.getSmartMeterInfo().setMeterStage("Active");
+//            meter.getPaymentMode().setMeterStage("Active");
+//            meter.setMeterStage("Active");
+//            meter.setStatus("Active");
+//        } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited"))
+//                && meter.getCustomerId() == null && meter.getNodeId() != null) {
+//            meter.setMeterStage("Unassigned");
+//            meter.setStatus("Active");
+//        } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited"))
+//                && meter.getCustomerId() == null && meter.getNodeId() == null) {
+//            meter.setMeterStage("Created");
+//            meter.setStatus("Active");
+////            handleMeterInfoRejection(meter, user);
+//        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited")
+//                && meter.getCustomerId() != null && meter.getNodeId() != null) {
+//            meter.setMeterStage("Assigned");
+//            meter.setStatus("Active");
+//        } else if(meter.getStatus().trim().equalsIgnoreCase("Pending-deactivated")) {
+//            meter.setStatus("Deactivated");
+//        } else if(meter.getStatus().trim().equalsIgnoreCase("Pending-activated")) {
+//            meter.setStatus("Activated");
+//        } else {
+//            //pending-detached & pending-migrated
+////            meter.getMdMeterInfo().setMeterStage("Active");
+//            meter.getPaymentMode().setMeterStage("Active");
+//            meter.setMeterStage("Active");
+//            meter.setStatus("Active");
+//        }
 
         int approved = meterMapper.approvedMeterVersion(meter.getMeterStage(), meter.getStatus(), meter.getApproveBy(), meter.getUpdatedAt(), meter.getMeterNumber());
         if (approved == 0) {
             throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
         }
 
-        if(!"Pending-detached".equalsIgnoreCase(st)){
+        if(!"Pending-detached".equalsIgnoreCase(stage)){
             //Approve meter in meters table
             if (meterMapper.approveMeter(meter) == 0) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
@@ -1107,13 +1192,13 @@ public class MeterServiceImpl implements MeterService {
             }
 
             //approve MD meter Information
-            if ("md".equalsIgnoreCase(meter.getMeterClass()) && !st.equalsIgnoreCase("Pending-allocated")) {
+            if ("md".equalsIgnoreCase(meter.getMeterClass()) && !stage.equalsIgnoreCase("Pending-allocated")) {
                 meter.getMdMeterInfo().setApproveBy(user.getId());
                 approveMDMeterInfo(meter);
             }
 
             //approve smart meter Information
-            if (Boolean.TRUE.equals(meter.getSmartStatus()) && !st.equalsIgnoreCase("Pending-allocated")) {
+            if (Boolean.TRUE.equals(meter.getSmartStatus()) && !stage.equalsIgnoreCase("Pending-allocated")) {
                 approveSmartMeterInfo(meter);
             }
 
@@ -1124,7 +1209,7 @@ public class MeterServiceImpl implements MeterService {
             }
         }
 
-        if("Pending-detached".equalsIgnoreCase(st)){
+        if("Pending-detached".equalsIgnoreCase(stage)){
             if (meterMapper.meterApproval(meter) == 0) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
             }
