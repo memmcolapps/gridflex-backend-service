@@ -42,7 +42,6 @@ public class MeterReadingSheetController {
     @GetMapping("/generate")
     public ResponseEntity<?> getAllReadingMeters(@RequestParam String assetId, String type) {
         try {
-
             Map<String, Object> result = readingMetersService.getGenerateMeterReading(assetId, type);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){

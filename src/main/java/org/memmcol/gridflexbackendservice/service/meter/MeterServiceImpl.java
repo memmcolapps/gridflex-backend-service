@@ -143,7 +143,7 @@ public class MeterServiceImpl implements MeterService {
         request.setMeterStage("Pending-created");
         request.setOrgId(user.getOrgId());
         request.setType("NON-VIRTUAL");
-        request.setDescription(capitalizeFirstLetter("Newly Created"));
+        request.setDescription(capitalizeFirstLetter("Newly Added"));
         request.setCreatedBy(user.getId());
     }
 
@@ -152,7 +152,7 @@ public class MeterServiceImpl implements MeterService {
         request.getMdMeterInfo().setOrgId(user.getOrgId());
         request.getMdMeterInfo().setCreatedBy(user.getId());
         request.getMdMeterInfo().setMeterStage("Pending-created");
-        request.getMdMeterInfo().setDescription("Newly Created");
+        request.getMdMeterInfo().setDescription("Newly Added");
 
         int inserted = meterMapper.insertMDMeterInfoVersion(request.getMdMeterInfo());
         if (inserted == 0) {
@@ -165,7 +165,7 @@ public class MeterServiceImpl implements MeterService {
         request.getSmartMeterInfo().setOrgId(user.getOrgId());
         request.getSmartMeterInfo().setCreatedBy(user.getId());
         request.getSmartMeterInfo().setMeterStage("Pending-created");
-        request.getSmartMeterInfo().setDescription("Newly Created");
+        request.getSmartMeterInfo().setDescription("Newly Added");
         request.getSmartMeterInfo().setPassword(passwordEncoder.encode(request.getSmartMeterInfo().getPassword()));
 
         int inserted = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());

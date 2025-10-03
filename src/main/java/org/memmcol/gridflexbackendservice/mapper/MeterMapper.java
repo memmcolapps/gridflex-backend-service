@@ -284,24 +284,31 @@ public interface MeterMapper {
     @Delete("DELETE FROM payment_mode WHERE meter_id = #{meterId}")
     int removePaymentMode(UUID meterId);
 
-    @Update("UPDATE md_meters_info_version " +
-            "SET " +
-            "  <if test='description != null'>description = #{description},</if>" +
-            "  <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
-            "  <if test='approvedBy != null'>approve_by = #{approvedBy},</if>" +
-            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
+//    @Update("UPDATE md_meters_info_version " +
+//            "SET " +
+//            "  <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
+//            "  <if test='approvedBy != null'>approve_by = #{approvedBy},</if>" +
+//            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+//            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+//            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
 
-    @Update("UPDATE smart_meter_info_version " +
-            "SET " +
-            "  <if test='approvedBy != null'>approved_by = #{approvedBy},</if>" +
-            "  <if test='description != null'>description = #{description},</if>" +
+    @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
+
+//    @Update("UPDATE smart_meter_info_version " +
+//            "SET " +
+//            "  <if test='approvedBy != null'>approved_by = #{approvedBy},</if>" +
+//            "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+//            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+//            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+
+    @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approvedBy);
+    int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update({
             "UPDATE md_meters_info SET",
