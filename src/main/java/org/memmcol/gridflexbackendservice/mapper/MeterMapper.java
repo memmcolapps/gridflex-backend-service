@@ -542,7 +542,7 @@ public interface MeterMapper {
     })
     List<Meter> getMetersVersion(UUID orgId);
 
-    @Select("SELECT * FROM meters WHERE id = #{meterId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM meters WHERE id = #{meterId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -581,7 +581,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
 
     })
-    Meter getMeterById(UUID id);
+    Meter getMeterById(UUID meterId);
 
     @Update("UPDATE meters SET status = #{status} WHERE org_id = #{orgId} AND id = #{meterId}")
     int changeState(UUID meterId, String status, UUID orgId);
