@@ -836,10 +836,10 @@ public interface MeterMapper {
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-assigned')")
     int removeMeter(String meterNumber, UUID orgId);
 
-    @Update("UPDATE meter_assign_locations_version SET approve_status = #{approveStatus} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-allocated' " +
-            "OR approve_status = 'Pending-assigned' OR approve_status = 'Pending-detached' OR approve_status = 'Pending-migrated')")
-    int updateMeterAssignedLocation(String approveStatus, UUID meterId, UUID orgId, Date updatedAt);
+    @Update("UPDATE meter_assign_locations_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+    int updateMeterAssignedLocation(String meterStage, UUID meterId, UUID orgId, Date updatedAt, UUID approveBy);
 
     @Delete("DELETE FROM md_meters_info_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
@@ -851,10 +851,10 @@ public interface MeterMapper {
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
     int removeSmartMeterInfo(UUID meterId, UUID orgId);
 
-    @Update("UPDATE payment_mode_version SET meter_stage = meterStage WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+    @Update("UPDATE payment_mode_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
         "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
         "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
-    int removePaymentModeInfo(String meterStage, UUID meterId, UUID orgId);
+    int removePaymentModeInfo(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{meterId}")
     int updateMeter(String meterStage, UUID meterId, Date updatedAt, String status);

@@ -1192,13 +1192,15 @@ public class MeterServiceImpl implements MeterService {
             }
 
             //approve MD meter Information
-            if ("md".equalsIgnoreCase(meter.getMeterClass()) && !stage.equalsIgnoreCase("Pending-allocated")) {
+            if ("md".equalsIgnoreCase(meter.getMeterClass()) && (stage.equalsIgnoreCase("Pending-created")
+                    || stage.equalsIgnoreCase("Pending-edited"))) {
                 meter.getMdMeterInfo().setApproveBy(user.getId());
                 approveMDMeterInfo(meter);
             }
 
             //approve smart meter Information
-            if (Boolean.TRUE.equals(meter.getSmartStatus()) && !stage.equalsIgnoreCase("Pending-allocated")) {
+            if (Boolean.TRUE.equals(meter.getSmartStatus()) && (stage.equalsIgnoreCase("Pending-created")
+                    || stage.equalsIgnoreCase("Pending-edited"))) {
                 approveSmartMeterInfo(meter);
             }
 
@@ -1313,10 +1315,15 @@ public class MeterServiceImpl implements MeterService {
         }
 
         //Update assigned location approve status to rejected in meter_assign_locations_version table
-        if(meter.getMeterAssignLocation() != null && meter.getMeterAssignLocation().getMeterStage() != null
-                && meter.getMeterAssignLocation().getMeterStage().contains("Pending")) {
-            int result = meterMapper.updateMeterAssignedLocation("Rejected", meter.getMeterId(), meter.getOrgId(), meter.getUpdatedAt());
+        if(meter.getMeterAssignLocation() != null) {
+            int result = meterMapper.updateMeterAssignedLocation("Rejected", meter.getMeterAssignLocation().getMeterId(), meter.getOrgId(), meter.getUpdatedAt(), user.getId());
             if(result == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assigned location failed");
+        }
+
+        if(meter.getPaymentMode() != null){
+            //Update smart meter Info, mater-stage to rejected in payment_mode_version table
+            int result = meterMapper.removePaymentModeInfo("Rejected", meter.getPaymentMode().getMeterId(), meter.getOrgId(), user.getId());
+            if(result == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assign payment mode failed");
         }
 
 
@@ -1333,11 +1340,6 @@ public class MeterServiceImpl implements MeterService {
             //Update smart meter Info, mater-stage to rejected in smart_meter_info_version table
             if (Boolean.TRUE.equals(meter.getSmartStatus() && !st.equalsIgnoreCase("Pending-allocated"))) {
                 res = meterMapper.updateSmartMeterInfoVersion("Rejected", meter.getSmartMeterInfo().getMeterId(), user.getOrgId(), user.getId());
-            }
-
-            if(meter.getPaymentMode() != null){
-                //Update smart meter Info, mater-stage to rejected in payment_mode_version table
-                res = meterMapper.removePaymentModeInfo("Rejected", meter.getPaymentMode().getMeterId(), meter.getOrgId());
             }
 
             if(res == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " failed to delete");
@@ -1365,9 +1367,10 @@ public class MeterServiceImpl implements MeterService {
             meter.setStatus("Active");
             handleMeterInfoRejection(meter, user);
         } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-assigned"))
-                && meter.getCustomerId() != null && meter.getNodeId() != null && !meter.getType().equalsIgnoreCase("virtual")) {
+                && meter.getCustomerId() != null && meter.getNodeId() != null && meter.getType().equalsIgnoreCase("non-virtual")) {
             meter.setMeterStage("Unassigned");
             meter.setStatus("Active");
+//            handlePendingAssignedRejection(meter, user);
             int u = meterMapper.updateMeter(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " deactivation failed");
         } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited")
@@ -1382,6 +1385,19 @@ public class MeterServiceImpl implements MeterService {
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " update failed");
         }
     }
+
+//    void handlePendingAssignedRejection(Meter meter, UserModel user) {
+//        if(meter.getMdMeterInfo() != null){
+//            int v = meterMapper.updateMeterAssignedLocation(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus(), user.getId());
+//            if(v == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " editing failed");
+//        }
+//        if(meter.getSmartMeterInfo() != null){
+//            int v = meterMapper.updateSmartMeter(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus(), user.getId());
+//            if(v == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " editing failed");
+//        }
+//        int m = meterMapper.updateMeter(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus());
+//        if(m == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assign failed");
+//    }
 
     void handleMeterInfoRejection(Meter meter, UserModel user) {
         if(meter.getMdMeterInfo() != null){
