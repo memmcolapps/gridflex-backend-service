@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/meters/reading/service")
+@RequestMapping("/meter/reading/service")
 public class MeterReadingSheetController {
 
     @Autowired
@@ -28,7 +28,7 @@ public class MeterReadingSheetController {
         this.readingMetersService = readingMetersService;
     }
 
-    @PostMapping("/add")
+    @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> addMeterReading(@RequestBody MeterReadingSheet meterReadingSheet) {
         try {
 

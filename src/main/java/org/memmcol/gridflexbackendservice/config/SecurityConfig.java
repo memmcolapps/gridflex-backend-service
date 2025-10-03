@@ -123,8 +123,8 @@ public class  SecurityConfig {
 						"/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
 						"/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-state", "/meter/service/approve",
 						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
-						"meter/service/allocate", "meter/service/detach","/meters/reading/service/add","/meters/reading/service/generate", "/meters/reading/service/update",
-						"/meters/reading/service/all"
+						"meter/service/allocate", "meter/service/detach","/meter/reading/service/create","/meter/reading/service/generate", "/meter/reading/service/update",
+						"/meter/reading/service/all"
 						)
 				.access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier
