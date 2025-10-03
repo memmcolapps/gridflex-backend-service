@@ -323,7 +323,6 @@ public class MeterServiceImpl implements MeterService {
              // Fetch all users
             assert meterStage != null;
             if(type.trim().equalsIgnoreCase("pending-state")) {
-                System.out.println("---------------->>>>>>>>>>>"+um.getOrgId());
                 meters = meterMapper.getMetersVersion(um.getOrgId());
             } else {
                 meters = meterMapper.getMeters(um.getOrgId());

@@ -52,6 +52,7 @@ public class Meter implements Serializable {
     private PaymentMode paymentMode;
     private Manufacturer manufacturer;
     private SmartMeterInfo smartMeterInfo;
+    private Meter oldMeterInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -374,5 +375,13 @@ public class Meter implements Serializable {
 
     public void setMeterModel(String meterModel) {
         this.meterModel = meterModel;
+    }
+
+    public Meter getOldMeterInfo() {
+        return oldMeterInfo;
+    }
+
+    public void setOldMeterInfo(Meter oldMeterInfo) {
+        this.oldMeterInfo = oldMeterInfo;
     }
 }
