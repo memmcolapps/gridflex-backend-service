@@ -613,7 +613,7 @@ public class MeterServiceImpl implements MeterService {
             request.setCreatedBy(user.getId());
 
 //            Meter mainMeter = null;
-            if(request.getMeterCategory() == null || !request.getMeterCategory().equalsIgnoreCase("Non-MD")){
+            if(request.getMeterClass() == null){
 
                 // Validate main meter record
                 Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null);
@@ -651,10 +651,10 @@ public class MeterServiceImpl implements MeterService {
                 request.setMeterModel(mainMeter.getMeterModel());
             }
 
-            Meter m = meterMapper.getMeter(user.getOrgId(), null, null, null, request.getCin());
-            if(m != null ) {
-                return ResponseMap.response(status.getSuccessCode(), "Existing meter attached to the cin provided fetch successfully", m);
-            }
+//            Meter m = meterMapper.getMeter(user.getOrgId(), null, null, null, request.getCin());
+//            if(m != null ) {
+//                return ResponseMap.response(status.getSuccessCode(), "Existing meter attached to the cin provided fetch successfully", m);
+//            }
 
             request.setNodeId(feederLine.getNodeId());
             request.setDss(dss.getNodeId());
@@ -686,10 +686,10 @@ public class MeterServiceImpl implements MeterService {
         request.setStatus("Active");
         int customerAssignResult;
         int customerAssignResult1;
-        if(request.getMeterCategory().equalsIgnoreCase("Non-MD")){
+        if(request.getMeterCategory().equalsIgnoreCase("Non-MD")
+                || request.getMeterCategory().equalsIgnoreCase("MD")){
             request.setType("VIRTUAL");
             request.setMeterCategory("Postpaid");
-            request.setMeterClass("Non-MD");
             request.setSmartStatus(false);
             request.setSimNumber("VIRTUAL");
             request.setMeterModel("VIRTUAL");

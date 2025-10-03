@@ -760,7 +760,7 @@ public interface MeterMapper {
             "org_id, meter_category, meter_stage, status, customer_id, cin, dss, tariff, meter_number, type, fixed_energy, meter_type, " +
             "created_at, updated_at, description, created_by, meter_id, account_number, node_id, smart_status, sim_number, meter_model, meter_class) " +
             "VALUES (" +
-            "#{orgId}, #{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{meterNumber}, " +
+            "#{orgId},#{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{meterNumber}, " +
             "#{type}, #{fixedEnergy}, #{meterType}, #{createdAt}, #{updatedAt}, #{description}, #{createdBy}, #{meterId}, #{accountNumber}, #{nodeId}," +
             "#{smartStatus}, #{simNumber}, #{meterModel}, #{meterClass})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
