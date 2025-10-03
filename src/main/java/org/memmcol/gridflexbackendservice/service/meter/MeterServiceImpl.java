@@ -617,7 +617,7 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMeterCategory() == null || !request.getMeterCategory().equalsIgnoreCase("Non-MD")){
 
                 // Validate main meter record
-                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getNewMeterNumber(), null, null);
+                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null);
                 if (mainMeter == null) {
                     throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
                 }
@@ -632,7 +632,7 @@ public class MeterServiceImpl implements MeterService {
 
                 // Validate node assignment
                 if (mainMeter.getNodeId() == null) {
-                    throw new GlobalExceptionHandler.NotFoundException(request.getNewMeterNumber() + " meter has not been allocated");
+                    throw new GlobalExceptionHandler.NotFoundException(request.getMeterNumber() + " meter has not been allocated");
                 }
 
                 request.setOldKrn(mainMeter.getOldKrn());
@@ -664,7 +664,7 @@ public class MeterServiceImpl implements MeterService {
 
             handleMeterAssign(request);
 
-            Meter meter = meterMapper.getVersionMeter(user.getOrgId(), null, request.getNewMeterNumber(), null);
+            Meter meter = meterMapper.getVersionMeter(user.getOrgId(), null, request.getMeterNumber(), null);
             String description = "Meter assigned to customer " + request.getCustomerId();
 
             AuditLog auditLog = buildAuditLog(user, description, meterName, meter, metadata, "");
@@ -1180,10 +1180,18 @@ public class MeterServiceImpl implements MeterService {
         }
 
         if(!"Pending-detached".equalsIgnoreCase(stage)){
-            //Approve meter in meters table
-            if (meterMapper.approveMeter(meter) == 0) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+
+            if("Pending-assigned".equalsIgnoreCase(stage)){
+                if (meterMapper.approvePendingMeter(meter) == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                }
+            } else {
+                //Approve meter in meters table
+                if (meterMapper.approveMeter(meter) == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                }
             }
+
 
             //approve meter location
             if(meter.getMeterAssignLocation() != null ){

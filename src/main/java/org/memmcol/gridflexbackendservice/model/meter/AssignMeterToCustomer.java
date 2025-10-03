@@ -14,8 +14,7 @@ public class AssignMeterToCustomer implements Serializable {
     private static final long serialVersionUID = 1L;
     private UUID id;
     private UUID meterId;
-//    private String oldMeterNumber;
-    private String newMeterNumber;
+    private String meterNumber;
     private String simNumber;
     private UUID orgId;
     private String customerId;
@@ -95,12 +94,12 @@ public class AssignMeterToCustomer implements Serializable {
         this.meterId = meterId;
     }
 
-    public String getNewMeterNumber() {
-        return newMeterNumber;
+    public String getMeterNumber() {
+        return meterNumber;
     }
 
-    public void setNewMeterNumber(String newMeterNumber) {
-        this.newMeterNumber = newMeterNumber;
+    public void setMeterNumber(String meterNumber) {
+        this.meterNumber = meterNumber;
     }
 
     public UUID getOrgId() {

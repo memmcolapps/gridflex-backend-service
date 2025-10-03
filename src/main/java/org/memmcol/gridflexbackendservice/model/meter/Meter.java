@@ -26,7 +26,6 @@ public class Meter implements Serializable {
     private String cin;
     private UUID tariff;
     private String type;
-    private String energyType;
     private String fixedEnergy;
     private UUID dss;
     private String meterCategory;
@@ -135,14 +134,6 @@ public class Meter implements Serializable {
 
     public void setTariff(UUID tariff) {
         this.tariff = tariff;
-    }
-
-    public String getEnergyType() {
-        return energyType;
-    }
-
-    public void setEnergyType(String energyType) {
-        this.energyType = energyType;
     }
 
     public String getFixedEnergy() {
