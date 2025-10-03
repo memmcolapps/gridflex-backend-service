@@ -1192,15 +1192,24 @@ public class MeterServiceImpl implements MeterService {
             }
 
             //approve MD meter Information
-            if ("md".equalsIgnoreCase(meter.getMeterClass()) && (stage.equalsIgnoreCase("Pending-created")
-                    || stage.equalsIgnoreCase("Pending-edited"))) {
+//            if ("md".equalsIgnoreCase(meter.getMeterClass()) && meter.getMdMeterInfo() != null && (stage.equalsIgnoreCase("Pending-created")
+//                    || stage.equalsIgnoreCase("Pending-edited"))) {
+//                meter.getMdMeterInfo().setApproveBy(user.getId());
+//                approveMDMeterInfo(meter);
+//            }
+
+            if (meter.getMdMeterInfo() != null) {
                 meter.getMdMeterInfo().setApproveBy(user.getId());
                 approveMDMeterInfo(meter);
             }
 
             //approve smart meter Information
-            if (Boolean.TRUE.equals(meter.getSmartStatus()) && (stage.equalsIgnoreCase("Pending-created")
-                    || stage.equalsIgnoreCase("Pending-edited"))) {
+//            if (Boolean.TRUE.equals(meter.getSmartStatus()) && (stage.equalsIgnoreCase("Pending-created")
+//                    || stage.equalsIgnoreCase("Pending-edited"))) {
+//                approveSmartMeterInfo(meter);
+//            }
+
+            if (meter.getMdMeterInfo() != null) {
                 approveSmartMeterInfo(meter);
             }
 
