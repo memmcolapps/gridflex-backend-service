@@ -27,7 +27,7 @@ public class AssignMeterToCustomer implements Serializable {
     private String cin;
     private String accountNumber;
     private String meterClass;
-    private String meterModel;
+//    private String meterModel;
     private String meterType;
     private UUID meterManufacturer;
     private Boolean smartStatus;
@@ -190,13 +190,13 @@ public class AssignMeterToCustomer implements Serializable {
         this.meterClass = meterClass;
     }
 
-    public String getMeterModel() {
-        return meterModel;
-    }
-
-    public void setMeterModel(String meterModel) {
-        this.meterModel = meterModel;
-    }
+//    public String getMeterModel() {
+//        return meterModel;
+//    }
+//
+//    public void setMeterModel(String meterModel) {
+//        this.meterModel = meterModel;
+//    }
 
     public String getMeterType() {
         return meterType;

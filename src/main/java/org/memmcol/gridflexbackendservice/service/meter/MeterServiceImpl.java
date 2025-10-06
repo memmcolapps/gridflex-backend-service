@@ -692,7 +692,7 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterCategory("Postpaid");
             request.setSmartStatus(false);
             request.setSimNumber("VIRTUAL");
-            request.setMeterModel("VIRTUAL");
+//            request.setMeterModel("VIRTUAL");
             request.setMeterType("Electricity");
             customerAssignResult = meterMapper.insertVirtualVersionMeterToCustomer(request);
             request.setMeterId(request.getId());
