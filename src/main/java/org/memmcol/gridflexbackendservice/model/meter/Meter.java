@@ -30,7 +30,7 @@ public class Meter implements Serializable {
     private UUID dss;
     private String meterCategory;
     private String meterClass;
-    private String meterModel;
+//    private String meterModel;
     private String meterType;
     private UUID meterManufacturer;
     private String meterStage;
@@ -369,13 +369,13 @@ public class Meter implements Serializable {
         this.smartMeterInfo = smartMeterInfo;
     }
 
-    public String getMeterModel() {
-        return meterModel;
-    }
-
-    public void setMeterModel(String meterModel) {
-        this.meterModel = meterModel;
-    }
+//    public String getMeterModel() {
+//        return meterModel;
+//    }
+//
+//    public void setMeterModel(String meterModel) {
+//        this.meterModel = meterModel;
+//    }
 
     public Meter getOldMeterInfo() {
         return oldMeterInfo;

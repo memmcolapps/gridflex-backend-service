@@ -648,7 +648,7 @@ public class MeterServiceImpl implements MeterService {
                 request.setMeterType(mainMeter.getMeterType());
                 request.setMeterId(mainMeter.getId());
                 request.setSimNumber(mainMeter.getSimNumber());
-                request.setMeterModel(mainMeter.getMeterModel());
+//                request.setMeterModel(mainMeter.getMeterModel());
             }
 
 //            Meter m = meterMapper.getMeter(user.getOrgId(), null, null, null, request.getCin());
