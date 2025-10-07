@@ -9,10 +9,10 @@ import java.util.UUID;
 
 public interface MeterReadingSheetService {
 
-    Map<String, Object> getGenerateMeterReading(String assetId, String type);
+    Map<String, Object> getGenerateMeterReading(String assetId, String type, String meterClass);
     Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet);
     Map<String, Object> getAllMeterReading(MeterReadingDTO selectItem,int page, int size);
-    Map<String, Object> updateMeterCurrentReading(UUID meterReadingId, BigDecimal currentReading);
+    Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet);
 
 
 }
