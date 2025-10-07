@@ -117,8 +117,8 @@ public class VendingServiceImpl implements VendingService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("data", creditToken);
-            response.put("transaction", transaction);
-            response.put("netBalance", netBalance);
+//            response.put("transaction", transaction);
+            response.put("totalAmountTendered", netBalance);
             response.put("totalDebitBalance", totalDebitBalance);
             response.put("totalCreditBalance", totalCreditBalance);
 

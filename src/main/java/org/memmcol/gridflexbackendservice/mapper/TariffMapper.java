@@ -106,10 +106,13 @@ public interface TariffMapper {
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated') " +
             "ORDER BY created_at DESC")
-    @Result(property = "band", column = "band_id",
-            one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
-    @Result(property = "oldTariffInfo", column = "t_id",
-            one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getTariffById"))
+    @Results({
+            @Result(property = "t_id", column = "t_id"),
+            @Result(property = "band", column = "band_id",
+                one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand")),
+            @Result(property = "oldTariffInfo", column = "t_id",
+                one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getTariffById"))
+    })
     List<Tariff> GetPendingTariffs(UUID orgId);
 
     @Select("SELECT * FROM tariffs WHERE id = #{id}")
