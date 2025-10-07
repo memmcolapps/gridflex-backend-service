@@ -122,11 +122,6 @@ public class VendingServiceImpl implements VendingService {
             response.put("totalDebitBalance", totalDebitBalance);
             response.put("totalCreditBalance", totalCreditBalance);
 
-//            int resp = vendMapper.createCreditToken(creditToken);
-//            if(resp == 0){
-//                throw new GlobalExceptionHandler.NotFoundException("Credit token failed to create");
-//            }
-
 //            Transaction vend = vendMapper.getCreditTokenTransaction(creditToken.getId());
 //
 //            AuditLog auditLog = buildAuditLog(um, "Credit token created","Vend", vend, metadata);
