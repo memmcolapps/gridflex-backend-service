@@ -8,7 +8,6 @@ import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
@@ -1019,8 +1018,6 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleApproval(Meter meter, UserModel user, String approveStatus) {
-        // String st = meter.getMeterStage();
-        // meter.setApproveBy(user.getId());
 
         meter.setApproveBy(user.getId());
 
@@ -1191,7 +1188,6 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-
             //approve meter location
             if(meter.getMeterAssignLocation() != null ){
                 meter.getMeterAssignLocation().setApproveBy(user.getId());
@@ -1216,7 +1212,8 @@ public class MeterServiceImpl implements MeterService {
 //                approveSmartMeterInfo(meter);
 //            }
 
-            if (meter.getMdMeterInfo() != null) {
+            if (meter.getSmartMeterInfo() != null) {
+                meter.getSmartMeterInfo().setApproveBy(user.getId());
                 approveSmartMeterInfo(meter);
             }
 
