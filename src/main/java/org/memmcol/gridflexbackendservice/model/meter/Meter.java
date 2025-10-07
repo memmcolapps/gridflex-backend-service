@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -53,6 +55,8 @@ public class Meter implements Serializable {
     private Manufacturer manufacturer;
     private SmartMeterInfo smartMeterInfo;
     private Meter oldMeterInfo;
+//    private Tariff tariffInfo;
+//    private DebitCreditAdjust debitCreditAdjust;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -368,14 +372,6 @@ public class Meter implements Serializable {
     public void setSmartMeterInfo(SmartMeterInfo smartMeterInfo) {
         this.smartMeterInfo = smartMeterInfo;
     }
-
-//    public String getMeterModel() {
-//        return meterModel;
-//    }
-//
-//    public void setMeterModel(String meterModel) {
-//        this.meterModel = meterModel;
-//    }
 
     public Meter getOldMeterInfo() {
         return oldMeterInfo;
