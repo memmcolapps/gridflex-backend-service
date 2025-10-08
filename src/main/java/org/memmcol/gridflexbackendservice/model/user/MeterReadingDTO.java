@@ -21,6 +21,7 @@ public class MeterReadingDTO {
     private String serviceName;
     private String dssName;
     private String regionName;
+    private String meterClass;
 
     // getters and setters
     public String getName() {
@@ -140,5 +141,13 @@ public class MeterReadingDTO {
 
     public void setRegionName(String regionName) {
         this.regionName = regionName;
+    }
+
+    public String getMeterClass() {
+        return meterClass;
+    }
+
+    public void setMeterClass(String meterClass) {
+        this.meterClass = meterClass;
     }
 }

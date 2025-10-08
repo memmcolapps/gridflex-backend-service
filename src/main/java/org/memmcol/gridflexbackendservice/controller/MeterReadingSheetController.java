@@ -24,7 +24,7 @@ public class MeterReadingSheetController {
     @Autowired
     private GlobalExceptionHandler exception;
 
-    public MeterReadingSheetController(MeterReadingSheetService readingMetersService, MeterReadingSheetMapper readingMetersMapper) {
+    public MeterReadingSheetController(MeterReadingSheetService readingMetersService) {
         this.readingMetersService = readingMetersService;
     }
 
@@ -40,9 +40,9 @@ public class MeterReadingSheetController {
     }
 
     @GetMapping("/generate")
-    public ResponseEntity<?> getAllReadingMeters(@RequestParam String assetId, String type) {
+    public ResponseEntity<?> getAllReadingMeters(@RequestParam String assetId, String type, String meterClass) {
         try {
-            Map<String, Object> result = readingMetersService.getGenerateMeterReading(assetId, type);
+            Map<String, Object> result = readingMetersService.getGenerateMeterReading(assetId, type,meterClass);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){
             return handleException(e);
@@ -50,10 +50,10 @@ public class MeterReadingSheetController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateMeterCurrentReading(@RequestParam UUID meterReadingID, @RequestBody MeterReadingDTO currentReading) {
+    public ResponseEntity<?> updateMeterCurrentReading(@RequestBody MeterReadingSheet meterReadingSheet) {
         try {
 
-            Map<String, Object> result = readingMetersService.updateMeterCurrentReading(meterReadingID,currentReading.getCurrentReading());
+            Map<String, Object> result = readingMetersService.updateMeterCurrentReading(meterReadingSheet);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){
             return handleException(e);
@@ -68,6 +68,7 @@ public class MeterReadingSheetController {
             @RequestParam(required = false) String readingType,
             @RequestParam(required = false) String month,
             @RequestParam(required = false) String year,
+            @RequestParam String meterClass,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -79,6 +80,7 @@ public class MeterReadingSheetController {
         search.setReadingType(readingType);
         search.setMonth(month);
         search.setYear(year);
+        search.setMeterClass(meterClass);
         Map<String, Object> response = readingMetersService.getAllMeterReading(search,page, size);
         return ResponseEntity.ok(response);
     }

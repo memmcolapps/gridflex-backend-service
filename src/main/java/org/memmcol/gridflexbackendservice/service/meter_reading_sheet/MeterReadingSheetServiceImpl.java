@@ -23,10 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
@@ -52,7 +49,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
     @Transactional
     @Override
-    public Map<String, Object> getGenerateMeterReading(String assetId, String type) {
+    public Map<String, Object> getGenerateMeterReading(String assetId, String type, String meterClass) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         UserModel operatorAction = handleUserValidation();
         UUID orgId = operatorAction.getOrgId();
@@ -64,10 +61,22 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                         "The AssetId provided is not found for the selected type \"" + type + "\"",
                         "");
             }
-            List<MeterReadingDTO> meters = readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId);
+
+            List<MeterReadingDTO> meters = new ArrayList<>();
+            String normalize = meterClass != null ? meterClass.trim().toUpperCase() : "";
+
+            if ("MD".equals(normalize)){
+                meters = readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "MD");
+            }else {
+                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "Non-MD"));
+                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "Single-Phase"));
+                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "Three-Phase"));
+            }
+
             return ResponseMap.response(status.getSuccessCode(),
                     "Meter Reading Sheet fetch successfully",
                     meters);
+
         } catch (Exception e) {
             log.error("Error occurred during meter reading fetch: {}", e.getMessage(), e);
 
@@ -94,7 +103,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             Meter meterInfo = readingMetersMapper.getMeterByMeterNo(meterReadingSheet.getMeterNumber(), operatorOrgId);
             if (meterInfo == null) {
                 return ResponseMap.response(status.getFailCode(),
-                        "Meter reading unavailable: meter is not yet assigned to a customer.",
+                        "Meter reading unavailable: This meter is either not assigned to a customer or does not belong to a postpaid account.",
                         "");
             }
 
@@ -135,6 +144,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             }
 
             MeterReadingSheet lastReadingRecord = readingMetersMapper.getLastReadingByMeterId(meterId,operatorOrgId);
+            MeterReadingSheet nonZeroCurrentReading = readingMetersMapper.getNonZeroCurrentReadingByMeterId(meterId,operatorOrgId);
 
             LocalDateTime lastReadingDate = (lastReadingRecord != null)
                     ? lastReadingRecord.getCurrentReadingDate()
@@ -151,8 +161,8 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             BigDecimal maxReading = new BigDecimal("999999");
             BigDecimal current = meterReadingSheet.getCurrentReading() != null
                     ? meterReadingSheet.getCurrentReading() : BigDecimal.ZERO;
-            BigDecimal lastReading = (lastReadingRecord != null && lastReadingRecord.getCurrentReading() != null)
-                    ? lastReadingRecord.getCurrentReading()
+            BigDecimal lastReading = (nonZeroCurrentReading != null && nonZeroCurrentReading.getCurrentReading() != null)
+                    ? nonZeroCurrentReading.getCurrentReading()
                     : BigDecimal.ZERO;
 
             if (current.compareTo(maxReading) > 0) {
@@ -206,12 +216,29 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
     public Map<String, Object> getAllMeterReading(MeterReadingDTO selectItem,int page, int size) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         UserModel operatorAction = handleUserValidation();
-
         selectItem.setOrgId(operatorAction.getOrgId());
 
         try {
             int offset = page * size;
-            List<MeterReadingSheet> allReadings = readingMetersMapper.getMeterReadingSheet(selectItem, offset, size);
+            List<MeterReadingSheet> allReadings = new ArrayList<>();
+            String meterClass = selectItem.getMeterClass();
+
+            String normalize = meterClass != null ? meterClass.trim().toUpperCase() : "";
+
+            if ("MD".equals(normalize)){
+                selectItem.setMeterClass("MD");
+                allReadings = readingMetersMapper.getMeterReadingSheet(selectItem, offset, size);
+            }else {
+                selectItem.setMeterClass("Non-MD");
+                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
+
+                selectItem.setMeterClass("Single-Phase");
+                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
+
+                selectItem.setMeterClass("Three-Phase");
+                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
+            }
+
             int totalCount = allReadings.size();
 
             List<MeterReadingSheet> paginatedReadings;
@@ -257,20 +284,40 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
     @Transactional
     @Override
-    public Map<String, Object> updateMeterCurrentReading( UUID meterReadingId,BigDecimal currentReading) {
+    public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         UserModel operatorAction = handleUserValidation();
         UUID orgId = operatorAction.getOrgId();
         try {
 
             LocalDateTime updatedTime = LocalDateTime.now();
+            String meterNo = meterReadingSheet.getMeterNumber();
+            String month = meterReadingSheet.getBillMonth();
+            String year = meterReadingSheet.getBillYear();
+            BigDecimal currentReading = meterReadingSheet.getCurrentReading();
 
-            readingMetersMapper.updateCurrentReading(meterReadingId,currentReading,orgId,updatedTime);
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Meter current reading updated successfully",
-                    ""
-            );
+            MeterReadingSheet meterReading = readingMetersMapper.readingSheetInfo(meterNo, month,year,orgId);
+            if (meterReading == null) {
+                return ResponseMap.response(
+                        status.getNotFoundCode(),
+                        "No meter reading found for meter number " + meterNo + " in " + month + " " + year + ".",
+                        ""
+                );
+            }
+            UUID meterReadingId = meterReading.getId();
+            UUID meterId = meterReading.getMeterId();
+            MeterReadingSheet meterRead = readingMetersMapper.getPreviousReadingByMeterReadingId(meterReadingId,meterId,orgId);
+            BigDecimal lastReading = meterRead.getCurrentReading();
+
+            int rowsUpdated = readingMetersMapper.updateCurrentReading(meterReadingId,currentReading,lastReading,updatedTime);
+            if (rowsUpdated > 0) {
+                return ResponseMap.response(
+                        status.getSuccessCode(),
+                        "Meter current reading updated successfully.",
+                        ""
+                );
+            }
+            return ResponseMap.response(status.getFailCode(), "No changes were applied to the record.", "");
         } catch (Exception e) {
             log.error("Error occurred while updating meter readings : {}", e.getMessage(), e);
 

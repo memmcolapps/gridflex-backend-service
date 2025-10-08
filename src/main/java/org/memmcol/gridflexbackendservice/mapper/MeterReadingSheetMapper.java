@@ -27,13 +27,28 @@ public interface MeterReadingSheetMapper {
                 ORDER BY current_reading_date DESC
                 LIMIT 1
             """)
-    @Results(id = "id", value = {
+    @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "currentReading", column = "current_reading"),
             @Result(property = "currentReadingDate", column = "current_reading_date")
     })
     MeterReadingSheet getLastReadingByMeterId(UUID meterId, UUID orgId);
+
+    @Select("""
+                SELECT meter_id, current_reading, current_reading_date
+                FROM meter_reading_sheet
+                WHERE meter_id = #{meterId} And org_id = #{orgId} AND current_reading::numeric <> 0
+                ORDER BY current_reading_date DESC
+                LIMIT 1
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "currentReadingDate", column = "current_reading_date")
+    })
+    MeterReadingSheet getNonZeroCurrentReadingByMeterId(UUID meterId, UUID orgId);
 
     @Select("""
                 SELECT COUNT(1) 
@@ -43,21 +58,6 @@ public interface MeterReadingSheetMapper {
                   AND bill_year = #{billYear}
             """)
     int checkIfMeterReadForMonth(UUID meterId, String billMonth, String billYear);
-
-
-    @Select("""
-            SELECT id, org_id, node_id, meter_number, tariff
-            FROM meters 
-            WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' And org_id = #{orgId}
-            """)
-    @Results(id = "MeterResult", value = {
-            @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "tariff", column = "tariff"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "meterNumber", column = "meter_number")
-    })
-    Meter getMeterByMeterNo(String meterNo, UUID orgId);
 
 
     @Select("""
@@ -80,8 +80,8 @@ public interface MeterReadingSheetMapper {
             WHERE (v.region_region_id = #{assetId}
             OR v.business_region_id= #{assetId}
             OR v.service_region_id= #{assetId}
-            OR v.feeder_asset_id= #{assetId}) AND m.org_id= #{orgId}
-            AND m.meter_number is not null
+            OR v.feeder_asset_id= #{assetId}) AND m.org_id= #{orgId} AND m.meter_class = #{meterClass} 
+            AND m.meter_category = 'Postpaid' AND m.meter_number is not null
             """)
     @Results({
             @Result(property = "meterNumber", column = "meter_number"),
@@ -90,10 +90,13 @@ public interface MeterReadingSheetMapper {
             @Result(property = "address", column = "address"),
             @Result(property = "businessName", column = "business_name"),
             @Result(property = "serviceName", column = "service_name"),
-            @Result(property = "regionName", column = "region_name")
+            @Result(property = "regionName", column = "region_name"),
+            @Result(property = "meterClass", column = "meter_class")
     })
     List<MeterReadingDTO> getMetersByFeederOrBhubAssetId(@Param("assetId") String assetId,
-                                                         @Param("orgId") UUID orgId);
+                                                         @Param("orgId") UUID orgId,
+                                                         @Param("meterClass") String meterClass
+    );
 
     @Select("""
                 SELECT name FROM substation_trans_feeder_lines f 
@@ -117,8 +120,8 @@ public interface MeterReadingSheetMapper {
                 JOIN substation_trans_feeder_lines s ON mr.node_id = s.node_id
                 JOIN meters m ON s.node_id = m.node_id And mr.meter_id = m.id
                 JOIN tariffs t ON m.tariff = t.id
-                WHERE mr.org_id = #{criteria.orgId}
-                  AND m.meter_stage = 'Assigned'
+                WHERE mr.org_id = #{criteria.orgId} AND m.meter_class = #{criteria.meterClass}
+                  AND m.meter_stage = 'Assigned' AND m.meter_category = 'Postpaid'
                 
                 <if test="criteria.meterNumber != null and criteria.meterNumber != ''">
                     AND m.meter_number = #{criteria.meterNumber}
@@ -152,7 +155,8 @@ public interface MeterReadingSheetMapper {
             @Result(property = "lastReading", column = "last_reading"),
             @Result(property = "lastReadingDate", column = "last_reading_date"),
             @Result(property = "currentReadingDate", column = "current_reading_date"),
-            @Result(property = "currentReading", column = "current_reading")
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "meterClass", column = "meter_class")
     })
     List<MeterReadingSheet> getMeterReadingSheet(
             @Param("criteria") MeterReadingDTO criteria,
@@ -161,19 +165,94 @@ public interface MeterReadingSheetMapper {
     );
 
     @Update("""
-                UPDATE meter_reading_sheet mr
-                SET current_reading = #{currentReading},
-                    last_reading = #{currentReading},
+                UPDATE meter_reading_sheet
+                SET current_reading = #{currentReading}::text,
+                    last_reading = CASE
+                            WHEN #{currentReading}::numeric <> 0 THEN #{currentReading}::text
+                                ELSE #{lastReading}::text
+                            END,
                     updated_at = #{updatedAt}
                 FROM meters m
-                WHERE mr.node_id = m.node_id
-                  AND mr.id = #{meterReadingId}
-                  AND mr.org_id = #{orgId}
+                WHERE meter_reading_sheet.node_id = m.node_id
+                  AND meter_reading_sheet.id = #{meterReadingId}
             """)
     int updateCurrentReading(@Param("meterReadingId") UUID meterReadingId,
                              @Param("currentReading") BigDecimal currentReading,
-                             @Param("orgId") UUID orgId,
-                             @Param("updatedAt") LocalDateTime updatedAt);
+                             @Param("lastReading") BigDecimal lastReading,
+                             @Param("updatedAt") LocalDateTime updatedAt
+    );
+
+    @Select("""
+            SELECT mr.* FROM meter_reading_sheet mr
+            JOIN meters m ON mr.meter_id = m.id
+            WHERE m.meter_number = #{meterNo} And mr.org_id = #{orgId} 
+            AND EXTRACT(MONTH FROM mr.current_reading_date) = EXTRACT(MONTH FROM TO_DATE(#{month}, 'Month')) 
+            AND EXTRACT(YEAR FROM mr.current_reading_date) = EXTRACT(YEAR FROM TO_DATE(#{year}, 'Year'))
+            """)
+    @Results(id = "MeterReadingSheetResultMap", value = {
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "tariffId", column = "tariff_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "readingType", column = "reading_type"),
+            @Result(property = "lastReading", column = "last_reading"),
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "currentReadingDate", column = "current_reading_date"),
+            @Result(property = "lastReadingDate", column = "last_reading_date"),
+            @Result(property = "billMonth", column = "bill_month"),
+            @Result(property = "billYear", column = "bill_year"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+
+            @Result(property = "meter", column = "meter_number",
+                    one = @One(select = "getMeterByMeterNo"))
+    })
+    MeterReadingSheet readingSheetInfo(@Param("meterNo") String meterNo,
+                                       @Param("month") String month,
+                                       @Param("year") String year,
+                                       @Param("orgId") UUID orgId
+    );
+
+    @Select("""
+            SELECT id, org_id, node_id, meter_number, tariff
+            FROM meters 
+            WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' 
+            And org_id = #{orgId} And meter_category = 'Postpaid'
+            """)
+    @Results(id = "MeterResult", value = {
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "tariff", column = "tariff"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "meterNumber", column = "meter_number")
+    })
+    Meter getMeterByMeterNo(String meterNo, UUID orgId);
+
+    @Select("""
+                SELECT id, meter_id, current_reading, current_reading_date
+                FROM meter_reading_sheet
+                WHERE meter_id = #{meterId}
+                  AND org_id = #{orgId} AND current_reading::numeric <> 0
+                  AND current_reading_date < (
+                      SELECT current_reading_date
+                      FROM meter_reading_sheet
+                      WHERE id = #{meterReadingId}
+                  )
+                ORDER BY current_reading_date DESC
+                LIMIT 1
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "currentReadingDate", column = "current_reading_date")
+    })
+    MeterReadingSheet getPreviousReadingByMeterReadingId(
+            @Param("meterReadingId") UUID meterReadingId,
+            @Param("meterId") UUID meterId,
+            @Param("orgId") UUID orgId
+    );
 
 
 }
