@@ -91,7 +91,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
     @Transactional
     @Override
-    public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet) {
+    public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet, String meterClass) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         AuditLog auditNotificationDTO = new AuditLog();
         UserModel operatorAction = handleUserValidation();
@@ -105,6 +105,24 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                 return ResponseMap.response(status.getFailCode(),
                         "Meter reading unavailable: This meter is either not assigned to a customer or does not belong to a postpaid account.",
                         "");
+            }
+
+            String meterClassDB = meterInfo.getMeterClass();
+            if (meterClassDB != null && meterClass != null){
+                boolean valid = ("MD".equals(meterClass) && "MD".equals(meterClassDB)) ||
+                                ("Non-MD".equals(meterClass) && (
+                                        meterClassDB.equals("Non-MD") ||
+                                        meterClassDB.equals("Single-Phase") ||
+                                        meterClassDB.equals("Three-Phase"))
+                                );
+
+                if (!valid) {
+                    return ResponseMap.response(
+                            status.getFailCode(),
+                            "You can only create readings for your assigned meter class (" + meterClass + ").",
+                            ""
+                    );
+                }
             }
 
             UUID meterId = meterInfo.getId();
@@ -284,11 +302,28 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
     @Transactional
     @Override
-    public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet) {
+    public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet, String meterClass) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         UserModel operatorAction = handleUserValidation();
         UUID orgId = operatorAction.getOrgId();
         try {
+            Meter meterResult = readingMetersMapper.getMeterByMeterNo(meterReadingSheet.getMeterNumber(), orgId);
+            String meterClassInDB = meterResult.getMeterClass();
+            if (meterClassInDB != null && meterClass != null){
+                boolean valid = ("MD".equals(meterClass) && "MD".equals(meterClassInDB)) ||
+                                ("Non-MD".equals(meterClass) && (
+                                        meterClassInDB.equals("Non-MD") ||
+                                        meterClassInDB.equals("Single-Phase") ||
+                                        meterClassInDB.equals("Three-Phase"))
+                                );
+                if (!valid) {
+                    return ResponseMap.response(
+                            status.getFailCode(),
+                            "You can only edit readings for your assigned meter class (" + meterClass + ").",
+                            ""
+                    );
+                }
+            }
 
             LocalDateTime updatedTime = LocalDateTime.now();
             String meterNo = meterReadingSheet.getMeterNumber();
