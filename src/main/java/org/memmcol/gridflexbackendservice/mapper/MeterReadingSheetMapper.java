@@ -215,9 +215,9 @@ public interface MeterReadingSheetMapper {
     );
 
     @Select("""
-            SELECT id, org_id, node_id, meter_number, tariff
+            SELECT id, org_id, node_id, meter_number, tariff,meter_class
             FROM meters 
-            WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' 
+            WHERE meter_number = #{meterNo} And meter_stage = 'Assigned'
             And org_id = #{orgId} And meter_category = 'Postpaid'
             """)
     @Results(id = "MeterResult", value = {
@@ -225,7 +225,8 @@ public interface MeterReadingSheetMapper {
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "tariff", column = "tariff"),
             @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "meterNumber", column = "meter_number")
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterClass", column = "meter_class")
     })
     Meter getMeterByMeterNo(String meterNo, UUID orgId);
 

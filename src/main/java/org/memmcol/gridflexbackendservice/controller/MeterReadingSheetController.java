@@ -29,10 +29,10 @@ public class MeterReadingSheetController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> addMeterReading(@RequestBody MeterReadingSheet meterReadingSheet) {
+    public ResponseEntity<Map<String, Object>> addMeterReading(@RequestBody MeterReadingSheet meterReadingSheet,@RequestParam String meterClass) {
         try {
 
-            Map<String, Object> result = readingMetersService.createMeterReading(meterReadingSheet);
+            Map<String, Object> result = readingMetersService.createMeterReading(meterReadingSheet,meterClass);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){
             return handleException(e);
@@ -50,10 +50,10 @@ public class MeterReadingSheetController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateMeterCurrentReading(@RequestBody MeterReadingSheet meterReadingSheet) {
+    public ResponseEntity<?> updateMeterCurrentReading(@RequestBody MeterReadingSheet meterReadingSheet, @RequestParam String meterClass) {
         try {
 
-            Map<String, Object> result = readingMetersService.updateMeterCurrentReading(meterReadingSheet);
+            Map<String, Object> result = readingMetersService.updateMeterCurrentReading(meterReadingSheet,meterClass);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){
             return handleException(e);
