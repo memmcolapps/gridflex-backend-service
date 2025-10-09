@@ -320,10 +320,18 @@ public class MeterServiceImpl implements MeterService {
 
             List<Meter> meters;
              // Fetch all users
-            assert meterStage != null;
-            if(type.trim().equalsIgnoreCase("pending-state")) {
+            if (type.trim().equalsIgnoreCase("pending-state")) {
                 meters = meterMapper.getMetersVersion(um.getOrgId());
+            } else if (type.trim().equalsIgnoreCase("inventory")) {
+                meters = meterMapper.getInventoryMeters(um.getOrgId());
+            } else if (type.trim().equalsIgnoreCase("allocated")) {
+                meters = meterMapper.getAllocatedMeters(um.getOrgId());
+            } else if (type.trim().equalsIgnoreCase("assigned")) {
+                meters = meterMapper.getAssignedMeters(um.getOrgId());
+            } else if (type.trim().equalsIgnoreCase("virtual")) {
+                meters = meterMapper.getAssignedVirtualMeters(um.getOrgId());
             } else {
+                System.out.println(">>>>size<<<<<<");
                 meters = meterMapper.getMeters(um.getOrgId());
             }
 

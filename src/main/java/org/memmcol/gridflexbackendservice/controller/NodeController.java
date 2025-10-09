@@ -93,7 +93,7 @@ public class NodeController {
         }
     }
 
-    @GetMapping("/bhub")
+    @GetMapping("/businessHub")
     public ResponseEntity<Map<String, Object>> getBhubByOrg(@RequestParam UUID orgId){
         try {
             Map<String, Object> result =  nodeService.getBusinessHubByOrgId(orgId);
