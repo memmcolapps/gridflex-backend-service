@@ -32,6 +32,14 @@ public class MeterView implements Serializable {
     private String bandName;
     private String bandHour;
 
+    //--- Meter Info----
+    private String oldSgc;
+    private String newSgc;
+    private String oldKrn;
+    private String newKrn;
+    private Long oldTariffIndex;
+    private Long newTariffIndex;
+
     //----- MD meter Info-------
     private Long ctRatioNum;
     private Long ctRatioDenom;
@@ -198,6 +206,54 @@ public class MeterView implements Serializable {
 
     public void setBandHour(String bandHour) {
         this.bandHour = bandHour;
+    }
+
+    public String getOldSgc() {
+        return oldSgc;
+    }
+
+    public void setOldSgc(String oldSgc) {
+        this.oldSgc = oldSgc;
+    }
+
+    public String getNewSgc() {
+        return newSgc;
+    }
+
+    public void setNewSgc(String newSgc) {
+        this.newSgc = newSgc;
+    }
+
+    public String getOldKrn() {
+        return oldKrn;
+    }
+
+    public void setOldKrn(String oldKrn) {
+        this.oldKrn = oldKrn;
+    }
+
+    public String getNewKrn() {
+        return newKrn;
+    }
+
+    public void setNewKrn(String newKrn) {
+        this.newKrn = newKrn;
+    }
+
+    public Long getOldTariffIndex() {
+        return oldTariffIndex;
+    }
+
+    public void setOldTariffIndex(Long oldTariffIndex) {
+        this.oldTariffIndex = oldTariffIndex;
+    }
+
+    public Long getNewTariffIndex() {
+        return newTariffIndex;
+    }
+
+    public void setNewTariffIndex(Long newTariffIndex) {
+        this.newTariffIndex = newTariffIndex;
     }
 
     public Long getCtRatioNum() {

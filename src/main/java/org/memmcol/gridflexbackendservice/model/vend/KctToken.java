@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,20 +15,33 @@ public class KctToken implements Serializable {
     private String newSgc;
     private String oldKrn;
     private String newKrn;
-    private String oldTariffIndex;
-    private String newTariffIndex;
+    private Long oldTariffIndex;
+    private Long newTariffIndex;
     private String tokenType;
     private String kct1;
     private String kct2;
-    private Date createdAt;
-    private Date updatedAt;
+    private UUID meterId;
+    private UUID orgId;
+    private String customerId;
+    private String status;
+    private UUID userId;
+    private String receiptNo;
 
-    private String customerName;
-    private String address;
     private String accountNumber;
     private String meterNumber;
-    private String user;
-    private String receiptNumber;
+    private UUID tariffId;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date updatedAt;
+
+    public KctToken() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+    }
+
 
 
     public UUID getId() {
@@ -78,19 +92,19 @@ public class KctToken implements Serializable {
         this.newKrn = newKrn;
     }
 
-    public String getOldTariffIndex() {
+    public Long getOldTariffIndex() {
         return oldTariffIndex;
     }
 
-    public void setOldTariffIndex(String oldTariffIndex) {
+    public void setOldTariffIndex(Long oldTariffIndex) {
         this.oldTariffIndex = oldTariffIndex;
     }
 
-    public String getNewTariffIndex() {
+    public Long getNewTariffIndex() {
         return newTariffIndex;
     }
 
-    public void setNewTariffIndex(String newTariffIndex) {
+    public void setNewTariffIndex(Long newTariffIndex) {
         this.newTariffIndex = newTariffIndex;
     }
 
@@ -134,22 +148,6 @@ public class KctToken implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
     public String getAccountNumber() {
         return accountNumber;
     }
@@ -166,19 +164,62 @@ public class KctToken implements Serializable {
         this.meterNumber = meterNumber;
     }
 
-    public String getUser() {
-        return user;
+
+    public UUID getMeterId() {
+        return meterId;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
     }
 
-    public String getReceiptNumber() {
-        return receiptNumber;
+    public UUID getOrgId() {
+        return orgId;
     }
 
-    public void setReceiptNumber(String receiptNumber) {
-        this.receiptNumber = receiptNumber;
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public String getReceiptNo() {
+        return receiptNo;
+    }
+
+    public void setReceiptNo(String receiptNo) {
+        this.receiptNo = receiptNo;
+    }
+
+    public UUID getTariffId() {
+        return tariffId;
+    }
+
+    public void setTariffId(UUID tariffId) {
+        this.tariffId = tariffId;
+    }
+
+
 }

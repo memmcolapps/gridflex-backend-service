@@ -13,7 +13,8 @@ public class CreditToken implements Serializable {
     private UUID orgId;
     private String customerId;
     private String tokenType;
-    private BigDecimal amount;
+    private BigDecimal InitialAmount;
+    private BigDecimal FinalAmount;
     private Date createdAt;
     private Date updatedAt;
     private String accountNumber;
@@ -41,12 +42,44 @@ public class CreditToken implements Serializable {
         this.tokenType = tokenType;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public UUID getMeterId() {
+        return meterId;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public BigDecimal getInitialAmount() {
+        return InitialAmount;
+    }
+
+    public void setInitialAmount(BigDecimal initialAmount) {
+        InitialAmount = initialAmount;
+    }
+
+    public BigDecimal getFinalAmount() {
+        return FinalAmount;
+    }
+
+    public void setFinalAmount(BigDecimal finalAmount) {
+        FinalAmount = finalAmount;
     }
 
     public Date getCreatedAt() {

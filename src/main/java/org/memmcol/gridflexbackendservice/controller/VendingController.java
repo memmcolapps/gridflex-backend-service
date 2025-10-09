@@ -22,9 +22,9 @@ public class VendingController {
     @Autowired private GlobalExceptionHandler exception;
 
     @PostMapping("/credit")
-    ResponseEntity<?> creditToken(@RequestBody Transaction transaction){
+    ResponseEntity<?> creditToken(@RequestBody CreditToken creditToken){
         try {
-            Map<String, Object> result = vendingService.createCreditToken(transaction);
+            Map<String, Object> result = vendingService.createCreditToken(creditToken);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -34,9 +34,6 @@ public class VendingController {
     @GetMapping("/credit/calculate")
     ResponseEntity<?> calculateCreditToken(@RequestBody CreditToken creditToken){
         try {
-            System.out.println("meterNumber: " + creditToken.getMeterNumber());
-            System.out.println("creditToken: " + creditToken.getAmount());
-            System.out.println("tokenType: "+ creditToken.getTokenType());
             Map<String, Object> result = vendingService.calculateCreditToken(creditToken);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {

@@ -46,14 +46,18 @@ public class VendingServiceImpl implements VendingService {
 
     @Transactional
     @Override
-    public Map<String, Object> createCreditToken(Transaction transaction) {
+    public Map<String, Object> createCreditToken(CreditToken creditToken) {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
-            System.out.println(">>>>meter:: "+transaction.getMeterNumber());
+            if(!creditToken.getTokenType().equalsIgnoreCase("credit-token")) {
+                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+            }
+
+            System.out.println(">>>>meter:: "+creditToken.getMeterNumber());
             // --- Fetch meter info ---
-            List<MeterView> meters = vendMapper.getMeterInfo(transaction.getMeterNumber(), transaction.getMeterAccountNumber(), user.getOrgId());
+            List<MeterView> meters = vendMapper.getMeterInfo(creditToken.getMeterNumber(), creditToken.getAccountNumber(), user.getOrgId());
             System.out.println(">>>>meter:: "+meters.get(0).getCustomerFullname());
             if (meters.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
@@ -68,7 +72,7 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal totalCredit = calculateTotalByType(meters, "credit");
 
             // (credit + amountTendered) - debit
-            BigDecimal netBalance = calculateNetBalance(totalCredit, transaction.getAmount(), totalDebit);
+            BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
 
             // --- VAT and Unit Calculations ---
             BigDecimal vatRate = new BigDecimal("0.075");
@@ -80,6 +84,7 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
 
             // --- Update Transaction ---
+            Transaction transaction = new Transaction();
             transaction.setUnitCost(costPerUnit);
             transaction.setUnit(units);
             transaction.setVatAmount(vatAmount);
@@ -87,10 +92,13 @@ public class VendingServiceImpl implements VendingService {
             transaction.setTariffId(meter.getTariffId());
             transaction.setToken("1130987906543214590007");
             transaction.setStatus("Completed");
-            transaction.setReceiptNo(generateReceiptNumber(transaction));
+            transaction.setReceiptNo(generateReceiptNumber(creditToken.getMeterNumber()));
             transaction.setOrgId(user.getOrgId());
             transaction.setUserId(user.getId());
             transaction.setCustomerId(meter.getCustomerId());
+            transaction.setInitialAmount(creditToken.getInitialAmount());
+            transaction.setFinalAmount(netBalance);
+            transaction.setTokenType(creditToken.getTokenType());
 
             // --- Persist ---
             int created = vendMapper.createCreditToken(transaction);
@@ -98,13 +106,13 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Credit token creation failed.");
             }
 
-//            Transaction savedTransaction = vendMapper.getCreditTokenTransaction(transaction.getId());
+            Transaction savedTransaction = vendMapper.getCreditTokenTransaction(transaction.getId());
 
             // Audit (optional)
-//             AuditLog auditLog = buildAuditLog(user, "Credit token created", "Vend", savedTransaction, metadata);
-//             auditRepository.save(auditLog);
+             AuditLog auditLog = buildAuditLog(user, "Credit token created", "Vend", savedTransaction, metadata, null);
+             auditRepository.save(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(), "Credit token generated successfully", "savedTransaction");
+            return ResponseMap.response(status.getSuccessCode(), "Credit token generated successfully", savedTransaction);
 
         } catch (Exception ex) {
             genericHandler.logIncidentReport("Creating credit token service failed");
@@ -133,7 +141,7 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal totalCredit = calculateTotalByType(meters, "credit");
 
             // (credit + amountTendered) - debit
-            BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getAmount(), totalDebit);
+            BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
 
             // --- VAT and Unit Calculations ---
             BigDecimal vatRate = new BigDecimal("0.075");
@@ -149,11 +157,11 @@ public class VendingServiceImpl implements VendingService {
             creditToken.setCostOfUnit(costPerUnit);
             creditToken.setUnit(units);
             creditToken.setVatAmount(vatAmount);
+            creditToken.setFinalAmount(netBalance);
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("data", creditToken);
-            responseData.put("transaction", meter);
-            responseData.put("totalAmountTendered", netBalance);
+            responseData.put("meter", meters);
             responseData.put("totalDebitBalance", totalDebit);
             responseData.put("totalCreditBalance", totalCredit);
 
@@ -167,10 +175,10 @@ public class VendingServiceImpl implements VendingService {
     }
 
 
-    private String generateReceiptNumber(Transaction transaction) {
+    private String generateReceiptNumber(String meterNumber) {
         String prefix = "RCPT";
         String timestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
-        return String.format("%s-%s-%s", prefix, timestamp, transaction.getMeterNumber());
+        return String.format("%s-%s-%s", prefix, timestamp, meterNumber);
     }
 
 
@@ -193,149 +201,69 @@ public class VendingServiceImpl implements VendingService {
         return netBalance.multiply(vatRate).setScale(2, RoundingMode.HALF_UP);
     }
 
-
-
-//    @Override
-//    public Map<String, Object> createCreditToken(Transaction transaction) {
-//        try {
-//            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-//            UserModel um = handleUserValidation();
-//
-////            Meter meter = vendMapper.getMeter(um.getOrgId(), creditToken.getMeterNumber(), creditToken.getAccountNumber());
-////            MeterView meterView = new MeterView();
-//            List<MeterView> meter = vendMapper.getMeterInfo(transaction.getMeterNumber(), transaction.getMeterAccountNumber());
-//
-//            // --- BALANCE CALCULATION ---
-//            BigDecimal totalDebitBalance = meter.stream()
-//                    .filter(m -> "debit".equalsIgnoreCase(m.getAdjustmentType()))
-//                    .map(MeterView::getBalanceAfterAdjustment)
-//                    .filter(Objects::nonNull)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            BigDecimal totalCreditBalance = meter.stream()
-//                    .filter(m -> "credit".equalsIgnoreCase(m.getAdjustmentType()))
-//                    .map(MeterView::getBalanceAfterAdjustment)
-//                    .filter(Objects::nonNull)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            // formula: (credit + amountTendered) - debit
-//            BigDecimal netBalance = totalCreditBalance
-//                    .add(transaction.getAmount())
-//                    .subtract(totalDebitBalance)
-//                    .setScale(2, RoundingMode.HALF_UP);
-//
-//            BigDecimal vatRate  = new BigDecimal("0.075"); // 7.5%
-//
-//            BigDecimal vatAmount = netBalance.multiply(vatRate).setScale(2, RoundingMode.HALF_UP);
-//
-//            // Amount including VAT
-//            BigDecimal totalWithVat = netBalance.add(vatAmount);
-//
-//            // Cost per unit (assuming tariffRate is numeric, e.g., "225.6")
-//            BigDecimal tariffRate = new BigDecimal(meter.get(0).getTariffRate());
-//            BigDecimal unit = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-//
-//            // Cost of each unit (VAT-inclusive cost per unit)
-//            BigDecimal costOfUnit = totalWithVat.divide(unit, 2, RoundingMode.HALF_UP);
-//
-//            transaction.setUnitCost(costOfUnit);
-//            transaction.setUnit(unit);
-//            transaction.setVatAmount(vatAmount);
-//            transaction.setMeterId(meter.get(0).getMeterId());
-//            transaction.setTariffId(meter.get(0).getTariffId());
-//            transaction.setToken("1130987906543214590007");
-//
-//
-//            int resp = vendMapper.createCreditToken(transaction);
-//            if(resp == 0){
-//                throw new GlobalExceptionHandler.NotFoundException("Credit token failed to create");
-//            }
-//
-//            Transaction vend = vendMapper.getCreditTokenTransaction(transaction.getTransactionId());
-//
-////            AuditLog auditLog = buildAuditLog(um, "Credit token created","Vend", vend, metadata);
-////            auditRepository.save(auditLog);
-//
-//            return ResponseMap.response(status.getSuccessCode(),  "Credit token created successfully", vend);
-//        } catch (Exception exception) {
-//
-//            genericHandler.logIncidentReport("Creating credit token service failed");
-//            genericHandler.logAndSaveException(exception, "creating credit token");
-//            throw exception;
-//        }
-//    }
-//
-//    @Transactional
-//    @Override
-//    public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
-//        try {
-//
-//            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-//            UserModel um = handleUserValidation();
-//
-//            List<MeterView> meter = vendMapper.getMeterInfo(creditToken.getMeterNumber(), creditToken.getAccountNumber());
-//
-//            // --- BALANCE CALCULATION ---
-//            BigDecimal totalDebitBalance = meter.stream()
-//                    .filter(m -> "debit".equalsIgnoreCase(m.getAdjustmentType()))
-//                    .map(MeterView::getBalanceAfterAdjustment)
-//                    .filter(Objects::nonNull)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            BigDecimal totalCreditBalance = meter.stream()
-//                    .filter(m -> "credit".equalsIgnoreCase(m.getAdjustmentType()))
-//                    .map(MeterView::getBalanceAfterAdjustment)
-//                    .filter(Objects::nonNull)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            // formula: (credit + amountTendered) - debit
-//            BigDecimal netBalance = totalCreditBalance
-//                    .add(creditToken.getAmount())
-//                    .subtract(totalDebitBalance)
-//                    .setScale(2, RoundingMode.HALF_UP);
-//
-//            BigDecimal vatRate  = new BigDecimal("0.075"); // 7.5%
-//
-//            BigDecimal vatAmount = netBalance.multiply(vatRate).setScale(2, RoundingMode.HALF_UP);
-//
-//            // Amount including VAT
-//            BigDecimal totalWithVat = netBalance.add(vatAmount);
-//
-//            // Cost per unit (assuming tariffRate is numeric, e.g., "225.6")
-//            BigDecimal tariffRate = new BigDecimal(meter.get(0).getTariffRate());
-//            BigDecimal unit = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-//
-//            // Cost of each unit (VAT-inclusive cost per unit)
-//            BigDecimal costOfUnit = totalWithVat.divide(unit, 2, RoundingMode.HALF_UP);
-//
-//            creditToken.setVat(vatRate);
-//            creditToken.setCostOfUnit(costOfUnit);
-//            creditToken.setUnit(unit);
-//            creditToken.setVatAmount(vatAmount);
-//
-//            Map<String, Object> response = new HashMap<>();
-//            response.put("data", creditToken);
-//            response.put("transaction", meter);
-//            response.put("totalAmountTendered", netBalance);
-//            response.put("totalDebitBalance", totalDebitBalance);
-//            response.put("totalCreditBalance", totalCreditBalance);
-//
-////            Transaction vend = vendMapper.getCreditTokenTransaction(creditToken.getId());
-//
-////            AuditLog auditLog = buildAuditLog(um, "Credit token calculated","Vend", vend, metadata);
-////            auditRepository.save(auditLog);
-//
-//            return ResponseMap.response(status.getSuccessCode(),  "Credit token calculated successfully", response);
-//        } catch (Exception exception) {
-//            genericHandler.logIncidentReport("Calculating credit token service failed");
-//            genericHandler.logAndSaveException(exception, "calculate credit token");
-//            throw exception;
-//        }
-//    }
-
+    @Transactional
     @Override
     public Map<String, Object> createKctToken(KctToken kctToken) {
-        return Map.of();
+       try{
+           Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+           UserModel user = handleUserValidation();
+
+           if(!kctToken.getTokenType().equalsIgnoreCase("kct")) {
+               throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+           }
+
+           MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
+
+           if(!kctToken.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
+               throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
+           }
+           if(!kctToken.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
+               throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
+           }
+
+           if(!kctToken.getOldKrn().equalsIgnoreCase(meter.getOldKrn())) {
+               throw new GlobalExceptionHandler.NotFoundException("Old KRN not found");
+           }
+           if(!kctToken.getNewKrn().equalsIgnoreCase(meter.getNewKrn())) {
+               throw new GlobalExceptionHandler.NotFoundException("New KRN not found");
+           }
+
+           if(!kctToken.getNewTariffIndex().equals(meter.getNewTariffIndex())) {
+               throw new GlobalExceptionHandler.NotFoundException("New Tariff index not found");
+           }
+
+           if(!kctToken.getOldTariffIndex().equals(meter.getOldTariffIndex())) {
+               throw new GlobalExceptionHandler.NotFoundException("Old Tariff index not found");
+           }
+
+           kctToken.setKct1("0009981278890223211");
+           kctToken.setKct2("2209981690890223290");
+           kctToken.setMeterId(meter.getMeterId());
+           kctToken.setStatus("Completed");
+           kctToken.setOrgId(user.getOrgId());
+           kctToken.setCustomerId(meter.getCustomerId());
+           kctToken.setUserId(user.getId());
+           kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
+           kctToken.setTariffId(meter.getTariffId());
+
+           int kct = vendMapper.createKctToken(kctToken);
+           if(kct == 0) {
+               throw new GlobalExceptionHandler.NotFoundException("Generate kct token failed");
+           }
+
+
+           Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
+
+           // Audit (optional)
+           AuditLog auditLog = buildAuditLog(user, "kct token generated", "vend", transaction, metadata, kctToken.getReason());
+           auditRepository.save(auditLog);
+
+           return ResponseMap.response(status.getSuccessCode(), "Kct token generated successfully", transaction);
+       } catch (Exception ex) {
+           genericHandler.logIncidentReport("Creating kct token service failed");
+           genericHandler.logAndSaveException(ex, "creating kct token");
+           throw ex;
+       }
     }
 
     @Override
@@ -363,7 +291,7 @@ public class VendingServiceImpl implements VendingService {
         return Map.of();
     }
 
-    private AuditLog buildAuditLog(UserModel creator, String description, String type, Transaction vend, Map<String, String> metadata) {
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Transaction vend, Map<String, String> metadata, String reason) {
         AuditLog log = new AuditLog();
         log.setCreator(creator);
         log.setDescription(description);
@@ -374,6 +302,7 @@ public class VendingServiceImpl implements VendingService {
         log.setUserAgent(metadata.get("userAgent"));
         log.setEndpoint(metadata.get("endpoint"));
         log.setHttpMethod(metadata.get("httpMethod"));
+        log.setReason(reason);
         return log;
     }
 }

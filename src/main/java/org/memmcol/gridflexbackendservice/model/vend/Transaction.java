@@ -1,10 +1,12 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,7 +22,8 @@ public class Transaction implements Serializable {
     private UUID meterId;
     private String meterAccountNumber;
     private String meterNumber;
-    private BigDecimal amount;
+    private BigDecimal InitialAmount;
+    private BigDecimal FinalAmount;
     private BigDecimal vatAmount;
     private BigDecimal unit;
     private BigDecimal unitCost;
@@ -43,14 +46,16 @@ public class Transaction implements Serializable {
     private String userFullname;
 
     // --- Credit/Debit Adjustment Info ---
-    private BigDecimal debitAmount;
-    private BigDecimal balanceAfterAdjustment;
-    private String adjustmentType;
-    private BigDecimal creditAmount;
+    private List<DebitCreditAdjust> debitCreditAdjust;
+    //---------------------------
+//    private BigDecimal debitAmount;
+//    private BigDecimal balanceAfterAdjustment;
+//    private String adjustmentType;
+//    private BigDecimal creditAmount;
 
     // --- Liability Cause Info ---
-    private String liabilityName;
-    private String liabilityCode;
+//    private String liabilityName;
+//    private String liabilityCode;
 
     // --- Metadata ---
     private Date createdAt;
@@ -133,12 +138,20 @@ public class Transaction implements Serializable {
         this.meterNumber = meterNumber;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public BigDecimal getInitialAmount() {
+        return InitialAmount;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setInitialAmount(BigDecimal initialAmount) {
+        InitialAmount = initialAmount;
+    }
+
+    public BigDecimal getFinalAmount() {
+        return FinalAmount;
+    }
+
+    public void setFinalAmount(BigDecimal finalAmount) {
+        FinalAmount = finalAmount;
     }
 
     public BigDecimal getVatAmount() {
@@ -269,53 +282,6 @@ public class Transaction implements Serializable {
         this.userId = userId;
     }
 
-    public BigDecimal getDebitAmount() {
-        return debitAmount;
-    }
-
-    public void setDebitAmount(BigDecimal debitAmount) {
-        this.debitAmount = debitAmount;
-    }
-
-    public BigDecimal getBalanceAfterAdjustment() {
-        return balanceAfterAdjustment;
-    }
-
-    public void setBalanceAfterAdjustment(BigDecimal balanceAfterAdjustment) {
-        this.balanceAfterAdjustment = balanceAfterAdjustment;
-    }
-
-    public String getAdjustmentType() {
-        return adjustmentType;
-    }
-
-    public void setAdjustmentType(String adjustmentType) {
-        this.adjustmentType = adjustmentType;
-    }
-
-    public BigDecimal getCreditAmount() {
-        return creditAmount;
-    }
-
-    public void setCreditAmount(BigDecimal creditAmount) {
-        this.creditAmount = creditAmount;
-    }
-
-    public String getLiabilityName() {
-        return liabilityName;
-    }
-
-    public void setLiabilityName(String liabilityName) {
-        this.liabilityName = liabilityName;
-    }
-
-    public String getLiabilityCode() {
-        return liabilityCode;
-    }
-
-    public void setLiabilityCode(String liabilityCode) {
-        this.liabilityCode = liabilityCode;
-    }
 
     public Date getCreatedAt() {
         return createdAt;
@@ -331,6 +297,14 @@ public class Transaction implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<DebitCreditAdjust> getDebitCreditAdjust() {
+        return debitCreditAdjust;
+    }
+
+    public void setDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjust) {
+        this.debitCreditAdjust = debitCreditAdjust;
     }
 }
 
