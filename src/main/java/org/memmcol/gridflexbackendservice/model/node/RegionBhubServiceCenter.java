@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.model.node;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.user.Organization;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
@@ -23,6 +24,7 @@ public class RegionBhubServiceCenter implements Serializable {
     private String contactPerson;
     private String address;
     private String type;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
 
@@ -137,4 +139,6 @@ public class RegionBhubServiceCenter implements Serializable {
     public void setType(String type) {
         this.type = type;
     }
+
+
 }

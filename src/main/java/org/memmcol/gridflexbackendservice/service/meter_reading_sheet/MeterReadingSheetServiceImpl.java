@@ -1,12 +1,14 @@
 package org.memmcol.gridflexbackendservice.service.meter_reading_sheet;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -47,10 +49,14 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
     @Autowired
     private HttpServletRequest httpServletRequest;
 
+    @Autowired
+    private GenericHandler genericHandler;
+
+    private String reading = "Meter Reading";
+
     @Transactional
     @Override
     public Map<String, Object> getGenerateMeterReading(String assetId, String type, String meterClass) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         UserModel operatorAction = handleUserValidation();
         UUID orgId = operatorAction.getOrgId();
         try {
@@ -63,7 +69,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             }
 
             List<MeterReadingDTO> meters = new ArrayList<>();
-            String normalize = meterClass != null ? meterClass.trim().toUpperCase() : "";
+            String normalize = meterClass != null ? meterClass.trim().toLowerCase() : "";
 
             if ("MD".equals(normalize)){
                 meters = readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "MD");
@@ -74,31 +80,25 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             }
 
             return ResponseMap.response(status.getSuccessCode(),
-                    "Meter Reading Sheet fetch successfully",
+                    "Meter Reading Sheet generate successfully",
                     meters);
 
-        } catch (Exception e) {
-            log.error("Error occurred during meter reading fetch: {}", e.getMessage(), e);
-
-            exceptionErrorLogs.setDescription("Error occurred while fetching meter reading sheet");
-            exceptionErrorLogs.setError_message(e.getMessage().trim());
-            exceptionErrorLogs.setError(e.toString().trim());
-
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw e;
+        } catch (Exception exception) {
+            log.error("Error occurred while generating meter readings : {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Generate meter readings service failed");
+            genericHandler.logAndSaveException(exception, "generate meter readings");
+            throw exception;
         }
     }
 
     @Transactional
     @Override
     public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet, String meterClass) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         UserModel operatorAction = handleUserValidation();
         UUID operatorOrgId = operatorAction.getOrgId();
+        String desc = "Newly added reading";
         try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
 
             Meter meterInfo = readingMetersMapper.getMeterByMeterNo(meterReadingSheet.getMeterNumber(), operatorOrgId);
             if (meterInfo == null) {
@@ -109,12 +109,13 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
             String meterClassDB = meterInfo.getMeterClass();
             if (meterClassDB != null && meterClass != null){
-                boolean valid = ("MD".equals(meterClass) && "MD".equals(meterClassDB)) ||
-                                ("Non-MD".equals(meterClass) && (
-                                        meterClassDB.equals("Non-MD") ||
-                                        meterClassDB.equals("Single-Phase") ||
-                                        meterClassDB.equals("Three-Phase"))
-                                );
+                boolean valid =
+                        ("MD".equalsIgnoreCase(meterClass) && "MD".equalsIgnoreCase(meterClassDB)) ||
+                        ("Non-MD".equalsIgnoreCase(meterClass) && (
+                                "Non-MD".equalsIgnoreCase(meterClassDB) ||
+                                "Single-Phase".equalsIgnoreCase(meterClassDB) ||
+                                "Three-Phase".equalsIgnoreCase(meterClassDB)
+                        ));
 
                 if (!valid) {
                     return ResponseMap.response(
@@ -204,39 +205,31 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                 meterReadingSheet.setLastReading(current);
                 meterReadingSheet.setLastReadingDate(lastReadingDate);
             }
-            auditNotificationDTO.setCreator(operatorAction);
-            auditNotificationDTO.setDescription("Add meter reading");
-            auditNotificationDTO.setUserAgent(userAgent);
-            auditNotificationDTO.setIpAddress(ipAddress);
-            auditRepository.save(auditNotificationDTO);
-
             readingMetersMapper.insertMeterReadingSheet(meterReadingSheet);
+            MeterReadingSheet newReading = readingMetersMapper.getLastReadingByMeterId(meterId,orgId);
+            AuditLog auditLog = buildAuditLog(operatorAction, desc, reading, newReading, metadata);
+            auditRepository.save(auditLog);
             return ResponseMap.response(
                     status.getSuccessCode(),
                     "Meter reading added successfully",
                     ""
             );
 
-        } catch (Exception e) {
-            log.error("Error occurred during adding meter reading : {}", e.getMessage(), e);
-
-            exceptionErrorLogs.setDescription("Error occurred while adding meter reading");
-            exceptionErrorLogs.setError_message(e.getMessage().trim());
-            exceptionErrorLogs.setError(e.toString().trim());
-
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw e;
+        } catch (Exception exception) {
+            log.error("Error occurred while creating meter reading [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Creating meter reading service failed");
+            genericHandler.logAndSaveException(exception, "creating meter reading");
+            throw exception;
         }
     }
 
     @Transactional
     @Override
     public Map<String, Object> getAllMeterReading(MeterReadingDTO selectItem,int page, int size) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         UserModel operatorAction = handleUserValidation();
         selectItem.setOrgId(operatorAction.getOrgId());
-
         try {
+
             int offset = page * size;
             List<MeterReadingSheet> allReadings = new ArrayList<>();
             String meterClass = selectItem.getMeterClass();
@@ -272,6 +265,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                 }
 
                 paginatedReadings = allReadings.subList(fromIndex, toIndex);
+
             }
 
             // Build response in the format you want
@@ -282,40 +276,39 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             responseData.put("size", size);
             responseData.put("totalPages", size == 0 ? 1 : (int) Math.ceil((double) totalCount / size));
 
+
             return ResponseMap.response(
                     status.getSuccessCode(),
                     "Meter reading list",
                     responseData
             );
 
-        } catch (Exception e) {
-            log.error("Error occurred while retrieving meter readings : {}", e.getMessage(), e);
-
-            exceptionErrorLogs.setDescription("Error occurred while retrieving meter readings");
-            exceptionErrorLogs.setError_message(e.getMessage().trim());
-            exceptionErrorLogs.setError(e.toString().trim());
-
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw e;
+        } catch (Exception exception) {
+            log.error("Error occurred while retrieving meter readings : {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Fetching meter readings service failed");
+            genericHandler.logAndSaveException(exception, "fetching meter readings");
+            throw exception;
         }
     }
 
     @Transactional
     @Override
     public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet, String meterClass) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        UserModel operatorAction = handleUserValidation();
-        UUID orgId = operatorAction.getOrgId();
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        UserModel um = handleUserValidation();
+        UUID orgId = um.getOrgId();
+        String desc = "Reading updated";
         try {
             Meter meterResult = readingMetersMapper.getMeterByMeterNo(meterReadingSheet.getMeterNumber(), orgId);
             String meterClassInDB = meterResult.getMeterClass();
             if (meterClassInDB != null && meterClass != null){
-                boolean valid = ("MD".equals(meterClass) && "MD".equals(meterClassInDB)) ||
-                                ("Non-MD".equals(meterClass) && (
-                                        meterClassInDB.equals("Non-MD") ||
-                                        meterClassInDB.equals("Single-Phase") ||
-                                        meterClassInDB.equals("Three-Phase"))
-                                );
+                boolean valid =
+                        ("MD".equalsIgnoreCase(meterClass) && "MD".equalsIgnoreCase(meterClassInDB)) ||
+                        ("Non-MD".equalsIgnoreCase(meterClass) && (
+                                "Non-MD".equalsIgnoreCase(meterClassInDB) ||
+                                "Single-Phase".equalsIgnoreCase(meterClassInDB) ||
+                                "Three-Phase".equalsIgnoreCase(meterClassInDB)
+                        ));
                 if (!valid) {
                     return ResponseMap.response(
                             status.getFailCode(),
@@ -345,6 +338,9 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             BigDecimal lastReading = meterRead.getCurrentReading();
 
             int rowsUpdated = readingMetersMapper.updateCurrentReading(meterReadingId,currentReading,lastReading,updatedTime);
+            MeterReadingSheet newReading = readingMetersMapper.getLastReadingByMeterId(meterId,orgId);
+            AuditLog auditLog = buildAuditLog(um, desc, reading, newReading, metadata);
+            auditRepository.save(auditLog);
             if (rowsUpdated > 0) {
                 return ResponseMap.response(
                         status.getSuccessCode(),
@@ -353,15 +349,24 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                 );
             }
             return ResponseMap.response(status.getFailCode(), "No changes were applied to the record.", "");
-        } catch (Exception e) {
-            log.error("Error occurred while updating meter readings : {}", e.getMessage(), e);
-
-            exceptionErrorLogs.setDescription("Error occurred while updating meter readings");
-            exceptionErrorLogs.setError_message(e.getMessage().trim());
-            exceptionErrorLogs.setError(e.toString().trim());
-
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw e;
+        } catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Editing meter reading service failed");
+            genericHandler.logAndSaveException(exception, "editing meter reading");
+            throw exception;
         }
+    }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, MeterReadingSheet createdEntity, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setMeterReadingSheet(createdEntity);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 }

@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.Organization;
@@ -69,6 +70,8 @@ public class AuditLog implements Serializable {
     private Organization organization;
 
     private Transaction vend;
+
+    private MeterReadingSheet meterReadingSheet;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -259,5 +262,13 @@ public class AuditLog implements Serializable {
 
     public void setVend(Transaction vend) {
         this.vend = vend;
+    }
+
+    public MeterReadingSheet getMeterReadingSheet() {
+        return meterReadingSheet;
+    }
+
+    public void setMeterReadingSheet(MeterReadingSheet meterReadingSheet) {
+        this.meterReadingSheet = meterReadingSheet;
     }
 }

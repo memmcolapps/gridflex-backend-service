@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.node.*;
+import org.memmcol.gridflexbackendservice.model.user.Organization;
 
 import java.util.List;
 import java.util.UUID;
@@ -47,22 +48,22 @@ public interface NodeMapper {
     List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
 
     @Select("""
-        SELECT
-            id, region_id,
-            node_id, name, 
-            NULL AS serial_no, phone_number, email, contact_person, address, 
-            NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
-            created_at, updated_at, type, NULL AS asset_id
-        FROM region_bhub_service_centers
-        WHERE node_id = #{nodeId}
-        UNION
-        SELECT
-            id, NULL AS region_id, 
-            node_id, name, serial_no, phone_number, email, contact_person,
-            address, status, voltage, latitude, longitude, description, created_at, updated_at, type, asset_id
-        FROM substation_trans_feeder_lines
-        WHERE node_id = #{nodeId}
-        """)
+            SELECT
+                id, region_id,
+                node_id, name, 
+                NULL AS serial_no, phone_number, email, contact_person, address, 
+                NULL AS status, NULL AS voltage, NULL AS latitude, NULL AS longitude, NULL AS description,
+                created_at, updated_at, type, NULL AS asset_id
+            FROM region_bhub_service_centers
+            WHERE node_id = #{nodeId}
+            UNION
+            SELECT
+                id, NULL AS region_id, 
+                node_id, name, serial_no, phone_number, email, contact_person,
+                address, status, voltage, latitude, longitude, description, created_at, updated_at, type, asset_id
+            FROM substation_trans_feeder_lines
+            WHERE node_id = #{nodeId}
+            """)
     @Results({
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "phoneNo", column = "phone_number"),
@@ -110,9 +111,24 @@ public interface NodeMapper {
             @Result(property = "orgId", column = "org_id")
     })
     RegionBhubServiceCenter verifyNode(String regionId);
+
+    @Select("""
+            SELECT * FROM region_bhub_service_centers 
+            WHERE org_id = #{id} AND UPPER(type) = UPPER('business hub')
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
+    })
+    List<RegionBhubServiceCenter> getBhubByOrgId(UUID id);
+
+
 }
-
-
 
 
 //    @Insert("INSERT INTO region_bhub_service_centers (node_id, bhub_id, org_id, name, email, contact_person, phone_number, address, type, created_at, updated_at) " +
@@ -175,7 +191,6 @@ public interface NodeMapper {
 //    List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
 
 
-
 //    @Select("SELECT * FROM region_bhub_service_centers WHERE id = #{id}")
 //    RegionBhubServiceCenter getServiceCenterNode(UUID id);
 //
@@ -216,7 +231,6 @@ public interface NodeMapper {
 //            @Result(property = "nodeInfo", column = "id",
 //                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.NodeMapper.getHierarchyById"))
 //    })
-
 
 
 //    @Select("""

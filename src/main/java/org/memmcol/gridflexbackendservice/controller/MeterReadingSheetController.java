@@ -69,8 +69,8 @@ public class MeterReadingSheetController {
             @RequestParam(required = false) String month,
             @RequestParam(required = false) String year,
             @RequestParam String meterClass,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(value = "page",required = false, defaultValue = "0") int page,
+            @RequestParam(value = "size",required = false, defaultValue = "0") int size
     ) {
 
         MeterReadingDTO search  = new MeterReadingDTO();

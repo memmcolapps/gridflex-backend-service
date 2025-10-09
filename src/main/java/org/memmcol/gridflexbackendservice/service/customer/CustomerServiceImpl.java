@@ -198,14 +198,13 @@ public class CustomerServiceImpl implements CustomerService {
                 userStream = userStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
             }
 
-
             List<Customer> filteredCustomers = userStream.toList();
 
             // Pagination logic
             int totalCustomers = filteredCustomers.size();
             List<Customer> paginatedCustomers;
             if (size == 0) {
-                paginatedCustomers = filteredCustomers; // Return all users
+                paginatedCustomers = filteredCustomers;
             } else {
                 int fromIndex = Math.min(page * size, totalCustomers);
                 int toIndex = Math.min(fromIndex + size, totalCustomers);
