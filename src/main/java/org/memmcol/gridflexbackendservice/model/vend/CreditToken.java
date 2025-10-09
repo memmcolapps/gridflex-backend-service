@@ -9,6 +9,9 @@ import java.util.UUID;
 
 public class CreditToken implements Serializable {
     private UUID id;
+    private UUID meterId;
+    private UUID orgId;
+    private String customerId;
     private String tokenType;
     private BigDecimal amount;
     private Date createdAt;

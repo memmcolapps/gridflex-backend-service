@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,16 +22,16 @@ public class VendingController {
     @Autowired private GlobalExceptionHandler exception;
 
     @PostMapping("/credit")
-    ResponseEntity<?> creditToken(@RequestBody CreditToken creditToken){
+    ResponseEntity<?> creditToken(@RequestBody Transaction transaction){
         try {
-            Map<String, Object> result = vendingService.createCreditToken(creditToken);
+            Map<String, Object> result = vendingService.createCreditToken(transaction);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
     }
 
-    @PostMapping("/credit/calculate")
+    @GetMapping("/credit/calculate")
     ResponseEntity<?> calculateCreditToken(@RequestBody CreditToken creditToken){
         try {
             System.out.println("meterNumber: " + creditToken.getMeterNumber());

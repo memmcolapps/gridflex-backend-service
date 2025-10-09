@@ -8,7 +8,6 @@ import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
@@ -206,7 +205,7 @@ public class MeterServiceImpl implements MeterService {
             request.setStatus("Active");
             request.setMeterStage(meterStage);
             MeterDesc = buildChangeDescription(existingMeter, request);
-            request.setDescription("Pending edited");
+            request.setDescription("Meter edited");
             request.setCreatedBy(user.getId());
 
             request.setNodeId(existingMeter.getNodeId());
@@ -1019,8 +1018,6 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleApproval(Meter meter, UserModel user, String approveStatus) {
-        // String st = meter.getMeterStage();
-        // meter.setApproveBy(user.getId());
 
         meter.setApproveBy(user.getId());
 
@@ -1191,7 +1188,6 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-
             //approve meter location
             if(meter.getMeterAssignLocation() != null ){
                 meter.getMeterAssignLocation().setApproveBy(user.getId());
@@ -1216,7 +1212,8 @@ public class MeterServiceImpl implements MeterService {
 //                approveSmartMeterInfo(meter);
 //            }
 
-            if (meter.getMdMeterInfo() != null) {
+            if (meter.getSmartMeterInfo() != null) {
+                meter.getSmartMeterInfo().setApproveBy(user.getId());
                 approveSmartMeterInfo(meter);
             }
 
@@ -1634,8 +1631,6 @@ public class MeterServiceImpl implements MeterService {
 
     private String buildSmartMeterInfoChangeDescription(SmartMeterInfo oldMeter, SmartMeterInfo newMeter) {
         StringBuilder changes = new StringBuilder("Edited smart meter ");
-
-        System.out.println(">>>>>>>>>>>>>>:: "+oldMeter.getMeterModel());
 
         if (!Objects.equals(oldMeter.getMeterModel(), newMeter.getMeterModel())) {
             changes.append(String.format("model: '%s' → '%s' ", oldMeter.getMeterModel(), newMeter.getMeterModel()));
