@@ -5,7 +5,7 @@ import org.memmcol.gridflexbackendservice.model.vend.*;
 import java.util.Map;
 
 public interface VendingService {
-    Map<String, Object> createCreditToken(CreditToken creditToken);
+    Map<String, Object> createCreditToken(Transaction transaction);
 
     Map<String, Object> createKctToken(KctToken kctToken);
 

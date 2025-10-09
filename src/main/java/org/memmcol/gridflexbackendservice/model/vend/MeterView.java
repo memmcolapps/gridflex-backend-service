@@ -8,27 +8,21 @@ import java.util.Date;
 import java.util.UUID;
 
 @Data
-public class Transaction implements Serializable {
+public class MeterView implements Serializable {
+
 
     // --- Core Transaction Info ---
-    private UUID id;
-    private UUID transactionId;
+    private UUID meterId;
     private UUID orgId;
     private String customerId;
     private String customerFullname;
     private String address;
-    private UUID meterId;
     private String meterAccountNumber;
     private String meterNumber;
-    private BigDecimal amount;
-    private BigDecimal vatAmount;
-    private BigDecimal unit;
-    private BigDecimal unitCost;
-    private String status;
-    private String token;
-    private String kct1;
-    private String kct2;
-    private String receiptNo;
+    private String meterCin;
+    private String meterClass;
+    private String meterCategory;
+    private String type;
     private String tokenType;
 
     // --- Tariff and Band Info ---
@@ -38,9 +32,20 @@ public class Transaction implements Serializable {
     private String bandName;
     private String bandHour;
 
-    // --- User Info ---
-    private UUID userId;
-    private String userFullname;
+    //----- MD meter Info-------
+    private Long ctRatioNum;
+    private Long ctRatioDenom;
+    private Long voltRatioNum;
+    private Long voltRatioDenom;
+    private Long multiplier;
+    private Long meterRating;
+    private Long initialReading;
+    private Long dial;
+
+    //------- Smart meter Info-------
+    private String meterModel;
+    private String protocol;
+    private String authentication;
 
     // --- Credit/Debit Adjustment Info ---
     private BigDecimal debitAmount;
@@ -52,29 +57,19 @@ public class Transaction implements Serializable {
     private String liabilityName;
     private String liabilityCode;
 
+    //---------manufacturer----------
+    private String meterManufacturer;
+
     // --- Metadata ---
     private Date createdAt;
     private Date updatedAt;
 
-    public Transaction() {
-        this.createdAt = new Date();
-        this.updatedAt = new Date();
+    public UUID getMeterId() {
+        return meterId;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public UUID getTransactionId() {
-        return transactionId;
-    }
-
-    public void setTransactionId(UUID transactionId) {
-        this.transactionId = transactionId;
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
     }
 
     public UUID getOrgId() {
@@ -109,14 +104,6 @@ public class Transaction implements Serializable {
         this.address = address;
     }
 
-    public UUID getMeterId() {
-        return meterId;
-    }
-
-    public void setMeterId(UUID meterId) {
-        this.meterId = meterId;
-    }
-
     public String getMeterAccountNumber() {
         return meterAccountNumber;
     }
@@ -133,76 +120,36 @@ public class Transaction implements Serializable {
         this.meterNumber = meterNumber;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public String getMeterCin() {
+        return meterCin;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setMeterCin(String meterCin) {
+        this.meterCin = meterCin;
     }
 
-    public BigDecimal getVatAmount() {
-        return vatAmount;
+    public String getMeterClass() {
+        return meterClass;
     }
 
-    public void setVatAmount(BigDecimal vatAmount) {
-        this.vatAmount = vatAmount;
+    public void setMeterClass(String meterClass) {
+        this.meterClass = meterClass;
     }
 
-    public BigDecimal getUnit() {
-        return unit;
+    public String getMeterCategory() {
+        return meterCategory;
     }
 
-    public void setUnit(BigDecimal unit) {
-        this.unit = unit;
+    public void setMeterCategory(String meterCategory) {
+        this.meterCategory = meterCategory;
     }
 
-    public BigDecimal getUnitCost() {
-        return unitCost;
+    public String getType() {
+        return type;
     }
 
-    public void setUnitCost(BigDecimal unitCost) {
-        this.unitCost = unitCost;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public String getKct1() {
-        return kct1;
-    }
-
-    public void setKct1(String kct1) {
-        this.kct1 = kct1;
-    }
-
-    public String getKct2() {
-        return kct2;
-    }
-
-    public void setKct2(String kct2) {
-        this.kct2 = kct2;
-    }
-
-    public String getReceiptNo() {
-        return receiptNo;
-    }
-
-    public void setReceiptNo(String receiptNo) {
-        this.receiptNo = receiptNo;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getTokenType() {
@@ -253,20 +200,92 @@ public class Transaction implements Serializable {
         this.bandHour = bandHour;
     }
 
-    public String getUserFullname() {
-        return userFullname;
+    public Long getCtRatioNum() {
+        return ctRatioNum;
     }
 
-    public void setUserFullname(String userFullname) {
-        this.userFullname = userFullname;
+    public void setCtRatioNum(Long ctRatioNum) {
+        this.ctRatioNum = ctRatioNum;
     }
 
-    public UUID getUserId() {
-        return userId;
+    public Long getCtRatioDenom() {
+        return ctRatioDenom;
     }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
+    public void setCtRatioDenom(Long ctRatioDenom) {
+        this.ctRatioDenom = ctRatioDenom;
+    }
+
+    public Long getVoltRatioNum() {
+        return voltRatioNum;
+    }
+
+    public void setVoltRatioNum(Long voltRatioNum) {
+        this.voltRatioNum = voltRatioNum;
+    }
+
+    public Long getVoltRatioDenom() {
+        return voltRatioDenom;
+    }
+
+    public void setVoltRatioDenom(Long voltRatioDenom) {
+        this.voltRatioDenom = voltRatioDenom;
+    }
+
+    public Long getMultiplier() {
+        return multiplier;
+    }
+
+    public void setMultiplier(Long multiplier) {
+        this.multiplier = multiplier;
+    }
+
+    public Long getMeterRating() {
+        return meterRating;
+    }
+
+    public void setMeterRating(Long meterRating) {
+        this.meterRating = meterRating;
+    }
+
+    public Long getInitialReading() {
+        return initialReading;
+    }
+
+    public void setInitialReading(Long initialReading) {
+        this.initialReading = initialReading;
+    }
+
+    public Long getDial() {
+        return dial;
+    }
+
+    public void setDial(Long dial) {
+        this.dial = dial;
+    }
+
+    public String getMeterModel() {
+        return meterModel;
+    }
+
+    public void setMeterModel(String meterModel) {
+        this.meterModel = meterModel;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public String getAuthentication() {
+        return authentication;
+    }
+
+    public void setAuthentication(String authentication) {
+        this.authentication = authentication;
     }
 
     public BigDecimal getDebitAmount() {
@@ -317,6 +336,14 @@ public class Transaction implements Serializable {
         this.liabilityCode = liabilityCode;
     }
 
+    public String getMeterManufacturer() {
+        return meterManufacturer;
+    }
+
+    public void setMeterManufacturer(String meterManufacturer) {
+        this.meterManufacturer = meterManufacturer;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -333,4 +360,3 @@ public class Transaction implements Serializable {
         this.updatedAt = updatedAt;
     }
 }
-

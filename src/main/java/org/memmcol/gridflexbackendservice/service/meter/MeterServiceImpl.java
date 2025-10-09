@@ -205,7 +205,7 @@ public class MeterServiceImpl implements MeterService {
             request.setStatus("Active");
             request.setMeterStage(meterStage);
             MeterDesc = buildChangeDescription(existingMeter, request);
-            request.setDescription("Pending edited");
+            request.setDescription("Meter edited");
             request.setCreatedBy(user.getId());
 
             request.setNodeId(existingMeter.getNodeId());
@@ -1631,8 +1631,6 @@ public class MeterServiceImpl implements MeterService {
 
     private String buildSmartMeterInfoChangeDescription(SmartMeterInfo oldMeter, SmartMeterInfo newMeter) {
         StringBuilder changes = new StringBuilder("Edited smart meter ");
-
-        System.out.println(">>>>>>>>>>>>>>:: "+oldMeter.getMeterModel());
 
         if (!Objects.equals(oldMeter.getMeterModel(), newMeter.getMeterModel())) {
             changes.append(String.format("model: '%s' → '%s' ", oldMeter.getMeterModel(), newMeter.getMeterModel()));
