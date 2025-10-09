@@ -388,6 +388,23 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
+    @Override
+    public Map<String, Object> getBusinessHubByOrgId(UUID orgId) {
+        try {
+            UserModel um = handleUserValidation();
+            UUID operatorOrgId = um.getOrgId();
+            if (!operatorOrgId.equals(orgId)) {
+                return ResponseMap.response(status.getFailCode(), "Unauthorized access", null);
+            }
+            List<RegionBhubServiceCenter> result = nodeMapper.getBhubByOrgId(orgId);
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+        }catch (Exception exception) {
+            log.error("Error occurred while fetching business hub [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Fetching all business hub service failed");
+            genericHandler.logAndSaveException(exception, "fetching all business hub");
+            throw exception;
+        }
+    }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();

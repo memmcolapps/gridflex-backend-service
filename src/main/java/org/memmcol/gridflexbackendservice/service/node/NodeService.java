@@ -18,4 +18,6 @@ public interface NodeService {
     Map<String, Object> updateRegionBhubServiceCenterNode(RegionBhubServiceCenter request);
 
     Map<String, Object> updateSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request);
+
+    Map<String, Object> getBusinessHubByOrgId(UUID orgId);
 }

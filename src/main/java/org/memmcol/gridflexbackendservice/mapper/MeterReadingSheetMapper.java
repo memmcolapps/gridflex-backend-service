@@ -143,7 +143,9 @@ public interface MeterReadingSheetMapper {
                 </if>
                 
                 ORDER BY mr.current_reading_date DESC
-                LIMIT #{limit} OFFSET #{offset}
+                <if test="limit != 0">
+                     LIMIT #{limit} OFFSET #{offset}
+                </if>
             </script>
             """)
     @Results(id = "MeterReadingSheetResult", value = {

@@ -93,6 +93,16 @@ public class NodeController {
         }
     }
 
+    @GetMapping("/bhub")
+    public ResponseEntity<Map<String, Object>> getBhubByOrg(@RequestParam UUID orgId){
+        try {
+            Map<String, Object> result =  nodeService.getBusinessHubByOrgId(orgId);
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 
 
 
