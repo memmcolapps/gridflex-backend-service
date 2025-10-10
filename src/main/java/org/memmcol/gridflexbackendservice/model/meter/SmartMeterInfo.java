@@ -22,7 +22,7 @@ public class SmartMeterInfo implements Serializable {
     private String meterModel;
     private String protocol;
     private String authentication;
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String description;
     private String meterStage;
