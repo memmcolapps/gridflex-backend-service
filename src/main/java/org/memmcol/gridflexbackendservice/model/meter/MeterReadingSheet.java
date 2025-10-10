@@ -30,6 +30,7 @@ public class MeterReadingSheet implements Serializable {
     private LocalDateTime updatedAt;
     private String tariffType;
     private String name;
+    private String meterClass;
 
     // Getters and Setters
     public UUID getId() {
@@ -166,6 +167,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getMeterClass() {
+        return meterClass;
+    }
+
+    public void setMeterClass(String meterClass) {
+        this.meterClass = meterClass;
     }
 }
 

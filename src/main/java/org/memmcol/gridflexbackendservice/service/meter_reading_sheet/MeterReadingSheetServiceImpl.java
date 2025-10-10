@@ -69,14 +69,11 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             }
 
             List<MeterReadingDTO> meters = new ArrayList<>();
-            String normalize = meterClass != null ? meterClass.trim().toLowerCase() : "";
 
-            if ("MD".equals(normalize)){
-                meters = readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "MD");
+            if ("md".equalsIgnoreCase(meterClass)){
+                meters = readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "MD", null);
             }else {
-                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "Non-MD"));
-                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "Single-Phase"));
-                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "Three-Phase"));
+                meters.addAll(readingMetersMapper.getMetersByFeederOrBhubAssetId(assetId, orgId, "single-phase", "three-phase"));
             }
 
             return ResponseMap.response(status.getSuccessCode(),
@@ -93,7 +90,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
     @Transactional
     @Override
-    public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet, String meterClass) {
+    public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         UserModel operatorAction = handleUserValidation();
         UUID operatorOrgId = operatorAction.getOrgId();
@@ -108,10 +105,10 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             }
 
             String meterClassDB = meterInfo.getMeterClass();
-            if (meterClassDB != null && meterClass != null){
+            if (meterClassDB != null && meterReadingSheet.getMeterClass() != null){
                 boolean valid =
-                        ("MD".equalsIgnoreCase(meterClass) && "MD".equalsIgnoreCase(meterClassDB)) ||
-                        ("Non-MD".equalsIgnoreCase(meterClass) && (
+                        ("MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && "MD".equalsIgnoreCase(meterClassDB)) ||
+                        ("Non-MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && (
                                 "Non-MD".equalsIgnoreCase(meterClassDB) ||
                                 "Single-Phase".equalsIgnoreCase(meterClassDB) ||
                                 "Three-Phase".equalsIgnoreCase(meterClassDB)
@@ -120,7 +117,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                 if (!valid) {
                     return ResponseMap.response(
                             status.getFailCode(),
-                            "You can only create readings for your assigned meter class (" + meterClass + ").",
+                            "You can only create readings for your assigned meter class (" + meterReadingSheet.getMeterClass() + ").",
                             ""
                     );
                 }
@@ -234,20 +231,14 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
             List<MeterReadingSheet> allReadings = new ArrayList<>();
             String meterClass = selectItem.getMeterClass();
 
-            String normalize = meterClass != null ? meterClass.trim().toUpperCase() : "";
-
-            if ("MD".equals(normalize)){
+            if ("MD".equalsIgnoreCase(meterClass)){
                 selectItem.setMeterClass("MD");
                 allReadings = readingMetersMapper.getMeterReadingSheet(selectItem, offset, size);
             }else {
-                selectItem.setMeterClass("Non-MD");
+                selectItem.setMeterClass("single-phase");
+                selectItem.setMeterClass2("three-phase");
                 allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
 
-                selectItem.setMeterClass("Single-Phase");
-                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
-
-                selectItem.setMeterClass("Three-Phase");
-                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
             }
 
             int totalCount = allReadings.size();
@@ -293,7 +284,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
 
     @Transactional
     @Override
-    public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet, String meterClass) {
+    public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         UserModel um = handleUserValidation();
         UUID orgId = um.getOrgId();
@@ -301,10 +292,10 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
         try {
             Meter meterResult = readingMetersMapper.getMeterByMeterNo(meterReadingSheet.getMeterNumber(), orgId);
             String meterClassInDB = meterResult.getMeterClass();
-            if (meterClassInDB != null && meterClass != null){
+            if (meterClassInDB != null && meterReadingSheet.getMeterClass() != null){
                 boolean valid =
-                        ("MD".equalsIgnoreCase(meterClass) && "MD".equalsIgnoreCase(meterClassInDB)) ||
-                        ("Non-MD".equalsIgnoreCase(meterClass) && (
+                        ("MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && "MD".equalsIgnoreCase(meterClassInDB)) ||
+                        ("Non-MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && (
                                 "Non-MD".equalsIgnoreCase(meterClassInDB) ||
                                 "Single-Phase".equalsIgnoreCase(meterClassInDB) ||
                                 "Three-Phase".equalsIgnoreCase(meterClassInDB)
@@ -312,7 +303,7 @@ public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
                 if (!valid) {
                     return ResponseMap.response(
                             status.getFailCode(),
-                            "You can only edit readings for your assigned meter class (" + meterClass + ").",
+                            "You can only edit readings for your assigned meter class (" + meterReadingSheet.getMeterClass() + ").",
                             ""
                     );
                 }

@@ -29,10 +29,10 @@ public class MeterReadingSheetController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> addMeterReading(@RequestBody MeterReadingSheet meterReadingSheet,@RequestParam String meterClass) {
+    public ResponseEntity<Map<String, Object>> addMeterReading(@RequestBody MeterReadingSheet meterReadingSheet) {
         try {
 
-            Map<String, Object> result = readingMetersService.createMeterReading(meterReadingSheet,meterClass);
+            Map<String, Object> result = readingMetersService.createMeterReading(meterReadingSheet);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){
             return handleException(e);
@@ -40,7 +40,10 @@ public class MeterReadingSheetController {
     }
 
     @GetMapping("/generate")
-    public ResponseEntity<?> getAllReadingMeters(@RequestParam String assetId, String type, String meterClass) {
+    public ResponseEntity<?> getAllReadingMeters(
+            @RequestParam String assetId,
+            @RequestParam String type,
+            @RequestParam String meterClass) {
         try {
             Map<String, Object> result = readingMetersService.getGenerateMeterReading(assetId, type,meterClass);
             return ResponseEntity.ok(result);
@@ -50,10 +53,10 @@ public class MeterReadingSheetController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateMeterCurrentReading(@RequestBody MeterReadingSheet meterReadingSheet, @RequestParam String meterClass) {
+    public ResponseEntity<?> updateMeterCurrentReading(@RequestBody MeterReadingSheet meterReadingSheet) {
         try {
 
-            Map<String, Object> result = readingMetersService.updateMeterCurrentReading(meterReadingSheet,meterClass);
+            Map<String, Object> result = readingMetersService.updateMeterCurrentReading(meterReadingSheet);
             return ResponseEntity.ok(result);
         }catch (GlobalExceptionHandler.SQLServerException e){
             return handleException(e);

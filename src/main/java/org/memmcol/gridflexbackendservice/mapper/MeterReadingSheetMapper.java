@@ -80,7 +80,7 @@ public interface MeterReadingSheetMapper {
             WHERE (v.region_region_id = #{assetId}
             OR v.business_region_id= #{assetId}
             OR v.service_region_id= #{assetId}
-            OR v.feeder_asset_id= #{assetId}) AND m.org_id= #{orgId} AND m.meter_class = #{meterClass} 
+            OR v.feeder_asset_id= #{assetId}) AND m.org_id= #{orgId} AND m.meter_class IN (#{meterClass}, #{s}) 
             AND m.meter_category = 'Postpaid' AND m.meter_number is not null
             """)
     @Results({
@@ -95,8 +95,8 @@ public interface MeterReadingSheetMapper {
     })
     List<MeterReadingDTO> getMetersByFeederOrBhubAssetId(@Param("assetId") String assetId,
                                                          @Param("orgId") UUID orgId,
-                                                         @Param("meterClass") String meterClass
-    );
+                                                         @Param("meterClass") String meterClass,
+                                                         String s);
 
     @Select("""
                 SELECT name FROM substation_trans_feeder_lines f 
@@ -120,7 +120,7 @@ public interface MeterReadingSheetMapper {
                 JOIN substation_trans_feeder_lines s ON mr.node_id = s.node_id
                 JOIN meters m ON s.node_id = m.node_id And mr.meter_id = m.id
                 JOIN tariffs t ON m.tariff = t.id
-                WHERE mr.org_id = #{criteria.orgId} AND m.meter_class = #{criteria.meterClass}
+                WHERE mr.org_id = #{criteria.orgId} AND m.meter_class IN (#{criteria.meterClass}, #{criteria.meterClass2})
                   AND m.meter_stage = 'Assigned' AND m.meter_category = 'Postpaid'
                 
                 <if test="criteria.meterNumber != null and criteria.meterNumber != ''">
