@@ -9,6 +9,8 @@ import java.util.UUID;
 @Data
 public class ClearTamper implements Serializable {
     private UUID id;
+    private UUID meterId;
+    private UUID orgId;
     private String tokenType;
     private String reason;
 
@@ -19,6 +21,11 @@ public class ClearTamper implements Serializable {
     private String user;
     private String receiptNumber;
     private String token;
+    private String customerId;
+    private String status;
+    private UUID userId;
+    private String receiptNo;
+    private UUID tariffId;
 
     private Date createdAt;
     private Date updatedAt;
@@ -117,5 +124,61 @@ public class ClearTamper implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public UUID getMeterId() {
+        return meterId;
+    }
+
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
+    }
+
+    public UUID getTariffId() {
+        return tariffId;
+    }
+
+    public void setTariffId(UUID tariffId) {
+        this.tariffId = tariffId;
+    }
+
+    public String getReceiptNo() {
+        return receiptNo;
+    }
+
+    public void setReceiptNo(String receiptNo) {
+        this.receiptNo = receiptNo;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
 }

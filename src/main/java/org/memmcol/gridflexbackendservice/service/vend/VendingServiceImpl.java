@@ -268,7 +268,43 @@ public class VendingServiceImpl implements VendingService {
 
     @Override
     public Map<String, Object> createClearTamperToken(ClearTamper clearTamper) {
-        return Map.of();
+        try{
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel user = handleUserValidation();
+
+            if(!clearTamper.getTokenType().equalsIgnoreCase("kct")) {
+                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+            }
+
+            MeterView meter = vendMapper.getMeterRecord(clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), user.getOrgId());
+
+            clearTamper.setToken("0009981278890223211");
+            clearTamper.setMeterId(meter.getMeterId());
+            clearTamper.setStatus("Completed");
+            clearTamper.setOrgId(user.getOrgId());
+            clearTamper.setCustomerId(meter.getCustomerId());
+            clearTamper.setUserId(user.getId());
+            clearTamper.setReceiptNo(generateReceiptNumber(clearTamper.getMeterNumber()));
+            clearTamper.setTariffId(meter.getTariffId());
+
+            int kct = vendMapper.createClearToken(clearTamper);
+            if(kct == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Generate kct token failed");
+            }
+
+
+            Transaction transaction = vendMapper.getCreditTokenTransaction(clearTamper.getId());
+
+            // Audit (optional)
+            AuditLog auditLog = buildAuditLog(user, "clear token generated", "vend", transaction, metadata, clearTamper.getReason());
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Clear tamper token generated successfully", transaction);
+        } catch (Exception ex) {
+            genericHandler.logIncidentReport("Creating clear tamper token service failed");
+            genericHandler.logAndSaveException(ex, "creating clear tamper token");
+            throw ex;
+        }
     }
 
     @Override

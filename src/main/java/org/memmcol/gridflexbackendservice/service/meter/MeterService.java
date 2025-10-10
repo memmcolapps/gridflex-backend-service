@@ -4,6 +4,7 @@ import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.BulkApproveMeter;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.Map;
@@ -41,5 +42,5 @@ public interface MeterService {
 
     Map<String, Object> detachMeter(UUID meterNumber, String reason);
 
-    Map<String, Object> continueAssignMeter(AssignMeterToCustomer assignMeterToCustomer);
+    Map<String, Object> continueAssignMeter(MeterView meterView);
 }

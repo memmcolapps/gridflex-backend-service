@@ -5,10 +5,7 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCre
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.vend.CreditToken;
-import org.memmcol.gridflexbackendservice.model.vend.KctToken;
-import org.memmcol.gridflexbackendservice.model.vend.MeterView;
-import org.memmcol.gridflexbackendservice.model.vend.Transaction;
+import org.memmcol.gridflexbackendservice.model.vend.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -303,4 +300,14 @@ public interface VendMapper {
             "#{kct1}, #{kct2})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createKctToken(KctToken kctToken);
+
+
+    @Insert("INSERT INTO vending_transactions (" +
+            "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
+            "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
+            "'0000', '0000')")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int createClearToken(ClearTamper clearTamper);
 }

@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.controller;
 import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
@@ -159,9 +160,9 @@ public class MeterController {
 
     @PostMapping("/assign")
     public ResponseEntity<Map<String, Object>> ContinueAssignMeter(
-            @RequestBody AssignMeterToCustomer assignMeterToCustomer) {
+            @RequestBody MeterView meterView) {
         try {
-            Map<String, Object> result = service.continueAssignMeter(assignMeterToCustomer);
+            Map<String, Object> result = service.continueAssignMeter(meterView);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

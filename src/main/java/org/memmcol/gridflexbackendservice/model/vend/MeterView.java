@@ -24,6 +24,10 @@ public class MeterView implements Serializable {
     private String meterCategory;
     private String type;
     private String tokenType;
+    private String description;
+    private String meterStage;
+    private String status;
+    private Boolean smartStatus;
 
     // --- Tariff and Band Info ---
     private UUID tariffId;
@@ -166,6 +170,38 @@ public class MeterView implements Serializable {
 
     public void setTokenType(String tokenType) {
         this.tokenType = tokenType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getMeterStage() {
+        return meterStage;
+    }
+
+    public void setMeterStage(String meterStage) {
+        this.meterStage = meterStage;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Boolean getSmartStatus() {
+        return smartStatus;
+    }
+
+    public void setSmartStatus(Boolean smartStatus) {
+        this.smartStatus = smartStatus;
     }
 
     public UUID getTariffId() {

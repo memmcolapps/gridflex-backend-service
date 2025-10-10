@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.util.Date;
 import java.util.List;
@@ -1036,4 +1037,63 @@ public interface MeterMapper {
     @Select("SELECT COUNT(*) FROM meter WHERE tariff = #{id} AND org_id = #{orgId} AND status != 'Deactivated'")
     int getTariffMeterById(UUID id, UUID orgId);
 
+    @Select("SELECT " +
+            "    m.meter_id, " +
+            "    m.org_id, " +
+            "    m.meter_number," +
+            "    m.old_sgc,  " +
+            "    m.new_sgc,  " +
+            "    m.old_krn,  " +
+            "    m.new_krn,  " +
+            "    m.old_tariff_index, " +
+            "    m.new_tariff_index," +
+            "    m.meter_account_number, " +
+            "    m.tariff_rate, " +
+            "    m.tariff_name," +
+            "    m.created_at, " +
+            "    m.updated_at, " +
+            "    m.customer_fullname, " +
+            "    m.customer_id, " +
+            "    m.address, " +
+            "    m.tariff_id " +
+            "FROM vw_meter_summary m " +
+            "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
+            "GROUP BY " +
+            "    m.meter_id, " +
+            "    m.org_id, " +
+            "    m.meter_number," +
+            "    m.meter_account_number, " +
+            "    m.old_sgc, " +
+            "    m.new_sgc, " +
+            "    m.old_krn, " +
+            "    m.new_krn, " +
+            "    m.old_tariff_index, " +
+            "    m.new_tariff_index," +
+            "    m.tariff_rate, " +
+            "    m.tariff_name," +
+            "    m.tariff_id, " +
+            "    m.customer_id, " +
+            "    m.address, " +
+            "    m.customer_fullname, " +
+            "    m.created_at, " +
+            "    m.updated_at ")
+    @Results({
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "customerFullname", column = "customer_fullname"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterAccountNumber", column = "meter_account_number"),
+            @Result(property = "tariffId", column = "tariff_id"),
+            @Result(property = "tariffRate", column = "tariff_rate"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+    MeterView getMeterRecord(String meterNumber, UUID orgId);
 }
