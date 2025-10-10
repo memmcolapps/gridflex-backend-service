@@ -272,7 +272,7 @@ public class VendingServiceImpl implements VendingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
-            if(!clearTamper.getTokenType().equalsIgnoreCase("kct")) {
+            if(!clearTamper.getTokenType().equalsIgnoreCase("clear-tamper")) {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
 
