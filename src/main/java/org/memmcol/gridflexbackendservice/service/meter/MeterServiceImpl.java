@@ -165,7 +165,7 @@ public class MeterServiceImpl implements MeterService {
         request.getSmartMeterInfo().setCreatedBy(user.getId());
         request.getSmartMeterInfo().setMeterStage("Pending-created");
         request.getSmartMeterInfo().setDescription("Newly Added");
-        request.getSmartMeterInfo().setPassword(passwordEncoder.encode(request.getSmartMeterInfo().getPassword()));
+//        request.getSmartMeterInfo().setPassword(passwordEncoder.encode(request.getSmartMeterInfo().getPassword()));
 
         int inserted = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());
         if (inserted == 0) {
@@ -190,11 +190,6 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
-//            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), user.getOrgId());
-//            if (meter != null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Meter not found");
-//            }
-
             String MDDesc = "";
             String SmartDesc = "";
             String MeterDesc = "";
@@ -218,7 +213,6 @@ public class MeterServiceImpl implements MeterService {
             request.setCustomerId(existingMeter.getCustomerId());
             request.setTariff(existingMeter.getTariff());
             request.setMeterId(existingMeter.getId());
-//            request.setMeterModel(existingMeter.getMeterModel());
 
             // Insert or update meter version
             int result;
@@ -243,7 +237,6 @@ public class MeterServiceImpl implements MeterService {
                 MDDesc = buildMDMeterInfoChangeDescription(existingMeter.getMdMeterInfo(), request.getMdMeterInfo());
                 request.getMdMeterInfo().setDescription("Pending edited");
 
-//                int resp = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
                 int mdResult2 = meterMapper.insertMDMeterInfoVersion(request.getMdMeterInfo());
                     if (mdResult2 == 0) {
                         throw new GlobalExceptionHandler.NotFoundException(meterName + " MD data " + status.getUpdateFailureDesc());
@@ -257,20 +250,14 @@ public class MeterServiceImpl implements MeterService {
                 request.getSmartMeterInfo().setOrgId(user.getOrgId());
                 request.getSmartMeterInfo().setMeterStage(meterStage);
                 request.getSmartMeterInfo().setCreatedBy(user.getId());
-//                request.getSmartMeterInfo().setMeterModel(user.getId());
                 SmartDesc = buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeterInfo(), request.getSmartMeterInfo());
                 request.getSmartMeterInfo().setDescription("Pending edited");
-//                int response = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
                 int mdResult2 = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());
                 if (mdResult2 == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " MD data " + status.getUpdateFailureDesc());
                 }
             }
 
-//            List<String> desc = new ArrayList<>();
-////            int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
-//            desc.add(MDDesc);
-//            desc.add(SmartDesc);
             String desc = MeterDesc + "," + MDDesc + ","+ SmartDesc;
 
             // Fetch updated meter and log audit
@@ -331,7 +318,6 @@ public class MeterServiceImpl implements MeterService {
             } else if (type.trim().equalsIgnoreCase("virtual")) {
                 meters = meterMapper.getAssignedVirtualMeters(um.getOrgId());
             } else {
-                System.out.println(">>>>size<<<<<<");
                 meters = meterMapper.getMeters(um.getOrgId());
             }
 
@@ -619,7 +605,6 @@ public class MeterServiceImpl implements MeterService {
             request.setOrgId(user.getOrgId());
             request.setCreatedBy(user.getId());
 
-//            Meter mainMeter = null;
             if(request.getMeterClass() == null){
 
                 // Validate main meter record
@@ -699,7 +684,6 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterCategory("Postpaid");
             request.setSmartStatus(false);
             request.setSimNumber("VIRTUAL");
-//            request.setMeterModel("VIRTUAL");
             request.setMeterType("Electricity");
             customerAssignResult = meterMapper.insertVirtualVersionMeterToCustomer(request);
             request.setMeterId(request.getId());
@@ -874,7 +858,6 @@ public class MeterServiceImpl implements MeterService {
                 // insert payment method
                 int migrate = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request);
                 if(migrate == 0) throw new GlobalExceptionHandler.NotFoundException(meterName+ " migration failed");
-                System.out.println(">>>>>>>>>>>>>>success>>>>>>>>>>>>>>>");
             }
 
             // get recent meter record
@@ -884,9 +867,7 @@ public class MeterServiceImpl implements MeterService {
             AuditLog auditLog = buildAuditLog(um, desc, meterName, meter, metadata, "");
             auditRepository.save(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(),
-                    "Meter migrated successfully",
-                    "");
+            return ResponseMap.response(status.getSuccessCode(), "Meter migrated successfully", "");
 
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);

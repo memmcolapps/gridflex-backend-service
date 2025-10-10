@@ -25,6 +25,7 @@ public class Meter implements Serializable {
     private String meterNumber;
     private String accountNumber;
     private String simNumber;
+    private String password;
     private String cin;
     private UUID tariff;
     private String type;
@@ -115,6 +116,14 @@ public class Meter implements Serializable {
 
     public void setSimNumber(String simNumber) {
         this.simNumber = simNumber;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getCin() {

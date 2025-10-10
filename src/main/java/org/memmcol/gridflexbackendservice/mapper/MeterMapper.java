@@ -541,7 +541,7 @@ public interface MeterMapper {
 
     @Select("SELECT * FROM meters m " +
             "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
-            "AND m.meter_stage IN ('Active', 'Pending-detached', 'Pending-migrated') " +
+            "AND m.meter_stage IN ('Assigned', 'Pending-detached', 'Pending-migrated') " +
             "ORDER BY m.created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
@@ -851,7 +851,7 @@ public interface MeterMapper {
             @Result(property = "ctRatioNum", column = "ct_ratio_num"),
             @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
             @Result(property = "voltRatioNum", column = "volt_ratio_num"),
-            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+            @Result(property = "voltRatioDenom", column = "volt_ratio_denom"),
             @Result(property = "meterRating", column = "meter_rating"),
             @Result(property = "initialReading", column = "initial_reading")
     })
