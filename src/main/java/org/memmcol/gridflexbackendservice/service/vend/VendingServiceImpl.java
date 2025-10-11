@@ -287,11 +287,10 @@ public class VendingServiceImpl implements VendingService {
             clearTamper.setReceiptNo(generateReceiptNumber(clearTamper.getMeterNumber()));
             clearTamper.setTariffId(meter.getTariffId());
 
-            int kct = vendMapper.createClearToken(clearTamper);
-            if(kct == 0) {
+            int clear = vendMapper.createClearToken(clearTamper);
+            if(clear == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Generate kct token failed");
             }
-
 
             Transaction transaction = vendMapper.getCreditTokenTransaction(clearTamper.getId());
 

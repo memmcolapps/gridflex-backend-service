@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -27,8 +28,16 @@ public class ClearTamper implements Serializable {
     private String receiptNo;
     private UUID tariffId;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;
+
+    public ClearTamper() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+    }
 
     public UUID getId() {
         return id;
