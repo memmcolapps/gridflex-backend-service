@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -17,8 +18,6 @@ public class kctAndClearTamper implements Serializable {
     private String kct1;
     private String kct2;
     private String token;
-    private Date createdAt;
-    private Date updatedAt;
 
     private String customerName;
     private String address;
@@ -26,6 +25,17 @@ public class kctAndClearTamper implements Serializable {
     private String meterNumber;
     private String user;
     private String receiptNumber;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date updatedAt;
+
+    public kctAndClearTamper() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+    }
 
     public UUID getId() {
         return id;

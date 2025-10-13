@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -20,8 +21,17 @@ public class ClearCredit implements Serializable {
     private String user;
     private String receiptNumber;
     private String token;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;
+
+    public ClearCredit() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+    }
 
     public UUID getId() {
         return id;
