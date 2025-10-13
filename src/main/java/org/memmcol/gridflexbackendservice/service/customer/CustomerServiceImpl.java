@@ -87,7 +87,8 @@ public class CustomerServiceImpl implements CustomerService {
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
 
-            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
+//            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
+            String uniqueCustomerId = "C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             request.setCustomerId(uniqueCustomerId);
 
             request.setOrgId(um.getOrgId());
@@ -301,7 +302,6 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-//    @Transactional
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
         UserModel currentUser = handleUserValidation();
         String filename = file.getOriginalFilename();
@@ -310,7 +310,7 @@ public class CustomerServiceImpl implements CustomerService {
             throw new IllegalArgumentException("Uploaded file must have a valid name.");
         }
 
-        final int MAX_UPLOAD_LIMIT = 2000;
+        final int MAX_UPLOAD_LIMIT = 5000;
         final int BATCH_SIZE = 200;
         final List<Customer> batch = new ArrayList<>();
         final List<String> failedRecords = new ArrayList<>();
@@ -327,9 +327,9 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             totalCount[0]++;
-            customer.setCustomerId("C" + Instant.now().toEpochMilli());
+            customer.setCustomerId("C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
             customer.setOrgId(currentUser.getOrgId());
-            customer.setStatus("inactive");
+            customer.setStatus("Inactive");
             batch.add(customer);
 
             if (batch.size() >= BATCH_SIZE) {
@@ -351,17 +351,17 @@ public class CustomerServiceImpl implements CustomerService {
             processBatch(batch, successCount, failedRecords);
         }
 
-        // Save all errors once
-        if (!failedRecords.isEmpty()) {
-            errorLogs.setDescription("Error occurred while trying to upload customer records");
-            errorLogs.setError_message(String.join("; ", failedRecords));
-            exceptionAuditRepository.save(errorLogs);
+        if(successCount[0] == 0){
+            throw new GlobalExceptionHandler.NotFoundException("Customer record upload failed");
         }
-
         return ResponseMap.response(
                 status.getSuccessCode(),
                 String.format("%d of %d %ss %s", successCount[0], totalCount[0], customerName, status.getRegDesc()),
-                failedRecords.isEmpty() ? "" : failedRecords
+                Map.of(
+                        "successful", successCount[0],
+                        "failed", failedRecords.size(),
+                        "failedDetails", failedRecords
+                )
         );
     }
 
@@ -369,17 +369,25 @@ public class CustomerServiceImpl implements CustomerService {
         try {
             customerMapper.bulkInsertCustomers(batch);
             successCount[0] += batch.size();
+            log.warn("Batch insert");
         } catch (Exception batchEx) {
+
             log.warn("Batch insert failed. Falling back to single inserts");
             for (Customer customer : batch) {
                 try {
                     customerMapper.insertCustomer(customer);
                     successCount[0]++;
                 } catch (Exception e) {
-                    String failedId = String.format("Acct#: %s | Email: %s | NIN: %s | Meter#: %s",
-                            customer.getCustomerId(), customer.getEmail());
-//                            customer.getNin(), customer.getMeterNumber());
-                    failedRecords.add(failedId + " - " + e.getMessage());
+                    String errorMessage = extractErrorMessage(e);
+
+                    String failedId = String.format(
+                            "Email: %s | Phone number: %s | Reason: %s",
+                            customer.getEmail(),
+                            customer.getPhoneNumber(),
+                            errorMessage
+                    );
+
+                    failedRecords.add(failedId);
                     log.error("Single insert failed for {}: {}", failedId, e.getMessage(), e);
                 }
             }
@@ -412,7 +420,6 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-
     public void parseExcel(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
         try {
             OPCPackage pkg = OPCPackage.open(file.getInputStream());
@@ -430,6 +437,30 @@ public class CustomerServiceImpl implements CustomerService {
             throw new IOException("Error while parsing Excel file", e);
         }
     }
+
+
+    private String extractErrorMessage(Exception e) {
+        String message = e.getMessage();
+
+        if (message == null) return "Unknown error";
+
+        if (message.contains("duplicate key value")) {
+            return "Duplicate record — The email, or phone number already exists.";
+        }
+        if (message.contains("violates not-null constraint")) {
+            return "Missing required field — one or more mandatory columns are empty.";
+        }
+        if (message.contains("foreign key constraint")) {
+            return "Invalid reference — linked data does not exist.";
+        }
+        if (message.contains("invalid input syntax")) {
+            return "Invalid data type — check number or date format.";
+        }
+
+        // default fallback
+        return message.split("\n")[0];
+    }
+
 
     public class ExcelSheetHandler extends DefaultHandler {
         private final Consumer<Customer> customerConsumer;
@@ -496,6 +527,16 @@ public class CustomerServiceImpl implements CustomerService {
             return (index >= 0 && index < array.length) ? array[index] : "";
         }
     }
+
+
+//    // Save all errors once
+//        if (!failedRecords.isEmpty()) {
+//        errorLogs.setDescription("Error occurred while trying to upload customer records");
+//        errorLogs.setError_message(String.join("; ", failedRecords));
+//        exceptionAuditRepository.save(errorLogs);
+//    }
+
+        ///-----------------------
 
 //    private void parseExcel(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
 //        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {

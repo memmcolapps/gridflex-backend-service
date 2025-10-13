@@ -100,8 +100,8 @@ public class  SecurityConfig {
 		 // Authorization
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
-						"/auth/service/forget-password/**", "/actuator/prometheus", "/service/alerts", "/service/reports/summary",
-						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache"
+						"/auth/service/forget-password/**", "/actuator/prometheus", "/service/alerts", "/service/reports/summary", "/customer/service/download/template/excel",
+						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache", "/customer/service/download/template/csv"
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
 						"/band/service/all",  "/band/service/single", "/tariff/service/single",
@@ -109,8 +109,8 @@ public class  SecurityConfig {
 						"/tariff/service/bulk-approve","/user/service/single-user", "/user/service/all",
 						"/user/service/change-state", "/user/service/update",  "/user/service/create",
 						"/user/service/groups",  "/user/service/create/group-permission", "/user/service/group/change-state",
-						"/customer/service/create", "/customer/service/update", "/customer/service/change-state",
-						"/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload",
+						"/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/download/template/excel",
+						"/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload", "/customer/service/download/template/csv",
 						"/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
 						"/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
 						"/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update", "/node/service/businessHub",

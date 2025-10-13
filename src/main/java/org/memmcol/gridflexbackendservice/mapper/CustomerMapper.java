@@ -53,12 +53,21 @@ public interface CustomerMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCustomer(Customer request);
 
+//    @Insert({
+//            "<script>",
+//            "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
+//            "VALUES",
+//            "<foreach collection='customers' item='c' separator=','>",
+//            "(#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, ${vat})",
+//            "</foreach>",
+//            "</script>"
+//    })
     @Insert({
             "<script>",
-            "INSERT INTO customer (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
+            "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
             "VALUES",
             "<foreach collection='customers' item='c' separator=','>",
-            "(#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, ${vat})",
+            "(#{c.orgId}, #{c.firstname}, #{c.lastname}, #{c.customerId}, #{c.nin}, #{c.phoneNumber}, #{c.email}, #{c.state}, #{c.city}, #{c.houseNo}, #{c.streetName}, #{c.status}, #{c.createdAt}, #{c.updatedAt}, #{c.vat})",
             "</foreach>",
             "</script>"
     })

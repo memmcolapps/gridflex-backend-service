@@ -102,7 +102,7 @@ public class UserServiceImpl implements  UserService {
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-            handleAddCache(user);
+//            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User created", userName, user, metadata);
             auditRepository.save(auditLog);
@@ -135,7 +135,7 @@ public class UserServiceImpl implements  UserService {
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-            handleAddCache(user);
+//            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User edited", userName, user, metadata);
             auditRepository.save(auditLog);
@@ -289,10 +289,10 @@ public class UserServiceImpl implements  UserService {
             String cacheKey = cacheKeyBuilder.toString();
 
             // Return from cache if available
-            Object cachedUser = userCache.get(cacheKey);
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
-            }
+//            Object cachedUser = userCache.get(cacheKey);
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
+//            }
             List<UserModel> enrichedUsers = new ArrayList<>();
 
 //            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
@@ -382,7 +382,7 @@ public class UserServiceImpl implements  UserService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedUsers.size() / size));
 
-            userCache.put(cacheKey, response);
+//            userCache.put(cacheKey, response);
 
             return ResponseMap.response(status.getSuccessCode(), userName + "s " + status.getDesc(), response);
 
@@ -431,11 +431,11 @@ public class UserServiceImpl implements  UserService {
 
             UserModel um = handleUserValidation();
 
-            Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
-
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedUser);
-            }
+//            Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
+//
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedUser);
+//            }
 
             UserModel user = userMapper.findById(userId, um.getOrgId());
             if (user == null) {
@@ -467,7 +467,7 @@ public class UserServiceImpl implements  UserService {
             }
             userDTO.setNodes(root);
 
-            handleAddCache(userDTO);
+//            handleAddCache(userDTO);
 
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);
@@ -499,7 +499,7 @@ public class UserServiceImpl implements  UserService {
             String desc = state ? "User activated" : "User deactivated";
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-            handleAddCache(user);
+//            handleAddCache(user);
             AuditLog auditLog = buildAuditLog(user, desc, userName, user, metadata);
             auditRepository.save(auditLog);
 
@@ -589,7 +589,6 @@ public class UserServiceImpl implements  UserService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getGroups() {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
             UserModel um = handleUserValidation();
