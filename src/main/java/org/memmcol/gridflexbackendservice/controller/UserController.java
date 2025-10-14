@@ -93,6 +93,16 @@ public class UserController {
         }
     }
 
+    @PutMapping("/update/group-permission")
+    public ResponseEntity<?> updateGroupPermission(@RequestBody CreateGroupRequest createGroupRequest) {
+        try {
+            Map<String, Object> result = service.updateGroupPermission(createGroupRequest);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @GetMapping("/groups")
     public ResponseEntity<?> getGroup() {
         try {

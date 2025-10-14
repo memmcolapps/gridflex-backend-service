@@ -6,6 +6,7 @@ import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.io.Serializable;
@@ -55,6 +56,7 @@ public class Meter implements Serializable {
     private Manufacturer manufacturer;
     private SmartMeterInfo smartMeterInfo;
     private Meter oldMeterInfo;
+    private RegionBhubServiceCenter nodeInfo;
 //    private Tariff tariffInfo;
 //    private DebitCreditAdjust debitCreditAdjust;
 
@@ -379,5 +381,13 @@ public class Meter implements Serializable {
 
     public void setOldMeterInfo(Meter oldMeterInfo) {
         this.oldMeterInfo = oldMeterInfo;
+    }
+
+    public RegionBhubServiceCenter getNodeInfo() {
+        return nodeInfo;
+    }
+
+    public void setNodeInfo(RegionBhubServiceCenter nodeInfo) {
+        this.nodeInfo = nodeInfo;
     }
 }
