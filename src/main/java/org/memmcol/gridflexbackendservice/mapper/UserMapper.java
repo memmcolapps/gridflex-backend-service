@@ -102,6 +102,13 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertGroup(Group group);
 
+    @Update("""
+        UPDATE groups SET title = #{groupTitle}, updated_at = #{updatedAt} WHERE id = #{id}
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateGroup(Group group);
+
+
     @Insert("""
         INSERT INTO groups (title, created_at, updated_at)
         VALUES (#{title}, #{createdAt}, #{updatedAt})
@@ -122,7 +129,7 @@ public interface UserMapper {
     """)
     List<Module> findModulesByGroupId(@Param("groupId") UUID groupId);
 
-    @Select("SELECT id, name, access, org_id FROM submodules WHERE module_id = CAST(#{moduleId} AS UUID)")
+    @Select("SELECT id, name, access, org_id FROM submodules WHERE module_id = #{moduleId})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "name", column = "name"),
@@ -147,16 +154,32 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertModule(Module module);
 
+    @Insert("UPDATE modules SET name = #{name}, access = #{access} WHERE id = #{id}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateModule(Module module);
+
     @Insert("INSERT INTO permissions(view, edit, approve, disable, org_id) VALUES(#{view}, #{edit}, #{approve}, #{disable}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertPermission(Permission permission);
+
+    @Update("UPDATE permissions SET view = #{view}, edit = #{edit}, approve = #{approve}, disable = #{disable} WHERE id = #{id}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updatePermission(Permission permission);
 
     @Insert("INSERT INTO submodules(name, module_id, access, org_id) VALUES(#{name}, #{moduleId}, #{access}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertSubModule(SubModule subModule);
 
+
+    @Insert("UPDATE submodules SET name = #{name}, access = #{access} WHERE id = #{id}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateSubModule(SubModule subModule);
+
     @Insert("INSERT INTO group_permissions(group_id, permission_id, org_id) VALUES(#{groupId}, #{permissionId}, #{orgId})")
     void assignPermissionToGroup(@Param("groupId") UUID groupId, @Param("permissionId") UUID permissionId,  @Param("orgId") UUID orgId);
+
+//    @Insert("UPDATE group_permissions SET group_id = #{groupId}, permission_id = #{permissionId} WHERE id = #{}")
+//    void assignUpdatePermissionToGroup(@Param("groupId") UUID groupId, @Param("permissionId") UUID permissionId,  @Param("orgId") UUID orgId);
 
     @Select("SELECT * FROM groups WHERE org_id = #{orgId}")
     @Results({
