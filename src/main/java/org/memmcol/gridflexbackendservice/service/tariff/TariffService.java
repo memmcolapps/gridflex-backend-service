@@ -26,4 +26,5 @@ public interface TariffService {
     Map<String, Object> changeStatus(UUID id, Boolean status);
 
     ByteArrayInputStream exportTariff();
+
 }

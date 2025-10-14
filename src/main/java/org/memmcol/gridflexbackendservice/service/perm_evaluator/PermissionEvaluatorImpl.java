@@ -76,11 +76,11 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             "user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
                     "/user/service/groups", "/user/service/create/group-permission", "/user/service/update/group-permission", "/node/service/create/node/region-bhub-service-center",
                     "/user/service/group/change-state", "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line",
-                    "/node/service/businessHub", "/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
+                    "/node/service/businessHub","/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get"),
 
             "users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log", "/user/service/update/group-permission",
+                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log",
                     "/user/service/group/change-state", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")
     );
 
