@@ -5,6 +5,7 @@ import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
@@ -13,6 +14,7 @@ import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -24,6 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -59,6 +65,9 @@ public class TariffServiceImpl implements TariffService {
 
     @Autowired
     private MeterMapper meterMapper;
+
+    @Autowired
+    private AuthMapper staticOperatorMapper;
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
@@ -276,36 +285,33 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
+
     @Override
     public ByteArrayInputStream exportTariff() {
-        UserModel um = handleUserValidation();
-        List<Tariff> allTariffs = tariffMapper.GetAllTariffs(um.getOrgId());
 
-        try (Workbook workbook = new XSSFWorkbook()) {
+        UserModel user = handleUserValidation();
+
+        List<Tariff> allTariffs = tariffMapper.GetAllTariffs(user.getOrgId());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
             Sheet sheet = workbook.createSheet("Tariff Report");
 
+            // Create header
             String[] headers = {
                     "S/N", "Tariff Name", "Tariff Type", "Band Code",
-                    "Tariff Rate", "Effective Date", "Approve Status", "Created At"
+                    "Tariff Rate", "Effective Date", "Approve Status", "Created At", "Updated_at"
             };
-
-            // Create header row
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-                CellStyle style = workbook.createCellStyle();
-                Font font = workbook.createFont();
-                font.setBold(true);
-                style.setFont(font);
-                cell.setCellStyle(style);
+                headerRow.createCell(i).setCellValue(headers[i]);
             }
 
-            // Populate rows with data
+            // Data rows
             for (int i = 0; i < allTariffs.size(); i++) {
                 Tariff tariff = allTariffs.get(i);
                 Row row = sheet.createRow(i + 1);
-
                 row.createCell(0).setCellValue(i + 1);
                 row.createCell(1).setCellValue(tariff.getName());
                 row.createCell(2).setCellValue(tariff.getTariff_type());
@@ -314,83 +320,21 @@ public class TariffServiceImpl implements TariffService {
                 row.createCell(5).setCellValue(tariff.getEffective_date());
                 row.createCell(6).setCellValue(tariff.getApprove_status());
                 row.createCell(7).setCellValue(tariff.getCreated_at());
+                row.createCell(8).setCellValue(tariff.getUpdated_at());
             }
 
-            // Resize columns
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            // Write to memory stream (not to file)
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
             return new ByteArrayInputStream(out.toByteArray());
 
         } catch (IOException e) {
-            throw new RuntimeException("Error generating tariff export", e);
+            throw new RuntimeException("Error exporting tariff data", e);
         }
     }
 
-
-
-//    @Override
-//    public ByteArrayInputStream exportTariff() {
-//            UserModel um = handleUserValidation();
-//            List<Tariff> allTariffs = tariffMapper.GetAllTariffs(um.getOrgId());
-//
-//
-//            // Write the output to a ByteArrayOutputStream
-//            ByteArrayOutputStream out = new ByteArrayOutputStream();
-//
-//            try (Workbook workbook = new XSSFWorkbook()) {
-//                Sheet sheet = workbook.createSheet("Tariff Report");
-//
-//                // Create header row
-//                Row headerRow = sheet.createRow(0);
-//                String[] headers = {"S/N", "Tariff Name", "Tariff Type", "Band Code", "tariff Rate", "Effective Date", "Approve Status", "Created At"};
-//
-//                for (int i = 0; i < headers.length; i++) {
-//                    org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
-//                    cell.setCellValue(headers[i]);
-//                    CellStyle style = workbook.createCellStyle();
-//                    style.setFont(workbook.createFont());
-////                style.getFont().setBold(true);
-//
-//                    cell.setCellStyle(style);
-//                }
-//
-//                // Populate rows with data
-//                for (int i = 0; i < allTariffs.size(); i++) {
-//                    Row row = sheet.createRow(i + 1);
-//                    Tariff tariff = allTariffs.get(i);
-//
-//                    // Write transaction data to the row
-//                    row.createCell(0).setCellValue(i + 1);
-//                    row.createCell(1).setCellValue(tariff.getName());
-//                    row.createCell(2).setCellValue(tariff.getTariff_type());
-//                    row.createCell(3).setCellValue(tariff.getBand().getName());
-//                    row.createCell(4).setCellValue(tariff.getTariff_rate());
-//                    row.createCell(5).setCellValue(tariff.getEffective_date());
-//                    row.createCell(6).setCellValue(tariff.getApprove_status());
-//                    row.createCell(7).setCellValue(tariff.getCreated_at());
-//                }
-//                // Resize columns to fit content
-//                for (int i = 0; i < headers.length; i++) {
-//                    sheet.autoSizeColumn(i);
-//                }
-//
-//                try (OutputStream fos = new FileOutputStream("tariff_report.xlsx")) {
-//                    workbook.write(fos);
-//                }
-//
-//                workbook.write(out);
-//                return new ByteArrayInputStream(out.toByteArray());
-//
-//            } catch (IOException e) {
-//                System.out.println(">>: "+e);
-//                throw new RuntimeException(e);
-//            }
-//    }
 
     @Transactional(readOnly = true)
     @Override

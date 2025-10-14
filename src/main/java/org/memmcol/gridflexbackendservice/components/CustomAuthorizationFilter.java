@@ -57,8 +57,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				"/service/reports/summary",
 				"/service/trigger/daily",
 				"/service/trigger/monthly",
-				"/band/service/clear-cache",
-				"/tariff/service/export"
+				"/band/service/clear-cache"
 		);
 
 		// If the path is exempt, skip the authorization filter

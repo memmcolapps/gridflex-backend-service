@@ -107,56 +107,19 @@ public class TariffController {
         }
     }
 
-//    @GetMapping("/export")
-//    public ResponseEntity<Resource> exportTariff() {
-//        ByteArrayInputStream in = service.exportTariff();
-//        InputStreamResource resource = new InputStreamResource(in);
-//
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tariff_report.xlsx");
-//        headers.add(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
-//        headers.add(HttpHeaders.PRAGMA, "no-cache");
-//        headers.add(HttpHeaders.EXPIRES, "0");
-//
-//        return ResponseEntity.ok()
-//                .headers(headers)
-//                .contentLength(in.available())
-//                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-//                .body(resource);
-//
-//    }
 
     @GetMapping("/export")
     public ResponseEntity<Resource> exportTariff() {
-        ByteArrayInputStream in = service.exportTariff();
-        InputStreamResource file = new InputStreamResource(in);
+        ByteArrayInputStream stream = service.exportTariff();
+
+        InputStreamResource resource = new InputStreamResource(stream);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tariff_report.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(file);
+                .body(resource);
     }
 
-
-//    @GetMapping("/export")
-//    public ResponseEntity<byte[]> exportTariff() {
-////        try {
-//            ByteArrayInputStream in = service.exportTariff();
-//
-//            HttpHeaders headers = new HttpHeaders();
-//            headers.add("Content-Disposition", "attachment; filename=transaction_report.xlsx");
-//            headers.add("Content-Type", "application/octet-stream");
-//
-//            return ResponseEntity
-//                    .ok()
-//                    .headers(headers)
-//                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-//                    .body(in.readAllBytes());
-////        }
-////        catch (GlobalExceptionHandler.SQLServerException e) {
-////            return handleException(e);
-////        }
-//    }
     @PatchMapping("/change-state")
     public ResponseEntity<?> changeState(
             @RequestParam UUID tariffId,
