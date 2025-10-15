@@ -310,4 +310,106 @@ public interface VendMapper {
             "'00000000', '00000000')")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createClearToken(ClearTamper clearTamper);
+
+    @Insert("INSERT INTO vending_transactions (" +
+            "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
+            "'0.00', '0.00', #{status}, #{receiptNumber}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
+            "'0000', '0000')")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int createClearCredit(ClearCredit clearCredit);
+
+    @Insert("INSERT INTO vending_transactions (" +
+            "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
+            "'0.00', '0.00', #{status}, #{receiptNumber}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
+            "'0000', '0000')")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int createKctAndClearTamper(kctAndClearTamper kctAndClearTamper);
+
+    @Insert("INSERT INTO vending_transactions (" +
+            "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, #{unit}, " +
+            "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
+            "'0000', '0000')")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int createCompensationToken(KctToken kctToken);
+
+    @Select("""
+                <script>
+                    SELECT *
+                    FROM vw_vending_transactions_summary
+                    WHERE org_id = #{orgId}
+                    
+                    <if test="meterNumber != null and meterNumber != ''">
+                        AND meter_number ILIKE CONCAT('%', #{meterNumber}, '%')
+                    </if>
+                    <if test="meterAccountNumber != null and meterAccountNumber != ''">
+                        AND meter_account_number ILIKE CONCAT('%', #{meterAccountNumber}, '%')
+                    </if>
+                    <if test="tariffName != null and tariffName != ''">
+                        AND tariff_name ILIKE CONCAT('%', #{tariffName}, '%')
+                    </if>
+                    <if test="tokenType != null and tokenType != ''">
+                        AND token_type = #{tokenType}
+                    </if>
+                    <if test="status != null and status != ''">
+                        AND status = #{status}
+                    </if>
+
+                    ORDER BY created_at DESC
+
+                    <if test="limit != 0">
+                        LIMIT #{limit} OFFSET #{offset}
+                    </if>
+                </script>
+            """)
+    @Results({
+            @Result(property = "transactionId", column = "transaction_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterAccountNumber", column = "meter_account_number"),
+            @Result(property = "userFullname", column = "user_Fullname"),
+            @Result(property = "customerFullname", column = "customer_Fullname"),
+            @Result(property = "tariffName", column = "tariff_name"),
+            @Result(property = "tariffRate", column = "tariff_rate"),
+            @Result(property = "liabilityName", column = "liability_name"),
+            @Result(property = "balanceAfterAdjustment", column = "balance"),
+
+            @Result(property = "userId", column = "user_id"),
+            @Result(property = "customerId", column = "customer_id"),
+
+            @Result(property = "InitialAmount", column = "Initial_amount"),
+            @Result(property = "FinalAmount", column = "Final_amount"),
+            @Result(property = "vatAmount", column = "vat_amount"),
+            @Result(property = "receiptNo", column = "receipt_no"),
+            @Result(property = "unitCost", column = "unit_cost"),
+            @Result(property = "tokenType", column = "token_type"),
+
+            @Result(property = "tariffName", column = "tariff_name"),
+            @Result(property = "tariffRate", column = "tariff_rate"),
+            @Result(property = "bandName", column = "band_name"),
+            @Result(property = "bandHour", column = "band_hour"),
+
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "debitCreditAdjust", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getCreditAdjustment")),
+            @Result(property = "debitCreditAdjust", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getDebitAdjustment")),
+    })
+    List<Transaction> getAllToken(
+            @Param("orgId") UUID orgId,
+            @Param("meterNumber") String meterNumber,
+            @Param("meterAccountNumber") String meterAccountNumber,
+            @Param("tariffName") String tariffName,
+            @Param("tokenType") String tokenType,
+            @Param("status") String status,
+            @Param("limit") int limit,
+            @Param("offset") int offset
+    );
+
 }
