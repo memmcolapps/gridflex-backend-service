@@ -102,7 +102,7 @@ public class UserServiceImpl implements  UserService {
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-            handleAddCache(user);
+//            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User created", userName, user, metadata);
             auditRepository.save(auditLog);
@@ -135,7 +135,7 @@ public class UserServiceImpl implements  UserService {
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-            handleAddCache(user);
+//            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User edited", userName, user, metadata);
             auditRepository.save(auditLog);
@@ -289,10 +289,10 @@ public class UserServiceImpl implements  UserService {
             String cacheKey = cacheKeyBuilder.toString();
 
             // Return from cache if available
-            Object cachedUser = userCache.get(cacheKey);
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
-            }
+//            Object cachedUser = userCache.get(cacheKey);
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached Users " + status.getDesc(), cachedUser);
+//            }
             List<UserModel> enrichedUsers = new ArrayList<>();
 
 //            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
@@ -382,7 +382,7 @@ public class UserServiceImpl implements  UserService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedUsers.size() / size));
 
-            userCache.put(cacheKey, response);
+//            userCache.put(cacheKey, response);
 
             return ResponseMap.response(status.getSuccessCode(), userName + "s " + status.getDesc(), response);
 
@@ -431,11 +431,11 @@ public class UserServiceImpl implements  UserService {
 
             UserModel um = handleUserValidation();
 
-            Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
-
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedUser);
-            }
+//            Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
+//
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + userName + " " + status.getDesc(), cachedUser);
+//            }
 
             UserModel user = userMapper.findById(userId, um.getOrgId());
             if (user == null) {
@@ -467,7 +467,7 @@ public class UserServiceImpl implements  UserService {
             }
             userDTO.setNodes(root);
 
-            handleAddCache(userDTO);
+//            handleAddCache(userDTO);
 
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);
@@ -499,7 +499,7 @@ public class UserServiceImpl implements  UserService {
             String desc = state ? "User activated" : "User deactivated";
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
             user.setPassword("");
-            handleAddCache(user);
+//            handleAddCache(user);
             AuditLog auditLog = buildAuditLog(user, desc, userName, user, metadata);
             auditRepository.save(auditLog);
 
@@ -586,10 +586,90 @@ public class UserServiceImpl implements  UserService {
 
     }
 
+    @Transactional
+    @Override
+    public Map<String, Object> updateGroupPermission(CreateGroupRequest request) {
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel um = handleUserValidation();
+            UUID orgId =  um.getOrgId();
+
+            Group group = new Group();
+            group.setId(request.getId());
+            group.setGroupTitle(request.getGroupTitle());
+            group.setUpdatedAt(request.getUpdatedAt());
+
+            Group isGroupId = userMapper.checkGroupId(group.getId(), orgId);
+            if (isGroupId == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+            }
+
+            /// Check if group already exist (No duplication title allowed)
+//            String isGroupTitle = userMapper.checkGroupName(request.getGroupTitle());
+////            group.setId(isGroupTitle.get);
+//            if(isGroupTitle == null) {
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Group title '" + request.getGroupTitle() + "' already exist.");
+//            }
+
+            group.setId(isGroupId.getId());
+            /// Insert group and retrieve group ID
+            userMapper.updateGroup(group); // Automatically sets group.id
+            UUID groupId = group.getId();
+
+            Permission permission = new Permission();
+            permission.setId(request.getPermission().getId());
+            permission.setEdit(request.getPermission().getEdit());
+            permission.setApprove(request.getPermission().getApprove());
+            permission.setDisable(request.getPermission().getDisable());
+            permission.setView(request.getPermission().getView());
+
+            /// Insert permission
+            userMapper.updatePermission(permission);
+
+            for (ModuleWithSubModules moduleWithSubs : request.getModules()) {
+
+                Module module = new Module();
+                module.setName(moduleWithSubs.getName());
+                module.setAccess(moduleWithSubs.getAccess());
+//                module.setOrgId(orgId);
+//                module.setGroupId(groupId);
+                module.setId(moduleWithSubs.getId());
+
+                /// Create and insert module
+                userMapper.updateModule(module);  // ID will be set here
+//                UUID moduleId = module.getId();   // Auto-generated ID
+
+                for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
+                    SubModule subModule = new SubModule();
+                    subModule.setName(smwp.getName());
+                    subModule.setAccess(smwp.getAccess());
+//                    subModule.setModuleId(moduleId);
+                    subModule.setId(smwp.getId());
+                    subModule.setOrgId(orgId);
+                    subModule.setId(smwp.getId());
+
+                    /// Create and insert submodule
+                    userMapper.updateSubModule(subModule);
+                }
+            }
+
+            /// Assign permission to the group created
+//            userMapper.assignUpdatePermissionToGroup(groupId, permission.getId(), um.getOrgId());
+
+            String desc = capitalizeFirstLetter(request.getGroupTitle() + " updated");
+            AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
+            auditRepository.save(auditLog);
+            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("Updating group permission service failed");
+            genericHandler.logAndSaveException(exception, "update group permission failed");
+            throw exception;
+        }
+    }
+
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getGroups() {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
             UserModel um = handleUserValidation();

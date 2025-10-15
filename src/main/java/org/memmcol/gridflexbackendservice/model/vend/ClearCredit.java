@@ -36,7 +36,6 @@ public class ClearCredit implements Serializable {
         this.updatedAt = new Date();
     }
 
-
     public UUID getId() {
         return id;
     }

@@ -104,13 +104,13 @@ public class  SecurityConfig {
 						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache"
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
-						"/band/service/all",  "/band/service/single", "/tariff/service/single",
+						"/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/export",
 						"/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state",
 						"/tariff/service/bulk-approve","/user/service/single-user", "/user/service/all",
 						"/user/service/change-state", "/user/service/update",  "/user/service/create",
-						"/user/service/groups",  "/user/service/create/group-permission", "/user/service/group/change-state",
-						"/customer/service/create", "/customer/service/update", "/customer/service/change-state",
-						"/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload",
+						"/user/service/groups",  "/user/service/create/group-permission", "/user/service/update/group-permission", "/user/service/group/change-state",
+						"/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/download/template/excel",
+						"/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload", "/customer/service/download/template/csv",
 						"/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
 						"/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
 						"/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update", "/node/service/businessHub",

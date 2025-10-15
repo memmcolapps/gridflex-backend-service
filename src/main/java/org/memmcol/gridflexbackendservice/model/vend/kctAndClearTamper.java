@@ -40,7 +40,6 @@ public class kctAndClearTamper implements Serializable {
         this.updatedAt = new Date();
     }
 
-
     public UUID getId() {
         return id;
     }

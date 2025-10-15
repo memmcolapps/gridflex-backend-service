@@ -3,6 +3,9 @@ package org.memmcol.gridflexbackendservice.service.tariff;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
@@ -11,6 +14,7 @@ import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -22,10 +26,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,6 +65,9 @@ public class TariffServiceImpl implements TariffService {
 
     @Autowired
     private MeterMapper meterMapper;
+
+    @Autowired
+    private AuthMapper staticOperatorMapper;
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
@@ -272,6 +284,57 @@ public class TariffServiceImpl implements TariffService {
             throw exception;
         }
     }
+
+
+    @Override
+    public ByteArrayInputStream exportTariff() {
+
+        UserModel user = handleUserValidation();
+
+        List<Tariff> allTariffs = tariffMapper.GetAllTariffs(user.getOrgId());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Tariff Report");
+
+            // Create header
+            String[] headers = {
+                    "S/N", "Tariff Name", "Tariff Type", "Band Code",
+                    "Tariff Rate", "Effective Date", "Approve Status", "Created At", "Updated_at"
+            };
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            // Data rows
+            for (int i = 0; i < allTariffs.size(); i++) {
+                Tariff tariff = allTariffs.get(i);
+                Row row = sheet.createRow(i + 1);
+                row.createCell(0).setCellValue(i + 1);
+                row.createCell(1).setCellValue(tariff.getName());
+                row.createCell(2).setCellValue(tariff.getTariff_type());
+                row.createCell(3).setCellValue(tariff.getBand() != null ? tariff.getBand().getName() : "");
+                row.createCell(4).setCellValue(tariff.getTariff_rate());
+                row.createCell(5).setCellValue(tariff.getEffective_date());
+                row.createCell(6).setCellValue(tariff.getApprove_status());
+                row.createCell(7).setCellValue(tariff.getCreated_at());
+                row.createCell(8).setCellValue(tariff.getUpdated_at());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error exporting tariff data", e);
+        }
+    }
+
 
     @Transactional(readOnly = true)
     @Override

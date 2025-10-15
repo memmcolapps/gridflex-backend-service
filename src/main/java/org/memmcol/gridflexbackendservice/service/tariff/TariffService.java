@@ -4,6 +4,7 @@ import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,4 +24,7 @@ public interface TariffService {
     Map<String, Object> approve(UUID tId, String approveStatus) throws MissingServletRequestParameterException;;
 
     Map<String, Object> changeStatus(UUID id, Boolean status);
+
+    ByteArrayInputStream exportTariff();
+
 }

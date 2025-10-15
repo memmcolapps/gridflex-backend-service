@@ -5,10 +5,16 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -99,6 +105,19 @@ public class TariffController {
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
+    }
+
+
+    @GetMapping("/export")
+    public ResponseEntity<Resource> exportTariff() {
+        ByteArrayInputStream stream = service.exportTariff();
+
+        InputStreamResource resource = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tariff_report.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(resource);
     }
 
     @PatchMapping("/change-state")

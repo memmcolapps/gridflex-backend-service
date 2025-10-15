@@ -17,11 +17,11 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     private static final Map<String, List<String>> SUBMODULE_URI_MAP = Map.of(
 
             "full access", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
-                    "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all",
-                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single",
+                    "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
+                    "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single", "/user/service/update/group-permission",
                     "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/group/change-state",
-                    "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update",
-                    "/customer/service/change-state", "/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload",
+                    "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update", "/customer/service/download/template/csv",
+                    "/customer/service/change-state", "/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload", "/customer/service/download/template/excel",
                     "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center", "/node/service/businessHub",
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line",
                     "/node/service/single", "/node/service/all", "/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single",
@@ -39,7 +39,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/vending/service/generate/token/compensation", "/vending/service/generate/token/all"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
-                    "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all",
+                    "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve", "/customer/service/create",
                     "/customer/service/update", "/customer/service/change-state", "/customer/service/all",  "/customer/service/single-customer",
                     "/customer/service/bulk-upload", "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
@@ -71,12 +71,12 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get"),
 
             "tariff", List.of("/tariff/service/single", "/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve",
-                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get"),
+                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get", "/tariff/service/export"),
 
             "user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups", "/user/service/create/group-permission", "/node/service/create/node/region-bhub-service-center", "/user/service/group/change-state",
-                    "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line", "/node/service/businessHub",
-                    "/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
+                    "/user/service/groups", "/user/service/create/group-permission", "/user/service/update/group-permission", "/node/service/create/node/region-bhub-service-center",
+                    "/user/service/group/change-state", "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line",
+                    "/node/service/businessHub","/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get"),
 
             "users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",

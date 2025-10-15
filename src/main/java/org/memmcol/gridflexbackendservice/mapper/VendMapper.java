@@ -296,7 +296,7 @@ public interface VendMapper {
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
             "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
-            "'0.00', '0.00', #{status}, #{receiptNo}, 'kct-0000000000000000', #{createdAt}, #{updatedAt}, #{tokenType}, " +
+            "'0.00', '0.00', #{status}, #{receiptNo}, '00000000', #{createdAt}, #{updatedAt}, #{tokenType}, " +
             "#{kct1}, #{kct2})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createKctToken(KctToken kctToken);
@@ -307,7 +307,7 @@ public interface VendMapper {
             "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
             "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
-            "'0000', '0000')")
+            "'00000000', '00000000')")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createClearToken(ClearTamper clearTamper);
 

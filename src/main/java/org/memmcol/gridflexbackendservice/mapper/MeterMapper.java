@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
@@ -664,10 +665,9 @@ public interface MeterMapper {
     })
     List<Meter> getMeters(UUID orgId);
 
-    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-            "WHERE m.org_id = #{orgId} AND (m.meter_stage = 'Pending-created' OR m.meter_stage = 'Pending-edited' OR m.meter_stage = 'Pending-allocated' " +
-            "OR m.meter_stage = 'Pending-assigned' OR m.meter_stage = 'Pending-detached' OR m.meter_stage = 'Pending-migrated' OR m.status = 'Pending-deactivated' " +
-            "OR m.status = 'Pending-activated') ORDER BY m.created_at DESC")
+    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND " +
+            "m.meter_stage IN('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Pending-deactivated' ) " +
+            "ORDER BY m.created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -705,10 +705,19 @@ public interface MeterMapper {
             @Result(property = "smartMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion")),
             @Result(property = "oldMeterInfo", column = "meter_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterById"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterById")),
+            @Result(property = "nodeInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo"))
 
     })
     List<Meter> getMetersVersion(UUID orgId);
+
+    @Select("SELECT * FROM region_bhub_service_centers WHERE node_Id = #{nodeId} ")
+    @Results({
+            @Result(property = "regionId", column = "region_id"),
+    })
+    RegionBhubServiceCenter getNodeInfo(UUID nodeId);
+
 
     @Select("SELECT * FROM meters WHERE id = #{meterId}")
     @Results({

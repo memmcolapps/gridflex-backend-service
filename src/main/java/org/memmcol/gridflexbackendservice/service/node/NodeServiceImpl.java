@@ -98,13 +98,6 @@ public class NodeServiceImpl implements NodeService {
             handleClearCache(node);
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub", regionBhubServiceCenter, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType(request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub");
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
-//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getRegDesc(), "");
 
