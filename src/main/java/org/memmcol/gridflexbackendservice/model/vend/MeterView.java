@@ -28,6 +28,7 @@ public class MeterView implements Serializable {
     private String meterStage;
     private String status;
     private Boolean smartStatus;
+    private String unit;
 
     // --- Tariff and Band Info ---
     private UUID tariffId;
@@ -450,5 +451,13 @@ public class MeterView implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 }

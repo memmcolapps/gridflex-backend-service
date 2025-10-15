@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.UUID;
 
@@ -26,6 +27,8 @@ public class KctToken implements Serializable {
     private String status;
     private UUID userId;
     private String receiptNo;
+    private String token;
+    private BigDecimal unit;
 
     private String accountNumber;
     private String meterNumber;
@@ -221,5 +224,19 @@ public class KctToken implements Serializable {
         this.tariffId = tariffId;
     }
 
+    public String getToken() {
+        return token;
+    }
 
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public BigDecimal getUnit() {
+        return unit;
+    }
+
+    public void setUnit(BigDecimal unit) {
+        this.unit = unit;
+    }
 }

@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -308,22 +309,181 @@ public class VendingServiceImpl implements VendingService {
 
     @Override
     public Map<String, Object> createClearCreditToken(ClearCredit clearCredit) {
-        return Map.of();
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel user = handleUserValidation();
+
+
+            if(!clearCredit.getTokenType().equalsIgnoreCase("clear-credit")) {
+                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+            }
+
+            MeterView meter = vendMapper.getMeterRecord(clearCredit.getMeterNumber(), clearCredit.getAccountNumber(), user.getOrgId());
+
+            clearCredit.setToken("0009981278890223211");
+            clearCredit.setMeterId(meter.getMeterId());
+            clearCredit.setStatus("Completed");
+            clearCredit.setOrgId(user.getOrgId());
+            clearCredit.setCustomerId(meter.getCustomerId());
+            clearCredit.setUserId(user.getId());
+            clearCredit.setReceiptNumber(generateReceiptNumber(clearCredit.getMeterNumber()));
+            clearCredit.setTariffId(meter.getTariffId());
+
+            int clear = vendMapper.createClearCredit(clearCredit);
+            if(clear == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Generate clear credit token failed");
+            }
+
+            Transaction transaction = vendMapper.getCreditTokenTransaction(clearCredit.getId());
+
+            // Audit (optional)
+            AuditLog auditLog = buildAuditLog(user, "clear credit token generated", "vend", transaction, metadata, clearCredit.getReason());
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Clear credit token generated successfully", transaction);
+
+        }catch (Exception ex) {
+            genericHandler.logIncidentReport("Creating clear credit token service failed");
+            genericHandler.logAndSaveException(ex, "creating clear credit token");
+            throw ex;
+        }
     }
 
     @Override
     public Map<String, Object> createKctClearTamperToken(kctAndClearTamper kctAndClearTamper) {
-        return Map.of();
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel user = handleUserValidation();
+
+            if(!kctAndClearTamper.getTokenType().equalsIgnoreCase("kct-clear-tamper")) {
+                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+            }
+
+            MeterView meter = vendMapper.getMeterRecord(kctAndClearTamper.getMeterNumber(), kctAndClearTamper.getAccountNumber(), user.getOrgId());
+
+            if(!kctAndClearTamper.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
+                throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
+            }
+
+            if(!kctAndClearTamper.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
+                throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
+            }
+
+            kctAndClearTamper.setToken("0009981278890223211");
+            kctAndClearTamper.setMeterId(meter.getMeterId());
+            kctAndClearTamper.setStatus("Completed");
+            kctAndClearTamper.setOrgId(user.getOrgId());
+            kctAndClearTamper.setCustomerId(meter.getCustomerId());
+            kctAndClearTamper.setUserId(user.getId());
+            kctAndClearTamper.setReceiptNumber(generateReceiptNumber(kctAndClearTamper.getMeterNumber()));
+            kctAndClearTamper.setTariffId(meter.getTariffId());
+
+            int clear = vendMapper.createKctAndClearTamper(kctAndClearTamper);
+            if(clear == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Generate kct and clear tamper token failed");
+            }
+
+            Transaction transaction = vendMapper.getCreditTokenTransaction(kctAndClearTamper.getId());
+
+            // Audit (optional)
+            AuditLog auditLog = buildAuditLog(user, "Kct and clear tamper token generated", "vend", transaction, metadata, kctAndClearTamper.getReason());
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Kct and clear tamper token generated successfully", transaction);
+
+        }catch (Exception ex) {
+            genericHandler.logIncidentReport("Creating kct and clear tamper token service failed");
+            genericHandler.logAndSaveException(ex, "creating kct and clear tamper token");
+            throw ex;
+        }
     }
 
     @Override
     public Map<String, Object> createCompensationToken(KctToken kctToken) {
-        return Map.of();
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel user = handleUserValidation();
+
+            if(!kctToken.getTokenType().equalsIgnoreCase("compensation")) {
+                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+            }
+
+            MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
+
+            kctToken.setToken("0009981278890223211");
+            kctToken.setMeterId(meter.getMeterId());
+            kctToken.setStatus("Completed");
+            kctToken.setOrgId(user.getOrgId());
+            kctToken.setCustomerId(meter.getCustomerId());
+            kctToken.setUserId(user.getId());
+            kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
+            kctToken.setTariffId(meter.getTariffId());
+
+            int clear = vendMapper.createCompensationToken(kctToken);
+            if(clear == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Generate compensation token failed");
+            }
+
+            Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
+
+            // Audit (optional)
+            AuditLog auditLog = buildAuditLog(user, "Compensation token generated", "vend", transaction, metadata, kctToken.getReason());
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Compensation token generated successfully", transaction);
+
+        }catch (Exception ex) {
+            genericHandler.logIncidentReport("Creating compensation token service failed");
+            genericHandler.logAndSaveException(ex, "creating compensation token");
+            throw ex;
+        }
     }
 
     @Override
-    public Map<String, Object> getAllToken() {
-        return Map.of();
+    public Map<String, Object> getAllToken(String meterNumber, String accountNumber,
+                                           String tariffName, String tokenType, String stat,
+                                           int page, int size) {
+        UserModel user = handleUserValidation();
+        UUID uId = user.getOrgId();
+
+        try {
+            int offset = page * size;
+            List<Transaction> allReadings = vendMapper.getAllToken(
+                    uId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size
+            );
+
+            int totalCount = allReadings.size();
+            List<Transaction> paginatedReadings;
+
+
+            if (size == 0) {
+                paginatedReadings = allReadings;
+            } else {
+                int fromIndex = Math.min(page * size, totalCount);
+                int toIndex = Math.min(fromIndex + size, totalCount);
+
+                if (fromIndex > toIndex) {
+                    fromIndex = toIndex;
+                }
+
+                paginatedReadings = allReadings.subList(fromIndex, toIndex);
+            }
+
+            // Build response
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("messages", paginatedReadings);
+            responseData.put("totalCount", totalCount);
+            responseData.put("page", page);
+            responseData.put("size", size);
+            responseData.put("totalPages", size == 0 ? 1 : (int) Math.ceil((double) totalCount / size));
+
+            return ResponseMap.response(status.getSuccessCode(), "Token fetched successfully", responseData);
+
+        } catch (Exception ex) {
+            genericHandler.logIncidentReport("Token fetched service failed");
+            genericHandler.logAndSaveException(ex, "token fetched");
+            throw ex;
+        }
     }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Transaction vend, Map<String, String> metadata, String reason) {

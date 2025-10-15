@@ -6,10 +6,7 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -91,10 +88,17 @@ public class VendingController {
         }
     }
 
-    @PostMapping("/all")
-    ResponseEntity<?> allToken(){
+    @GetMapping("/all")
+    ResponseEntity<?> allToken(@RequestParam(required = false) String meterNumber,
+                               @RequestParam(required = false) String accountNumber,
+                               @RequestParam(required = false) String tariffName,
+                               @RequestParam(required = false) String tokenType,
+                               @RequestParam(required = false) String status,
+                               @RequestParam(value = "page", required = false,defaultValue = "0") int page,
+                               @RequestParam(value = "size",required = false,defaultValue = "0") int size){
         try {
-            Map<String, Object> result = vendingService.getAllToken();
+            Map<String, Object> result = vendingService.getAllToken(meterNumber,accountNumber,tariffName,
+                    tokenType,status,page,size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

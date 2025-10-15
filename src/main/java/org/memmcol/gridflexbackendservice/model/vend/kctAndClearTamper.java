@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,18 +15,31 @@ public class kctAndClearTamper implements Serializable {
     private String oldSgc;
     private String newSgc;
     private String tokenType;
-    private String kct1;
-    private String kct2;
     private String token;
-    private Date createdAt;
-    private Date updatedAt;
 
-    private String customerName;
+    private String status;
+    private UUID meterId;
+    private UUID orgId;
+    private UUID userId;
+    private String customerId;
+    private UUID tariffId;
     private String address;
     private String accountNumber;
     private String meterNumber;
     private String user;
     private String receiptNumber;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date updatedAt;
+
+    public kctAndClearTamper() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+    }
+
 
     public UUID getId() {
         return id;
@@ -67,22 +81,6 @@ public class kctAndClearTamper implements Serializable {
         this.tokenType = tokenType;
     }
 
-    public String getKct1() {
-        return kct1;
-    }
-
-    public void setKct1(String kct1) {
-        this.kct1 = kct1;
-    }
-
-    public String getKct2() {
-        return kct2;
-    }
-
-    public void setKct2(String kct2) {
-        this.kct2 = kct2;
-    }
-
     public String getToken() {
         return token;
     }
@@ -105,14 +103,6 @@ public class kctAndClearTamper implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
     }
 
     public String getAddress() {
@@ -153,5 +143,53 @@ public class kctAndClearTamper implements Serializable {
 
     public void setReceiptNumber(String receiptNumber) {
         this.receiptNumber = receiptNumber;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public UUID getMeterId() {
+        return meterId;
+    }
+
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
+    }
+
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public UUID getTariffId() {
+        return tariffId;
+    }
+
+    public void setTariffId(UUID tariffId) {
+        this.tariffId = tariffId;
     }
 }
