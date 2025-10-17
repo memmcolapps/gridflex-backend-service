@@ -89,7 +89,7 @@ public class NodeServiceImpl implements NodeService {
                     request.getType().equalsIgnoreCase("business hub") ||
                     request.getType().equalsIgnoreCase("service center")){
                 nodeMapper.createRegionBhubServiceCenter(request);
-                id = request.getId();
+                id = request.getNodeId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
                 desc = regionBhubServiceCenter.getName() + "newly created";
             } else {
@@ -142,7 +142,7 @@ public class NodeServiceImpl implements NodeService {
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.createSubStationTransformerFeederLine(request);
-                id = request.getId();
+                id = request.getNodeId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
                 desc = subStationTransformerFeederLine.getName() + "newly created";
             } else {
@@ -197,8 +197,7 @@ public class NodeServiceImpl implements NodeService {
                     request.getType().equalsIgnoreCase("business hub") ||
                     request.getType().equalsIgnoreCase("service center")) {
                 nodeMapper.updateRegionBhubServiceCenter(request);
-                id = request.getId();
-                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
+                regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(request.getNodeId());
                 desc = regionBhubServiceCenter.getName()  + "edited";
             }  else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
@@ -208,13 +207,6 @@ public class NodeServiceImpl implements NodeService {
 
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "Region" : request.getType().equals("service center") ? "Service center" : "Business hub", regionBhubServiceCenter, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType(request.getType().equals("region") ? "Region" : request.getType().equals("service center") ? "Service center" : "Business hub");
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setRegionBhubServiceCenter(regionBhubServiceCenter);
-//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getUpdateDesc(), "");
 
@@ -258,8 +250,8 @@ public class NodeServiceImpl implements NodeService {
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.updateSubStationTransformerFeederLine(request);
-                id = request.getId();
-                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
+
+                subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(request.getNodeId());
                 desc = subStationTransformerFeederLine.getName()  + "edited";
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
@@ -270,7 +262,7 @@ public class NodeServiceImpl implements NodeService {
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equalsIgnoreCase("transformer") ? "Transformer" : request.getType().equalsIgnoreCase("feeder line") ? "Feeder line" : "Substation", subStationTransformerFeederLine, metadata);
             auditRepository.save(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getUpdateDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName()+"' "+ status.getUpdateDesc(), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
