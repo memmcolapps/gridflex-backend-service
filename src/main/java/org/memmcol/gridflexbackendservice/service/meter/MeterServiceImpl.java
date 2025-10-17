@@ -3,6 +3,11 @@ package org.memmcol.gridflexbackendservice.service.meter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
@@ -25,11 +30,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -491,7 +502,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getUpdateDesc());
             }
 
-            int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), "Pending");
+            int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), "Pending-deactivated");
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter" + (state ? " activated " : " deactivated ")+ "failed");
             Meter meter = meterMapper.getMeter(um.getOrgId(), meterById.getMeterId(), null, null, null);
             um.setPassword("");
@@ -644,10 +655,10 @@ public class MeterServiceImpl implements MeterService {
 //                request.setMeterModel(mainMeter.getMeterModel());
             }
 
-            MeterView m = meterMapper.getMeterRecord(request.getMeterNumber(), user.getOrgId());
-            if(m != null ) {
-                return ResponseMap.response("001", "Existing meter attached to the cin provided fetch successfully", m);
-            }
+//            MeterView m = meterMapper.getMeterRecord(request.getMeterNumber(), user.getOrgId());
+//            if(m != null ) {
+//                return ResponseMap.response("001", "Existing meter attached to the cin provided fetch successfully", m);
+//            }
 
             request.setNodeId(feederLine.getNodeId());
             request.setDss(dss.getNodeId());
@@ -801,6 +812,7 @@ public class MeterServiceImpl implements MeterService {
         }
 
     }
+
 
 //    private void handleContinueMeterAssign(MeterView request){
 //        // Assign meter to customer
@@ -1537,6 +1549,362 @@ public class MeterServiceImpl implements MeterService {
             throw exception;
         }
     }
+
+//    @Override
+//    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+//        try{
+//            List<Meter> meters;
+//            UserModel user = handleUserValidation();
+//            String filename = file.getOriginalFilename();
+//            if (filename == null) {
+//                throw new IOException("File has no name");
+//            }
+//            if (filename.endsWith(".csv")) {
+//                meters = processCsv(file.getInputStream(), user);
+//            } else if (filename.endsWith(".xlsx")) {
+//                meters =  processExcel(file.getInputStream(), user);
+//            } else {
+//                throw new IOException("Unsupported file format");
+//            }
+//
+//            Map<String, Object> result = meterMapper.bulkInsertMeters(meters);
+//            return ResponseMap.response(status.getSuccessCode(), "Meter bulk upload successfully", result);
+////            return ResponseEntity.ok(result);
+//
+//        } catch (Exception exception) {
+//            throw new IOException(exception);
+//        }
+//    }
+
+    @Override
+    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+        try {
+            UserModel user = handleUserValidation();
+
+            // Determine file type
+            String filename = Optional.ofNullable(file.getOriginalFilename())
+                    .orElseThrow(() -> new IOException("File has no name"));
+
+            List<Meter> meters;
+            if (filename.endsWith(".csv")) {
+                meters = processCsv(file.getInputStream(), user);
+            } else if (filename.endsWith(".xlsx")) {
+                meters = processExcel(file.getInputStream(), user);
+            } else {
+                throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+            }
+
+            Map<String, Object> result = bulkInsertMeters(meters, user);
+            return ResponseMap.response(status.getSuccessCode(), "Meter bulk upload completed", result);
+
+        } catch (Exception e) {
+            log.error("Error in bulk upload: {}", e.getMessage(), e);
+            throw new IOException("Bulk upload failed: " + e.getMessage(), e);
+        }
+    }
+
+
+    // Parse CSV file into a list of Meter objects
+    public static List<Meter> processCsv(InputStream inputStream, UserModel user) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                Meter meter = new Meter();
+                meter.setMeterNumber(record.get("meterNumber"));
+                meter.setAccountNumber(record.get("accountNumber"));
+                meter.setSimNumber(record.get("simNumber"));
+                meter.setMeterCategory(record.get("meterCategory"));
+                meter.setMeterClass(record.get("meterClass"));
+                meter.setMeterType(record.get("meterType"));
+                meter.setSmartStatus(Boolean.parseBoolean(record.get("smartStatus")));
+                meter.setOldSgc(record.get("oldSgc"));
+                meter.setNewSgc(record.get("newSgc"));
+                meter.setOldKrn(record.get("oldKrn"));
+                meter.setNewKrn(record.get("newKrn"));
+                meter.setOldTariffIndex(Long.parseLong(record.get("oldTariffIndex")));
+                meter.setNewTariffIndex(Long.parseLong(record.get("newTariffIndex")));
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+    // Parse Excel (.xlsx) file into a list of Meter objects
+    public static List<Meter> processExcel(InputStream inputStream,  UserModel user) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+            rows.next(); // skip header
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                Meter meter = new Meter();
+
+                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
+                meter.setAccountNumber(getStringCellValue(row.getCell(1)));
+                meter.setSimNumber(getStringCellValue(row.getCell(2)));
+                meter.setMeterCategory(getStringCellValue(row.getCell(3)));
+                meter.setMeterClass(getStringCellValue(row.getCell(4)));
+                meter.setMeterType(getStringCellValue(row.getCell(5)));
+                meter.setSmartStatus(Boolean.parseBoolean(getStringCellValue(row.getCell(6))));
+                meter.setOldSgc(getStringCellValue(row.getCell(7)));
+                meter.setNewSgc(getStringCellValue(row.getCell(8)));
+                meter.setOldKrn(getStringCellValue(row.getCell(9)));
+                meter.setNewKrn(getStringCellValue(row.getCell(10)));
+                meter.setOldTariffIndex(Long.parseLong(getStringCellValue(row.getCell(11))));
+                meter.setNewTariffIndex(Long.parseLong(getStringCellValue(row.getCell(12))));
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+
+    private static String getStringCellValue(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
+    }
+
+
+    public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+        int batchSize = 200;
+
+        for (int i = 0; i < meters.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, meters.size());
+            List<Meter> batch = meters.subList(i, end);
+
+            try {
+                insertBatchTransactional(batch, user);
+                successCount += batch.size();
+            } catch (Exception batchEx) {
+                log.error("Batch {} failed: {}", (i / batchSize) + 1, batchEx.getMessage());
+
+                // Try inserting one by one for this failed batch
+                for (Meter meter : batch) {
+                    try {
+                        insertBatchTransactional(Collections.singletonList(meter), user);
+                        successCount++;
+                    } catch (Exception recordEx) {
+                        log.error("Meter {} failed: {}", meter.getMeterNumber(), recordEx.getMessage());
+                        failedRecords.add("Meter " + meter.getMeterNumber() + " failed: " + recordEx.getMessage());
+                    }
+                }
+            }
+        }
+
+        result.put("totalRecords", meters.size());
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+        result.put("status", "completed");
+        return result;
+    }
+
+
+    @Transactional
+    public void insertBatchTransactional(List<Meter> batch, UserModel user) {
+        for (Meter meter : batch) {
+            meter.setId(UUID.randomUUID());
+            meter.setOrgId(user.getOrgId());
+            meter.setCreatedBy(user.getId());
+            meter.setStatus("Active");
+            meter.setMeterStage("Pending-created");
+            meter.setType("NON-VIRTUAL");
+            meter.setDescription("Newly Added");
+        }
+
+        meterMapper.insertMeters(batch);
+        meterMapper.insertMeterVersions(batch);
+    }
+
+
+//    public Map<String, Object> processCsv(InputStream is, UserModel user) throws IOException {
+//        DataAuditDTO auditNotificationDTO = new DataAuditDTO();
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        String ipAddress = getClientIp(httpServletRequest);
+//        String userAgent = httpServletRequest.getHeader("User-Agent");
+//        List<Sbc> allParsedSbcs = new ArrayList<>();
+//        Set<String> parsedSbcIdSet = new HashSet<>();
+//        List<Sbc> toInsert = new ArrayList<>();
+//        List<String> skippedDueToDuplicate = new ArrayList<>();
+//
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+//        String line;
+//        boolean isFirst = true;
+//
+//        while ((line = reader.readLine()) != null) {
+//            if (isFirst) { isFirst = false; continue; } // Skip header
+//
+//            String[] data = line.split(",");
+//
+//            if (data.length < 7) continue;
+//
+//            try {
+//                Sbc sbc = new Sbc();
+//                sbc.setSbcId(data[0]);
+//                sbc.setName(data[1]);
+//                sbc.setBreakerCount(Long.parseLong(data[2]));
+//                sbc.setState(data[3]);
+//                sbc.setStreetName(data[4]);
+//                sbc.setCity(data[5]);
+//                sbc.setAssetId(data[6]);
+//                sbc.setOrgId(user.getOrgId());
+//
+//                if (parsedSbcIdSet.contains(sbc.getSbcId())) {
+//                    skippedDueToDuplicate.add(sbc.getSbcId()); // Duplicate in file
+//                } else {
+//                    allParsedSbcs.add(sbc);
+//                    parsedSbcIdSet.add(sbc.getSbcId());
+//                }
+//
+//            } catch (Exception exception) {
+//                log.error("Error occurred while assigning SBCs: {}", exception.getMessage(), exception);
+//                exceptionErrorLogs.setDescription("Error occurred while assigning SBCs");
+//                exceptionErrorLogs.setError_message(exception.getMessage());
+//                exceptionErrorLogs.setError(exception.toString());
+//                exceptionAuditRepository.save(exceptionErrorLogs);
+//                throw exception;
+//            }
+//        }
+//
+//        try {
+//            // Fetch sbcIds already in DB
+//            List<String> existingSbcIds = sbcMapper.findExistingSbcIds(new ArrayList<>(parsedSbcIdSet));
+//            Set<String> existingSbcIdSet = new HashSet<>(existingSbcIds);
+//
+//            for (Sbc sbc : allParsedSbcs) {
+//                if (existingSbcIdSet.contains(sbc.getSbcId())) {
+//                    skippedDueToDuplicate.add(sbc.getSbcId() + "->" + " (already exist)"); // Already in DB
+//                } else {
+//                    toInsert.add(sbc); // New
+//                }
+//            }
+//
+//            if (!toInsert.isEmpty()) {
+//                sbcMapper.insertBatch(toInsert);
+//            }
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while assigning SBCs: {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while assigning SBCs");
+//            exceptionErrorLogs.setError_message(exception.getMessage());
+//            exceptionErrorLogs.setError(exception.toString());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//
+//        String message = "SBC bulk upload completed. " + "Uploaded: " + toInsert.size() + ", Failed: " + skippedDueToDuplicate.size();
+//
+//        auditNotificationDTO.setCreator(user);
+//        auditNotificationDTO.setDescription(message);
+//        auditNotificationDTO.setType(breaker);
+//        auditNotificationDTO.setIpAddress(ipAddress);
+//        auditNotificationDTO.setUserAgent(userAgent);
+//        auditRepository.save(auditNotificationDTO);
+//
+//        return ResponseMap.response(status.getSuccessCode(), message, Map.of(
+//                "successCount", toInsert.size(),
+//                "failedCount", skippedDueToDuplicate.size(),
+//                "failures", skippedDueToDuplicate
+//        ));
+//    }
+//
+//    public Map<String, Object> processExcel(InputStream is, UserModel user) throws IOException {
+//        DataAuditDTO auditNotificationDTO = new DataAuditDTO();
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        String ipAddress = getClientIp(httpServletRequest);
+//        String userAgent = httpServletRequest.getHeader("User-Agent");
+//        List<Sbc> allParsedSbcs = new ArrayList<>();
+//        Set<String> parsedSbcIdSet = new HashSet<>();
+//        List<Sbc> toInsert = new ArrayList<>();
+//        List<String> skippedDueToDuplicate = new ArrayList<>();
+//
+//        Workbook workbook = new XSSFWorkbook(is);
+//        Sheet sheet = workbook.getSheetAt(0);
+//
+//        for (Row row : sheet) {
+//            if (row.getRowNum() == 0) continue;
+//            try {
+//                Sbc sbc = new Sbc();
+//                sbc.setSbcId(getCellString(row.getCell(0)));
+//                sbc.setName(getCellString(row.getCell(1)));
+//                sbc.setBreakerCount(getCellLong(row.getCell(2)));
+//                sbc.setState(getCellString(row.getCell(3)));
+//                sbc.setStreetName(getCellString(row.getCell(4)));
+//                sbc.setCity(getCellString(row.getCell(5)));
+//                sbc.setAssetId(getCellString(row.getCell(6)));
+//                sbc.setOrgId(user.getOrgId());
+//                if (parsedSbcIdSet.contains(sbc.getSbcId())) {
+//                    skippedDueToDuplicate.add(sbc.getSbcId()); // Duplicate in file
+//                } else {
+//                    allParsedSbcs.add(sbc);
+//                    parsedSbcIdSet.add(sbc.getSbcId());
+//                }
+//            } catch (Exception exception) {
+//                log.error("Error occurred while uploading SBCs: {}", exception.getMessage(), exception);
+//                exceptionErrorLogs.setDescription("Error occurred while assigning SBCs");
+//                exceptionErrorLogs.setError_message(exception.getMessage());
+//                exceptionErrorLogs.setError(exception.toString());
+//                exceptionAuditRepository.save(exceptionErrorLogs);
+//                throw exception;
+//            }
+//
+//        }
+//
+//        workbook.close();
+//        try {
+//            // Fetch sbcIds already in DB
+//            List<String> existingSbcIds = sbcMapper.findExistingSbcIds(new ArrayList<>(parsedSbcIdSet));
+//            Set<String> existingSbcIdSet = new HashSet<>(existingSbcIds);
+//
+//            for (Sbc sbc : allParsedSbcs) {
+//                if (existingSbcIdSet.contains(sbc.getSbcId())) {
+//                    skippedDueToDuplicate.add(sbc.getSbcId() + "->" + " (already exist)"); // Already in DB
+//                } else {
+//                    toInsert.add(sbc); // New
+//                }
+//            }
+//
+//            if (!toInsert.isEmpty()) {
+//                sbcMapper.insertBatch(toInsert);
+//            }
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while uploading SBCs: {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while assigning SBCs");
+//            exceptionErrorLogs.setError_message(exception.getMessage());
+//            exceptionErrorLogs.setError(exception.toString());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//
+//        String message = "SBC bulk upload completed. Uploaded: " + toInsert.size() + ", Failed: " + skippedDueToDuplicate.size();
+//
+//        auditNotificationDTO.setCreator(user);
+//        auditNotificationDTO.setDescription(message);
+//        auditNotificationDTO.setType(breaker);
+//        auditNotificationDTO.setIpAddress(ipAddress);
+//        auditNotificationDTO.setUserAgent(userAgent);
+//        auditRepository.save(auditNotificationDTO);
+//
+//        return ResponseMap.response(status.getSuccessCode(), message, Map.of(
+//                "successCount", toInsert.size(),
+//                "failedCount", skippedDueToDuplicate.size(),
+//                "failures", skippedDueToDuplicate
+//        ));
+//    }
+
+
+
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Meter createdEntity, Map<String, String> metadata, String reason) {
         AuditLog log = new AuditLog();
