@@ -6,7 +6,9 @@ import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,4 +45,6 @@ public interface MeterService {
     Map<String, Object> detachMeter(UUID meterNumber, String reason);
 
     Map<String, Object> continueAssignMeter(MeterView meterView);
+
+    Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
 }

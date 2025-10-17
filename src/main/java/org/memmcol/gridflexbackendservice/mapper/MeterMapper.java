@@ -145,10 +145,13 @@ public interface MeterMapper {
     })
     Meter findById(UUID meterId, UUID orgId);
 
-    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
-            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
+//    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+//            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+//            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
+//            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
+@Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+        "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+        "OR status IN ('Pending-deactivated' OR status = 'Pending-activated')) ")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -294,14 +297,12 @@ public interface MeterMapper {
     int removePaymentMode(UUID meterId);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
     int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
     int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update({
@@ -322,20 +323,17 @@ public interface MeterMapper {
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
     @Update("UPDATE meter_assign_locations_version SET meter_stage = 'Aprroved', approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
     int approveMeterAssignLocationVersion(MeterAssignLocation meterAssignLocation);
 
     @Update("UPDATE payment_mode_version SET status = #{status}, meter_stage = 'Approved', approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE org_id = #{orgId} AND meter_id = #{meterId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
     int approvePrepaidMeterVersion(PaymentMode paymentMode);
 
     @Update("UPDATE payment_mode SET status = #{status}, credit_payment_mode = #{creditPaymentMode}, credit_payment_plan = #{creditPaymentPlan}, " +
@@ -393,10 +391,8 @@ public interface MeterMapper {
 
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-            "WHERE (m.meter_stage = 'Pending-created' OR m.meter_stage = 'Pending-edited' OR m.meter_stage = 'Pending-allocated' " +
-            "OR m.meter_stage = 'Pending-assigned' OR m.meter_stage = 'Pending-detached' OR m.meter_stage = 'Pending-migrated') " +
-            "AND m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber}) OR m.status = 'Pending-deactivated' " +
-            "OR m.status = 'Pending-activated'")
+            "WHERE m.meter_stage IN ('Pending-created', 'Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+            "AND m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber}) AND m.status IN ('Pending-deactivated', 'Pending-activated')")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -666,7 +662,8 @@ public interface MeterMapper {
     List<Meter> getMeters(UUID orgId);
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND " +
-            "m.meter_stage IN('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Pending-deactivated' ) " +
+            "(m.meter_stage IN('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+            "OR m.status IN ('Pending-deactivated', 'Pending-activated')) " +
             "ORDER BY m.created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
@@ -1105,4 +1102,53 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
     })
     MeterView getMeterRecord(String meterNumber, UUID orgId);
+
+
+    @Insert({
+            "<script>",
+            "INSERT INTO meters (",
+            "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
+            "meter_type, status, type, old_sgc, new_sgc, old_krn, new_krn, ",
+            "old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage",
+            ") VALUES ",
+            "<foreach collection='meters' item='m' separator=','>",
+            "(",
+            "#{m.orgId}, #{m.meterNumber}, #{m.simNumber}, #{m.meterCategory}, #{m.meterClass}, ",
+            "#{m.meterManufacturer}, #{m.meterType}, #{m.status}, #{m.type}, ",
+            "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, ",
+            "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
+            "#{m.smartStatus}, #{m.meterStage}",
+            ")",
+            "</foreach>",
+            "</script>"
+    })
+    void insertMeters(@Param("meters") List<Meter> meters);
+
+    @Insert({
+            "<script>",
+            "INSERT INTO meters_version (",
+            "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
+            "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, ",
+            "old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, ",
+            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, tariff",
+            ") VALUES ",
+            "<foreach collection='meters' item='m' separator=','>",
+            "(",
+            "#{m.orgId}, #{m.meterNumber}, #{m.simNumber}, #{m.meterCategory}, #{m.meterClass}, ",
+            "#{m.meterManufacturer}, #{m.meterType}, #{m.meterStage}, #{m.status}, #{m.type}, ",
+            "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, ",
+            "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
+            "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
+            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.tariff}",
+            ")",
+            "</foreach>",
+            "</script>"
+    })
+    void insertMeterVersions(@Param("meters") List<Meter> meters);
+
+
+
+//
+
+
 }
