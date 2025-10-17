@@ -145,14 +145,15 @@ public interface MeterMapper {
     })
     Meter findById(UUID meterId, UUID orgId);
 
-//    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-//        "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
-//        "OR status IN ('Pending-deactivated' OR status = 'Pending-activated')) ")
 
+
+//    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
+//            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
+//            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
+//            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
     @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
-            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
+        "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+        "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
