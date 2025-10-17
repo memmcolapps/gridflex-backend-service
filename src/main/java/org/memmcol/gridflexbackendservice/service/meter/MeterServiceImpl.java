@@ -690,8 +690,8 @@ public class MeterServiceImpl implements MeterService {
         request.setStatus("Active");
         int customerAssignResult;
         int customerAssignResult1;
-        if(request.getMeterCategory().equalsIgnoreCase("Non-MD")
-                || request.getMeterCategory().equalsIgnoreCase("MD")){
+        if(request.getMeterClass().equalsIgnoreCase("Non-MD")
+                || request.getMeterClass().equalsIgnoreCase("MD")){
             request.setType("VIRTUAL");
             request.setMeterCategory("Postpaid");
             request.setSmartStatus(false);
