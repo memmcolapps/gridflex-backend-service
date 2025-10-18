@@ -26,10 +26,10 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, meter_id, smart_status," +
-            "account_number, node_id, customer_id, cin, dss, tariff) " +
+            "account_number, node_id, customer_id, cin, dss, tariff, reason) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{meterStage}, #{status}, #{type}, " +
             "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{meterId}, " +
-            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{tariff})")
+            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{tariff}, #{reason})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
 
@@ -233,18 +233,38 @@ public interface MeterMapper {
     })
     Meter findByMeterNumber(String meterNumber, UUID orgId);
 
+//    @Update({
+//            "<script>",
+//            "UPDATE meters",
+//            "SET "+
+//                    " <if test='status != null'> status = #{status},</if>"+
+//                    " <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
+//                    " <if test='nodeId != null'>node_id = #{nodeId},</if>" +
+//                    "  updated_at = #{updatedAt}"+
+//                    " WHERE meter_number = #{meterNumber} AND org_id = #{orgId} "+
+//                    "</script>"
+//    })
+//    int approveMeter(Meter request);
     @Update({
             "<script>",
             "UPDATE meters",
-            "SET "+
-                    " <if test='status != null'> status = #{status},</if>"+
-                    " <if test='meterStage != null'>meter_stage = #{meterStage},</if>" +
-                    " <if test='nodeId != null'>node_id = #{nodeId},</if>" +
-                    "  updated_at = #{updatedAt}"+
-                    " WHERE meter_number = #{meterNumber} AND org_id = #{orgId} "+
-                    "</script>"
+            "<set>",
+            " <if test='status != null'> status = #{status}, </if>",
+            " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
+            " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
+            " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
+            " updated_at = #{updatedAt}",
+            "</set>",
+            "WHERE id = #{meterId} AND org_id = #{orgId}",
+            "</script>"
     })
     int approveMeter(Meter request);
+
+//    @Update("UPDATE meters SET status = #{status}, meter_stage = #{meterStage}, updated_at = #{updatedAt} " +
+//            "WHERE meter_number = #{meterNumber} AND org_id = #{orgId} ")
+//    int approveMeter(Meter request);
+
+
 
     @Update({
             "<script>",

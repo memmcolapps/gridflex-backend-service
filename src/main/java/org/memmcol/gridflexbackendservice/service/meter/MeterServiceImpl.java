@@ -492,10 +492,10 @@ public class MeterServiceImpl implements MeterService {
             meterById.setStatus("Pending-"+(state ? "activated" : "deactivated"));
             meterById.setCreatedBy(um.getId());
             meterById.setMeterId(meterById.getId());
+            meterById.setReason(reason);
 
             String changeDescription = buildChangeStatusDescription(meterById, state);
             meterById.setDescription(state ? "Meter Activated" : "Meter Deactivated");
-
 
             result = meterMapper.insertMeterVersion(meterById);
             if(result == 0){
@@ -885,6 +885,10 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meters migration failed because meter is either unassigned, deactivated and virtual");
             }
 
+//            if(request.getMigrationFrom().equalsIgnoreCase("postpaid") && meterById.getMeterCategory().equalsIgnoreCase("prepaid")){
+//                throw new GlobalExceptionHandler.NotFoundException("Meter is a prepaid meter");
+//            }
+
             // prevent MD meter from migrating
             if(meterById.getMeterClass().equalsIgnoreCase("MD")){
                 throw new GlobalExceptionHandler.NotFoundException("MD meter can not be migrated" );
@@ -900,6 +904,7 @@ public class MeterServiceImpl implements MeterService {
             request.setDescription(description);
             request.setMeterStage(meterStage);
 
+
             //migrate to prepaid
             if(request.getMigrationFrom().equalsIgnoreCase("postpaid") && meterById.getMeterCategory().equalsIgnoreCase("postpaid")){
                 desc = "Meter migration from postpaid to prepaid";
@@ -910,17 +915,13 @@ public class MeterServiceImpl implements MeterService {
 
                 int m = meterMapper.insertMeterVersion(meterById);
                 if(m == 0) throw new GlobalExceptionHandler.NotFoundException(meterName+ " Migration " +status.getRegFailureDesc());
-
                 request.setStatus(true);
 
                 // insert payment method
                 int migrate = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request);
                 if(migrate == 0) throw new GlobalExceptionHandler.NotFoundException(meterName+ " migration failed");
 
-            }
-
-            // migrate to postpaid
-            if(request.getMigrationFrom().equalsIgnoreCase("prepaid") && meterById.getMeterCategory().equalsIgnoreCase("prepaid")){
+            } else if(request.getMigrationFrom().equalsIgnoreCase("prepaid") && meterById.getMeterCategory().equalsIgnoreCase("prepaid")){
                 desc = "Meter migration from prepaid to postpaid";
 
                 request.setCreditPaymentMode(meterById.getPaymentMode().getCreditPaymentMode());
@@ -940,6 +941,8 @@ public class MeterServiceImpl implements MeterService {
                 // insert payment method
                 int migrate = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request);
                 if(migrate == 0) throw new GlobalExceptionHandler.NotFoundException(meterName+ " migration failed");
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Migration not allowed because meter is already "+meterById.getMeterCategory());
             }
 
             // get recent meter record

@@ -49,6 +49,7 @@ public class Meter implements Serializable {
     private UUID createdBy;
     private UUID approveBy;
     private String description;
+    private String reason;
     private Customer customer;
     private MeterAssignLocation meterAssignLocation;
     private MDMeterInfo mdMeterInfo;
@@ -349,6 +350,14 @@ public class Meter implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public Date getCreatedAt() {
