@@ -15,8 +15,8 @@ import java.util.UUID;
 public interface UserMapper {
 
     @Insert("""
-        INSERT INTO users (firstname, lastname, email, node_id, status, active, last_active, password, org_id, created_at, updated_at) 
-    VALUES (#{firstname}, #{lastname}, #{email}, #{nodeId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt})
+        INSERT INTO users (firstname, lastname, email, node_id, status, active, last_active, password, org_id, created_at, updated_at, unit) 
+    VALUES (#{firstname}, #{lastname}, #{email}, #{nodeId}, true, false, #{lastActive}, #{password}, #{orgId}, #{createdAt}, #{updatedAt}, #{unit})
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertUser(UserModel operator);
@@ -32,12 +32,27 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateUser(UserModel operator);
 
+    @Update("""
+        UPDATE users 
+        SET firstname = #{firstname}, 
+            lastname = #{lastname},
+            unit = #{unit}, 
+            updated_at = #{updatedAt} WHERE id = #{id} AND org_id = #{orgId}
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void updateUserGroup(UserModel operator);
+
 
     @Insert("""
                 INSERT INTO user_groups (user_id, group_id, org_id)
                 VALUES (#{userId}, #{groupId}, #{orgId})
             """)
     void assignUserToGroup(@Param("userId") UUID userId, @Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
+
+//    @Insert("""
+//                UPDATE user_groups FROM group_id = #{groupId} WHERE user_id = #{userId} AND org_id = #{orgId}
+//            """)
+//    void assignUpdateUserToGroup(@Param("userId") UUID userId, @Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
     @Update("""
         UPDATE user_groups SET group_id = #{groupId} WHERE user_id = #{userId} AND org_id = #{orgId}

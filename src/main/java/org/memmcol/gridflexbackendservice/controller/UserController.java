@@ -33,8 +33,18 @@ public class UserController {
         }
     }
 
+    @PutMapping("/group/update")
+    public ResponseEntity<?> updateGroupUser(@RequestBody CreateUserRequest request) {
+        try {
+            Map<String, Object> result = service.updateUserGroup(request);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @PutMapping("/update")
-    public ResponseEntity<?> updateUser(@RequestBody UserModel user) {
+    public ResponseEntity<?> updateUserProfile(@RequestBody UserModel user) {
         try {
             Map<String, Object> result = service.updateUser(user);
             return ResponseEntity.ok(result);

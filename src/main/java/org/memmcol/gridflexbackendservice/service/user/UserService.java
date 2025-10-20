@@ -26,4 +26,6 @@ public interface UserService {
     Map<String, Object> changeGroupPermissionStatus(UUID groupId, Boolean status);
 
     Map<String, Object> updateGroupPermission(CreateGroupRequest createGroupRequest);
+
+    Map<String, Object> updateUserGroup(CreateUserRequest request);
 }

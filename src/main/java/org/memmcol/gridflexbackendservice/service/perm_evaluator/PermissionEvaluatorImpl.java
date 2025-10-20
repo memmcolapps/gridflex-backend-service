@@ -19,7 +19,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             "full access", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
                     "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve","/user/service/single", "/user/service/update/group-permission",
-                    "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/group/change-state",
+                    "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/group/change-state", "/user/service/group/update",
                     "/user/service/groups",  "/user/service/create/group-permission", "/customer/service/create", "/customer/service/update", "/customer/service/download/template/csv",
                     "/customer/service/change-state", "/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload", "/customer/service/download/template/excel",
                     "/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center", "/node/service/businessHub",
@@ -80,7 +80,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get"),
 
             "users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
-                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log",
+                    "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log", "/user/service/group/update",
                     "/user/service/group/change-state", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")
     );
 

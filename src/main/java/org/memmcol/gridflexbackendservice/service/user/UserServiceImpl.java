@@ -91,7 +91,7 @@ public class UserServiceImpl implements  UserService {
             if (isGroupId == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
-            if (isGroupId.getStatus()) {
+            if (!isGroupId.getStatus()) {
                 throw new GlobalExceptionHandler.NotFoundException("Group deactivated and cannot be assigned");
             }
 
@@ -112,6 +112,51 @@ public class UserServiceImpl implements  UserService {
 
             genericHandler.logIncidentReport("Creating user service failed");
             genericHandler.logAndSaveException(exception, "creating user");
+            throw exception;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> updateUserGroup(CreateUserRequest request) {
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel um = handleUserValidation();
+
+            UserModel operator = request.getUser();
+//            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
+
+            // check if operator exist
+            if (userMapper.findById(operator.getId(), um.getOrgId()) == null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getNotFoundDesc());
+            }
+
+            // check if groupId exist
+            Group isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
+            if (isGroupId == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
+            }
+            if (!isGroupId.getStatus()) {
+                throw new GlobalExceptionHandler.NotFoundException("Group deactivated and cannot be assigned");
+            }
+
+            operator.setOrgId(um.getOrgId());
+            userMapper.updateUserGroup(operator);
+            UUID userId = operator.getId();
+            userMapper.updateUserToGroup(userId, request.getGroupId(), um.getOrgId());
+
+            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+            user.setPassword("");
+//            handleAddCache(user);
+
+            AuditLog auditLog = buildAuditLog(um, "User edited", userName, user, metadata);
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
+        } catch (Exception exception) {
+
+            genericHandler.logIncidentReport("Editing user service failed");
+            genericHandler.logAndSaveException(exception, "editing user");
             throw exception;
         }
     }
