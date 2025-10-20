@@ -293,7 +293,7 @@ public class MeterController {
     @GetMapping("/download/template/excel")
     public void downloadExcelTemplate(HttpServletResponse response) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            XSSFSheet sheet = workbook.createSheet("Customer Template");
+            XSSFSheet sheet = workbook.createSheet("Meter Bulk Upload Template");
 
             // Create header row
             Row headerRow = sheet.createRow(0);
