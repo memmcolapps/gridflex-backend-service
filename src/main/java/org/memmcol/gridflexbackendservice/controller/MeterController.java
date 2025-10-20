@@ -284,7 +284,7 @@ public class MeterController {
         ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=customer_upload_template.csv")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meter_upload_template.csv")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .contentLength(resource.contentLength())
                 .body(resource);
@@ -321,7 +321,7 @@ public class MeterController {
 
             // Set response headers
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=customer_upload_template.xlsx");
+            response.setHeader("Content-Disposition", "attachment; filename=meter_upload_template.xlsx");
 
             workbook.write(response.getOutputStream());
         }
