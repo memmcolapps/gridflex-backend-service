@@ -37,7 +37,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/reading/service/generate", "/meter/reading/service/update",
                     "/meter/reading/service/all", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct",
                     "/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
-                    "/vending/service/generate/token/compensation", "/vending/service/generate/token/all"),
+                    "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
@@ -50,7 +50,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign",
                     "/meter/reading/service/download/template/csv", "/meter/reading/service/download/template/excel","/meter/reading/service/bulk-upload",
                     "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach", "/meter/reading/service/create",
-                    "/meter/reading/service/generate","/meter/reading/service/update","/meter/reading/service/all"),
+                    "/meter/reading/service/generate","/meter/reading/service/update","/meter/reading/service/all", "/dashboard/service/data-management"),
 
             "customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
                     "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
