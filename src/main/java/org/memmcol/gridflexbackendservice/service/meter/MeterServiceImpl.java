@@ -1051,7 +1051,7 @@ public class MeterServiceImpl implements MeterService {
             meterById.setAccountNumber(null);
             meterById.setTariff(null);
             meterById.setCin(null);
-            meterById.setStatus("Inactive");
+            meterById.setStatus("Active");
             meterById.setReason(reason);
             int m = meterMapper.insertMeterVersion(meterById);
             if(m == 0) {
@@ -1466,8 +1466,15 @@ public class MeterServiceImpl implements MeterService {
             meter.setMeterStage("Assigned");
             meter.setStatus("Active");
             handleMeterInfoRejection(meter, user);
-        } else {
-//            meter.setMeterStage("Active");
+        }  else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-detached")
+                || meter.getMeterStage().trim().equalsIgnoreCase("Pending-migrated"))
+                && meter.getCustomerId() != null && meter.getNodeId() != null) {
+            meter.setMeterStage("Assigned");
+            meter.setStatus("Active");
+        }
+        else {
+            System.out.println(">>>meterStage: "+meter.getMeterStage());
+            System.out.println(">>>status: "+meter.getStatus());
             meter.setStatus(s);
             int u = meterMapper.updateMeter(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " update failed");

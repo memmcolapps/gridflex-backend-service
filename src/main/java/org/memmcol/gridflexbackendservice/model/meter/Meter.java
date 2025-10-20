@@ -58,6 +58,7 @@ public class Meter implements Serializable {
     private SmartMeterInfo smartMeterInfo;
     private Meter oldMeterInfo;
     private RegionBhubServiceCenter nodeInfo;
+    private Tariff tariffInfo;
 //    private Tariff tariffInfo;
 //    private DebitCreditAdjust debitCreditAdjust;
 
@@ -398,5 +399,13 @@ public class Meter implements Serializable {
 
     public void setNodeInfo(RegionBhubServiceCenter nodeInfo) {
         this.nodeInfo = nodeInfo;
+    }
+
+    public Tariff getTariffInfo() {
+        return tariffInfo;
+    }
+
+    public void setTariffInfo(Tariff tariffInfo) {
+        this.tariffInfo = tariffInfo;
     }
 }

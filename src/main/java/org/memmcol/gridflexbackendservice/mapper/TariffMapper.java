@@ -40,6 +40,7 @@ public interface TariffMapper {
     })
     Tariff getApproveTariff(UUID id);
 
+
     @Select("SELECT * FROM bands WHERE id = #{bandId}")
     @Results({
             @Result(property = "id", column = "id"),
