@@ -1,5 +1,10 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
@@ -8,12 +13,17 @@ import org.memmcol.gridflexbackendservice.service.meter.MeterService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,6 +35,38 @@ public class MeterController {
 
     @Autowired
     private GlobalExceptionHandler exception;
+
+
+
+    // Common headers for both formats
+    private static final String[] HEADERS = {
+            "meterNumber",
+            "simNumber",
+            "meterCategory",
+            "meterManufacturer",
+            "meterType",
+            "oldSgc",
+            "newSgc",
+            "oldKrn",
+            "newKrn",
+            "oldTariffIndex",
+            "newTariffIndex",
+            "smartStatus",
+            "meterModel",
+            "protocol",
+            "authentication",
+            "password",
+            "ctRatioNum",
+            "ctRatioDenom",
+            "voltRatioNum",
+            "voltRatioDenom",
+            "multiplier",
+            "meterRating",
+            "initialReading",
+            "dial",
+            "latitude",
+            "longitude",
+    };
 
     @PostMapping("/create")
     public ResponseEntity<?> createMeter(@RequestBody Meter meter) {
@@ -228,6 +270,60 @@ public class MeterController {
             return handleException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+
+    @GetMapping("/download/template/csv")
+    public ResponseEntity<Resource> downloadCsvTemplate() throws IOException {
+        String sampleRow = "0048675416677,SN64114711150,Prepaid,MD,8972a55d-0a34-47c7-885a-fe9a3c656b46,electricity,60101,69888,12345,54321, " +
+                "0,1, true, XME45633, 34231, R4532, 123456, 2341, 5432, 23098, 4567, 986, 121, 656, 1, 0.234562, 0.232133";
+
+        // Build CSV content in memory
+        String csvContent = String.join(",", HEADERS) + "\n" + sampleRow;
+        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=customer_upload_template.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(resource.contentLength())
+                .body(resource);
+    }
+
+    @GetMapping("/download/template/excel")
+    public void downloadExcelTemplate(HttpServletResponse response) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Customer Template");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < HEADERS.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(HEADERS[i]);
+            }
+
+            // Optional: Add a sample row
+            Row sampleRow = sheet.createRow(1);
+
+            Object[] sampleData = {
+                    "0048675416677","SN64114711150","Prepaid","MD","8972a55d-0a34-47c7-885a-fe9a3c656b46","electricity","60101","69888","12345","54321",
+                    0, 1, true, "re43213", "67r5", "ERREW", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, 0.099321, 0.2345612
+            };
+
+            for (int i = 0; i < sampleData.length; i++) {
+                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < HEADERS.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Set response headers
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=customer_upload_template.xlsx");
+
+            workbook.write(response.getOutputStream());
         }
     }
 

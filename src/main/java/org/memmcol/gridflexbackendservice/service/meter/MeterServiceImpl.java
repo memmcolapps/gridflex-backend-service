@@ -1625,32 +1625,97 @@ public class MeterServiceImpl implements MeterService {
             for (CSVRecord record : csvParser) {
                 Meter meter = new Meter();
                 meter.setMeterNumber(record.get("meterNumber"));
-                meter.setAccountNumber(record.get("accountNumber"));
                 meter.setSimNumber(record.get("simNumber"));
                 meter.setMeterCategory(record.get("meterCategory"));
                 meter.setMeterClass(record.get("meterClass"));
                 meter.setMeterType(record.get("meterType"));
-                meter.setSmartStatus(Boolean.parseBoolean(record.get("smartStatus")));
                 meter.setOldSgc(record.get("oldSgc"));
                 meter.setNewSgc(record.get("newSgc"));
                 meter.setOldKrn(record.get("oldKrn"));
                 meter.setNewKrn(record.get("newKrn"));
                 meter.setOldTariffIndex(Long.parseLong(record.get("oldTariffIndex")));
                 meter.setNewTariffIndex(Long.parseLong(record.get("newTariffIndex")));
+
+                boolean isSmart = Boolean.parseBoolean(record.get("smartStatus"));
+                meter.setSmartStatus(isSmart);
+
+                // Handle smart meter info
+                if (isSmart) {
+                    if (meter.getSmartMeterInfo() == null) {
+                        meter.setSmartMeterInfo(new SmartMeterInfo());
+                    }
+                    meter.getSmartMeterInfo().setMeterModel(record.get("meterModel"));
+                    meter.getSmartMeterInfo().setProtocol(record.get("protocol"));
+                    meter.getSmartMeterInfo().setAuthentication(record.get("authentication"));
+                    meter.getSmartMeterInfo().setPassword(record.get("password"));
+                }
+//                if(meter.getSmartStatus(Boolean.parseBoolean(record.get("smartStatus"))) == true){
+//                    meter.setSmartStatus(Boolean.parseBoolean(record.get("smartStatus")));
+//                    meter.getSmartMeterInfo().setMeterModel("meterModel");
+//                    meter.getSmartMeterInfo().setProtocol("protocol");
+//                    meter.getSmartMeterInfo().setAuthentication("authentication");
+//                    meter.getSmartMeterInfo().setPassword("password");
+//                }
+
+                // Handle MD meter info (only if class matches certain type)
+                String meterClass = record.get("meterClass");
+                if ("MD".equalsIgnoreCase(meterClass)) { // or whatever condition applies
+                    if (meter.getMdMeterInfo() == null) {
+                        meter.setMdMeterInfo(new MDMeterInfo());
+                    }
+                    meter.getMdMeterInfo().setCtRatioNum(parseLongSafe(record.get("ctRatioNum")));
+                    meter.getMdMeterInfo().setCtRatioDenom(parseLongSafe(record.get("ctRatioDenom")));
+                    meter.getMdMeterInfo().setVoltRatioNum(parseLongSafe(record.get("voltRatioNum")));
+                    meter.getMdMeterInfo().setVoltRatioDenom(parseLongSafe(record.get("voltRatioDenom")));
+                    meter.getMdMeterInfo().setMultiplier(parseLongSafe(record.get("multiplier")));
+                    meter.getMdMeterInfo().setMeterRating(parseLongSafe(record.get("meterRating")));
+                    meter.getMdMeterInfo().setInitialReading(parseLongSafe(record.get("initialReading")));
+                    meter.getMdMeterInfo().setDial(parseLongSafe(record.get("dial")));
+                    meter.getMdMeterInfo().setLatitude(record.get("latitude"));
+                    meter.getMdMeterInfo().setLongitude(record.get("longitude"));
+                }
+
+//                if( meter.setMeterClass(record.get("meterClass"))){
+//                    meter.getMdMeterInfo().setCtRatioNum(Long.parseLong(record.get("ctRationNum")));
+//                    meter.getMdMeterInfo().setCtRatioDenom(Long.parseLong(record.get("ctRationDenom")));
+//                    meter.getMdMeterInfo().setVoltRatioNum(Long.parseLong(record.get("voltRatioNum")));
+//                    meter.getMdMeterInfo().setVoltRatioDenom(Long.parseLong(record.get("voltRatioDenom")));
+//                    meter.getMdMeterInfo().setMultiplier(Long.parseLong(record.get("multiplier")));
+//                    meter.getMdMeterInfo().setMeterRating(Long.parseLong(record.get("meterRating")));
+//                    meter.getMdMeterInfo().setInitialReading(Long.parseLong(record.get("initialReading")));
+//                    meter.getMdMeterInfo().setDial(Long.parseLong(record.get("dial")));
+//                    meter.getMdMeterInfo().setLatitude(record.get("latitude"));
+//                    meter.getMdMeterInfo().setLongitude(record.get("longitude"));
+//                }
+
+
                 meters.add(meter);
             }
         }
         return meters;
     }
 
+    // ✅ Helper method to avoid NumberFormatException
+    private static Long parseLongSafe(String value) {
+        try {
+            return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     // Parse Excel (.xlsx) file into a list of Meter objects
-    public static List<Meter> processExcel(InputStream inputStream,  UserModel user) throws IOException {
+    public static List<Meter> processExcel(InputStream inputStream, UserModel user) throws IOException {
         List<Meter> meters = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
-            rows.next(); // skip header
+
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
 
             while (rows.hasNext()) {
                 Row row = rows.next();
@@ -1662,18 +1727,119 @@ public class MeterServiceImpl implements MeterService {
                 meter.setMeterCategory(getStringCellValue(row.getCell(3)));
                 meter.setMeterClass(getStringCellValue(row.getCell(4)));
                 meter.setMeterType(getStringCellValue(row.getCell(5)));
-                meter.setSmartStatus(Boolean.parseBoolean(getStringCellValue(row.getCell(6))));
+
                 meter.setOldSgc(getStringCellValue(row.getCell(7)));
                 meter.setNewSgc(getStringCellValue(row.getCell(8)));
                 meter.setOldKrn(getStringCellValue(row.getCell(9)));
                 meter.setNewKrn(getStringCellValue(row.getCell(10)));
-                meter.setOldTariffIndex(Long.parseLong(getStringCellValue(row.getCell(11))));
-                meter.setNewTariffIndex(Long.parseLong(getStringCellValue(row.getCell(12))));
+
+                meter.setOldTariffIndex(parseLongSafe(getStringCellValue(row.getCell(11))));
+                meter.setNewTariffIndex(parseLongSafe(getStringCellValue(row.getCell(12))));
+
+                boolean isSmart = Boolean.parseBoolean(getStringCellValue(row.getCell(6)));
+                meter.setSmartStatus(isSmart);
+
+                // Smart meter info
+                if (isSmart) {
+                    if (meter.getSmartMeterInfo() == null) {
+                        meter.setSmartMeterInfo(new SmartMeterInfo());
+                    }
+                    meter.getSmartMeterInfo().setMeterModel(getStringCellValue(row.getCell(13)));
+                    meter.getSmartMeterInfo().setProtocol(getStringCellValue(row.getCell(14)));
+                    meter.getSmartMeterInfo().setAuthentication(getStringCellValue(row.getCell(15)));
+                    meter.getSmartMeterInfo().setPassword(getStringCellValue(row.getCell(16)));
+                }
+
+                // MD meter info
+                String meterClass = meter.getMeterClass();
+                if ("MD".equalsIgnoreCase(meterClass)) {
+                    if (meter.getMdMeterInfo() == null) {
+                        meter.setMdMeterInfo(new MDMeterInfo());
+                    }
+                    meter.getMdMeterInfo().setCtRatioNum(parseLongSafe(getStringCellValue(row.getCell(17))));
+                    meter.getMdMeterInfo().setCtRatioDenom(parseLongSafe(getStringCellValue(row.getCell(18))));
+                    meter.getMdMeterInfo().setVoltRatioNum(parseLongSafe(getStringCellValue(row.getCell(19))));
+                    meter.getMdMeterInfo().setVoltRatioDenom(parseLongSafe(getStringCellValue(row.getCell(20))));
+                    meter.getMdMeterInfo().setMultiplier(parseLongSafe(getStringCellValue(row.getCell(21))));
+                    meter.getMdMeterInfo().setMeterRating(parseLongSafe(getStringCellValue(row.getCell(22))));
+                    meter.getMdMeterInfo().setInitialReading(parseLongSafe(getStringCellValue(row.getCell(23))));
+                    meter.getMdMeterInfo().setDial(parseLongSafe(getStringCellValue(row.getCell(24))));
+                    meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
+                    meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
+                }
+
+                // Optionally attach the user who uploaded
+                // meter.setCreatedBy(user);
+
                 meters.add(meter);
             }
         }
         return meters;
     }
+
+//    // ✅ Safely get cell value as string
+//    private static String getStringCellValue(Cell cell) {
+//        if (cell == null) return "";
+//        cell.setCellType(CellType.STRING);
+//        return cell.getStringCellValue().trim();
+//    }
+//
+//    // ✅ Safely parse a string into Long
+//    private static Long parseLongSafe(String value) {
+//        try {
+//            return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());
+//        } catch (NumberFormatException e) {
+//            return null;
+//        }
+//    }
+
+//    public static List<Meter> processExcel(InputStream inputStream,  UserModel user) throws IOException {
+//        List<Meter> meters = new ArrayList<>();
+//
+//        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+//            Sheet sheet = workbook.getSheetAt(0);
+//            Iterator<Row> rows = sheet.iterator();
+//            rows.next(); // skip header
+//
+//            while (rows.hasNext()) {
+//                Row row = rows.next();
+//                Meter meter = new Meter();
+//
+//                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
+//                meter.setAccountNumber(getStringCellValue(row.getCell(1)));
+//                meter.setSimNumber(getStringCellValue(row.getCell(2)));
+//                meter.setMeterCategory(getStringCellValue(row.getCell(3)));
+//                meter.setMeterClass(getStringCellValue(row.getCell(4)));
+//                meter.setMeterType(getStringCellValue(row.getCell(5)));
+//                meter.setOldSgc(getStringCellValue(row.getCell(7)));
+//                meter.setNewSgc(getStringCellValue(row.getCell(8)));
+//                meter.setOldKrn(getStringCellValue(row.getCell(9)));
+//                meter.setNewKrn(getStringCellValue(row.getCell(10)));
+//                meter.setOldTariffIndex(Long.parseLong(getStringCellValue(row.getCell(11))));
+//                meter.setNewTariffIndex(Long.parseLong(getStringCellValue(row.getCell(12))));
+//
+//                meter.setSmartStatus(Boolean.parseBoolean(getStringCellValue(row.getCell(6))));
+//                meter.getSmartMeterInfo().setMeterModel(getStringCellValue(row.getCell(13)));
+//                meter.getSmartMeterInfo().setProtocol(getStringCellValue(row.getCell(14)));
+//                meter.getSmartMeterInfo().setAuthentication(getStringCellValue(row.getCell(15)));
+//                meter.getSmartMeterInfo().setPassword(getStringCellValue(row.getCell(16)));
+//
+//                meter.getMdMeterInfo().setCtRatioNum(Long.parseLong(getStringCellValue(row.getCell(17))));
+//                meter.getMdMeterInfo().setCtRatioDenom(Long.parseLong(getStringCellValue(row.getCell(18))));
+//                meter.getMdMeterInfo().setVoltRatioNum(Long.parseLong(getStringCellValue(row.getCell(19))));
+//                meter.getMdMeterInfo().setVoltRatioDenom(Long.parseLong(getStringCellValue(row.getCell(20))));
+//                meter.getMdMeterInfo().setMultiplier(Long.parseLong(getStringCellValue(row.getCell(21))));
+//                meter.getMdMeterInfo().setMeterRating(Long.parseLong(getStringCellValue(row.getCell(22))));
+//                meter.getMdMeterInfo().setInitialReading(Long.parseLong(getStringCellValue(row.getCell(23))));
+//                meter.getMdMeterInfo().setDial(Long.parseLong(getStringCellValue(row.getCell(24))));
+//                meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
+//                meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
+//
+//                meters.add(meter);
+//            }
+//        }
+//        return meters;
+//    }
 
 
     private static String getStringCellValue(Cell cell) {
