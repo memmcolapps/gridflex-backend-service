@@ -502,7 +502,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getUpdateDesc());
             }
 
-            int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), "Pending-deactivated");
+            int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter" + (state ? " activated " : " deactivated ")+ "failed");
             Meter meter = meterMapper.getMeter(um.getOrgId(), meterById.getMeterId(), null, null, null);
             um.setPassword("");
@@ -1052,6 +1052,7 @@ public class MeterServiceImpl implements MeterService {
             meterById.setTariff(null);
             meterById.setCin(null);
             meterById.setStatus("Inactive");
+            meterById.setReason(reason);
             int m = meterMapper.insertMeterVersion(meterById);
             if(m == 0) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
@@ -1167,7 +1168,7 @@ public class MeterServiceImpl implements MeterService {
 
             // === Handle Pending-activated ===
             } else if (stat.equalsIgnoreCase("Pending-activated")) {
-                meter.setStatus("Activated");
+                meter.setStatus("Active");
 
             // === Default fallback ===
             } else {
