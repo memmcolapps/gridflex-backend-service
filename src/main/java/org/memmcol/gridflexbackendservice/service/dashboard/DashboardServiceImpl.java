@@ -42,38 +42,6 @@ public class DashboardServiceImpl implements  DashboardService{
     @Autowired
     private ResponseProperties status;
 
-//    @Override
-//    public Map<String, Object> dataManagementDashboard() {
-//        try {
-//            UserModel um = handleUserValidation();
-//
-//            List<Meter> meter = dashboardMapper.getMeters(um.getOrgId());
-//
-//            long inventory = meter.stream().filter(m -> m.getMeterStage().equalsIgnoreCase("Created")).count();
-//
-//            long allocated = meter.stream().filter(m -> m.getNodeId() != null).count();
-//
-//            long assigned = meter.stream().filter(m -> m.getNodeId() != null && m.getCustomerId() != null).count();
-//
-//            long deactivated = meter.stream().filter(m -> m.getStatus().equalsIgnoreCase("Deactivated")).count();
-//
-//            Map<String, Object> response = new HashMap<>();
-//
-//            response.put("meter", meter);
-//            response.put("inventory", inventory);
-//            response.put("allocated", allocated);
-//            response.put("assigned", assigned);
-//            response.put("deactivated", deactivated);
-//
-//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), response);
-//        } catch (Exception exception) {
-//            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//            genericHandler.logIncidentReport("fetching band service failed");
-//            genericHandler.logAndSaveException(exception, "fetch band");
-//            throw exception;
-//        }
-//    }
-
 @Override
 public Map<String, Object> dataManagementDashboard() {
     try {
@@ -105,18 +73,7 @@ public Map<String, Object> dataManagementDashboard() {
                 .distinct() // make sure Manufacturer implements equals() and hashCode()
                 .collect(Collectors.toList());
 
-//        // Group meters installed by year and month separately
-//        Map<Integer, Map<String, Long>> metersInstalledByYearAndMonth = meters.stream()
-//                .filter(m -> m.getUpdatedAt() != null)
-//                .collect(Collectors.groupingBy(
-//                        m -> m.getUpdatedAt().getYear(),
-//                        Collectors.groupingBy(
-//                                m -> String.valueOf(m.getUpdatedAt().getMonth()),
-//                                Collectors.counting()
-//                        )
-//                ));
-
-        // ✅ Group meters installed by year and month (handling java.util.Date safely)
+        // Group meters installed by year and month (handling java.util.Date safely)
         Map<Integer, Map<String, Long>> metersInstalledByYearAndMonth = meters.stream()
                 .filter(m -> m.getCustomerId() != null && m.getUpdatedAt() != null)
                 .collect(Collectors.groupingBy(
