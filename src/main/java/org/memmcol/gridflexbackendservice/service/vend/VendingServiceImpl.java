@@ -5,8 +5,6 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -205,8 +203,73 @@ public class VendingServiceImpl implements VendingService {
     @Transactional
     @Override
     public Map<String, Object> createKctToken(KctToken kctToken) {
+        try{
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel user = handleUserValidation();
+
+            if(!kctToken.getTokenType().equalsIgnoreCase("kct")) {
+                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+            }
+
+            MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
+//
+//           if(!kctToken.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
+//               throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
+//           }
+//           if(!kctToken.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
+//               throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
+//           }
+//
+//           if(!kctToken.getOldKrn().equalsIgnoreCase(meter.getOldKrn())) {
+//               throw new GlobalExceptionHandler.NotFoundException("Old KRN not found");
+//           }
+//           if(!kctToken.getNewKrn().equalsIgnoreCase(meter.getNewKrn())) {
+//               throw new GlobalExceptionHandler.NotFoundException("New KRN not found");
+//           }
+//
+//           if(!kctToken.getNewTariffIndex().equals(meter.getNewTariffIndex())) {
+//               throw new GlobalExceptionHandler.NotFoundException("New Tariff index not found");
+//           }
+//
+//           if(!kctToken.getOldTariffIndex().equals(meter.getOldTariffIndex())) {
+//               throw new GlobalExceptionHandler.NotFoundException("Old Tariff index not found");
+//           }
+
+            kctToken.setKct1("0009981278890223211");
+            kctToken.setKct2("2209981690890223290");
+            kctToken.setMeterId(meter.getMeterId());
+            kctToken.setStatus("Completed");
+            kctToken.setOrgId(user.getOrgId());
+            kctToken.setCustomerId(meter.getCustomerId());
+            kctToken.setUserId(user.getId());
+            kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
+            kctToken.setTariffId(meter.getTariffId());
+
+            int kct = vendMapper.createKctToken(kctToken);
+            if(kct == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Generate kct token failed");
+            }
+
+
+            Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
+
+            // Audit (optional)
+            AuditLog auditLog = buildAuditLog(user, "kct token generated", "vend", transaction, metadata, kctToken.getReason());
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Kct token generated successfully", transaction);
+        } catch (Exception ex) {
+            genericHandler.logIncidentReport("Creating kct token service failed");
+            genericHandler.logAndSaveException(ex, "creating kct token");
+            throw ex;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> getKctMeterInfo(KctToken kctToken) {
        try{
-           Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+//           Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
            UserModel user = handleUserValidation();
 
            if(!kctToken.getTokenType().equalsIgnoreCase("kct")) {
@@ -215,54 +278,25 @@ public class VendingServiceImpl implements VendingService {
 
            MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
 
-           if(!kctToken.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
-               throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
-           }
-           if(!kctToken.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
-               throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
-           }
+           System.out.println("oldSgc: "+meter.getOldSgc());
 
-           if(!kctToken.getOldKrn().equalsIgnoreCase(meter.getOldKrn())) {
-               throw new GlobalExceptionHandler.NotFoundException("Old KRN not found");
-           }
-           if(!kctToken.getNewKrn().equalsIgnoreCase(meter.getNewKrn())) {
-               throw new GlobalExceptionHandler.NotFoundException("New KRN not found");
-           }
+           kctToken.setOldSgc(meter.getOldSgc());
+           kctToken.setNewSgc(meter.getNewSgc());
+           kctToken.setNewKrn(meter.getNewKrn());
+           kctToken.setOldKrn(meter.getOldKrn());
+           kctToken.setNewTariffIndex(meter.getNewTariffIndex());
+           kctToken.setOldTariffIndex(meter.getOldTariffIndex());
 
-           if(!kctToken.getNewTariffIndex().equals(meter.getNewTariffIndex())) {
-               throw new GlobalExceptionHandler.NotFoundException("New Tariff index not found");
-           }
+//           Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
 
-           if(!kctToken.getOldTariffIndex().equals(meter.getOldTariffIndex())) {
-               throw new GlobalExceptionHandler.NotFoundException("Old Tariff index not found");
-           }
+//           // Audit (optional)
+//           AuditLog auditLog = buildAuditLog(user, "kct token generated", "vend", transaction, metadata, "");
+//           auditRepository.save(auditLog);
 
-           kctToken.setKct1("0009981278890223211");
-           kctToken.setKct2("2209981690890223290");
-           kctToken.setMeterId(meter.getMeterId());
-           kctToken.setStatus("Completed");
-           kctToken.setOrgId(user.getOrgId());
-           kctToken.setCustomerId(meter.getCustomerId());
-           kctToken.setUserId(user.getId());
-           kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
-           kctToken.setTariffId(meter.getTariffId());
-
-           int kct = vendMapper.createKctToken(kctToken);
-           if(kct == 0) {
-               throw new GlobalExceptionHandler.NotFoundException("Generate kct token failed");
-           }
-
-
-           Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
-
-           // Audit (optional)
-           AuditLog auditLog = buildAuditLog(user, "kct token generated", "vend", transaction, metadata, kctToken.getReason());
-           auditRepository.save(auditLog);
-
-           return ResponseMap.response(status.getSuccessCode(), "Kct token generated successfully", transaction);
+           return ResponseMap.response(status.getSuccessCode(), "Meter data fetched successfully", kctToken);
        } catch (Exception ex) {
-           genericHandler.logIncidentReport("Creating kct token service failed");
-           genericHandler.logAndSaveException(ex, "creating kct token");
+           genericHandler.logIncidentReport("Fetching meter kct service failed");
+           genericHandler.logAndSaveException(ex, "Fetching meter kct service");
            throw ex;
        }
     }

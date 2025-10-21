@@ -37,7 +37,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/reading/service/generate", "/meter/reading/service/update",
                     "/meter/reading/service/all", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct",
                     "/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
-                    "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management"),
+                    "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management", "/vending/service/generate/meter-kct"),
 
             "data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",

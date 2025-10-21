@@ -125,7 +125,7 @@ public class  SecurityConfig {
 						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
 						"meter/service/allocate", "meter/service/detach","/meter/reading/service/create","/meter/reading/service/generate", "/meter/reading/service/update",
 						"/meter/reading/service/all", "/meter/reading/service/download/template/csv", "/meter/reading/service/download/template/excel","/meter/reading/service/bulk-upload",
-						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct",
+						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management"
 						)

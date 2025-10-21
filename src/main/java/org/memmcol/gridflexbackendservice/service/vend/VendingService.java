@@ -21,4 +21,6 @@ public interface VendingService {
                                     String tariffName, String tokenType, String status,int page, int size);
 
     Map<String, Object> calculateCreditToken(CreditToken creditToken);
+
+    Map<String, Object> getKctMeterInfo(KctToken kctToken);
 }

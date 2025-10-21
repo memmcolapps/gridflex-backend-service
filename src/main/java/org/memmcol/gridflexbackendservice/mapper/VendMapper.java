@@ -52,9 +52,9 @@ public interface VendMapper {
 
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "debitCreditAdjust", column = "meter_id",
+            @Result(property = "creditAdjustment", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getCreditAdjustment")),
-            @Result(property = "debitCreditAdjust", column = "meter_id",
+            @Result(property = "debitAdjustment", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getDebitAdjustment")),
     })
     Transaction getCreditTokenTransaction(UUID id);
@@ -396,9 +396,9 @@ public interface VendMapper {
 
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "debitCreditAdjust", column = "meter_id",
+            @Result(property = "creditAdjustment", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getCreditAdjustment")),
-            @Result(property = "debitCreditAdjust", column = "meter_id",
+            @Result(property = "debitAdjustment", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getDebitAdjustment")),
     })
     List<Transaction> getAllToken(

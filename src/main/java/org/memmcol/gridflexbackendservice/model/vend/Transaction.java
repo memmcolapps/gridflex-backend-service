@@ -46,7 +46,8 @@ public class Transaction implements Serializable {
     private String userFullname;
 
     // --- Credit/Debit Adjustment Info ---
-    private List<DebitCreditAdjust> debitCreditAdjust;
+    private List<DebitCreditAdjust> debitAdjustment;
+    private List<DebitCreditAdjust> creditAdjustment;
     //---------------------------
 //    private BigDecimal debitAmount;
 //    private BigDecimal balanceAfterAdjustment;
@@ -299,12 +300,20 @@ public class Transaction implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public List<DebitCreditAdjust> getDebitCreditAdjust() {
-        return debitCreditAdjust;
+    public List<DebitCreditAdjust> getDebitAdjustment() {
+        return debitAdjustment;
     }
 
-    public void setDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjust) {
-        this.debitCreditAdjust = debitCreditAdjust;
+    public void setDebitAdjustment(List<DebitCreditAdjust> debitAdjustment) {
+        this.debitAdjustment = debitAdjustment;
+    }
+
+    public List<DebitCreditAdjust> getCreditAdjustment() {
+        return creditAdjustment;
+    }
+
+    public void setCreditAdjustment(List<DebitCreditAdjust> creditAdjustment) {
+        this.creditAdjustment = creditAdjustment;
     }
 }
 

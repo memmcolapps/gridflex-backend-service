@@ -48,6 +48,16 @@ public class VendingController {
         }
     }
 
+    @GetMapping("/meter-kct")
+    ResponseEntity<?> kctMeterInfo(@RequestBody KctToken kctToken){
+        try {
+            Map<String, Object> result = vendingService.getKctMeterInfo(kctToken);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @PostMapping("/clear-tamper")
     ResponseEntity<?> clearTamperToken(@RequestBody ClearTamper clearTamper){
         try {
