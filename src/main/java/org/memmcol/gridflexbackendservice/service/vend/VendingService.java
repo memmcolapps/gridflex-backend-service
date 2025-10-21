@@ -2,7 +2,9 @@ package org.memmcol.gridflexbackendservice.service.vend;
 
 import org.memmcol.gridflexbackendservice.model.vend.*;
 
+import java.io.ByteArrayInputStream;
 import java.util.Map;
+import java.util.UUID;
 
 public interface VendingService {
     Map<String, Object> createCreditToken(CreditToken creditToken);
@@ -23,4 +25,6 @@ public interface VendingService {
     Map<String, Object> calculateCreditToken(CreditToken creditToken);
 
     Map<String, Object> getKctMeterInfo(KctToken kctToken);
+
+    ByteArrayInputStream printToken(String tokenType, UUID id);
 }

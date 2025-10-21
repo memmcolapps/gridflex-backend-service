@@ -248,7 +248,7 @@ public interface UserMapper {
     @Select("SELECT * FROM incident_report WHERE org_id = #{orgId} ORDER BY created_at DESC ")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "organization", column = "org_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.UserMapper.getOrganization")),

@@ -1,5 +1,20 @@
 package org.memmcol.gridflexbackendservice.service.vend;
 
+import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.events.PdfDocumentEvent;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -9,17 +24,21 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
@@ -520,6 +539,101 @@ public class VendingServiceImpl implements VendingService {
         }
     }
 
+    @Override
+    public ByteArrayInputStream printToken(String tokenType, UUID id) {
+
+        try {
+            Transaction transaction = vendMapper.getCreditTokenTransaction(id);//getVendingReceipt(id, tokenType);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PdfWriter writer = new PdfWriter(out);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            // Font setup
+            PdfFont font = PdfFontFactory.createFont();
+            String headerText = "Printed on: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+            // Add page numbering or header/footer if you have a handler
+            pdf.addEventHandler(PdfDocumentEvent.END_PAGE, new HeaderFooterPageEvent(document, font, headerText));
+
+            // Title
+            document.add(new Paragraph("Token Receipt")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(14)
+                    .setBold());
+
+            // Create a two-column table
+            float[] columnWidths = {3, 3}; // adjust width ratio if needed
+            Table table = new Table(columnWidths);
+            table.setWidth(UnitValue.createPercentValue(100));
+
+            // Helper for adding key-value rows
+            BiConsumer<String, String> addRow = (label, value) -> {
+                table.addCell(new Cell().add(new Paragraph(label))
+                        .setFont(font)
+                        .setBold()
+                        .setFontSize(10));
+                table.addCell(new Cell().add(new Paragraph(getSafeString(value)))
+                        .setFont(font)
+                        .setFontSize(10));
+            };
+
+            // Add key-value pairs
+            if("credit-token".equalsIgnoreCase(tokenType)){
+                addRow.accept("Customer Name", transaction.getCustomerFullname());
+                addRow.accept("Address", transaction.getAddress());
+                addRow.accept("Tariff", transaction.getTariffName());
+                addRow.accept("Rate", transaction.getTariffRate());
+                addRow.accept("Account No", String.valueOf(transaction.getMeterAccountNumber()));
+                addRow.accept("Meter No", String.valueOf(transaction.getMeterNumber()));
+                addRow.accept("Operator ID", transaction.getUserFullname());
+                addRow.accept("Date", String.valueOf(transaction.getCreatedAt()));
+                addRow.accept("Receipt No", transaction.getReceiptNo());
+                addRow.accept("Last Amount Vended", "0");
+                addRow.accept("Cost of Unit", transaction.getUnitCost().toString());
+                addRow.accept("VAT Amount", transaction.getVatAmount().toString());
+                addRow.accept("Credit Adjustment", "0");
+                addRow.accept("Debit Adjustment", "0");
+                addRow.accept("Initial Amount", transaction.getInitialAmount().toString());
+                addRow.accept("Token", transaction.getToken());
+                addRow.accept("Credit Adjustment Balance", "0");
+                addRow.accept("Debit Adjustment Balance", "0");
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Wrong token type provided");
+            }
+
+            document.add(table);
+
+            document.close();
+
+            try (OutputStream fos = new FileOutputStream(tokenType+"_receipt.pdf")) {
+                out.writeTo(fos);
+            }
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ByteArrayInputStream(new byte[0]);
+        }
+    }
+
+    private String getSafeString(String value) {
+        return value != null ? value : "";
+    }
+
+//    private Transaction getVendingReceipt(UUID id, String tokenType) {
+//        Transaction transaction = null;
+//        if ("credit".equalsIgnoreCase(tokenType)) {
+//            transaction = vendMapper.getCreditTokenTransaction(id);
+//        } else {
+//            throw new GlobalExceptionHandler.NotFoundException("Wrong token type provided");
+//        }
+//
+//        return transaction;
+//    }
+
+
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Transaction vend, Map<String, String> metadata, String reason) {
         AuditLog log = new AuditLog();
         log.setCreator(creator);
@@ -535,3 +649,104 @@ public class VendingServiceImpl implements VendingService {
         return log;
     }
 }
+
+// Add merged token cell at the bottom
+//            Cell tokenCell = new Cell(1, 2) // merge 2 columns
+//                    .add(new Paragraph("Credit Token: " + getSafeString(transaction.getToken()))
+//                            .setTextAlignment(TextAlignment.JUSTIFIED_ALL)
+//                            .setFont(font)
+//                            .setBold()
+//                            .setFontSize(12))
+//                    .setMarginTop(10)
+//                    .setPadding(8)
+//                    .setBorderTop(new SolidBorder(ColorConstants.BLACK, 1f))
+//                    .setBackgroundColor(new DeviceRgb(240, 248, 255)); // light background
+
+//            table.addCell(tokenCell);
+
+// Add the table to the document
+///
+
+//    @Override
+//    public ByteArrayInputStream printToken(String tokenType, UUID id) {
+//
+//            Transaction transaction = getVendingReceipt(id, tokenType);
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//
+//        try {
+//            PdfWriter writer = new PdfWriter(out);
+//            PdfDocument pdf = new PdfDocument(writer);
+//            Document document = new Document(pdf);
+//
+//            // Set up the font
+//            PdfFont font = PdfFontFactory.createFont();
+//            String headerText = "Printed on: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+//
+//            // Add page event for numbering
+//            pdf.addEventHandler(PdfDocumentEvent.END_PAGE, new HeaderFooterPageEvent(document, font, headerText));
+//
+//
+//            document.add(new Paragraph("Token Receipt")
+//                    .setTextAlignment(TextAlignment.CENTER)
+//                    .setFontSize(14));
+//
+//            // Create table with appropriate columns
+//            float[] columnWidths = {1, 3};
+//            Table table = new Table(columnWidths);
+//            table.setWidth(UnitValue.createPercentValue(100));
+//
+////            Color lightGreenBackground = new DeviceRgb(194, 218, 184);
+//
+//            // Add table headers with light green background
+////            String[] headers = {"Meter No", "Account No"};
+////            for (String header : headers) {
+////                table.addHeaderCell(new Cell().add(new Paragraph(header)).setFont(font).setFontSize(10).setBackgroundColor(lightGreenBackground));
+////            }
+//
+//            // Populate table rows
+////            for (int i = 0; i < transactions.size(); i++) {
+////                Transaction transaction = Transaction.get(i);
+////                table.addCell(new Cell().add(new Paragraph(String.valueOf(i + 1))).setFont(font).setFontSize(8));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getCustomerFullname())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getAddress())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getTariffName())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getTariffRate())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(String.valueOf(transaction.getMeterAccountNumber())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(String.valueOf(transaction.getMeterNumber())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(String.valueOf(transaction.getUserFullname())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(String.valueOf(transaction.getCreatedAt())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getReceiptNo())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getLastAmountVeded())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getUnitCost())).setFont(font).setFontSize(8)));
+//                table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getVatAmount())).setFont(font).setFontSize(8)));
+//            table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getCreditAdjustment())).setFont(font).setFontSize(8)));
+//            table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getDebitAdjustment())).setFont(font).setFontSize(8)));
+//            table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getInitialAmount())).setFont(font).setFontSize(8)));
+//            table.addCell(new Cell().add(new Paragraph(getSafeString(transaction.getToken())).setFont(font).setFontSize(8)));
+////            }
+//
+////            // Add totals row
+////            Cell mergedCell1 = new Cell(1, 5).add(new Paragraph("Total = ").setFont(font).setFontSize(10).setTextAlignment(TextAlignment.RIGHT));
+////            Cell mergedCell2 = new Cell(1, 4).add(new Paragraph("Printed on: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())).setFontSize(6).setFont(font).setTextAlignment(TextAlignment.RIGHT));
+////            table.addCell(mergedCell1);
+////            table.addCell(new Cell().add(new Paragraph(String.valueOf(getTotalUnits))).setFont(font).setFontSize(10));
+////            table.addCell(new Cell().add(new Paragraph(String.valueOf(getTotalCostOfUnits))).setFont(font).setFontSize(10));
+////            table.addCell(new Cell().add(new Paragraph(String.valueOf(getTotalVat))).setFont(font).setFontSize(10));
+////            table.addCell(new Cell().add(new Paragraph(String.valueOf(getTotalAmount))).setFont(font).setFontSize(10));
+////            table.addCell(mergedCell2);
+//
+//            // Add table to document
+//            document.add(table);
+//            document.close();
+//
+//            try (OutputStream fos = new FileOutputStream("token_receipt.pdf")) {
+//                out.writeTo(fos);
+//            }
+//
+//            return new ByteArrayInputStream(out.toByteArray());
+//        } catch (Exception e) {
+//            System.out.println("Error: " + e);
+//            e.printStackTrace(); // Log the error details
+//            return new ByteArrayInputStream(new byte[0]); // Return empty ByteArrayInputStream instead of null
+//        }
+//    }
