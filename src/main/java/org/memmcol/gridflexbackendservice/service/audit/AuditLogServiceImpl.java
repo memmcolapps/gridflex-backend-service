@@ -55,6 +55,7 @@ public class AuditLogServiceImpl implements AuditLogService {
             if (page < 0 || size <= 0) {
                 List<AuditLogDto> result = auditRepository.findAllByCreator_OrgId(um.getOrgId())
                         .stream()
+                        .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
                         .map(log -> new AuditLogDto(
                                 log.getId(),
                                 log.getType(),
