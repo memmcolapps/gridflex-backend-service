@@ -19,11 +19,14 @@ public class DashboardController {
 
     @Autowired
     private GlobalExceptionHandler exception;
-
+//    @RequestParam(value = "tariffName", required = false, defaultValue = "") String tariffName,
     @GetMapping("/data-management")
-    public ResponseEntity<?> dataManagement() {
+    public ResponseEntity<?> dataManagement(
+            @RequestParam(value = "band", required = false, defaultValue = "") String band,
+            @RequestParam(value = "year", required = false, defaultValue = "") String year,
+            @RequestParam(value = "meterClass", required = false, defaultValue = "") String meterClass) {
         try {
-            Map<String, Object> result = service.dataManagementDashboard();
+            Map<String, Object> result = service.dataManagementDashboard(band, year,meterClass);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

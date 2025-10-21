@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.mapper.DashboardMapper;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.band.BandServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -43,31 +44,47 @@ public class DashboardServiceImpl implements  DashboardService{
     private ResponseProperties status;
 
     @Override
-    public Map<String, Object> dataManagementDashboard() {
+    public Map<String, Object> dataManagementDashboard(String band, String year, String meterClass) {
     try {
         UserModel um = handleUserValidation();
 
         List<Meter> meters = dashboardMapper.getMeters(um.getOrgId());
-        int total = meters.size();
-        // Avoid divide-by-zero
+
+        List<Meter> filteredMeters = meters.stream()
+                .filter(m -> band == null || band.isEmpty() || (m.getTariffInfo() != null &&
+                        m.getTariffInfo().getBand() != null &&
+                        band.equalsIgnoreCase(m.getTariffInfo().getBand().getName())))
+                .filter(m -> {
+                    if (year == null || year.isEmpty() || m.getCreatedAt() == null)
+                        return true;
+
+                    Instant instant = m.getCreatedAt().toInstant();
+                    ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
+                    int meterYear = zoned.getYear();
+                    return String.valueOf(meterYear).equals(year);
+                })
+                .filter(m -> meterClass == null || meterClass.isEmpty() || m.getMeterClass().equalsIgnoreCase(meterClass))
+                .collect(Collectors.toList());
+
+        int total = filteredMeters.size();
         if (total == 0) {
             total = 1;
         }
 
         // Calculate summary stats
-        long inventory = meters.stream()
+        long inventory = filteredMeters.stream()
                 .filter(m -> "Created".equalsIgnoreCase(m.getMeterStage()))
                 .count();
 
-        long allocated = meters.stream()
+        long allocated = filteredMeters.stream()
                 .filter(m -> m.getNodeId() != null && m.getCustomerId() == null)
                 .count();
 
-        long assigned = meters.stream()
+        long assigned = filteredMeters.stream()
                 .filter(m -> m.getCustomerId() != null)
                 .count();
 
-        long deactivated = meters.stream()
+        long deactivated = filteredMeters.stream()
                 .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
                 .count();
 
@@ -109,10 +126,10 @@ public class DashboardServiceImpl implements  DashboardService{
 
         // Flatten into a list of objects with year, month, and count
         List<Map<String, Object>> installedOverMonths = new ArrayList<>();
-        metersInstalledByYearAndMonth.forEach((year, monthMap) -> {
+        metersInstalledByYearAndMonth.forEach((yr, monthMap) -> {
             monthMap.forEach((month, count) -> {
                 Map<String, Object> data = new HashMap<>();
-                data.put("year", year);
+                data.put("year", yr);
                 data.put("month", month);
                 data.put("count", count);
                 installedOverMonths.add(data);
@@ -133,7 +150,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
         // Build response
         Map<String, Object> response = new HashMap<>();
-        response.put("totalMeter", meters.size());
+        response.put("totalMeter", filteredMeters.size());
         response.put("inventory", inventory);
         response.put("allocated", allocatedSummary);
         response.put("assigned", assigned);

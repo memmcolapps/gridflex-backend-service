@@ -43,9 +43,15 @@ public interface DashboardMapper {
            mf.org_id AS mf_org_id,
            mf.manufacturer_id AS mf_manufacturer_id,
            mf.contact_person AS mf_contact_person,
-           mf.phone_no AS mf_phone_no
+           mf.phone_no AS mf_phone_no,
+           t.name AS t_tariff_name,
+           t.band_id AS t_band_id,
+           b.id AS b_id,
+           b.name AS b_name
     FROM meters m
     LEFT JOIN manufacturers mf ON m.meter_manufacturer = mf.id
+    LEFT JOIN tariffs t ON m.tariff = t.id
+    LEFT JOIN bands b ON t.band_id = b.id
     WHERE m.org_id = #{orgId}
 """)
     @Results({
@@ -56,6 +62,7 @@ public interface DashboardMapper {
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
 
@@ -64,7 +71,16 @@ public interface DashboardMapper {
             @Result(property = "manufacturer.name", column = "mf_name"),
             @Result(property = "manufacturer.manufacturerId", column = "mf_manufacturer_id"),
             @Result(property = "manufacturer.contactPerson", column = "mf_contact_person"),
-            @Result(property = "manufacturer.phoneNo", column = "mf_phone_no")
+            @Result(property = "manufacturer.phoneNo", column = "mf_phone_no"),
+
+            // tariff
+            @Result(property = "tariffInfo.name", column = "t_tariff_name"),
+            @Result(property = "tariffInfo.band_id", column = "t_band_id"),
+
+            // band mapping (nested under tariffInfo)
+            @Result(property = "tariffInfo.band.id", column = "b_id"),
+            @Result(property = "tariffInfo.band.name", column = "b_name"),
+
     })
     List<Meter> getMeters(UUID orgId);
 
