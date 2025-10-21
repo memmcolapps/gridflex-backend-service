@@ -42,12 +42,17 @@ public class DashboardServiceImpl implements  DashboardService{
     @Autowired
     private ResponseProperties status;
 
-@Override
-public Map<String, Object> dataManagementDashboard() {
+    @Override
+    public Map<String, Object> dataManagementDashboard() {
     try {
         UserModel um = handleUserValidation();
 
         List<Meter> meters = dashboardMapper.getMeters(um.getOrgId());
+        int total = meters.size();
+        // Avoid divide-by-zero
+        if (total == 0) {
+            total = 1;
+        }
 
         // Calculate summary stats
         long inventory = meters.stream()
@@ -55,16 +60,24 @@ public Map<String, Object> dataManagementDashboard() {
                 .count();
 
         long allocated = meters.stream()
-                .filter(m -> m.getNodeId() != null)
+                .filter(m -> m.getNodeId() != null && m.getCustomerId() == null)
                 .count();
 
         long assigned = meters.stream()
-                .filter(m -> m.getNodeId() != null && m.getCustomerId() != null)
+                .filter(m -> m.getCustomerId() != null)
                 .count();
 
         long deactivated = meters.stream()
                 .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
                 .count();
+
+        long allocatedSummary = allocated + assigned;
+
+        // Calculate percentages
+        double inventoryPercent = (inventory * 100.0) / total;
+        double allocatedPercent = (allocatedSummary * 100.0) / total;
+        double assignedPercent = (assigned * 100.0) / total;
+        double deactivatedPercent = (deactivated * 100.0) / total;
 
         // Extract unique manufacturers
         List<Manufacturer> uniqueManufacturers = meters.stream()
@@ -111,13 +124,21 @@ public Map<String, Object> dataManagementDashboard() {
                 .comparing((Map<String, Object> e) -> (Integer) e.get("year"))
                 .thenComparing(e -> Month.valueOf(e.get("month").toString())));
 
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("inventory", String.format("%.2f", inventoryPercent));
+        resp.put("allocated", String.format("%.2f", allocatedPercent));
+        resp.put("assigned", String.format("%.2f", assignedPercent));
+        resp.put("deactivated", String.format("%.2f", deactivatedPercent));
+
+
         // Build response
         Map<String, Object> response = new HashMap<>();
         response.put("totalMeter", meters.size());
         response.put("inventory", inventory);
-        response.put("allocated", allocated);
+        response.put("allocated", allocatedSummary);
         response.put("assigned", assigned);
         response.put("deactivated", deactivated);
+        response.put("percent", resp);
         response.put("manufacturers", uniqueManufacturers);
         response.put("installedOverMonths", installedOverMonths);
 
