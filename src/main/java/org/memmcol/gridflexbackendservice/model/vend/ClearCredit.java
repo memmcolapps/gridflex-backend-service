@@ -24,6 +24,8 @@ public class ClearCredit implements Serializable {
     private String receiptNumber;
     private UUID tariffId;
     private String token;
+    private String kct1;
+    private String kct2;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -138,6 +140,22 @@ public class ClearCredit implements Serializable {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getKct1() {
+        return kct1;
+    }
+
+    public void setKct1(String kct1) {
+        this.kct1 = kct1;
+    }
+
+    public String getKct2() {
+        return kct2;
+    }
+
+    public void setKct2(String kct2) {
+        this.kct2 = kct2;
     }
 
     public Date getCreatedAt() {

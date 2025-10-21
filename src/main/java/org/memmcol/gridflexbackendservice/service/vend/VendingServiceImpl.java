@@ -1,15 +1,11 @@
 package org.memmcol.gridflexbackendservice.service.vend;
 
-import com.itextpdf.kernel.colors.Color;
-import com.itextpdf.kernel.colors.ColorConstants;
-import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
@@ -48,9 +44,6 @@ public class VendingServiceImpl implements VendingService {
     private HttpServletRequest httpServletRequest;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
     private GenericHandler genericHandler;
 
     @Autowired
@@ -73,17 +66,14 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
 
-            System.out.println(">>>>meter:: "+creditToken.getMeterNumber());
             // --- Fetch meter info ---
             List<MeterView> meters = vendMapper.getMeterInfo(creditToken.getMeterNumber(), creditToken.getAccountNumber(), user.getOrgId());
-            System.out.println(">>>>meter:: "+meters.get(0).getCustomerFullname());
+
             if (meters.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
             MeterView meter = meters.get(0);
-
-            System.out.println(">>>>customerId:: "+meter.getCustomerId());
 
             // --- Balance Calculations ---
             BigDecimal totalDebit = calculateTotalByType(meters, "debit");
@@ -108,7 +98,7 @@ public class VendingServiceImpl implements VendingService {
             transaction.setVatAmount(vatAmount);
             transaction.setMeterId(meter.getMeterId());
             transaction.setTariffId(meter.getTariffId());
-            transaction.setToken("1130987906543214590007");
+            transaction.setToken(generateDummyToken());
             transaction.setStatus("Completed");
             transaction.setReceiptNo(generateReceiptNumber(creditToken.getMeterNumber()));
             transaction.setOrgId(user.getOrgId());
@@ -117,6 +107,8 @@ public class VendingServiceImpl implements VendingService {
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(netBalance);
             transaction.setTokenType(creditToken.getTokenType());
+            transaction.setKct1(generateDummyToken());
+            transaction.setKct2(generateDummyToken());
 
             // --- Persist ---
             int created = vendMapper.createCreditToken(transaction);
@@ -231,31 +223,9 @@ public class VendingServiceImpl implements VendingService {
             }
 
             MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
-//
-//           if(!kctToken.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
-//               throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
-//           }
-//           if(!kctToken.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
-//               throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
-//           }
-//
-//           if(!kctToken.getOldKrn().equalsIgnoreCase(meter.getOldKrn())) {
-//               throw new GlobalExceptionHandler.NotFoundException("Old KRN not found");
-//           }
-//           if(!kctToken.getNewKrn().equalsIgnoreCase(meter.getNewKrn())) {
-//               throw new GlobalExceptionHandler.NotFoundException("New KRN not found");
-//           }
-//
-//           if(!kctToken.getNewTariffIndex().equals(meter.getNewTariffIndex())) {
-//               throw new GlobalExceptionHandler.NotFoundException("New Tariff index not found");
-//           }
-//
-//           if(!kctToken.getOldTariffIndex().equals(meter.getOldTariffIndex())) {
-//               throw new GlobalExceptionHandler.NotFoundException("Old Tariff index not found");
-//           }
 
-            kctToken.setKct1("0009981278890223211");
-            kctToken.setKct2("2209981690890223290");
+            kctToken.setKct1(generateDummyToken());
+            kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
             kctToken.setStatus("Completed");
             kctToken.setOrgId(user.getOrgId());
@@ -263,6 +233,7 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setUserId(user.getId());
             kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
             kctToken.setTariffId(meter.getTariffId());
+            kctToken.setToken(generateDummyToken());
 
             int kct = vendMapper.createKctToken(kctToken);
             if(kct == 0) {
@@ -332,7 +303,7 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), user.getOrgId());
 
-            clearTamper.setToken("0009981278890223211");
+            clearTamper.setToken(generateDummyToken());
             clearTamper.setMeterId(meter.getMeterId());
             clearTamper.setStatus("Completed");
             clearTamper.setOrgId(user.getOrgId());
@@ -340,6 +311,8 @@ public class VendingServiceImpl implements VendingService {
             clearTamper.setUserId(user.getId());
             clearTamper.setReceiptNo(generateReceiptNumber(clearTamper.getMeterNumber()));
             clearTamper.setTariffId(meter.getTariffId());
+            clearTamper.setKct1(generateDummyToken());
+            clearTamper.setKct2(generateDummyToken());
 
             int clear = vendMapper.createClearToken(clearTamper);
             if(clear == 0) {
@@ -373,7 +346,7 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(clearCredit.getMeterNumber(), clearCredit.getAccountNumber(), user.getOrgId());
 
-            clearCredit.setToken("0009981278890223211");
+            clearCredit.setToken(generateDummyToken());
             clearCredit.setMeterId(meter.getMeterId());
             clearCredit.setStatus("Completed");
             clearCredit.setOrgId(user.getOrgId());
@@ -381,6 +354,8 @@ public class VendingServiceImpl implements VendingService {
             clearCredit.setUserId(user.getId());
             clearCredit.setReceiptNumber(generateReceiptNumber(clearCredit.getMeterNumber()));
             clearCredit.setTariffId(meter.getTariffId());
+            clearCredit.setKct1(generateDummyToken());
+            clearCredit.setKct2(generateDummyToken());
 
             int clear = vendMapper.createClearCredit(clearCredit);
             if(clear == 0) {
@@ -422,7 +397,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
             }
 
-            kctAndClearTamper.setToken("0009981278890223211");
+            kctAndClearTamper.setToken(generateDummyToken());
             kctAndClearTamper.setMeterId(meter.getMeterId());
             kctAndClearTamper.setStatus("Completed");
             kctAndClearTamper.setOrgId(user.getOrgId());
@@ -430,6 +405,8 @@ public class VendingServiceImpl implements VendingService {
             kctAndClearTamper.setUserId(user.getId());
             kctAndClearTamper.setReceiptNumber(generateReceiptNumber(kctAndClearTamper.getMeterNumber()));
             kctAndClearTamper.setTariffId(meter.getTariffId());
+            kctAndClearTamper.setKct1(generateDummyToken());
+            kctAndClearTamper.setKct2(generateDummyToken());
 
             int clear = vendMapper.createKctAndClearTamper(kctAndClearTamper);
             if(clear == 0) {
@@ -463,7 +440,7 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
 
-            kctToken.setToken("0009981278890223211");
+            kctToken.setToken(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
             kctToken.setStatus("Completed");
             kctToken.setOrgId(user.getOrgId());
@@ -471,6 +448,8 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setUserId(user.getId());
             kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
             kctToken.setTariffId(meter.getTariffId());
+            kctToken.setKct1(generateDummyToken());
+            kctToken.setKct2(generateDummyToken());
 
             int clear = vendMapper.createCompensationToken(kctToken);
             if(clear == 0) {
@@ -621,6 +600,16 @@ public class VendingServiceImpl implements VendingService {
     private String getSafeString(String value) {
         return value != null ? value : "";
     }
+
+    private String generateDummyToken() {
+        return "DUMMY-" + UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 12)
+                .toUpperCase();
+    }
+
+
 
 //    private Transaction getVendingReceipt(UUID id, String tokenType) {
 //        Transaction transaction = null;

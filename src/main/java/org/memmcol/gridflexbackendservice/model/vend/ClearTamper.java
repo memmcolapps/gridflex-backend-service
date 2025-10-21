@@ -22,6 +22,8 @@ public class ClearTamper implements Serializable {
     private String user;
     private String receiptNumber;
     private String token;
+    private String kct1;
+    private String kct2;
     private String customerId;
     private String status;
     private UUID userId;
@@ -117,6 +119,22 @@ public class ClearTamper implements Serializable {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getKct1() {
+        return kct1;
+    }
+
+    public void setKct1(String kct1) {
+        this.kct1 = kct1;
+    }
+
+    public String getKct2() {
+        return kct2;
+    }
+
+    public void setKct2(String kct2) {
+        this.kct2 = kct2;
     }
 
     public Date getCreatedAt() {
