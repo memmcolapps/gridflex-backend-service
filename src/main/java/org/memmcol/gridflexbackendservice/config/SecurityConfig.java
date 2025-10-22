@@ -101,7 +101,7 @@ public class  SecurityConfig {
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
 						"/auth/service/forget-password/**", "/actuator/prometheus", "/service/alerts", "/service/reports/summary",
-						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache"
+						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache", "/meter/service/download/template/excel", "/meter/service/download/template/csv"
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
 						"/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/export",
@@ -130,7 +130,7 @@ public class  SecurityConfig {
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management"
 						)
 				.access((context, authSupplier) -> {
-					// Get the Authentication object from the Supplier
+					// Get the Authentication object from the Supplier"/customer/service/download/template/csv",
 					Authentication authentication =  context.get();
 
 					// Check if authentication is present and valid

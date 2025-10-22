@@ -1,7 +1,5 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.model.band.Band;
-import org.memmcol.gridflexbackendservice.service.band.BandService;
 import org.memmcol.gridflexbackendservice.service.dashboard.DashboardService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,7 @@ public class DashboardController {
 
     @Autowired
     private GlobalExceptionHandler exception;
-//    @RequestParam(value = "tariffName", required = false, defaultValue = "") String tariffName,
+
     @GetMapping("/data-management")
     public ResponseEntity<?> dataManagement(
             @RequestParam(value = "band", required = false, defaultValue = "") String band,

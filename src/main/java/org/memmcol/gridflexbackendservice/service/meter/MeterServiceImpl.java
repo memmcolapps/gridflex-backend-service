@@ -1695,7 +1695,7 @@ public class MeterServiceImpl implements MeterService {
         return meters;
     }
 
-    // ✅ Helper method to avoid NumberFormatException
+    // Helper method to avoid NumberFormatException
     private static Long parseLongSafe(String value) {
         try {
             return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());

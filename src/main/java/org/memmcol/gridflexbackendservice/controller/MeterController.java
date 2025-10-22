@@ -274,9 +274,38 @@ public class MeterController {
     }
 
 
+    private static final String[] HEADERS = {
+            "meterNumber",
+            "simNumber",
+            "meterCategory",
+            "meterClass",
+            "meterManufacturer",
+            "meterType",
+            "oldSgc",
+            "newSgc",
+            "oldKrn",
+            "newKrn",
+            "oldTariffIndex",
+            "newTariffIndex",
+            "smartStatus",
+            "meterModel",
+            "protocol",
+            "authentication",
+            "password",
+            "ctRatioNum",
+            "ctRatioDenom",
+            "voltRatioNum",
+            "voltRatioDenom",
+            "multiplier",
+            "meterRating",
+            "initialReading",
+            "dial",
+            "latitude",
+            "longitude",
+    };
     @GetMapping("/download/template/csv")
     public ResponseEntity<Resource> downloadCsvTemplate() throws IOException {
-        String sampleRow = "0048675416677,SN64114711150,Prepaid,MD,8972a55d-0a34-47c7-885a-fe9a3c656b46,electricity,60101,69888,12345,54321, " +
+        String sampleRow = "0048675416677,SN64114711150,Prepaid,MD,memmcol,electricity,60101,69888,12345,54321, " +
                 "0,1, true, XME45633, 34231, R4532, 123456, 2341, 5432, 23098, 4567, 986, 121, 656, 1, 0.234562, 0.232133";
 
         // Build CSV content in memory
@@ -306,8 +335,8 @@ public class MeterController {
             Row sampleRow = sheet.createRow(1);
 
             Object[] sampleData = {
-                    "0048675416677","SN64114711150","Prepaid","MD","8972a55d-0a34-47c7-885a-fe9a3c656b46","electricity","60101","69888","12345","54321",
-                    0, 1, true, "re43213", "67r5", "ERREW", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, 0.099321, 0.2345612
+                    "0048675416677","SN64114711150","Prepaid","MD","memmcol","electricity","60101","69888","12345","54321",
+                    0, 1, true, "XME45633", "34231", "R4532", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, 0.099321, 0.2345612
             };
 
             for (int i = 0; i < sampleData.length; i++) {
