@@ -105,14 +105,14 @@ public interface UserMapper {
 
 
     @Select("""
-            SELECT DISTINCT org_id FROM groups WHERE org_id = CAST(#{orgId} AS UUID)
+            SELECT DISTINCT org_id FROM groups WHERE org_id = #{orgId})
             """)
     String checkOrgId(@Param("orgId") UUID orgId);
 
 
     @Insert("""
-        INSERT INTO groups (title, created_at, updated_at, org_id)
-        VALUES (#{groupTitle}, #{createdAt}, #{updatedAt}, #{orgId})
+        INSERT INTO groups (title, created_at, updated_at, org_id, status)
+        VALUES (#{groupTitle}, #{createdAt}, #{updatedAt}, #{orgId}, #{status})
     """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertGroup(Group group);

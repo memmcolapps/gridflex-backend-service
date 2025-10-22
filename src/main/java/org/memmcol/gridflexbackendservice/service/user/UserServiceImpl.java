@@ -571,6 +571,7 @@ public class UserServiceImpl implements  UserService {
             group.setCreatedAt(request.getCreatedAt());
             group.setUpdatedAt(request.getUpdatedAt());
             group.setOrgId(orgId);
+            group.setStatus(true);
 
             /// Check if group already exist (No duplication title allowed)
             String isGroupTitle = userMapper.checkGroupName(request.getGroupTitle());
