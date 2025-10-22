@@ -122,8 +122,6 @@ public class DashboardServiceImpl implements  DashboardService{
                         )
                 ));
 
-
-
         // Flatten into a list of objects with year, month, and count
         List<Map<String, Object>> installedOverMonths = new ArrayList<>();
         metersInstalledByYearAndMonth.forEach((yr, monthMap) -> {
@@ -147,15 +145,17 @@ public class DashboardServiceImpl implements  DashboardService{
         resp.put("assigned", String.format("%.2f", assignedPercent));
         resp.put("deactivated", String.format("%.2f", deactivatedPercent));
 
+        Map<String, Object> card = new HashMap<>();
+        card.put("totalMeter", filteredMeters.size());
+        card.put("inventory", inventory);
+        card.put("allocated", allocatedSummary);
+        card.put("assigned", assigned);
+        card.put("deactivated", deactivated);
 
         // Build response
         Map<String, Object> response = new HashMap<>();
-        response.put("totalMeter", filteredMeters.size());
-        response.put("inventory", inventory);
-        response.put("allocated", allocatedSummary);
-        response.put("assigned", assigned);
-        response.put("deactivated", deactivated);
-        response.put("percent", resp);
+        response.put("cardData", card);
+        response.put("percentData", resp);
         response.put("manufacturers", uniqueManufacturers);
         response.put("installedOverMonths", installedOverMonths);
 
