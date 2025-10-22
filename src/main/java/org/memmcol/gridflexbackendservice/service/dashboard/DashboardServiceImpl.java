@@ -44,7 +44,7 @@ public class DashboardServiceImpl implements  DashboardService{
     private ResponseProperties status;
 
     @Override
-    public Map<String, Object> dataManagementDashboard(String band, String year, String meterClass) {
+    public Map<String, Object> dataManagementDashboard(String band, String year, String meterCategory) {
     try {
         UserModel um = handleUserValidation();
 
@@ -63,7 +63,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     int meterYear = zoned.getYear();
                     return String.valueOf(meterYear).equals(year);
                 })
-                .filter(m -> meterClass == null || meterClass.isEmpty() || m.getMeterClass().equalsIgnoreCase(meterClass))
+                .filter(m -> meterCategory == null || meterCategory.isEmpty() || m.getMeterCategory().equalsIgnoreCase(meterCategory))
                 .collect(Collectors.toList());
 
         int total = filteredMeters.size();
@@ -96,11 +96,28 @@ public class DashboardServiceImpl implements  DashboardService{
         double assignedPercent = (assigned * 100.0) / total;
         double deactivatedPercent = (deactivated * 100.0) / total;
 
-        // Extract unique manufacturers
-        List<Manufacturer> uniqueManufacturers = meters.stream()
-                .map(Meter::getManufacturer)
-                .filter(Objects::nonNull)
-                .distinct() // make sure Manufacturer implements equals() and hashCode()
+//        // Extract unique manufacturers
+//        List<Manufacturer> uniqueManufacturers = meters.stream()
+//                .map(Meter::getManufacturer)
+//                .filter(Objects::nonNull)
+//                .distinct() // make sure Manufacturer implements equals() and hashCode()
+//                .collect(Collectors.toList());
+
+        // Manufacturer list & count summary
+        Map<String, Long> manufacturerCounts = filteredMeters.stream()
+                .filter(m -> m.getManufacturer() != null)
+                .collect(Collectors.groupingBy(
+                        m -> m.getManufacturer().getName(),
+                        Collectors.counting()
+                ));
+
+        List<Map<String, Object>> manufacturersSummary = manufacturerCounts.entrySet().stream()
+                .map(entry -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", entry.getKey());
+                    map.put("totalMeters", entry.getValue());
+                    return map;
+                })
                 .collect(Collectors.toList());
 
         // Group meters installed by year and month (handling java.util.Date safely)
@@ -156,7 +173,7 @@ public class DashboardServiceImpl implements  DashboardService{
         Map<String, Object> response = new HashMap<>();
         response.put("cardData", card);
         response.put("percentData", resp);
-        response.put("manufacturers", uniqueManufacturers);
+        response.put("manufacturers", manufacturersSummary);
         response.put("installedOverMonths", installedOverMonths);
 
         return ResponseMap.response(status.getSuccessCode(), status.getDesc(), response);

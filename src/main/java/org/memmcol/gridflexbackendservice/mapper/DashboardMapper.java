@@ -63,6 +63,7 @@ public interface DashboardMapper {
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
 
