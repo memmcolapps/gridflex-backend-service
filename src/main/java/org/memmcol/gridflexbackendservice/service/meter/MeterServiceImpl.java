@@ -1834,13 +1834,18 @@ public class MeterServiceImpl implements MeterService {
         }
 
         meterMapper.insertMeters(batch);
-        meterMapper.insertMeterVersions(batch);
+
 
         // Prepare smart and MD info lists
         List<SmartMeterInfo> smartInfos = new ArrayList<>();
         List<MDMeterInfo> mdInfos = new ArrayList<>();
+        List<UUID> meterId = new ArrayList<>();
 
         for (Meter m : batch) {
+
+//            meterId.add(m.getId());
+
+//            meterId.add(m.setMeterId(m.getId()));
             if (m.getSmartMeterInfo() != null) {
                 m.getSmartMeterInfo().setMeterId(m.getId());
                 smartInfos.add(m.getSmartMeterInfo());
@@ -1851,13 +1856,14 @@ public class MeterServiceImpl implements MeterService {
             }
         }
 
-        // Bulk insert child info
-        if (!smartInfos.isEmpty()) {
-            meterMapper.insertSmartMeterInfo(smartInfos);
-        }
-        if (!mdInfos.isEmpty()) {
-            meterMapper.insertMDMeterInfo(mdInfos);
-        }
+        meterMapper.insertMeterVersions(batch);
+//        // Bulk insert child info
+//        if (!smartInfos.isEmpty()) {
+//            meterMapper.insertSmartMeterInfo(smartInfos);
+//        }
+//        if (!mdInfos.isEmpty()) {
+//            meterMapper.insertMDMeterInfo(mdInfos);
+//        }
 
     }
 
