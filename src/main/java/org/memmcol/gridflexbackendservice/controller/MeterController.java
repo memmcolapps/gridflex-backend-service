@@ -273,36 +273,6 @@ public class MeterController {
         }
     }
 
-
-    private static final String[] HEADERS = {
-            "meterNumber",
-            "simNumber",
-            "meterCategory",
-            "meterClass",
-            "meterManufacturer",
-            "meterType",
-            "oldSgc",
-            "newSgc",
-            "oldKrn",
-            "newKrn",
-            "oldTariffIndex",
-            "newTariffIndex",
-            "smartStatus",
-            "meterModel",
-            "protocol",
-            "authentication",
-            "password",
-            "ctRatioNum",
-            "ctRatioDenom",
-            "voltRatioNum",
-            "voltRatioDenom",
-            "multiplier",
-            "meterRating",
-            "initialReading",
-            "dial",
-            "latitude",
-            "longitude",
-    };
     @GetMapping("/download/template/csv")
     public ResponseEntity<Resource> downloadCsvTemplate() throws IOException {
         String sampleRow = "0048675416677,SN64114711150,Prepaid,MD,memmcol,electricity,60101,69888,12345,54321, " +
