@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,9 +65,6 @@ public class MeterServiceImpl implements MeterService {
 
     @Autowired
     private MeterMapper meterMapper;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private TariffMapper tariffMapper;
@@ -1606,7 +1602,8 @@ public class MeterServiceImpl implements MeterService {
             }
 
             Map<String, Object> result = bulkInsertMeters(meters, user);
-            return ResponseMap.response(status.getSuccessCode(), "Meter bulk upload completed", result);
+            return result;
+//            return ResponseMap.response(status.getSuccessCode(), "Meter bulk upload completed", result);
 
         } catch (Exception e) {
             log.error("Error in bulk upload: {}", e.getMessage(), e);
@@ -1649,13 +1646,6 @@ public class MeterServiceImpl implements MeterService {
                     meter.getSmartMeterInfo().setAuthentication(record.get("authentication"));
                     meter.getSmartMeterInfo().setPassword(record.get("password"));
                 }
-//                if(meter.getSmartStatus(Boolean.parseBoolean(record.get("smartStatus"))) == true){
-//                    meter.setSmartStatus(Boolean.parseBoolean(record.get("smartStatus")));
-//                    meter.getSmartMeterInfo().setMeterModel("meterModel");
-//                    meter.getSmartMeterInfo().setProtocol("protocol");
-//                    meter.getSmartMeterInfo().setAuthentication("authentication");
-//                    meter.getSmartMeterInfo().setPassword("password");
-//                }
 
                 // Handle MD meter info (only if class matches certain type)
                 String meterClass = record.get("meterClass");
@@ -1674,20 +1664,6 @@ public class MeterServiceImpl implements MeterService {
                     meter.getMdMeterInfo().setLatitude(record.get("latitude"));
                     meter.getMdMeterInfo().setLongitude(record.get("longitude"));
                 }
-
-//                if( meter.setMeterClass(record.get("meterClass"))){
-//                    meter.getMdMeterInfo().setCtRatioNum(Long.parseLong(record.get("ctRationNum")));
-//                    meter.getMdMeterInfo().setCtRatioDenom(Long.parseLong(record.get("ctRationDenom")));
-//                    meter.getMdMeterInfo().setVoltRatioNum(Long.parseLong(record.get("voltRatioNum")));
-//                    meter.getMdMeterInfo().setVoltRatioDenom(Long.parseLong(record.get("voltRatioDenom")));
-//                    meter.getMdMeterInfo().setMultiplier(Long.parseLong(record.get("multiplier")));
-//                    meter.getMdMeterInfo().setMeterRating(Long.parseLong(record.get("meterRating")));
-//                    meter.getMdMeterInfo().setInitialReading(Long.parseLong(record.get("initialReading")));
-//                    meter.getMdMeterInfo().setDial(Long.parseLong(record.get("dial")));
-//                    meter.getMdMeterInfo().setLatitude(record.get("latitude"));
-//                    meter.getMdMeterInfo().setLongitude(record.get("longitude"));
-//                }
-
 
                 meters.add(meter);
             }
@@ -1777,71 +1753,6 @@ public class MeterServiceImpl implements MeterService {
         return meters;
     }
 
-//    // ✅ Safely get cell value as string
-//    private static String getStringCellValue(Cell cell) {
-//        if (cell == null) return "";
-//        cell.setCellType(CellType.STRING);
-//        return cell.getStringCellValue().trim();
-//    }
-//
-//    // ✅ Safely parse a string into Long
-//    private static Long parseLongSafe(String value) {
-//        try {
-//            return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());
-//        } catch (NumberFormatException e) {
-//            return null;
-//        }
-//    }
-
-//    public static List<Meter> processExcel(InputStream inputStream,  UserModel user) throws IOException {
-//        List<Meter> meters = new ArrayList<>();
-//
-//        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-//            Sheet sheet = workbook.getSheetAt(0);
-//            Iterator<Row> rows = sheet.iterator();
-//            rows.next(); // skip header
-//
-//            while (rows.hasNext()) {
-//                Row row = rows.next();
-//                Meter meter = new Meter();
-//
-//                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
-//                meter.setAccountNumber(getStringCellValue(row.getCell(1)));
-//                meter.setSimNumber(getStringCellValue(row.getCell(2)));
-//                meter.setMeterCategory(getStringCellValue(row.getCell(3)));
-//                meter.setMeterClass(getStringCellValue(row.getCell(4)));
-//                meter.setMeterType(getStringCellValue(row.getCell(5)));
-//                meter.setOldSgc(getStringCellValue(row.getCell(7)));
-//                meter.setNewSgc(getStringCellValue(row.getCell(8)));
-//                meter.setOldKrn(getStringCellValue(row.getCell(9)));
-//                meter.setNewKrn(getStringCellValue(row.getCell(10)));
-//                meter.setOldTariffIndex(Long.parseLong(getStringCellValue(row.getCell(11))));
-//                meter.setNewTariffIndex(Long.parseLong(getStringCellValue(row.getCell(12))));
-//
-//                meter.setSmartStatus(Boolean.parseBoolean(getStringCellValue(row.getCell(6))));
-//                meter.getSmartMeterInfo().setMeterModel(getStringCellValue(row.getCell(13)));
-//                meter.getSmartMeterInfo().setProtocol(getStringCellValue(row.getCell(14)));
-//                meter.getSmartMeterInfo().setAuthentication(getStringCellValue(row.getCell(15)));
-//                meter.getSmartMeterInfo().setPassword(getStringCellValue(row.getCell(16)));
-//
-//                meter.getMdMeterInfo().setCtRatioNum(Long.parseLong(getStringCellValue(row.getCell(17))));
-//                meter.getMdMeterInfo().setCtRatioDenom(Long.parseLong(getStringCellValue(row.getCell(18))));
-//                meter.getMdMeterInfo().setVoltRatioNum(Long.parseLong(getStringCellValue(row.getCell(19))));
-//                meter.getMdMeterInfo().setVoltRatioDenom(Long.parseLong(getStringCellValue(row.getCell(20))));
-//                meter.getMdMeterInfo().setMultiplier(Long.parseLong(getStringCellValue(row.getCell(21))));
-//                meter.getMdMeterInfo().setMeterRating(Long.parseLong(getStringCellValue(row.getCell(22))));
-//                meter.getMdMeterInfo().setInitialReading(Long.parseLong(getStringCellValue(row.getCell(23))));
-//                meter.getMdMeterInfo().setDial(Long.parseLong(getStringCellValue(row.getCell(24))));
-//                meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
-//                meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
-//
-//                meters.add(meter);
-//            }
-//        }
-//        return meters;
-//    }
-
-
     private static String getStringCellValue(Cell cell) {
         if (cell == null) return "";
         cell.setCellType(CellType.STRING);
@@ -1872,7 +1783,7 @@ public class MeterServiceImpl implements MeterService {
                         successCount++;
                     } catch (Exception recordEx) {
                         log.error("Meter {} failed: {}", meter.getMeterNumber(), recordEx.getMessage());
-                        failedRecords.add("Meter " + meter.getMeterNumber() + " failed: " + recordEx.getMessage());
+                        failedRecords.add(meter.getMeterNumber() + " (" + extractErrorMessage(recordEx) + ")");
                     }
                 }
             }
@@ -1882,8 +1793,31 @@ public class MeterServiceImpl implements MeterService {
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
-        result.put("status", "completed");
-        return result;
+//        result.put("status", "completed");
+        return ResponseMap.response(status.getSuccessCode(), successCount + " of " + meters.size() +"Meter uploaded successfully", result);
+
+    }
+
+    private String extractErrorMessage(Exception e) {
+        String message = e.getMessage();
+
+        if (message == null) return "Unknown error";
+
+        if (message.contains("duplicate key value")) {
+            return "Duplicate record — Meter already exists.";
+        }
+        if (message.contains("violates not-null constraint")) {
+            return "Missing required field — one or more mandatory columns are empty.";
+        }
+        if (message.contains("foreign key constraint")) {
+            return "Invalid reference — linked data does not exist.";
+        }
+        if (message.contains("invalid input syntax")) {
+            return "Invalid data type — check number or date format.";
+        }
+
+        // default fallback
+        return message.split("\n")[0];
     }
 
 
@@ -1901,8 +1835,173 @@ public class MeterServiceImpl implements MeterService {
 
         meterMapper.insertMeters(batch);
         meterMapper.insertMeterVersions(batch);
+        //Insert Smart Meter Info for those with smartStatus == true
+        batch.stream()
+                .filter(Meter::getSmartStatus) // shorthand for m -> m.getSmartStatus() == true
+                .forEach(m -> meterMapper.insertSmartMeterInfo(m.getSmartMeterInfo()));
+
     }
 
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Meter createdEntity, Map<String, String> metadata, String reason) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setCreatedMeter(createdEntity);
+        log.setReason(reason);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
+    }
+
+    private void handleAddCache(Meter meter) {
+        meterCache.remove(meter.getId().toString()+"_"+meter.getOrgId());
+        for (String key : auditCache.keySet()) {
+            if (key.startsWith("grid_flex_audit_log_page_")) {
+                auditCache.remove(key);
+            }
+        }
+        for (String key : meterCache.keySet()) {
+            if (key.startsWith("meters_"+meter.getOrgId())) {
+                meterCache.remove(key);
+            }
+        }
+        meterCache.put(meter.getId().toString()+"_"+meter.getOrgId(), meter);  // Cache updated or deleted entity
+    }
+
+    private String handleGetAccountNumber(){
+        String accountNumber;
+        accountNumber = String.valueOf(Instant.now().getEpochSecond());
+        return accountNumber;
+    }
+
+    private String handleGetVirtualMeter(){
+        String virtualMeterNo;
+        long timePart = Instant.now().toEpochMilli(); // 13 digits
+        int randomPart = new Random().nextInt(90) + 10; // 2-digit number
+        virtualMeterNo = "V" + String.valueOf(timePart).substring(0, 11) + randomPart;
+        return virtualMeterNo;
+    }
+
+    private String buildChangeDescription(Meter oldMeter, Meter newMeter) {
+        StringBuilder changes = new StringBuilder("Edited meter ");
+
+        if (!Objects.equals(oldMeter.getMeterNumber(), newMeter.getMeterNumber())) {
+            changes.append(String.format("number: '%s' → '%s' ", oldMeter.getMeterNumber(), newMeter.getMeterNumber()));
+        }
+
+        if (!Objects.equals(oldMeter.getSimNumber(), newMeter.getSimNumber())) {
+            changes.append(String.format("sim number: '%s' → '%s' ", oldMeter.getSimNumber(), newMeter.getSimNumber()));
+        }
+
+        if (!Objects.equals(oldMeter.getMeterCategory(), newMeter.getMeterCategory())) {
+            changes.append(String.format("category: '%s' → '%s' ", oldMeter.getMeterCategory(), newMeter.getMeterCategory()));
+        }
+
+        if (!Objects.equals(oldMeter.getMeterClass(), newMeter.getMeterClass())) {
+            changes.append(String.format("class: '%s' → '%s' ", oldMeter.getMeterClass(), newMeter.getMeterClass()));
+        }
+
+        if (!Objects.equals(oldMeter.getMeterType(), newMeter.getMeterType())) {
+            changes.append(String.format("type: '%s' → '%s' ", oldMeter.getMeterType(), newMeter.getMeterType()));
+        }
+
+        if (!Objects.equals(oldMeter.getOldSgc(), newMeter.getOldSgc())) {
+            changes.append(String.format("old sgc: '%s' → '%s' ", oldMeter.getOldSgc(), newMeter.getOldSgc()));
+        }
+
+        if (!Objects.equals(oldMeter.getNewSgc(), newMeter.getNewSgc())) {
+            changes.append(String.format("new sgc: '%s' → '%s' ", oldMeter.getNewSgc(), newMeter.getNewSgc()));
+        }
+
+        if (!Objects.equals(oldMeter.getOldKrn(), newMeter.getOldKrn())) {
+            changes.append(String.format("old krn: '%s' → '%s' ", oldMeter.getOldKrn(), newMeter.getOldKrn()));
+        }
+
+        if (!Objects.equals(oldMeter.getNewKrn(), newMeter.getNewKrn())) {
+            changes.append(String.format("new krn: '%s' → '%s' ", oldMeter.getNewKrn(), newMeter.getNewKrn()));
+        }
+
+        if (!Objects.equals(oldMeter.getOldTariffIndex(), newMeter.getOldTariffIndex())) {
+            changes.append(String.format("old tariff index: '%s' → '%s' ", oldMeter.getOldTariffIndex(), newMeter.getOldTariffIndex()));
+        }
+
+        if (!Objects.equals(oldMeter.getNewTariffIndex(), newMeter.getNewTariffIndex())) {
+            changes.append(String.format("new tariff index: '%s' → '%s' ", oldMeter.getNewTariffIndex(), newMeter.getNewTariffIndex()));
+        }
+        return changes.toString();
+    }
+
+    private String buildMDMeterInfoChangeDescription(MDMeterInfo oldMeter, MDMeterInfo newMeter) {
+        StringBuilder changes = new StringBuilder("Edited MD meter ");
+
+        if (!Objects.equals(oldMeter.getCtRatioNum(), newMeter.getCtRatioNum())) {
+            changes.append(String.format("ct ratio num: '%s' → '%s' ", oldMeter.getCtRatioNum(), newMeter.getCtRatioNum()));
+        }
+
+        if (!Objects.equals(oldMeter.getCtRatioDenom(), newMeter.getCtRatioDenom())) {
+            changes.append(String.format("ct ratio denom: '%s' → '%s' ", oldMeter.getCtRatioDenom(), newMeter.getCtRatioDenom()));
+        }
+
+        if (!Objects.equals(oldMeter.getVoltRatioNum(), newMeter.getVoltRatioNum())) {
+            changes.append(String.format("volt ratio num: '%s' → '%s' ", oldMeter.getVoltRatioNum(), newMeter.getVoltRatioNum()));
+        }
+
+        if (!Objects.equals(oldMeter.getVoltRatioDenom(), newMeter.getVoltRatioDenom())) {
+            changes.append(String.format("volt ratio denom: '%s' → '%s' ", oldMeter.getVoltRatioDenom(), newMeter.getVoltRatioDenom()));
+        }
+
+        if (!Objects.equals(oldMeter.getMultiplier(), newMeter.getMultiplier())) {
+            changes.append(String.format("multiplier: '%s' → '%s' ", oldMeter.getMultiplier(), newMeter.getMultiplier()));
+        }
+
+        if (!Objects.equals(oldMeter.getMeterRating(), newMeter.getMeterRating())) {
+            changes.append(String.format("reading: '%s' → '%s' ", oldMeter.getMeterRating(), newMeter.getMeterRating()));
+        }
+
+        if (!Objects.equals(oldMeter.getInitialReading(), newMeter.getInitialReading())) {
+            changes.append(String.format("initial reading: '%s' → '%s' ", oldMeter.getInitialReading(), newMeter.getInitialReading()));
+        }
+
+        if (!Objects.equals(oldMeter.getDial(), newMeter.getDial())) {
+            changes.append(String.format("dial: '%s' → '%s' ", oldMeter.getDial(), newMeter.getDial()));
+        }
+
+        if (!Objects.equals(oldMeter.getLatitude(), newMeter.getLatitude())) {
+            changes.append(String.format("latitude: '%s' → '%s' ", oldMeter.getLatitude(), newMeter.getLatitude()));
+        }
+
+        if (!Objects.equals(oldMeter.getLongitude(), newMeter.getLongitude())) {
+            changes.append(String.format("longitude: '%s' → '%s' ", oldMeter.getLongitude(), newMeter.getLongitude()));
+        }
+
+        return changes.toString();
+    }
+
+    private String buildSmartMeterInfoChangeDescription(SmartMeterInfo oldMeter, SmartMeterInfo newMeter) {
+        StringBuilder changes = new StringBuilder("Edited smart meter ");
+
+        if (!Objects.equals(oldMeter.getMeterModel(), newMeter.getMeterModel())) {
+            changes.append(String.format("model: '%s' → '%s' ", oldMeter.getMeterModel(), newMeter.getMeterModel()));
+        }
+
+        if (!Objects.equals(oldMeter.getAuthentication(), newMeter.getAuthentication())) {
+            changes.append(String.format("authentication: '%s' → '%s' ", oldMeter.getAuthentication(), newMeter.getAuthentication()));
+        }
+
+        if (!Objects.equals(oldMeter.getPassword(), newMeter.getPassword())) {
+            changes.append(String.format("password: '%s' → '%s' ", oldMeter.getPassword(), newMeter.getPassword()));
+        }
+
+        if (!Objects.equals(oldMeter.getProtocol(), newMeter.getProtocol())) {
+            changes.append(String.format("protocol: '%s' → '%s' ", oldMeter.getProtocol(), newMeter.getProtocol()));
+        }
+
+        return changes.toString();
+    }
+}
 
 //    public Map<String, Object> processCsv(InputStream is, UserModel user) throws IOException {
 //        DataAuditDTO auditNotificationDTO = new DataAuditDTO();
@@ -2081,165 +2180,68 @@ public class MeterServiceImpl implements MeterService {
 //    }
 
 
+///
 
+//    // ✅ Safely get cell value as string
+//    private static String getStringCellValue(Cell cell) {
+//        if (cell == null) return "";
+//        cell.setCellType(CellType.STRING);
+//        return cell.getStringCellValue().trim();
+//    }
+//
+//    // ✅ Safely parse a string into Long
+//    private static Long parseLongSafe(String value) {
+//        try {
+//            return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());
+//        } catch (NumberFormatException e) {
+//            return null;
+//        }
+//    }
 
-    private AuditLog buildAuditLog(UserModel creator, String description, String type, Meter createdEntity, Map<String, String> metadata, String reason) {
-        AuditLog log = new AuditLog();
-        log.setCreator(creator);
-        log.setDescription(description);
-        log.setType(type);
-        log.setCreatedMeter(createdEntity);
-        log.setReason(reason);
-        log.setIpAddress(metadata.get("ipAddress"));
-        log.setUserAgent(metadata.get("userAgent"));
-        log.setEndpoint(metadata.get("endpoint"));
-        log.setHttpMethod(metadata.get("httpMethod"));
-        return log;
-    }
-
-    private void handleAddCache(Meter meter) {
-        meterCache.remove(meter.getId().toString()+"_"+meter.getOrgId());
-        for (String key : auditCache.keySet()) {
-            if (key.startsWith("grid_flex_audit_log_page_")) {
-                auditCache.remove(key);
-            }
-        }
-        for (String key : meterCache.keySet()) {
-            if (key.startsWith("meters_"+meter.getOrgId())) {
-                meterCache.remove(key);
-            }
-        }
-        meterCache.put(meter.getId().toString()+"_"+meter.getOrgId(), meter);  // Cache updated or deleted entity
-    }
-
-    private String handleGetAccountNumber(){
-        String accountNumber;
-        accountNumber = String.valueOf(Instant.now().getEpochSecond());
-        return accountNumber;
-    }
-
-    private String handleGetVirtualMeter(){
-        String virtualMeterNo;
-        long timePart = Instant.now().toEpochMilli(); // 13 digits
-        int randomPart = new Random().nextInt(90) + 10; // 2-digit number
-        virtualMeterNo = "V" + String.valueOf(timePart).substring(0, 11) + randomPart;
-        return virtualMeterNo;
-    }
-
-    private String buildChangeDescription(Meter oldMeter, Meter newMeter) {
-        StringBuilder changes = new StringBuilder("Edited meter ");
-
-        if (!Objects.equals(oldMeter.getMeterNumber(), newMeter.getMeterNumber())) {
-            changes.append(String.format("number: '%s' → '%s' ", oldMeter.getMeterNumber(), newMeter.getMeterNumber()));
-        }
-
-        if (!Objects.equals(oldMeter.getSimNumber(), newMeter.getSimNumber())) {
-            changes.append(String.format("sim number: '%s' → '%s' ", oldMeter.getSimNumber(), newMeter.getSimNumber()));
-        }
-
-        if (!Objects.equals(oldMeter.getMeterCategory(), newMeter.getMeterCategory())) {
-            changes.append(String.format("category: '%s' → '%s' ", oldMeter.getMeterCategory(), newMeter.getMeterCategory()));
-        }
-
-        if (!Objects.equals(oldMeter.getMeterClass(), newMeter.getMeterClass())) {
-            changes.append(String.format("class: '%s' → '%s' ", oldMeter.getMeterClass(), newMeter.getMeterClass()));
-        }
-
-        if (!Objects.equals(oldMeter.getMeterType(), newMeter.getMeterType())) {
-            changes.append(String.format("type: '%s' → '%s' ", oldMeter.getMeterType(), newMeter.getMeterType()));
-        }
-
-        if (!Objects.equals(oldMeter.getOldSgc(), newMeter.getOldSgc())) {
-            changes.append(String.format("old sgc: '%s' → '%s' ", oldMeter.getOldSgc(), newMeter.getOldSgc()));
-        }
-
-        if (!Objects.equals(oldMeter.getNewSgc(), newMeter.getNewSgc())) {
-            changes.append(String.format("new sgc: '%s' → '%s' ", oldMeter.getNewSgc(), newMeter.getNewSgc()));
-        }
-
-        if (!Objects.equals(oldMeter.getOldKrn(), newMeter.getOldKrn())) {
-            changes.append(String.format("old krn: '%s' → '%s' ", oldMeter.getOldKrn(), newMeter.getOldKrn()));
-        }
-
-        if (!Objects.equals(oldMeter.getNewKrn(), newMeter.getNewKrn())) {
-            changes.append(String.format("new krn: '%s' → '%s' ", oldMeter.getNewKrn(), newMeter.getNewKrn()));
-        }
-
-        if (!Objects.equals(oldMeter.getOldTariffIndex(), newMeter.getOldTariffIndex())) {
-            changes.append(String.format("old tariff index: '%s' → '%s' ", oldMeter.getOldTariffIndex(), newMeter.getOldTariffIndex()));
-        }
-
-        if (!Objects.equals(oldMeter.getNewTariffIndex(), newMeter.getNewTariffIndex())) {
-            changes.append(String.format("new tariff index: '%s' → '%s' ", oldMeter.getNewTariffIndex(), newMeter.getNewTariffIndex()));
-        }
-        return changes.toString();
-    }
-
-    private String buildMDMeterInfoChangeDescription(MDMeterInfo oldMeter, MDMeterInfo newMeter) {
-        StringBuilder changes = new StringBuilder("Edited MD meter ");
-
-        if (!Objects.equals(oldMeter.getCtRatioNum(), newMeter.getCtRatioNum())) {
-            changes.append(String.format("ct ratio num: '%s' → '%s' ", oldMeter.getCtRatioNum(), newMeter.getCtRatioNum()));
-        }
-
-        if (!Objects.equals(oldMeter.getCtRatioDenom(), newMeter.getCtRatioDenom())) {
-            changes.append(String.format("ct ratio denom: '%s' → '%s' ", oldMeter.getCtRatioDenom(), newMeter.getCtRatioDenom()));
-        }
-
-        if (!Objects.equals(oldMeter.getVoltRatioNum(), newMeter.getVoltRatioNum())) {
-            changes.append(String.format("volt ratio num: '%s' → '%s' ", oldMeter.getVoltRatioNum(), newMeter.getVoltRatioNum()));
-        }
-
-        if (!Objects.equals(oldMeter.getVoltRatioDenom(), newMeter.getVoltRatioDenom())) {
-            changes.append(String.format("volt ratio denom: '%s' → '%s' ", oldMeter.getVoltRatioDenom(), newMeter.getVoltRatioDenom()));
-        }
-
-        if (!Objects.equals(oldMeter.getMultiplier(), newMeter.getMultiplier())) {
-            changes.append(String.format("multiplier: '%s' → '%s' ", oldMeter.getMultiplier(), newMeter.getMultiplier()));
-        }
-
-        if (!Objects.equals(oldMeter.getMeterRating(), newMeter.getMeterRating())) {
-            changes.append(String.format("reading: '%s' → '%s' ", oldMeter.getMeterRating(), newMeter.getMeterRating()));
-        }
-
-        if (!Objects.equals(oldMeter.getInitialReading(), newMeter.getInitialReading())) {
-            changes.append(String.format("initial reading: '%s' → '%s' ", oldMeter.getInitialReading(), newMeter.getInitialReading()));
-        }
-
-        if (!Objects.equals(oldMeter.getDial(), newMeter.getDial())) {
-            changes.append(String.format("dial: '%s' → '%s' ", oldMeter.getDial(), newMeter.getDial()));
-        }
-
-        if (!Objects.equals(oldMeter.getLatitude(), newMeter.getLatitude())) {
-            changes.append(String.format("latitude: '%s' → '%s' ", oldMeter.getLatitude(), newMeter.getLatitude()));
-        }
-
-        if (!Objects.equals(oldMeter.getLongitude(), newMeter.getLongitude())) {
-            changes.append(String.format("longitude: '%s' → '%s' ", oldMeter.getLongitude(), newMeter.getLongitude()));
-        }
-
-        return changes.toString();
-    }
-
-    private String buildSmartMeterInfoChangeDescription(SmartMeterInfo oldMeter, SmartMeterInfo newMeter) {
-        StringBuilder changes = new StringBuilder("Edited smart meter ");
-
-        if (!Objects.equals(oldMeter.getMeterModel(), newMeter.getMeterModel())) {
-            changes.append(String.format("model: '%s' → '%s' ", oldMeter.getMeterModel(), newMeter.getMeterModel()));
-        }
-
-        if (!Objects.equals(oldMeter.getAuthentication(), newMeter.getAuthentication())) {
-            changes.append(String.format("authentication: '%s' → '%s' ", oldMeter.getAuthentication(), newMeter.getAuthentication()));
-        }
-
-        if (!Objects.equals(oldMeter.getPassword(), newMeter.getPassword())) {
-            changes.append(String.format("password: '%s' → '%s' ", oldMeter.getPassword(), newMeter.getPassword()));
-        }
-
-        if (!Objects.equals(oldMeter.getProtocol(), newMeter.getProtocol())) {
-            changes.append(String.format("protocol: '%s' → '%s' ", oldMeter.getProtocol(), newMeter.getProtocol()));
-        }
-
-        return changes.toString();
-    }
-}
+//    public static List<Meter> processExcel(InputStream inputStream,  UserModel user) throws IOException {
+//        List<Meter> meters = new ArrayList<>();
+//
+//        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+//            Sheet sheet = workbook.getSheetAt(0);
+//            Iterator<Row> rows = sheet.iterator();
+//            rows.next(); // skip header
+//
+//            while (rows.hasNext()) {
+//                Row row = rows.next();
+//                Meter meter = new Meter();
+//
+//                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
+//                meter.setAccountNumber(getStringCellValue(row.getCell(1)));
+//                meter.setSimNumber(getStringCellValue(row.getCell(2)));
+//                meter.setMeterCategory(getStringCellValue(row.getCell(3)));
+//                meter.setMeterClass(getStringCellValue(row.getCell(4)));
+//                meter.setMeterType(getStringCellValue(row.getCell(5)));
+//                meter.setOldSgc(getStringCellValue(row.getCell(7)));
+//                meter.setNewSgc(getStringCellValue(row.getCell(8)));
+//                meter.setOldKrn(getStringCellValue(row.getCell(9)));
+//                meter.setNewKrn(getStringCellValue(row.getCell(10)));
+//                meter.setOldTariffIndex(Long.parseLong(getStringCellValue(row.getCell(11))));
+//                meter.setNewTariffIndex(Long.parseLong(getStringCellValue(row.getCell(12))));
+//
+//                meter.setSmartStatus(Boolean.parseBoolean(getStringCellValue(row.getCell(6))));
+//                meter.getSmartMeterInfo().setMeterModel(getStringCellValue(row.getCell(13)));
+//                meter.getSmartMeterInfo().setProtocol(getStringCellValue(row.getCell(14)));
+//                meter.getSmartMeterInfo().setAuthentication(getStringCellValue(row.getCell(15)));
+//                meter.getSmartMeterInfo().setPassword(getStringCellValue(row.getCell(16)));
+//
+//                meter.getMdMeterInfo().setCtRatioNum(Long.parseLong(getStringCellValue(row.getCell(17))));
+//                meter.getMdMeterInfo().setCtRatioDenom(Long.parseLong(getStringCellValue(row.getCell(18))));
+//                meter.getMdMeterInfo().setVoltRatioNum(Long.parseLong(getStringCellValue(row.getCell(19))));
+//                meter.getMdMeterInfo().setVoltRatioDenom(Long.parseLong(getStringCellValue(row.getCell(20))));
+//                meter.getMdMeterInfo().setMultiplier(Long.parseLong(getStringCellValue(row.getCell(21))));
+//                meter.getMdMeterInfo().setMeterRating(Long.parseLong(getStringCellValue(row.getCell(22))));
+//                meter.getMdMeterInfo().setInitialReading(Long.parseLong(getStringCellValue(row.getCell(23))));
+//                meter.getMdMeterInfo().setDial(Long.parseLong(getStringCellValue(row.getCell(24))));
+//                meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
+//                meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
+//
+//                meters.add(meter);
+//            }
+//        }
+//        return meters;
+//    }

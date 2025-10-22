@@ -101,7 +101,7 @@ public class  SecurityConfig {
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**",
 						"/auth/service/forget-password/**", "/actuator/prometheus", "/service/alerts", "/service/reports/summary",
-						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache", "/meter/service/download/template/excel", "/meter/service/download/template/csv"
+						"/service/trigger/daily", "/service/trigger/monthly", "/band/service/clear-cache"
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
 						"/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/export",
@@ -125,6 +125,7 @@ public class  SecurityConfig {
 						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
 						"meter/service/allocate", "meter/service/detach","/meter/reading/service/create","/meter/reading/service/generate", "/meter/reading/service/update",
 						"/meter/reading/service/all", "/meter/reading/service/download/template/csv", "/meter/reading/service/download/template/excel","/meter/reading/service/bulk-upload",
+						"/meter/service/download/template/excel", "/meter/service/download/template/csv",
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management"

@@ -1185,8 +1185,6 @@ public interface MeterMapper {
     })
     void insertMeterVersions(@Param("meters") List<Meter> meters);
 
-
-
 //
 
 
