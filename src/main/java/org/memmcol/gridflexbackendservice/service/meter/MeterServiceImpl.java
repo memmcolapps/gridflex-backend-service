@@ -1612,6 +1612,44 @@ public class MeterServiceImpl implements MeterService {
     }
 
 
+    public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+        int batchSize = 200;
+
+        for (int i = 0; i < meters.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, meters.size());
+            List<Meter> batch = meters.subList(i, end);
+
+            try {
+                insertBatchTransactional(batch, user);
+                successCount += batch.size();
+            } catch (Exception batchEx) {
+                log.error("Batch {} failed: {}", (i / batchSize) + 1, batchEx.getMessage());
+
+                // Try inserting one by one for this failed batch
+                for (Meter meter : batch) {
+                    try {
+                        insertBatchTransactional(Collections.singletonList(meter), user);
+                        successCount++;
+                    } catch (Exception recordEx) {
+                        log.error("Meter {} failed: {}", meter.getMeterNumber(), recordEx.getMessage());
+                        failedRecords.add(meter.getMeterNumber() + " (" + extractErrorMessage(recordEx) + ")");
+                    }
+                }
+            }
+        }
+
+        result.put("totalRecords", meters.size());
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+//        result.put("status", "completed");
+        return ResponseMap.response(status.getSuccessCode(), successCount + " of " + meters.size() +"Meter uploaded successfully", result);
+
+    }
+
     // Parse CSV file into a list of Meter objects
     public static List<Meter> processCsv(InputStream inputStream, UserModel user) throws IOException {
         List<Meter> meters = new ArrayList<>();
@@ -1669,15 +1707,6 @@ public class MeterServiceImpl implements MeterService {
             }
         }
         return meters;
-    }
-
-    // Helper method to avoid NumberFormatException
-    private static Long parseLongSafe(String value) {
-        try {
-            return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     // Parse Excel (.xlsx) file into a list of Meter objects
@@ -1753,50 +1782,21 @@ public class MeterServiceImpl implements MeterService {
         return meters;
     }
 
+    // Helper method to avoid NumberFormatException
+    private static Long parseLongSafe(String value) {
+        try {
+            return (value == null || value.isEmpty()) ? null : Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     private static String getStringCellValue(Cell cell) {
         if (cell == null) return "";
         cell.setCellType(CellType.STRING);
         return cell.getStringCellValue().trim();
     }
 
-
-    public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
-        Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
-        int successCount = 0;
-        int batchSize = 200;
-
-        for (int i = 0; i < meters.size(); i += batchSize) {
-            int end = Math.min(i + batchSize, meters.size());
-            List<Meter> batch = meters.subList(i, end);
-
-            try {
-                insertBatchTransactional(batch, user);
-                successCount += batch.size();
-            } catch (Exception batchEx) {
-                log.error("Batch {} failed: {}", (i / batchSize) + 1, batchEx.getMessage());
-
-                // Try inserting one by one for this failed batch
-                for (Meter meter : batch) {
-                    try {
-                        insertBatchTransactional(Collections.singletonList(meter), user);
-                        successCount++;
-                    } catch (Exception recordEx) {
-                        log.error("Meter {} failed: {}", meter.getMeterNumber(), recordEx.getMessage());
-                        failedRecords.add(meter.getMeterNumber() + " (" + extractErrorMessage(recordEx) + ")");
-                    }
-                }
-            }
-        }
-
-        result.put("totalRecords", meters.size());
-        result.put("successCount", successCount);
-        result.put("failedCount", failedRecords.size());
-        result.put("failedRecords", failedRecords);
-//        result.put("status", "completed");
-        return ResponseMap.response(status.getSuccessCode(), successCount + " of " + meters.size() +"Meter uploaded successfully", result);
-
-    }
 
     private String extractErrorMessage(Exception e) {
         String message = e.getMessage();
@@ -1835,10 +1835,29 @@ public class MeterServiceImpl implements MeterService {
 
         meterMapper.insertMeters(batch);
         meterMapper.insertMeterVersions(batch);
-        //Insert Smart Meter Info for those with smartStatus == true
-        batch.stream()
-                .filter(Meter::getSmartStatus) // shorthand for m -> m.getSmartStatus() == true
-                .forEach(m -> meterMapper.insertSmartMeterInfo(m.getSmartMeterInfo()));
+
+        // Prepare smart and MD info lists
+        List<SmartMeterInfo> smartInfos = new ArrayList<>();
+        List<MDMeterInfo> mdInfos = new ArrayList<>();
+
+        for (Meter m : batch) {
+            if (m.getSmartMeterInfo() != null) {
+                m.getSmartMeterInfo().setMeterId(m.getId());
+                smartInfos.add(m.getSmartMeterInfo());
+            }
+            if (m.getMdMeterInfo() != null) {
+                m.getMdMeterInfo().setMeterId(m.getId());
+                mdInfos.add(m.getMdMeterInfo());
+            }
+        }
+
+        // Bulk insert child info
+        if (!smartInfos.isEmpty()) {
+            meterMapper.insertSmartMeterInfo(smartInfos);
+        }
+        if (!mdInfos.isEmpty()) {
+            meterMapper.insertMDMeterInfo(mdInfos);
+        }
 
     }
 
