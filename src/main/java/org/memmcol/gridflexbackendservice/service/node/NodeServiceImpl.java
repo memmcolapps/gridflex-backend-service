@@ -85,9 +85,10 @@ public class NodeServiceImpl implements NodeService {
             request.setOrgId(um.getOrgId());
             request.setParentId(parentNodeId);
 
-            if(request.getType().equalsIgnoreCase("region") ||
-                    request.getType().equalsIgnoreCase("business hub") ||
-                    request.getType().equalsIgnoreCase("service center")){
+
+            if(request.getType().toLowerCase().equals("region") ||
+                    request.getType().toLowerCase().equals("business hub") ||
+                    request.getType().toLowerCase().equals("service center")){
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getNodeId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
@@ -138,9 +139,9 @@ public class NodeServiceImpl implements NodeService {
             request.setOrgId(um.getOrgId());
             request.setParentId(parentNodeId);
 
-            if(request.getType().equalsIgnoreCase("dss") ||
-                    request.getType().equalsIgnoreCase("feeder line") ||
-                    request.getType().equalsIgnoreCase("substation")){
+            if(request.getType().toLowerCase().equals("dss") ||
+                    request.getType().toLowerCase().equals("feeder line") ||
+                    request.getType().toLowerCase().equals("substation")){
                 nodeMapper.createSubStationTransformerFeederLine(request);
                 id = request.getNodeId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
