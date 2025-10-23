@@ -356,7 +356,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
             Map<String, Object> response = new HashMap<>();
             response.put("cardData", cardData);
-            response.put("percentData", percentData);
+            response.put("tokenDistribution", percentData);
             response.put("transactionStatus", transactionStatus);
             response.put("transactionOverMonths", transactionOverMonths);
 
