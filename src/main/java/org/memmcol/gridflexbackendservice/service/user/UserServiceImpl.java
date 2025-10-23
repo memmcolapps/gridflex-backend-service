@@ -574,7 +574,7 @@ public class UserServiceImpl implements  UserService {
             group.setStatus(true);
 
             /// Check if group already exist (No duplication title allowed)
-            String isGroupTitle = userMapper.checkGroupName(request.getGroupTitle());
+            String isGroupTitle = userMapper.checkGroupName(request.getGroupTitle(), um.getOrgId());
             if(isGroupTitle != null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Group title '" + request.getGroupTitle() + "' already exist.");
             }
@@ -677,25 +677,37 @@ public class UserServiceImpl implements  UserService {
                 Module module = new Module();
                 module.setName(moduleWithSubs.getName());
                 module.setAccess(moduleWithSubs.getAccess());
-//                module.setOrgId(orgId);
-//                module.setGroupId(groupId);
+                module.setOrgId(orgId);
+                module.setGroupId(groupId);
                 module.setId(moduleWithSubs.getId());
 
-                /// Create and insert module
-                userMapper.updateModule(module);  // ID will be set here
-//                UUID moduleId = module.getId();   // Auto-generated ID
+                if(module.getId() != null){
+                    /// Update module
+                    userMapper.updateModule(module);
+                } else {
+                    /// Create and insert module
+                    userMapper.insertModule(module);
+                }
+                UUID moduleId = module.getId();
+                 // Auto-generated ID
 
                 for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
                     SubModule subModule = new SubModule();
                     subModule.setName(smwp.getName());
                     subModule.setAccess(smwp.getAccess());
-//                    subModule.setModuleId(moduleId);
+                    subModule.setModuleId(moduleId);
                     subModule.setId(smwp.getId());
                     subModule.setOrgId(orgId);
                     subModule.setId(smwp.getId());
 
-                    /// Create and insert submodule
-                    userMapper.updateSubModule(subModule);
+                    if(subModule.getId() != null){
+                        /// Update submodule
+                        userMapper.updateSubModule(subModule);
+                    } else {
+                        /// Create and insert submodule
+                        userMapper.insertSubModule(subModule);
+                    }
+
                 }
             }
 

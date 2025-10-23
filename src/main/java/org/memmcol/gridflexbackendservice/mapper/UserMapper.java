@@ -1,14 +1,12 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
-import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.model.user.Module;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
@@ -99,9 +97,9 @@ public interface UserMapper {
     Group checkGroupId(@Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
     @Select("""
-            SELECT * FROM groups WHERE title = #{groupTitle}
+            SELECT * FROM groups WHERE title = #{groupTitle} AND org_id = #{orgId}
             """)
-    String checkGroupName(@Param("groupTitle") String groupTitle);
+    String checkGroupName(@Param("groupTitle") String groupTitle, UUID orgId);
 
 
     @Select("""
@@ -169,7 +167,7 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertModule(Module module);
 
-    @Insert("UPDATE modules SET name = #{name}, access = #{access} WHERE id = #{id}")
+    @Insert("UPDATE modules SET access = #{access} WHERE id = #{id}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateModule(Module module);
 
@@ -186,7 +184,7 @@ public interface UserMapper {
     void insertSubModule(SubModule subModule);
 
 
-    @Insert("UPDATE submodules SET name = #{name}, access = #{access} WHERE id = #{id}")
+    @Insert("UPDATE submodules SET access = #{access} WHERE id = #{id}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubModule(SubModule subModule);
 
