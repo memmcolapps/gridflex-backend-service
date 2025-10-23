@@ -72,6 +72,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
             Map.entry("meter inventory", List.of("/node/service/single", "/node/service/all",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "meter/service/allocate",
+                    "/meter/service/download/template/excel", "/meter/service/download/template/csv",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("assigned meter", List.of("/node/service/single", "/node/service/all", "/meter/service/migrate", "/meter/service/detach",
@@ -89,6 +90,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
+                    "/customer/service/download/template/excel", "/customer/service/download/template/csv",
                     "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
                     "/audit-log/service/incident/report/get")),
 
@@ -104,7 +106,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("tariff", List.of("/tariff/service/single", "/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state",
-                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get", "/tariff/service/export")),
+                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",
+                    "/tariff/service/export")),
 
             Map.entry("dashboard", List.of("/dashboard/service/data-management")),
 
