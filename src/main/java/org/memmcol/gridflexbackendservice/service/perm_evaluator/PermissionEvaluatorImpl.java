@@ -48,8 +48,9 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/node/service/create/node/substation-transformer-feeder-line", "/node/service/update/node/substation-transformer-feeder-line", "/node/service/businessHub",
                     "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
                     "/audit-log/service/incident/report/get", "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
-                    "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign",
+                    "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/assign",
                     "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach",
+                    "/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
                     "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/dashboard/service/data-management")),
 
             Map.entry("organization", List.of("/node/service/create/node/region-bhub-service-center", "/node/service/update/node/region-bhub-service-center",
