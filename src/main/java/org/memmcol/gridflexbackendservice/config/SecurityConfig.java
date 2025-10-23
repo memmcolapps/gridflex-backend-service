@@ -123,12 +123,14 @@ public class  SecurityConfig {
 						"/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
 						"/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-state", "/meter/service/approve",
 						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer",
-						"meter/service/allocate", "meter/service/detach","/meter/reading/service/create","/meter/reading/service/generate", "/meter/reading/service/update",
-						"/meter/reading/service/all", "/meter/reading/service/download/template/csv", "/meter/reading/service/download/template/excel","/meter/reading/service/bulk-upload",
+						"meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/service/create","/billing/service/meter/reading/service/generate", "/billing/service/meter/reading/service/update",
+						"/billing/service/meter/reading/service/all", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/service/download/template/excel",
+						"/billing/service/meter/reading/service/bulk-upload",
 						"/meter/service/download/template/excel", "/meter/service/download/template/csv",
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
-						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management"
+						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management",
+						"/dashboard/service/billing-management"
 						)
 				.access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier"/customer/service/download/template/csv",

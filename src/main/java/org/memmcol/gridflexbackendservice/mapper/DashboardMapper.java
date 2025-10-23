@@ -52,7 +52,7 @@ public interface DashboardMapper {
     LEFT JOIN manufacturers mf ON m.meter_manufacturer = mf.id
     LEFT JOIN tariffs t ON m.tariff = t.id
     LEFT JOIN bands b ON t.band_id = b.id
-    WHERE m.org_id = #{orgId}
+    WHERE m.org_id = #{orgId} AND m.meter_stage != 'Pending-created'
 """)
     @Results({
             @Result(property = "id", column = "id"),

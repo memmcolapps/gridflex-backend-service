@@ -73,28 +73,31 @@ public class DashboardServiceImpl implements  DashboardService{
 
         // Calculate summary stats
         long inventory = filteredMeters.stream()
-                .filter(m -> "Created".equalsIgnoreCase(m.getMeterStage()))
+                .filter(m -> m.getNodeId() == null)
                 .count();
+//        long pending_allocated = filteredMeters.stream()
+//                .filter(m -> "Pending-allocated".equalsIgnoreCase(m.getMeterStage()))
+//                .count();
 
         long allocated = filteredMeters.stream()
-                .filter(m -> m.getNodeId() != null && m.getCustomerId() == null)
+                .filter(m -> m.getNodeId() != null)
                 .count();
 
-        long assigned = filteredMeters.stream()
-                .filter(m -> m.getCustomerId() != null)
-                .count();
+//        long assigned = filteredMeters.stream()
+//                .filter(m -> m.getCustomerId() != null)
+//                .count();
+//
+//        long deactivated = filteredMeters.stream()
+//                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
+//                .count();
 
-        long deactivated = filteredMeters.stream()
-                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
-                .count();
-
-        long allocatedSummary = allocated + assigned;
+//        long inventory = created + pending_allocated;
 
         // Calculate percentages
         double inventoryPercent = (inventory * 100.0) / total;
-        double allocatedPercent = (allocatedSummary * 100.0) / total;
-        double assignedPercent = (assigned * 100.0) / total;
-        double deactivatedPercent = (deactivated * 100.0) / total;
+        double allocatedPercent = (allocated * 100.0) / total;
+//        double assignedPercent = (assigned * 100.0) / total;
+//        double deactivatedPercent = (deactivated * 100.0) / total;
 
 //        // Extract unique manufacturers
 //        List<Manufacturer> uniqueManufacturers = meters.stream()
@@ -159,15 +162,15 @@ public class DashboardServiceImpl implements  DashboardService{
         Map<String, Object> resp = new HashMap<>();
         resp.put("inventory", String.format("%.2f", inventoryPercent));
         resp.put("allocated", String.format("%.2f", allocatedPercent));
-        resp.put("assigned", String.format("%.2f", assignedPercent));
-        resp.put("deactivated", String.format("%.2f", deactivatedPercent));
+//        resp.put("assigned", String.format("%.2f", assignedPercent));
+//        resp.put("deactivated", String.format("%.2f", deactivatedPercent));
 
         Map<String, Object> card = new HashMap<>();
         card.put("totalMeter", filteredMeters.size());
         card.put("inventory", inventory);
-        card.put("allocated", allocatedSummary);
-        card.put("assigned", assigned);
-        card.put("deactivated", deactivated);
+        card.put("allocated", allocated);
+//        card.put("assigned", assigned);
+//        card.put("deactivated", deactivated);
 
         // Build response
         Map<String, Object> response = new HashMap<>();

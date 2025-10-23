@@ -1,14 +1,12 @@
-package org.memmcol.gridflexbackendservice.service.meter_reading_sheet;
+package org.memmcol.gridflexbackendservice.service.billing;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -27,11 +25,10 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.*;
 
-import static org.memmcol.gridflexbackendservice.components.GenericHandler.getClientIp;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
-public class MeterReadingSheetServiceImpl implements MeterReadingSheetService {
+public class BillingServiceImpl implements BillingService {
     private static final Logger log = LoggerFactory.getLogger(CustomerServiceImpl.class);
 
     @Autowired

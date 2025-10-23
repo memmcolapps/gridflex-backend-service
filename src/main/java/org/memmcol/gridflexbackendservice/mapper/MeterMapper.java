@@ -1186,29 +1186,29 @@ public interface MeterMapper {
     })
     void insertMeterVersions(@Param("meters") List<Meter> meters);
 
-//    @Insert({
-//            "<script>",
-//            "INSERT INTO smart_meter_info (meter_id, meter_model, protocol, authentication, password) VALUES ",
-//            "<foreach collection='list' item='info' separator=','>",
-//            "(#{info.meterId}, #{info.meterModel}, #{info.protocol}, #{info.authentication}, #{info.password})",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    void insertSmartMeterInfo(@Param("list") List<SmartMeterInfo> list);
-//
-//
-//    @Insert({
-//            "<script>",
-//            "INSERT INTO md_meter_info (meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, ",
-//            "multiplier, meter_rating, initial_reading, dial, latitude, longitude) VALUES ",
-//            "<foreach collection='list' item='info' separator=','>",
-//            "(#{info.meterId}, #{info.ctRatioNum}, #{info.ctRatioDenom}, #{info.voltRatioNum}, #{info.voltRatioDenom}, ",
-//            "#{info.multiplier}, #{info.meterRating}, #{info.initialReading}, #{info.dial}, ",
-//            "#{info.latitude}, #{info.longitude})",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    void insertMDMeterInfo(@Param("list") List<MDMeterInfo> list);
+    @Insert({
+            "<script>",
+            "INSERT INTO smart_meter_info_version (meter_id, meter_model, protocol, authentication, password, org_id, meter_stage, description)",
+            "VALUES ",
+            "<foreach collection='list' item='info' separator=','>",
+            "(#{info.meterId}, #{info.meterModel}, #{info.protocol}, #{info.authentication}, #{info.password}, #{info.orgId}, #{info.meterStage}, #{info.description})",
+            "</foreach>",
+            "</script>"
+    })
+    void insertBatchSmartMeterInfoVersion(@Param("list") List<SmartMeterInfo> list);
+
+    @Insert({
+            "<script>",
+            "INSERT INTO md_meter_info_version (org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, " +
+                    "latitude, longitude, created_by, description, meter_stage) " +
+            "VALUES ",
+            "<foreach collection='list' item='info' separator=','>",
+            "(#{info.orgId}, #{info.meterId}, #{info.ctRatioNum}, #{info.ctRatioDenom}, #{info.voltRatioNum}, #{info.voltRatioDenom}, #{info.multiplier}, #{info.meterRating}, #{info.initialReading}, " +
+            "#{info.dial}, #{info.latitude}, #{info.longitude}, #{info.createdBy}, #{info.description}, #{info.meterStage})",
+            "</foreach>",
+            "</script>"
+    })
+    void insertBatchMDMeterInfoVersion(@Param("list") List<MDMeterInfo> list);
 
 
 

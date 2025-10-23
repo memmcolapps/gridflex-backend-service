@@ -1,13 +1,11 @@
-package org.memmcol.gridflexbackendservice.service.meter_reading_sheet;
+package org.memmcol.gridflexbackendservice.service.billing;
 
 import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 
-import java.math.BigDecimal;
 import java.util.Map;
-import java.util.UUID;
 
-public interface MeterReadingSheetService {
+public interface BillingService {
 
     Map<String, Object> getGenerateMeterReading(String assetId, String type, String meterClass);
     Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet);

@@ -1,34 +1,31 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
 import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
-import org.memmcol.gridflexbackendservice.service.meter_reading_sheet.MeterReadingSheetService;
+import org.memmcol.gridflexbackendservice.service.billing.BillingService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
-@RequestMapping("/meter/reading/service")
-public class MeterReadingSheetController {
+@RequestMapping("/billing/service")
+public class BillingController {
 
     @Autowired
-    private final MeterReadingSheetService readingMetersService;
+    private final BillingService readingMetersService;
 
 
     @Autowired
     private GlobalExceptionHandler exception;
 
-    public MeterReadingSheetController(MeterReadingSheetService readingMetersService) {
+    public BillingController(BillingService readingMetersService) {
         this.readingMetersService = readingMetersService;
     }
 
-    @PostMapping("/create")
+    @PostMapping("/meter/reading/create")
     public ResponseEntity<Map<String, Object>> addMeterReading(@RequestBody MeterReadingSheet meterReadingSheet) {
         try {
 
@@ -39,7 +36,7 @@ public class MeterReadingSheetController {
         }
     }
 
-    @GetMapping("/generate")
+    @GetMapping("/meter/reading/generate")
     public ResponseEntity<?> getAllReadingMeters(
             @RequestParam String assetId,
             @RequestParam String type,
@@ -52,7 +49,7 @@ public class MeterReadingSheetController {
         }
     }
 
-    @PutMapping("/update")
+    @PutMapping("/meter/reading/update")
     public ResponseEntity<?> updateMeterCurrentReading(@RequestBody MeterReadingSheet meterReadingSheet) {
         try {
 
@@ -63,7 +60,7 @@ public class MeterReadingSheetController {
         }
     }
 
-    @GetMapping("/all")
+    @GetMapping("/meter/reading/all")
     public ResponseEntity<Map<String, Object>> getMeterReadings(
             @RequestParam(required = false) String meterNumber,
             @RequestParam(required = false) String name,

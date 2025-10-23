@@ -33,6 +33,7 @@ public class UserController {
         }
     }
 
+    // Update user group by assigning the user to another group
     @PutMapping("/group/update")
     public ResponseEntity<?> updateGroupUser(@RequestBody CreateUserRequest request) {
         try {
@@ -43,6 +44,7 @@ public class UserController {
         }
     }
 
+    // Update User profile
     @PutMapping("/update")
     public ResponseEntity<?> updateUserProfile(@RequestBody UserModel user) {
         try {
@@ -93,6 +95,7 @@ public class UserController {
         }
     }
 
+    //Create group permission, adding modules and submodules
     @PostMapping("/create/group-permission")
     public ResponseEntity<?> createGroupPermission(@RequestBody CreateGroupRequest request) {
         try {
@@ -103,6 +106,7 @@ public class UserController {
         }
     }
 
+    //Update group permission, adding or removing module and submodule
     @PutMapping("/update/group-permission")
     public ResponseEntity<?> updateGroupPermission(@RequestBody CreateGroupRequest createGroupRequest) {
         try {
