@@ -57,28 +57,29 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/node/service/single", "/node/service/all", "/audit-log/service/all", "/node/service/businessHub", "/audit-log/service/single-log",
                     "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("meter manufacturers", List.of("/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
+            Map.entry("meter manufacturers", List.of(
+                    "/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("meter management", List.of("/tariff/service/all",
-                    "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
-                    "/audit-log/service/incident/report/get", "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
-                    "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign",
+            Map.entry("meter management", List.of("/tariff/service/all", "/node/service/single", "/node/service/all",
+                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
+                    "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/assign", "/manufacturer/service/create",
+                    "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
                     "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach",
                     "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/dashboard/service/data-management", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("meter inventory", List.of("/node/service/single", "/node/service/all",
-                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
-                    "meter/service/allocate", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
+                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "meter/service/allocate",
+                    "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("assigned meter", List.of("/node/service/single", "/node/service/all", "/meter/service/migrate", "/meter/service/detach",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
-                    "meter/service/allocate", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
+                    "meter/service/allocate", "/audit-log/service/single-log", "/audit-log/service/all", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("meter", List.of("/tariff/service/all", "/node/service/single", "/node/service/all", "/meter/service/create",
                     "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/assign", "/meter/service/cin/assign", "/meter/service/cin/change-state",
-                    "meter/service/allocate", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
+                    "meter/service/allocate", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("review and approval", List.of("/band/service/all", "/band/service/single", "/band/service/approve", "/meter/service/all",
                     "/meter/service/single", "/meter/service/approve", "/tariff/service/single", "/tariff/service/all", "/tariff/service/approve",

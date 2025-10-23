@@ -83,13 +83,13 @@ public class DashboardServiceImpl implements  DashboardService{
                 .filter(m -> m.getNodeId() != null)
                 .count();
 
-//        long assigned = filteredMeters.stream()
-//                .filter(m -> m.getCustomerId() != null)
-//                .count();
-//
-//        long deactivated = filteredMeters.stream()
-//                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
-//                .count();
+        long assigned = filteredMeters.stream()
+                .filter(m -> m.getCustomerId() != null)
+                .count();
+
+        long deactivated = filteredMeters.stream()
+                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
+                .count();
 
 //        long inventory = created + pending_allocated;
 
@@ -169,8 +169,8 @@ public class DashboardServiceImpl implements  DashboardService{
         card.put("totalMeter", filteredMeters.size());
         card.put("inventory", inventory);
         card.put("allocated", allocated);
-//        card.put("assigned", assigned);
-//        card.put("deactivated", deactivated);
+        card.put("assigned", assigned);
+        card.put("deactivated", deactivated);
 
         // Build response
         Map<String, Object> response = new HashMap<>();
