@@ -22,7 +22,7 @@ public interface VendMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createCreditToken(Transaction transaction);
 
-    @Select("SELECT * FROM vw_vending_transactions_summary WHERE transaction_id = #{id}")
+    @Select("SELECT * FROM vw_vending_transactions_summary WHERE transaction_id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "transactionId", column = "transaction_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -57,7 +57,7 @@ public interface VendMapper {
             @Result(property = "debitAdjustment", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getDebitAdjustment")),
     })
-    Transaction getCreditTokenTransaction(UUID id);
+    Transaction getCreditTokenTransaction(UUID id, UUID orgId);
 
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} AND type = 'credit'")

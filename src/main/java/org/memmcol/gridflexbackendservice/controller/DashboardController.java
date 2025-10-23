@@ -33,9 +33,12 @@ public class DashboardController {
 
 
     @GetMapping("/vending")
-    public ResponseEntity<?> vending() {
+    public ResponseEntity<?> vending(
+            @RequestParam(value = "band", required = false, defaultValue = "") String band,
+            @RequestParam(value = "year", required = false, defaultValue = "") String year,
+            @RequestParam(value = "meterCategory", required = false, defaultValue = "") String meterCategory) {
         try {
-            Map<String, Object> result = service.vendingDashboard();
+            Map<String, Object> result = service.vendingDashboard(band, year, meterCategory);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

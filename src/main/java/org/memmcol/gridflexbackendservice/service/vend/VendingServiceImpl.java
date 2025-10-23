@@ -23,7 +23,6 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,7 +115,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Credit token creation failed.");
             }
 
-            Transaction savedTransaction = vendMapper.getCreditTokenTransaction(transaction.getId());
+            Transaction savedTransaction = vendMapper.getCreditTokenTransaction(transaction.getId(), user.getOrgId());
 
             // Audit (optional)
              AuditLog auditLog = buildAuditLog(user, "Credit token created", "Vend", savedTransaction, metadata, null);
@@ -241,7 +240,7 @@ public class VendingServiceImpl implements VendingService {
             }
 
 
-            Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
+            Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId(), user.getOrgId());
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "kct token generated", "vend", transaction, metadata, kctToken.getReason());
@@ -319,7 +318,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Generate kct token failed");
             }
 
-            Transaction transaction = vendMapper.getCreditTokenTransaction(clearTamper.getId());
+            Transaction transaction = vendMapper.getCreditTokenTransaction(clearTamper.getId(), user.getOrgId());
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "clear token generated", "vend", transaction, metadata, clearTamper.getReason());
@@ -362,7 +361,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Generate clear credit token failed");
             }
 
-            Transaction transaction = vendMapper.getCreditTokenTransaction(clearCredit.getId());
+            Transaction transaction = vendMapper.getCreditTokenTransaction(clearCredit.getId(), user.getOrgId());
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "clear credit token generated", "vend", transaction, metadata, clearCredit.getReason());
@@ -413,7 +412,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Generate kct and clear tamper token failed");
             }
 
-            Transaction transaction = vendMapper.getCreditTokenTransaction(kctAndClearTamper.getId());
+            Transaction transaction = vendMapper.getCreditTokenTransaction(kctAndClearTamper.getId(), user.getOrgId());
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "Kct and clear tamper token generated", "vend", transaction, metadata, kctAndClearTamper.getReason());
@@ -456,7 +455,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Generate compensation token failed");
             }
 
-            Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId());
+            Transaction transaction = vendMapper.getCreditTokenTransaction(kctToken.getId(), user.getOrgId());
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "Compensation token generated", "vend", transaction, metadata, kctToken.getReason());
@@ -522,7 +521,8 @@ public class VendingServiceImpl implements VendingService {
     public ByteArrayInputStream printToken(String tokenType, UUID id) {
 
         try {
-            Transaction transaction = vendMapper.getCreditTokenTransaction(id);//getVendingReceipt(id, tokenType);
+            UserModel user = handleUserValidation();
+            Transaction transaction = vendMapper.getCreditTokenTransaction(id, user.getOrgId());//getVendingReceipt(id, tokenType);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(out);
             PdfDocument pdf = new PdfDocument(writer);

@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.mapper;
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.vend.Transaction;
 
 import java.util.List;
 import java.util.UUID;
@@ -85,4 +86,37 @@ public interface DashboardMapper {
     })
     List<Meter> getMeters(UUID orgId);
 
+    @Select("SELECT * FROM vw_vending_transactions_summary WHERE org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "transaction_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterAccountNumber", column = "meter_account_number"),
+            @Result(property = "userFullname", column = "user_Fullname"),
+            @Result(property = "customerFullname", column = "customer_Fullname"),
+            @Result(property = "tariffName", column = "tariff_name"),
+            @Result(property = "tariffRate", column = "tariff_rate"),
+            @Result(property = "liabilityName", column = "liability_name"),
+            @Result(property = "balanceAfterAdjustment", column = "balance"),
+
+            @Result(property = "userId", column = "user_id"),
+            @Result(property = "customerId", column = "customer_id"),
+
+            @Result(property = "InitialAmount", column = "Initial_amount"),
+            @Result(property = "FinalAmount", column = "Final_amount"),
+            @Result(property = "vatAmount", column = "vat_amount"),
+            @Result(property = "receiptNo", column = "receipt_no"),
+            @Result(property = "unitCost", column = "unit_cost"),
+            @Result(property = "tokenType", column = "token_type"),
+
+            @Result(property = "tariffName", column = "tariff_name"),
+            @Result(property = "tariffRate", column = "tariff_rate"),
+            @Result(property = "bandName", column = "band_name"),
+            @Result(property = "bandHour", column = "band_hour"),
+
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+    List<Transaction> getVendingTransaction(UUID orgId);
 }

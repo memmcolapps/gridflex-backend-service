@@ -130,7 +130,7 @@ public class  SecurityConfig {
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management",
-						"/dashboard/service/billing-management"
+						"/dashboard/service/billing-management", "/dashboard/service/vending"
 						)
 				.access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier"/customer/service/download/template/csv",

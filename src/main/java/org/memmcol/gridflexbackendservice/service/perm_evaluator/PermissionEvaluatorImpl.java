@@ -38,7 +38,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/reading/service/generate", "/meter/reading/service/update", "/meter/reading/service/all", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate",
                     "/vending/service/generate/kct", "/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
                     "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management", "/vending/service/generate/meter-kct",
-                    "/vending/service/generate/token/print")),
+                    "/vending/service/generate/token/print", "/dashboard/service/vending")),
 
             Map.entry("data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
@@ -111,13 +111,13 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
             Map.entry("dashboard", List.of("/dashboard/service/data-management")),
 
-            Map.entry("user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
+            Map.entry("user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/group/update",  "/user/service/create",
                     "/user/service/groups", "/user/service/create/group-permission", "/user/service/update/group-permission", "/node/service/create/node/region-bhub-service-center",
                     "/user/service/group/change-state", "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line",
                     "/node/service/businessHub","/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create",
+            Map.entry("users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/group/update", "/user/service/create",
                     "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log", "/user/service/group/update",
                     "/user/service/group/change-state", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
@@ -125,7 +125,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/user/service/group/change-state", "/user/service/groups",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("vending", List.of("/dashboard/service/vending-management", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct",
+            Map.entry("vending", List.of("/dashboard/service/vending", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct",
                     "/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
                     "/vending/service/generate/token/compensation",  "/vending/service/generate/meter-kct", "/vending/service/generate/token/all", "/vending/service/generate/token/print",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
