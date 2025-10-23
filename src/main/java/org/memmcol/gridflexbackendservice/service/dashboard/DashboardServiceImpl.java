@@ -181,6 +181,7 @@ public class DashboardServiceImpl implements  DashboardService{
     }
 }
 
+
     @Override
     public Map<String, Object> vendingDashboard(String band, String year, String meterCategory) {
         try {
@@ -202,6 +203,12 @@ public class DashboardServiceImpl implements  DashboardService{
 
             int total = filteredTransaction.size();
             if (total == 0) total = 1;
+
+            // === Compute current and previous year ===
+            int currentYear = year != null && !year.isEmpty()
+                    ? Integer.parseInt(year)
+                    : ZonedDateTime.now().getYear();
+            int previousYear = currentYear - 1;
 
             // === Token counts ===
             long creditToken = filteredTransaction.stream()
@@ -228,7 +235,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     .filter(m -> m.getTokenType().equalsIgnoreCase("compensation"))
                     .count();
 
-            // === Token counts ===
+            // === Token statuses ===
             long success = filteredTransaction.stream()
                     .filter(m -> m.getStatus().equalsIgnoreCase("Completed"))
                     .count();
@@ -241,8 +248,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     .filter(m -> m.getStatus().equalsIgnoreCase("Failed"))
                     .count();
 
-
-            // === Card Totals (filtered by year) ===
+            // === Card Totals (filtered by selected/current year) ===
             BigDecimal transactionSum = filteredTransaction.stream()
                     .map(Transaction::getInitialAmount)
                     .filter(Objects::nonNull)
@@ -264,7 +270,45 @@ public class DashboardServiceImpl implements  DashboardService{
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+            // === Compute previous year totals ===
+            List<Transaction> previousYearTransactions = transactions.stream()
+                    .filter(t -> t.getCreatedAt() != null)
+                    .filter(t -> {
+                        int yr = t.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear();
+                        return yr == previousYear;
+                    })
+                    .collect(Collectors.toList());
+
+            BigDecimal previousTransactionSum = previousYearTransactions.stream()
+                    .map(Transaction::getInitialAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal previousUnitCostSum = previousYearTransactions.stream()
+                    .map(Transaction::getUnitCost)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal previousVatAmountSum = previousYearTransactions.stream()
+                    .map(Transaction::getVatAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal previousTotalProfit = previousYearTransactions.stream()
+                    .filter(t -> "Completed".equalsIgnoreCase(t.getStatus()))
+                    .map(Transaction::getFinalAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
             // === Percentages ===
+            System.out.println("filteredTransaction: "+filteredTransaction.size());
+            System.out.println("creditToken: "+creditToken);
+            System.out.println("kct: "+kct);
+            System.out.println("clearTamper: "+clearTamper);
+            System.out.println("clearCredit: "+clearCredit);
+            System.out.println("kctClearTamper: "+kctClearTamper);
+            System.out.println("compensation: "+compensation);
+
             double creditTokenPercent = (creditToken * 100.0) / total;
             double kctPercent = (kct * 100.0) / total;
             double clearTamperPercent = (clearTamper * 100.0) / total;
@@ -280,13 +324,10 @@ public class DashboardServiceImpl implements  DashboardService{
             Map<Integer, Map<String, Map<String, BigDecimal>>> transactionByYearAndMonth = transactions.stream()
                     .filter(m -> m.getCreatedAt() != null)
                     .collect(Collectors.groupingBy(
-                            // Group by Year
                             m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear(),
                             Collectors.groupingBy(
-                                    // Group by Month (e.g., "January")
                                     m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault())
                                             .getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                                    // For each month, compute sums
                                     Collectors.collectingAndThen(Collectors.toList(), list -> {
                                         BigDecimal amountSum = list.stream()
                                                 .map(Transaction::getInitialAmount)
@@ -325,11 +366,9 @@ public class DashboardServiceImpl implements  DashboardService{
                 });
             });
 
-            // === Sort by year and month chronologically ===
             transactionOverMonths.sort(Comparator
                     .comparing((Map<String, Object> e) -> (Integer) e.get("year"))
                     .thenComparing(e -> Month.valueOf(e.get("month").toString().toUpperCase())));
-
 
             // === Build response objects ===
             Map<String, Object> percentData = Map.of(
@@ -343,9 +382,13 @@ public class DashboardServiceImpl implements  DashboardService{
 
             Map<String, Object> cardData = Map.of(
                     "transactionSum", transactionSum,
+                    "previousTransactionSum", previousTransactionSum,
                     "unitCostSum", unitCostSum,
+                    "previousUnitCostSum", previousUnitCostSum,
                     "vatAmountSum", vatSum,
-                    "totalProfit", totalProfit
+                    "previousVatAmountSum", previousVatAmountSum,
+                    "totalProfit", totalProfit,
+                    "previousTotalProfit", previousTotalProfit
             );
 
             Map<String, Object> transactionStatus = Map.of(
@@ -370,34 +413,35 @@ public class DashboardServiceImpl implements  DashboardService{
         }
     }
 
-
 //    @Override
 //    public Map<String, Object> vendingDashboard(String band, String year, String meterCategory) {
 //        try {
 //            UserModel um = handleUserValidation();
-//
 //            List<Transaction> transactions = dashboardMapper.getVendingTransaction(um.getOrgId());
 //
+//            // === Filter transactions ===
 //            List<Transaction> filteredTransaction = transactions.stream()
-//                    .filter(t -> band == null || band.isEmpty() || t.getBandName().equalsIgnoreCase((band)))
+//                    .filter(t -> band == null || band.isEmpty() || t.getBandName().equalsIgnoreCase(band))
+//                    .filter(t -> meterCategory == null || meterCategory.isEmpty() ||
+//                            t.getMeterCategory().equalsIgnoreCase(meterCategory))
 //                    .filter(t -> {
 //                        if (year == null || year.isEmpty() || t.getCreatedAt() == null)
 //                            return true;
-//
-//                        Instant instant = t.getCreatedAt().toInstant();
-//                        ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
-//                        int meterYear = zoned.getYear();
-//                        return String.valueOf(meterYear).equals(year);
+//                        ZonedDateTime zoned = t.getCreatedAt().toInstant().atZone(ZoneId.systemDefault());
+//                        return String.valueOf(zoned.getYear()).equals(year);
 //                    })
-//                    .filter(t -> meterCategory == null || meterCategory.isEmpty() || t.getMeterCategory().equalsIgnoreCase(meterCategory))
 //                    .collect(Collectors.toList());
 //
 //            int total = filteredTransaction.size();
-//            if (total == 0) {
-//                total = 1;
-//            }
+//            if (total == 0) total = 1;
 //
-//            // Calculate summary stats
+//            // === Compute current year and previous year ===
+//            int currentYear = year != null && !year.isEmpty()
+//                    ? Integer.parseInt(year)
+//                    : ZonedDateTime.now().getYear();
+//            int previousYear = currentYear - 1;
+//
+//            // === Token counts ===
 //            long creditToken = filteredTransaction.stream()
 //                    .filter(m -> m.getTokenType().equalsIgnoreCase("credit-token"))
 //                    .count();
@@ -407,21 +451,36 @@ public class DashboardServiceImpl implements  DashboardService{
 //                    .count();
 //
 //            long clearTamper = filteredTransaction.stream()
-//                    .filter(m ->  m.getTokenType().equalsIgnoreCase("clear-tamper"))
+//                    .filter(m -> m.getTokenType().equalsIgnoreCase("clear-tamper"))
 //                    .count();
 //
 //            long clearCredit = filteredTransaction.stream()
-//                    .filter(m ->  m.getTokenType().equalsIgnoreCase("clear-credit"))
+//                    .filter(m -> m.getTokenType().equalsIgnoreCase("clear-credit"))
 //                    .count();
 //
 //            long kctClearTamper = filteredTransaction.stream()
-//                    .filter(m ->  m.getTokenType().equalsIgnoreCase("kct-clear-tamper"))
+//                    .filter(m -> m.getTokenType().equalsIgnoreCase("kct-clear-tamper"))
 //                    .count();
 //
 //            long compensation = filteredTransaction.stream()
-//                    .filter(m ->  m.getTokenType().equalsIgnoreCase("compensation"))
+//                    .filter(m -> m.getTokenType().equalsIgnoreCase("compensation"))
 //                    .count();
 //
+//            // === Token counts ===
+//            long success = filteredTransaction.stream()
+//                    .filter(m -> m.getStatus().equalsIgnoreCase("Completed"))
+//                    .count();
+//
+//            long pending = filteredTransaction.stream()
+//                    .filter(m -> m.getStatus().equalsIgnoreCase("Pending"))
+//                    .count();
+//
+//            long fail = filteredTransaction.stream()
+//                    .filter(m -> m.getStatus().equalsIgnoreCase("Failed"))
+//                    .count();
+//
+//
+//            // === Card Totals (filtered by year) ===
 //            BigDecimal transactionSum = filteredTransaction.stream()
 //                    .map(Transaction::getInitialAmount)
 //                    .filter(Objects::nonNull)
@@ -437,12 +496,13 @@ public class DashboardServiceImpl implements  DashboardService{
 //                    .filter(Objects::nonNull)
 //                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 //
-//            BigDecimal totalProfit = transactions.stream()
-//                    .filter(t -> "Completed".equals(t.getStatus()))
+//            BigDecimal totalProfit = filteredTransaction.stream()
+//                    .filter(t -> "Completed".equalsIgnoreCase(t.getStatus()))
 //                    .map(Transaction::getFinalAmount)
+//                    .filter(Objects::nonNull)
 //                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 //
-//            // Calculate percentages
+//            // === Percentages ===
 //            double creditTokenPercent = (creditToken * 100.0) / total;
 //            double kctPercent = (kct * 100.0) / total;
 //            double clearTamperPercent = (clearTamper * 100.0) / total;
@@ -450,67 +510,104 @@ public class DashboardServiceImpl implements  DashboardService{
 //            double kctClearTamperPercent = (kctClearTamper * 100.0) / total;
 //            double compensationPercent = (compensation * 100.0) / total;
 //
-//            // Group meters installed by year and month (handling java.util.Date safely)
-//            Map<Integer, Map<String, Long>> transactionByYearAndMonth = transactions.stream()
-//                    .filter(m -> m.getInitialAmount() != null && m.getUpdatedAt() != null)
+//            double successPercent = (success * 100.0) / total;
+//            double pendingPercent = (pending * 100.0) / total;
+//            double failPercent = (fail * 100.0) / total;
+//
+//            // === Group transactions by year and month (for charts) ===
+//            Map<Integer, Map<String, Map<String, BigDecimal>>> transactionByYearAndMonth = transactions.stream()
+//                    .filter(m -> m.getCreatedAt() != null)
 //                    .collect(Collectors.groupingBy(
-//                            m -> {
-//                                Instant instant = m.getUpdatedAt().toInstant();
-//                                ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
-//                                return zoned.getYear();
-//                            },
+//                            // Group by Year
+//                            m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear(),
 //                            Collectors.groupingBy(
-//                                    m -> {
-//                                        Instant instant = m.getUpdatedAt().toInstant();
-//                                        ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
-//                                        return zoned.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH); // e.g. "October"
-//                                    },
-//                                    Collectors.counting()
+//                                    // Group by Month (e.g., "January")
+//                                    m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault())
+//                                            .getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+//                                    // For each month, compute sums
+//                                    Collectors.collectingAndThen(Collectors.toList(), list -> {
+//                                        BigDecimal amountSum = list.stream()
+//                                                .map(Transaction::getInitialAmount)
+//                                                .filter(Objects::nonNull)
+//                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//                                        BigDecimal costUnitSum = list.stream()
+//                                                .map(Transaction::getUnitCost)
+//                                                .filter(Objects::nonNull)
+//                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//                                        BigDecimal vatAmountSum = list.stream()
+//                                                .map(Transaction::getVatAmount)
+//                                                .filter(Objects::nonNull)
+//                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//                                        Map<String, BigDecimal> sums = new HashMap<>();
+//                                        sums.put("amountSum", amountSum);
+//                                        sums.put("costUnitSum", costUnitSum);
+//                                        sums.put("vatAmountSum", vatAmountSum);
+//                                        return sums;
+//                                    })
 //                            )
 //                    ));
 //
-//            // Flatten into a list of objects with year, month, and count
 //            List<Map<String, Object>> transactionOverMonths = new ArrayList<>();
 //            transactionByYearAndMonth.forEach((yr, monthMap) -> {
-//                monthMap.forEach((month, amount) -> {
+//                monthMap.forEach((mn, sums) -> {
 //                    Map<String, Object> data = new HashMap<>();
 //                    data.put("year", yr);
-//                    data.put("month", month);
-//                    data.put("amount", amount);
+//                    data.put("month", mn);
+//                    data.put("transactionSum", sums.get("amountSum"));
+//                    data.put("unitCostSum", sums.get("costUnitSum"));
+//                    data.put("vatAmountSum", sums.get("vatAmountSum"));
 //                    transactionOverMonths.add(data);
 //                });
 //            });
 //
-//            // Optionally sort results by year then by month order
+//            // === Sort by year and month chronologically ===
 //            transactionOverMonths.sort(Comparator
 //                    .comparing((Map<String, Object> e) -> (Integer) e.get("year"))
-//                    .thenComparing(e -> Month.valueOf(e.get("month").toString())));
+//                    .thenComparing(e -> Month.valueOf(e.get("month").toString().toUpperCase())));
 //
-//            Map<String, Object> resp = new HashMap<>();
-//            resp.put("creditToken", String.format("%.2f", creditTokenPercent));
-//            resp.put("kctToken", String.format("%.2f", kctPercent));
-//            resp.put("clearTamperToken", String.format("%.2f", clearTamperPercent));
-//            resp.put("clearCreditToken", String.format("%.2f", clearCreditPercent));
-//            resp.put("kctClearTamperToken", String.format("%.2f", kctClearTamperPercent));
-//            resp.put("compensationToken", String.format("%.2f", compensationPercent));
 //
-//            Map<String, Object> card = new HashMap<>();
-//            card.put("transactionSum", transactionSum);
-//            card.put("unitCostSum", unitCostSum);
-//            card.put("vatSum", vatSum);
-//            card.put("totalProfit", totalProfit);
+//            // === Build response objects ===
+//            Map<String, Object> percentData = Map.of(
+//                    "creditToken", String.format("%.2f", creditTokenPercent),
+//                    "kctToken", String.format("%.2f", kctPercent),
+//                    "clearTamperToken", String.format("%.2f", clearTamperPercent),
+//                    "clearCreditToken", String.format("%.2f", clearCreditPercent),
+//                    "kctClearTamperToken", String.format("%.2f", kctClearTamperPercent),
+//                    "compensationToken", String.format("%.2f", compensationPercent)
+//            );
 //
-//            // Build response
+//            Map<String, Object> cardData = Map.of(
+//                    "transactionSum", transactionSum,
+//                    "previousTransactionSum", 0,
+//                    "unitCostSum", unitCostSum,
+//                    "previousUnitCostSum", 0,
+//                    "vatAmountSum", vatSum,
+//                    "previousVatAmountSum", 0,
+//                    "totalProfit", totalProfit,
+//                    "previousTotalProfit", 0
+//            );
+//
+//            Map<String, Object> transactionStatus = Map.of(
+//                    "success", successPercent,
+//                    "pending", pendingPercent,
+//                    "failed", failPercent
+//            );
+//
 //            Map<String, Object> response = new HashMap<>();
-//            response.put("cardData", card);
-//            response.put("percentData", resp);
+//            response.put("cardData", cardData);
+//            response.put("tokenDistribution", percentData);
+//            response.put("transactionStatus", transactionStatus);
+//            response.put("transactionOverMonths", transactionOverMonths);
 //
 //            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), response);
 //
 //        } catch (Exception exception) {
-//            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//            genericHandler.logIncidentReport("fetching data management dashboard failed");
-//            genericHandler.logAndSaveException(exception, "fetch data management dashboard");
+//            log.error("Error occurred while fetching vending dashboard: {}", exception.getMessage(), exception);
+//            genericHandler.logIncidentReport("fetching vending dashboard failed");
+//            genericHandler.logAndSaveException(exception, "fetch vending dashboard");
 //            throw exception;
 //        }
 //    }
