@@ -59,10 +59,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("meter manufacturers", List.of(
-                    "/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
+                    "/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all", "/dashboard/service/data-management",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("meter management", List.of("/tariff/service/all", "/node/service/single", "/node/service/all",
+            Map.entry("meter management", List.of("/tariff/service/all", "/node/service/single", "/node/service/all", "/dashboard/service/data-management",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
                     "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/assign", "/manufacturer/service/create",
                     "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
@@ -70,31 +70,31 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/dashboard/service/data-management", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("meter inventory", List.of("/node/service/single", "/node/service/all",
+            Map.entry("meter inventory", List.of("/node/service/single", "/node/service/all", "/dashboard/service/data-management",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "meter/service/allocate",
                     "/meter/service/download/template/excel", "/meter/service/download/template/csv",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("assigned meter", List.of("/node/service/single", "/node/service/all", "/meter/service/migrate", "/meter/service/detach",
-                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
+                    "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/dashboard/service/data-management",
                     "meter/service/allocate", "/audit-log/service/single-log", "/audit-log/service/all", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("meter", List.of("/tariff/service/all", "/node/service/single", "/node/service/all", "/meter/service/create",
+            Map.entry("meter", List.of("/tariff/service/all", "/node/service/single", "/node/service/all", "/meter/service/create", "/dashboard/service/data-management",
                     "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/assign", "/meter/service/cin/assign", "/meter/service/cin/change-state",
                     "meter/service/allocate", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("review and approval", List.of("/band/service/all", "/band/service/single", "/band/service/approve", "/meter/service/all",
                     "/meter/service/single", "/meter/service/approve", "/tariff/service/single", "/tariff/service/all", "/tariff/service/approve",
                     "/debt-setting/service/liability-cause/all", "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/approve",
-                    "/debt-setting/service/liability-cause/approve",
+                    "/debt-setting/service/liability-cause/approve", "/dashboard/service/data-management",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
-                    "/customer/service/download/template/excel", "/customer/service/download/template/csv",
+                    "/customer/service/download/template/excel", "/customer/service/download/template/csv", "/dashboard/service/data-management",
                     "/customer/service/single", "/customer/service/bulk-upload", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
                     "/audit-log/service/incident/report/get")),
 
-            Map.entry("debt management", List.of("/debit-credit-adjustment/service/create",
+            Map.entry("debt management", List.of("/debit-credit-adjustment/service/create", "/dashboard/service/data-management",
                     "/debit-credit-adjustment/service/meter-liability", "/debit-credit-adjustment/service/reconcile-dept", "/debit-credit-adjustment/service/all",
                     "/debit-credit-adjustment/service/single", "/debt-setting/service/liability-cause/create", "/debt-setting/service/liability-cause/update",
                     "/debt-setting/service/liability-cause/all", "/debt-setting/service/liability-cause/single", "/debt-setting/service/liability-cause/approve",
@@ -102,10 +102,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve", "/audit-log/service/all", "/audit-log/service/single-log",
                     "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/band/service/all",  "/band/service/single",
+            Map.entry("band management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/band/service/all",  "/band/service/single", "/dashboard/service/data-management",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("tariff", List.of("/tariff/service/single", "/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state",
+            Map.entry("tariff", List.of("/tariff/service/single", "/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state", "/dashboard/service/data-management",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",
                     "/tariff/service/export")),
 
@@ -113,16 +113,16 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
             Map.entry("user management", List.of("/user/service/single", "/user/service/all", "/user/service/change-state", "/user/service/group/update",  "/user/service/create",
                     "/user/service/groups", "/user/service/create/group-permission", "/user/service/update/group-permission", "/node/service/create/node/region-bhub-service-center",
-                    "/user/service/group/change-state", "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line",
+                    "/user/service/group/change-state", "/node/service/update/node/region-bhub-service-center", "/node/service/create/node/substation-transformer-feeder-line", "/dashboard/service/data-management",
                     "/node/service/businessHub","/node/service/update/node/substation-transformer-feeder-line", "/node/service/single", "/node/service/all", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("users", List.of("/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/group/update", "/user/service/create",
                     "/user/service/groups", "/user/service/create/group-permission", "/audit-log/service/all", "/audit-log/service/single-log", "/user/service/group/update",
-                    "/user/service/group/change-state", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
+                    "/user/service/group/change-state", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get", "/dashboard/service/data-management")),
 
             Map.entry("group permission", List.of("/user/service/create/group-permission", "/user/service/update/group-permission",
-                    "/user/service/group/change-state", "/user/service/groups",
+                    "/user/service/group/change-state", "/user/service/groups", "/dashboard/service/data-management",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("vending", List.of("/dashboard/service/vending", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct",
