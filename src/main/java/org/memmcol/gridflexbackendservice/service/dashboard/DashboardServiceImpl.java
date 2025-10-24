@@ -301,14 +301,6 @@ public class DashboardServiceImpl implements  DashboardService{
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // === Percentages ===
-            System.out.println("filteredTransaction: "+filteredTransaction.size());
-            System.out.println("creditToken: "+creditToken);
-            System.out.println("kct: "+kct);
-            System.out.println("clearTamper: "+clearTamper);
-            System.out.println("clearCredit: "+clearCredit);
-            System.out.println("kctClearTamper: "+kctClearTamper);
-            System.out.println("compensation: "+compensation);
-
             double creditTokenPercent = (creditToken * 100.0) / total;
             double kctPercent = (kct * 100.0) / total;
             double clearTamperPercent = (clearTamper * 100.0) / total;

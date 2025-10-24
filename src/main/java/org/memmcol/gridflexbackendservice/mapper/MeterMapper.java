@@ -628,7 +628,7 @@ public interface MeterMapper {
 
     @Select("SELECT * FROM meters m " +
             "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
-            "AND m.status IN ('Assigned', 'Deactivated') " +
+            "AND m.type == 'VIRTUAL' " +
             "ORDER BY m.created_at DESC")
     @Results({
             @Result(property = "id", column = "id"),
