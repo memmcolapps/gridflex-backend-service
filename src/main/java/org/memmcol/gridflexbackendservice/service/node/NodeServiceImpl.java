@@ -323,8 +323,6 @@ public class NodeServiceImpl implements NodeService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllNodes() {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        AuditLog auditNotificationDTO = new AuditLog();
         try {
 
             UserModel um = handleUserValidation();
@@ -374,6 +372,7 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getBusinessHubByOrgId() {
         try {
@@ -388,6 +387,7 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getFeederAndDssNode() {
         try{

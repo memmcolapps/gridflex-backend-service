@@ -169,6 +169,10 @@ public class UserServiceImpl implements  UserService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
+            if(!request.getId().equals(um.getId())) {
+                throw new GlobalExceptionHandler.NotFoundException("Editing someone else record is not permissible");
+            }
+
             UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
             if (isOperator == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
