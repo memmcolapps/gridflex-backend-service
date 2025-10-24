@@ -306,7 +306,7 @@ public class MeterController {
 
             Object[] sampleData = {
                     "0048675416677","SN64114711150","Prepaid","MD","memmcol","electricity","60101","69888","12345","54321",
-                    0, 1, true, "XME45633", "34231", "R4532", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, 0.099321, 0.2345612
+                    0, 1, true, "XME45633", "34231", "R4532", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, "0.099321", "0.2345612"
             };
 
             for (int i = 0; i < sampleData.length; i++) {
@@ -325,6 +325,8 @@ public class MeterController {
             workbook.write(response.getOutputStream());
         }
     }
+
+
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);

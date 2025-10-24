@@ -1550,38 +1550,12 @@ public class MeterServiceImpl implements MeterService {
             return ResponseMap.response(status.getSuccessCode(), meterName + " allocated successfully" , "");
 
         } catch (Exception exception) {
-            log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
+            log.error("Error filtering / fetching meters: {}", exception.getMessage(), exception);
             genericHandler.logIncidentReport("Allocating meter service failed");
             genericHandler.logAndSaveException(exception, "allocating meter");
             throw exception;
         }
     }
-
-//    @Override
-//    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
-//        try{
-//            List<Meter> meters;
-//            UserModel user = handleUserValidation();
-//            String filename = file.getOriginalFilename();
-//            if (filename == null) {
-//                throw new IOException("File has no name");
-//            }
-//            if (filename.endsWith(".csv")) {
-//                meters = processCsv(file.getInputStream(), user);
-//            } else if (filename.endsWith(".xlsx")) {
-//                meters =  processExcel(file.getInputStream(), user);
-//            } else {
-//                throw new IOException("Unsupported file format");
-//            }
-//
-//            Map<String, Object> result = meterMapper.bulkInsertMeters(meters);
-//            return ResponseMap.response(status.getSuccessCode(), "Meter bulk upload successfully", result);
-////            return ResponseEntity.ok(result);
-//
-//        } catch (Exception exception) {
-//            throw new IOException(exception);
-//        }
-//    }
 
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {

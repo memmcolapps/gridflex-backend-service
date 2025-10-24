@@ -375,19 +375,33 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @Override
-    public Map<String, Object> getBusinessHubByOrgId(UUID orgId) {
+    public Map<String, Object> getBusinessHubByOrgId() {
         try {
             UserModel um = handleUserValidation();
-            UUID operatorOrgId = um.getOrgId();
-            if (!operatorOrgId.equals(orgId)) {
-                return ResponseMap.response(status.getFailCode(), "Unauthorized access", null);
-            }
-            List<RegionBhubServiceCenter> result = nodeMapper.getBhubByOrgId(orgId);
+            List<RegionBhubServiceCenter> result = nodeMapper.getBhubByOrgId(um.getOrgId());
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         }catch (Exception exception) {
             log.error("Error occurred while fetching business hub [ACTION]: {}", exception.getMessage().trim(), exception);
             genericHandler.logIncidentReport("Fetching all business hub service failed");
             genericHandler.logAndSaveException(exception, "fetching all business hub");
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getFeederAndDssNode() {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            List<SubStationTransformerFeederLine> result = nodeMapper.getFeederDss(um.getOrgId());
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+
+        } catch (Exception exception) {
+            log.error("Error filtering / fetching feeders and dss: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching feeders and dss service failed");
+            genericHandler.logAndSaveException(exception, "fetching feeders and dss");
             throw exception;
         }
     }

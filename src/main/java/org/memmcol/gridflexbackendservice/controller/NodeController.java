@@ -94,11 +94,21 @@ public class NodeController {
     }
 
     @GetMapping("/businessHub")
-    public ResponseEntity<Map<String, Object>> getBhubByOrg(@RequestParam UUID orgId){
+    public ResponseEntity<Map<String, Object>> getBhubByOrg(){
         try {
-            Map<String, Object> result =  nodeService.getBusinessHubByOrgId(orgId);
+            Map<String, Object> result =  nodeService.getBusinessHubByOrgId();
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/feeder-dss-node")
+    ResponseEntity<?> getFeederAndDss(){
+        try {
+            Map<String, Object> result = nodeService.getFeederAndDssNode();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
     }

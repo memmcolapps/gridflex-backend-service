@@ -2,7 +2,8 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
-import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
+import org.memmcol.gridflexbackendservice.model.meter.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,43 +26,70 @@ public interface CustomerMapper {
     })
     Customer findById(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM meters WHERE customer_id = #{customerId}")
+//    @Select("SELECT * FROM meters WHERE customer_id = #{customerId}")
+//    @Results({
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "simNumber", column = "sim_number"),
+//            @Result(property = "feederLine", column = "feeder_line"),
+//            @Result(property = "meterCategory", column = "meter_category"),
+//            @Result(property = "meterClass", column = "meter_class"),
+//            @Result(property = "meterType", column = "meter_type"),
+//            @Result(property = "meterStage", column = "meter_stage"),
+//            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
+//            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
+//            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
+//            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+//            @Result(property = "meterRating", column = "meter_rating"),
+//            @Result(property = "initialReading", column = "initial_reading"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "updatedAt", column = "updated_at")
+//    })
+//    List<Meter> getByCustomerId(String customerId);
+
+
+    @Select("SELECT * FROM meters WHERE customer_id = #{customerId} ORDER BY created_at DESC")
     @Results({
+            @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "simNumber", column = "sim_number"),
-            @Result(property = "feederLine", column = "feeder_line"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
             @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterType", column = "meter_type"),
             @Result(property = "meterStage", column = "meter_stage"),
-            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
-            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
-            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
-            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
-            @Result(property = "meterRating", column = "meter_rating"),
-            @Result(property = "initialReading", column = "initial_reading"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "meterAssignLocation", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getMeterAssignLocation")),
+            @Result(property = "mdMeterInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getMDMeterInfo")),
+            @Result(property = "paymentMode", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getPaymentMode")),
+            @Result(property = "manufacturer", column = "meter_manufacturer",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getMeterManufacturer")),
+            @Result(property = "smartMeterInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getSmartMeter"))
     })
     List<Meter> getByCustomerId(String customerId);
-
-//    Customer findByAccountNo(String accountNumber);
 
     @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) " +
             "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCustomer(Customer request);
 
-//    @Insert({
-//            "<script>",
-//            "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
-//            "VALUES",
-//            "<foreach collection='customers' item='c' separator=','>",
-//            "(#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, ${vat})",
-//            "</foreach>",
-//            "</script>"
-//    })
     @Insert({
             "<script>",
             "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
@@ -100,13 +128,60 @@ public interface CustomerMapper {
     })
     List<Customer> findAllCustomers(UUID orgId);
 
-//    @Insert({
-//            "<script>",
-//            "INSERT INTO customers (org_id, firstname, lastname, account_number, nin, phone_number, email, state, city, house_no, street_name, status, meter_number, meter_assigned, created_at, updated_at) VALUES ",
-//            "<foreach collection='customers' item='c' separator=','>",
-//            "(#{orgId}, #{firstname}, #{lastname}, #{accountNumber}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, false, #{meterNumber}, false, #{createdAt}, #{updatedAt}))",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    void insertCustomers(List<Customer> customers);
+    @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "meterModel", column = "meter_model"),
+    })
+    SmartMeterInfo getSmartMeter(UUID meterId);
+
+    @Select("SELECT * FROM manufacturers WHERE id = #{meter_manufacturer}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "manufacturerId", column = "manufacturer_id"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "phoneNo", column = "phone_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+    Manufacturer getMeterManufacturer(UUID meter_manufacturer);
+
+    @Select("SELECT * FROM meter_assign_locations WHERE meter_id = #{meterId}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "streetName", column = "street_name"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+    MeterAssignLocation getMeterAssignLocation(UUID meterId);
+
+    @Select("SELECT * FROM md_meters_info WHERE meter_id = #{meterId}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
+            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
+            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
+            @Result(property = "voltRatioDenom", column = "volt_ratio_denom"),
+            @Result(property = "meterRating", column = "meter_rating"),
+            @Result(property = "initialReading", column = "initial_reading")
+    })
+    MDMeterInfo getMDMeterInfo(UUID meterId);
+
+    @Select("SELECT * FROM payment_mode WHERE meter_id = #{meterId} AND status = true")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
+            @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
+            @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
+            @Result(property = "debitPaymentPlan", column = "debit_payment_plan"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+    PaymentMode getPaymentMode(UUID meterId);
+
 }

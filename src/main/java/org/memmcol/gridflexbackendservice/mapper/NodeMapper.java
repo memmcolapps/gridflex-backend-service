@@ -127,7 +127,20 @@ public interface NodeMapper {
     })
     List<RegionBhubServiceCenter> getBhubByOrgId(UUID id);
 
-
+    @Select("""
+            SELECT * FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND UPPER(type) IN (UPPER('feeder line'), UPPER('dss'))
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
+    })
+    List<SubStationTransformerFeederLine> getFeederDss(UUID orgId);
 }
 
 

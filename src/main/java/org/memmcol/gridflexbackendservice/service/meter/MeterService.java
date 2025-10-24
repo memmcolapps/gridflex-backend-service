@@ -47,4 +47,5 @@ public interface MeterService {
     Map<String, Object> continueAssignMeter(MeterView meterView);
 
     Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
+
 }

@@ -19,5 +19,7 @@ public interface NodeService {
 
     Map<String, Object> updateSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request);
 
-    Map<String, Object> getBusinessHubByOrgId(UUID orgId);
+    Map<String, Object> getBusinessHubByOrgId();
+
+    Map<String, Object> getFeederAndDssNode();
 }
