@@ -30,8 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +47,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
@@ -1557,6 +1561,20 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Async("bulkUploadExecutor")
+    public CompletableFuture<Integer> insertSingleAsync(
+            Meter meter, UserModel user, List<String> failedRecords) {
+        try {
+            insertSingleTransactional(meter, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+            log.warn("Async single insert failed for {}: {}", meter.getMeterNumber(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
         try {
@@ -1577,7 +1595,6 @@ public class MeterServiceImpl implements MeterService {
 
             Map<String, Object> result = bulkInsertMeters(meters, user);
             return result;
-//            return ResponseMap.response(status.getSuccessCode(), "Meter bulk upload completed", result);
 
         } catch (Exception e) {
             log.error("Error in bulk upload: {}", e.getMessage(), e);
@@ -1585,46 +1602,409 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
     public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
         Map<String, Object> result = new HashMap<>();
         List<String> failedRecords = new ArrayList<>();
+
+        List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
+        Map<String, UUID> manufacturerNameToId = manufacturers.stream()
+                .collect(Collectors.toMap(
+                        m -> m.getName().trim().toLowerCase(),
+                        Manufacturer::getId
+                ));
+
+
         int successCount = 0;
-        int batchSize = 200;
+
+        int batchSize = 500; // try 500–1000 for optimal JDBC performance
 
         for (int i = 0; i < meters.size(); i += batchSize) {
             int end = Math.min(i + batchSize, meters.size());
             List<Meter> batch = meters.subList(i, end);
 
             try {
-                System.out.println(">>>>>>>>>>>>>>>>>insertBatchTransactional");
-                insertBatchTransactional(batch, user);
+                System.out.println(">>>>>>>>insertBatchTransactional");
+                insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
                 successCount += batch.size();
-            } catch (Exception batchEx) {
-                log.error("Batch {} failed: {}", (i / batchSize) + 1, batchEx.getMessage());
-
-                // Try inserting one by one for this failed batch
-                for (Meter meter : batch) {
-                    try {
-                        System.out.println(">>>>>>>>>>>>>>>>>insertSingleTransactional");
-//                        insertSingleTransactional(meter, user);
-//                        successCount++;
-                    } catch (Exception recordEx) {
-                        log.error("Meter {} failed: {}", meter.getMeterNumber(), recordEx.getMessage());
-                        failedRecords.add(meter.getMeterNumber() + " (" + extractErrorMessage(recordEx) + ")");
-                    }
-                }
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying sub batch upload", (i / batchSize) + 1);
+                System.out.println(">>>>>>>>insertSubBatchTransactional1");
+                // Attempt smaller sub-batches to isolate failure
+                successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
             }
         }
 
-        result.put("totalRecords", meters.size());
+        result.put("totalRecords", successCount+failedRecords.size());
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
-//        result.put("status", "completed");
-        return ResponseMap.response(status.getSuccessCode(), successCount + " of " + meters.size() +" Meter uploaded successfully", result);
 
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + successCount+failedRecords.size() + " Meters uploaded successfully",
+                result
+        );
     }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void insertBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<String> failedRecords) {
+        prepareMeters(batch, user, manufacturerNameToId, failedRecords);
+
+        System.out.println(">>>>>>>>insertMeters");
+        // Step 1: Insert main meters
+        meterMapper.insertMeters(batch);
+
+        // Step 2: Map 'id' → 'meterId' before inserting version records
+        for (Meter meter : batch) {
+            meter.setMeterId(meter.getId()); // Copy generated ID
+        }
+        System.out.println(">>>>>>>>insertMeterVersions");
+        // Insert into meter_versions (replica)
+        meterMapper.insertMeterVersions(batch);
+
+        // Insert related info
+        insertChildMeterData(batch, user);
+        System.out.println(">>>>>>>>insertChildMeterData");
+        // Audit logs
+        auditBatch(batch, user);
+    }
+
+    public int insertSubBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<String> failedRecords) {
+        int successCount = 0;
+        int subBatchSize = 100;
+
+
+        for (int i = 0; i < batch.size(); i += subBatchSize) {
+            int end = Math.min(i + subBatchSize, batch.size());
+            List<Meter> subBatch = batch.subList(i, end);
+
+            try {
+                System.out.println(">>>>>>>>insertBatchTransactional2");
+                insertBatchTransactional(subBatch, user, manufacturerNameToId, failedRecords);
+                successCount += subBatch.size();
+            } catch (Exception e) {
+                log.warn("Sub-batch failed (size={}): {}", subBatch.size(), e.getMessage());
+
+                if (subBatch.size() > 50) {
+                    System.out.println(">>>>>>>>insertSinglesFallbackAsync");
+                    successCount += insertSinglesFallbackAsync(subBatch, user, failedRecords);
+                } else {
+                    System.out.println(">>>>>>>>insertSinglesFallback");
+                    successCount += insertSinglesFallback(subBatch, user, failedRecords);
+                }
+
+//                successCount += insertSinglesFallback(subBatch, user, failedRecords);
+            }
+        }
+        return successCount;
+    }
+
+    public int insertSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (Meter meter : batch) {
+            futures.add(insertSingleAsync(meter, user, failedRecords));
+        }
+
+        // Wait for all tasks to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Sum successful inserts
+        return futures.stream().mapToInt(f -> f.join()).sum();
+    }
+
+    public int insertSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
+        int successCount = 0;
+
+        for (Meter meter : batch) {
+            try {
+                log.debug("Fallback single upload for meter: {}", meter.getMeterNumber());
+                insertSingleTransactional(meter, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+                log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    private void prepareMeters(
+            List<Meter> batch,
+            UserModel user,
+            Map<String, UUID> manufacturerNameToId,
+            List<String> failedRecords
+    ) {
+        Iterator<Meter> iterator = batch.iterator();
+
+        while (iterator.hasNext()) {
+            Meter meter = iterator.next();
+
+            // --- Validate and set Manufacturer ID ---
+            String manuName = meter.getMeterManufacturerName();
+            if (manuName == null || manuName.trim().isEmpty()) {
+                failedRecords.add(meter.getMeterNumber() + " (Missing manufacturer name)");
+                iterator.remove();
+                continue;
+            }
+
+            UUID manuId = manufacturerNameToId.get(manuName.trim().toLowerCase());
+            if (manuId == null) {
+                failedRecords.add(meter.getMeterNumber() + " (Invalid manufacturer: " + manuName + ")");
+                iterator.remove();
+                continue;
+            }
+
+            meter.setMeterManufacturer(manuId);
+
+            // --- Default Meter Fields ---
+            meter.setOrgId(user.getOrgId());
+            meter.setCreatedBy(user.getId());
+            meter.setStatus("Active");
+            meter.setMeterStage("Pending-created");
+            meter.setType("NON-VIRTUAL");
+            meter.setDescription("Newly Added");
+        }
+    }
+
+
+
+
+//    private void prepareMeters(List<Meter> batch, UserModel user) {
+//        for (Meter meter : batch) {
+//            meter.setOrgId(user.getOrgId());
+//            meter.setCreatedBy(user.getId());
+//            meter.setStatus("Active");
+//            meter.setMeterStage("Pending-created");
+//            meter.setType("NON-VIRTUAL");
+//            meter.setDescription("Newly Added");
+//        }
+//    }
+
+    private void insertChildMeterData(List<Meter> batch, UserModel user) {
+        List<SmartMeterInfo> smartInfos = new ArrayList<>();
+        List<MDMeterInfo> mdInfos = new ArrayList<>();
+
+        for (Meter m : batch) {
+            if (m.getSmartMeterInfo() != null) {
+                m.getSmartMeterInfo().setMeterId(m.getId());
+                m.getSmartMeterInfo().setCreatedBy(user.getId());
+                m.getSmartMeterInfo().setOrgId(user.getOrgId());
+                m.getSmartMeterInfo().setMeterStage("Pending-created");
+                m.getSmartMeterInfo().setDescription("Newly Added");
+                smartInfos.add(m.getSmartMeterInfo());
+            }
+            if (m.getMdMeterInfo() != null) {
+                m.getMdMeterInfo().setMeterId(m.getId());
+                m.getMdMeterInfo().setCreatedBy(user.getId());
+                m.getMdMeterInfo().setOrgId(user.getOrgId());
+                m.getMdMeterInfo().setMeterStage("Pending-created");
+                m.getMdMeterInfo().setDescription("Newly Added");
+                mdInfos.add(m.getMdMeterInfo());
+            }
+        }
+
+        if (!smartInfos.isEmpty()) meterMapper.insertBatchSmartMeterInfoVersion(smartInfos);
+        if (!mdInfos.isEmpty()) meterMapper.insertBatchMDMeterInfoVersion(mdInfos);
+    }
+
+    private void auditBatch(List<Meter> batch, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (Meter m : batch) {
+            AuditLog auditLog = buildAuditLog(user, "Meter created", "Meter", m, metadata, "");
+            auditRepository.save(auditLog);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void insertSingleTransactional(Meter meter, UserModel user) {
+//        try {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        // --- Step 1: Prepare core meter entity ---
+        meter.setOrgId(user.getOrgId());
+        meter.setCreatedBy(user.getId());
+        meter.setStatus("Active");
+        meter.setMeterStage("Pending-created");
+        meter.setType("NON-VIRTUAL");
+        meter.setDescription("Newly Added");
+
+        // --- Step 2: Insert into main + version tables ---
+        meterMapper.insertSingleBatchMeter(meter);
+
+        // Link version table by setting meterId = generated meter.id
+        meter.setMeterId(meter.getId());
+        meterMapper.insertSingleBatchMeterVersion(meter);
+
+        // --- Step 3: Child entities ---
+        if ("md".equalsIgnoreCase(meter.getMeterClass())) {
+            insertMDMeterInfo(meter, user);
+        }
+        if (Boolean.TRUE.equals(meter.getSmartStatus())) {
+            insertSmartMeterInfo(meter, user);
+        }
+
+        // --- Step 4: Audit logging ---
+        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), meter.getOrgId());
+        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
+        auditRepository.save(auditLog);
+
+//        } catch (Exception e) {
+//            log.error("Failed to insert meter {}: {}", meter.getMeterNumber(), e.getMessage(), e);
+//            throw e; // rethrow so parent caller can track failure count
+//        }
+    }
+
+
+    //    public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
+//        Map<String, Object> result = new HashMap<>();
+//        List<String> failedRecords = new ArrayList<>();
+//        int successCount = 0;
+//
+//        // Recommended: 500–1000 for database efficiency
+//        final int BATCH_SIZE = 500;
+//        // Retry smaller chunks for failed batches
+//        final int SUB_BATCH_SIZE = 100;
+//
+//        for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
+//            int end = Math.min(i + BATCH_SIZE, meters.size());
+//            List<Meter> batch = meters.subList(i, end);
+//
+//            log.info("Processing batch {} (records {} - {})",
+//                    (i / BATCH_SIZE) + 1, i + 1, end);
+//
+//            try {
+//                // Attempt to insert the full batch
+//                insertBatchTransactional(batch, user);
+//                successCount += batch.size();
+//            } catch (Exception batchEx) {
+//                log.warn("Batch {} failed: {}. Retrying in smaller sub-batches...",
+//                        (i / BATCH_SIZE) + 1, batchEx.getMessage());
+//
+//                // Retry the failed batch in smaller chunks
+//                for (int j = 0; j < batch.size(); j += SUB_BATCH_SIZE) {
+//                    int subEnd = Math.min(j + SUB_BATCH_SIZE, batch.size());
+//                    List<Meter> subBatch = batch.subList(j, subEnd);
+//
+//                    try {
+//                        insertBatchTransactional(subBatch, user);
+//                        successCount += subBatch.size();
+//                    } catch (Exception subBatchEx) {
+//                        log.error("Sub-batch failed ({} - {}): {}",
+//                                j + 1, subEnd, subBatchEx.getMessage());
+//
+//                        // Retry inserting records individually in this sub-batch
+//                        for (Meter meter : subBatch) {
+//                            try {
+//                                insertSingleTransactional(meter, user);
+//                                successCount++;
+//                            } catch (Exception recordEx) {
+//                                String errorMsg = extractErrorMessage(recordEx);
+//                                log.error("Meter {} failed: {}", meter.getMeterNumber(), errorMsg);
+//                                failedRecords.add(meter.getMeterNumber() + " (" + errorMsg + ")");
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        result.put("totalRecords", meters.size());
+//        result.put("successCount", successCount);
+//        result.put("failedCount", failedRecords.size());
+//        result.put("failedRecords", failedRecords);
+//
+//        return ResponseMap.response(
+//                status.getSuccessCode(),
+//                successCount + " of " + meters.size() + " meters uploaded successfully",
+//                result
+//        );
+//    }
+    ///
+
+    //    public int insertSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
+//        int count = 0;
+//        for (Meter meter : batch) {
+//            try {
+//                System.out.println(">>>>> single upload <<<<< : "+meter.getMeterNumber());
+//                insertSingleTransactional(meter, user);
+//                count++;
+//            } catch (Exception e) {
+//                failedRecords.add(meter.getMeterNumber() + " (" + e.getMessage() + ")");
+//                log.error("Meter {} failed: {}", meter.getMeterNumber(), e.getMessage());
+//            }
+//        }
+//        return count;
+//    }
+
+
+//    @Transactional(propagation = Propagation.REQUIRES_NEW)
+//    public void insertSingleTransactional(Meter meter, UserModel user) {
+//        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+////        validateMeterRequest(meter, user);
+//
+//        // --- Step 2: Insert Meter + Versions ---
+//        meterMapper.insertSingleBatchMeter(meter);
+//        meter.setMeterId(meter.getId());
+//        meterMapper.insertSingleBatchMeterVersion(meter);
+//        if ("md".trim().equalsIgnoreCase(meter.getMeterClass())) {
+//            insertMDMeterInfo(meter, user);
+//        }
+//        if (Boolean.TRUE.equals(meter.getSmartStatus())) {
+//            insertSmartMeterInfo(meter, user);
+//        }
+//
+//        // --- Step 3: Fetch created meter & Audit ---
+//        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), meter.getOrgId());
+//        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
+//        auditRepository.save(auditLog);
+//
+//    }
+
+
+
+
+//    public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
+//        Map<String, Object> result = new HashMap<>();
+//        List<String> failedRecords = new ArrayList<>();
+//        int successCount = 0;
+//        int batchSize = 200;
+//
+//        for (int i = 0; i < meters.size(); i += batchSize) {
+//            int end = Math.min(i + batchSize, meters.size());
+//            List<Meter> batch = meters.subList(i, end);
+//
+//            try {
+//                System.out.println(">>>>>>>>>>>>>>>>>insertBatchTransactional");
+//                insertBatchTransactional(batch, user);
+//                successCount += batch.size();
+//            } catch (Exception batchEx) {
+//                log.error("Batch {} failed: {}", (i / batchSize) + 1, batchEx.getMessage());
+//
+//                // Try inserting one by one for this failed batch
+//                for (Meter meter : batch) {
+//                    try {
+//                        System.out.println(">>>>>>>>>>>>>>>>>insertSingleTransactional");
+//                        insertSingleTransactional(meter, user);
+//                        successCount++;
+//                    } catch (Exception recordEx) {
+//                        log.error("Meter {} failed: {}", meter.getMeterNumber(), recordEx.getMessage());
+//                        failedRecords.add(meter.getMeterNumber() + " (" + extractErrorMessage(recordEx) + ")");
+//                    }
+//                }
+//            }
+//        }
+//
+//        result.put("totalRecords", meters.size());
+//        result.put("successCount", successCount);
+//        result.put("failedCount", failedRecords.size());
+//        result.put("failedRecords", failedRecords);
+////        result.put("status", "completed");
+//        return ResponseMap.response(status.getSuccessCode(), successCount + " of " + meters.size() +" Meter uploaded successfully", result);
+//
+//    }
 
     // Parse CSV file into a list of Meter objects
     public static List<Meter> processCsv(InputStream inputStream, UserModel user) throws IOException {
@@ -1639,6 +2019,7 @@ public class MeterServiceImpl implements MeterService {
                 meter.setSimNumber(record.get("simNumber"));
                 meter.setMeterCategory(record.get("meterCategory"));
                 meter.setMeterClass(record.get("meterClass"));
+                meter.setMeterManufacturerName(record.get("meterManufacturerName"));
                 meter.setMeterType(record.get("meterType"));
                 meter.setOldSgc(record.get("oldSgc"));
                 meter.setNewSgc(record.get("newSgc"));
@@ -1703,10 +2084,10 @@ public class MeterServiceImpl implements MeterService {
                 Meter meter = new Meter();
 
                 meter.setMeterNumber(getStringCellValue(row.getCell(0)));
-                meter.setAccountNumber(getStringCellValue(row.getCell(1)));
-                meter.setSimNumber(getStringCellValue(row.getCell(2)));
-                meter.setMeterCategory(getStringCellValue(row.getCell(3)));
-                meter.setMeterClass(getStringCellValue(row.getCell(4)));
+                meter.setSimNumber(getStringCellValue(row.getCell(1)));
+                meter.setMeterCategory(getStringCellValue(row.getCell(2)));
+                meter.setMeterClass(getStringCellValue(row.getCell(3)));
+                meter.setMeterManufacturerName(getStringCellValue(row.getCell(4)));
                 meter.setMeterType(getStringCellValue(row.getCell(5)));
 
                 meter.setOldSgc(getStringCellValue(row.getCell(7)));
@@ -1797,101 +2178,99 @@ public class MeterServiceImpl implements MeterService {
     }
 
 
-//    @Transactional
-    public void insertBatchTransactional(List<Meter> batch, UserModel user) {
-        for (Meter meter : batch) {
-            meter.setOrgId(user.getOrgId());
-            meter.setCreatedBy(user.getId());
-            meter.setStatus("Active");
-            meter.setMeterStage("Pending-created");
-            meter.setType("NON-VIRTUAL");
-            meter.setDescription("Newly Added");
-        }
-
-        meterMapper.insertMeters(batch);
-
-
-        // Prepare smart and MD info lists
-        List<Meter> versions = new ArrayList<>();
-        List<SmartMeterInfo> smartInfos = new ArrayList<>();
-        List<MDMeterInfo> mdInfos = new ArrayList<>();
-
-        for (Meter m : batch) {
-
-//            // Ensure the ID was generated
-//            if (m.getId() == null) {
-//                throw new IllegalStateException("Meter ID not generated for meterNumber: " + m.getMeterNumber());
+////    @Transactional
+//    public void insertBatchTransactional(List<Meter> batch, UserModel user) {
+//        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+//        for (Meter meter : batch) {
+//            meter.setOrgId(user.getOrgId());
+//            meter.setCreatedBy(user.getId());
+//            meter.setStatus("Active");
+//            meter.setMeterStage("Pending-created");
+//            meter.setType("NON-VIRTUAL");
+//            meter.setDescription("Newly Added");
+//
+//        }
+//        System.out.println(">>>>>>>>>>>1:: "+batch.get(0).getCreatedBy());
+//
+//        meterMapper.insertMeters(batch);
+//
+//        System.out.println(">>>>>>>>>>>2:: "+batch.get(1).getCreatedBy());
+//
+//        // Prepare smart and MD info lists
+//        List<Meter> versions = new ArrayList<>();
+//        List<SmartMeterInfo> smartInfos = new ArrayList<>();
+//        List<MDMeterInfo> mdInfos = new ArrayList<>();
+//
+//        for (Meter m : batch) {
+//            if (m.getSmartMeterInfo() != null) {
+//                System.out.println(">>>>>>>>>>>Smart:: "+batch.get(1).getCreatedBy());
+//                m.getSmartMeterInfo().setMeterId(m.getId());
+//                m.getSmartMeterInfo().setCreatedBy(user.getId());
+//                m.getSmartMeterInfo().setOrgId(user.getOrgId());
+//                m.getSmartMeterInfo().setMeterStage("Pending-created");
+//                m.getSmartMeterInfo().setDescription("Newly Added");
+//                smartInfos.add(m.getSmartMeterInfo());
 //            }
-
-            // Create version record
-//            Meter version = new Meter();
-//            version.setMeterId(m.getId());
-//            version.setOrgId(m.getOrgId());
-//            version.setDescription("Newly Added");
-//            version.setCreatedAt(new Date());
-//            version.setCreatedBy(user.getId());
-//            version.setStatus("Active");
-//            version.setMeterStage("Pending-created");
-//            version.setType("NON-VIRTUAL");
-//            versions.add(version);
-
-            // Create version record
-            if (m.getSmartMeterInfo() != null) {
-                m.getSmartMeterInfo().setMeterId(m.getId());
-                m.getSmartMeterInfo().setCreatedBy(user.getId());
-                m.getSmartMeterInfo().setOrgId(user.getOrgId());
-                m.getSmartMeterInfo().setDescription("Newly Added");
-                smartInfos.add(m.getSmartMeterInfo());
-            }
-
-            // Smart meter info
-            if (m.getMdMeterInfo() != null) {
-                m.getMdMeterInfo().setMeterId(m.getId());
-                m.getMdMeterInfo().setCreatedBy(user.getId());
-                m.getMdMeterInfo().setOrgId(user.getOrgId());
-                m.getMdMeterInfo().setDescription("Newly Added");
-                mdInfos.add(m.getMdMeterInfo());
-            }
-        }
-
-//        if (!batch.isEmpty()) {
-            meterMapper.insertMeterVersions(batch);
-
-        // Bulk insert child info
-        if (!smartInfos.isEmpty()) {
-            meterMapper.insertBatchSmartMeterInfoVersion(smartInfos);
-        }
-        if (!mdInfos.isEmpty()) {
-            meterMapper.insertBatchMDMeterInfoVersion(mdInfos);
-        }
-
-    }
-
-    @Transactional
-    public void insertSingleTransactional(Meter meter, UserModel user) {
-        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-        validateMeterRequest(meter, user);
-
-        // --- Step 2: Insert Meter + Versions ---
-        int result1 = meterMapper.insertMeter(meter);
-        meter.setMeterId(meter.getId());
-        int result2 = meterMapper.insertMeterVersion(meter);
-        if (result1 == 0 || result2 == 0) {
-            throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
-        }
-        if ("md".trim().equalsIgnoreCase(meter.getMeterClass())) {
-            insertMDMeterInfo(meter, user);
-        }
-        if (Boolean.TRUE.equals(meter.getSmartStatus())) {
-            insertSmartMeterInfo(meter, user);
-        }
-
-        // --- Step 3: Fetch created meter & Audit ---
-        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), meter.getOrgId());
-        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
-        auditRepository.save(auditLog);
-
-    }
+//
+//            // Smart meter info
+//            if (m.getMdMeterInfo() != null) {
+//                System.out.println(">>>>>>>>>>>MD:: "+batch.get(1).getCreatedBy());
+//                m.getMdMeterInfo().setMeterId(m.getId());
+//                m.getMdMeterInfo().setCreatedBy(user.getId());
+//                m.getMdMeterInfo().setOrgId(user.getOrgId());
+//                m.getMdMeterInfo().setMeterStage("Pending-created");
+//                m.getMdMeterInfo().setDescription("Newly Added");
+//                mdInfos.add(m.getMdMeterInfo());
+//            }
+//        }
+//
+////        if (!batch.isEmpty()) {
+//        System.out.println(">>>>>>>>>>>3:: "+batch.get(1).getCreatedBy());
+//            meterMapper.insertMeterVersions(batch);
+//        System.out.println(">>>>>>>>>>>4:: "+batch.get(1).getCreatedBy());
+//
+//        // Bulk insert child info
+//        if (!smartInfos.isEmpty()) {
+//            System.out.println(">>>>>>>>>>>smart batch:: "+smartInfos.get(0).getCreatedBy());
+//            meterMapper.insertBatchSmartMeterInfoVersion(smartInfos);
+//        }
+//        if (!mdInfos.isEmpty()) {
+//            System.out.println(">>>>>>>>>>>MD batch:: "+mdInfos.get(0).getCreatedBy());
+//            meterMapper.insertBatchMDMeterInfoVersion(mdInfos);
+//        }
+//
+//        // --- Step 3: Fetch created meter & Audit ---
+////        Meter newMeter = meterMapper.findByIdVersion(m.getId(), meter.getOrgId());
+//        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
+//        auditRepository.save(auditLog);
+//
+//    }
+//
+//    @Transactional
+//    public void insertSingleTransactional(Meter meter, UserModel user) {
+//        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+//        validateMeterRequest(meter, user);
+//
+//        // --- Step 2: Insert Meter + Versions ---
+//        int result1 = meterMapper.insertMeter(meter);
+//        meter.setMeterId(meter.getId());
+//        int result2 = meterMapper.insertMeterVersion(meter);
+//        if (result1 == 0 || result2 == 0) {
+//            throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
+//        }
+//        if ("md".trim().equalsIgnoreCase(meter.getMeterClass())) {
+//            insertMDMeterInfo(meter, user);
+//        }
+//        if (Boolean.TRUE.equals(meter.getSmartStatus())) {
+//            insertSmartMeterInfo(meter, user);
+//        }
+//
+//        // --- Step 3: Fetch created meter & Audit ---
+//        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), meter.getOrgId());
+//        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
+//        auditRepository.save(auditLog);
+//
+//    }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Meter createdEntity, Map<String, String> metadata, String reason) {
         AuditLog log = new AuditLog();

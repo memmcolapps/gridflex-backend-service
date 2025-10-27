@@ -36,6 +36,7 @@ public class Meter implements Serializable {
 //    private String meterModel;
     private String meterType;
     private UUID meterManufacturer;
+    private String meterManufacturerName;
     private String meterStage;
     private String status;
     private Boolean smartStatus;
@@ -183,6 +184,14 @@ public class Meter implements Serializable {
 
     public void setMeterManufacturer(UUID meterManufacturer) {
         this.meterManufacturer = meterManufacturer;
+    }
+
+    public String getMeterManufacturerName() {
+        return meterManufacturerName;
+    }
+
+    public void setMeterManufacturerName(String meterManufacturerName) {
+        this.meterManufacturerName = meterManufacturerName;
     }
 
     public Manufacturer getManufacturer() {

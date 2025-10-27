@@ -25,6 +25,14 @@ public interface MeterMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeter(Meter request);
 
+    @Insert("INSERT INTO meters " +
+            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, status, type, " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage) " +
+            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{status}, #{type}, " +
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{smartStatus}, #{meterStage})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insertSingleBatchMeter(Meter request);
+
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, meter_id, smart_status," +
@@ -34,6 +42,16 @@ public interface MeterMapper {
             "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{tariff}, #{reason})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
+
+    @Insert("INSERT INTO meters_version " +
+            "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, meter_id, smart_status," +
+            "account_number, node_id, customer_id, cin, dss, tariff, reason) " +
+            "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{meterStage}, #{status}, #{type}, " +
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{meterId}, " +
+            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{tariff}, #{reason})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insertSingleBatchMeterVersion(Meter request);
 
     @Insert("INSERT INTO meters " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, approve_status, status, customer_id, " +
@@ -1188,10 +1206,10 @@ public interface MeterMapper {
 
     @Insert({
             "<script>",
-            "INSERT INTO smart_meter_info_version (meter_id, meter_model, protocol, authentication, password, org_id, meter_stage, description)",
+            "INSERT INTO smart_meter_info_version (meter_id, meter_model, protocol, authentication, password, org_id, meter_stage, description, created_by)",
             "VALUES ",
             "<foreach collection='list' item='info' separator=','>",
-            "(#{info.meterId}, #{info.meterModel}, #{info.protocol}, #{info.authentication}, #{info.password}, #{info.orgId}, #{info.meterStage}, #{info.description})",
+            "(#{info.meterId}, #{info.meterModel}, #{info.protocol}, #{info.authentication}, #{info.password}, #{info.orgId}, #{info.meterStage}, #{info.description}, #{info.createdBy})",
             "</foreach>",
             "</script>"
     })
@@ -1199,7 +1217,7 @@ public interface MeterMapper {
 
     @Insert({
             "<script>",
-            "INSERT INTO md_meter_info_version (org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, " +
+            "INSERT INTO md_meters_info_version (org_id, meter_id, ct_ratio_num, ct_ratio_denom, volt_ratio_num, volt_ratio_denom, multiplier, meter_rating, initial_reading, dial, " +
                     "latitude, longitude, created_by, description, meter_stage) " +
             "VALUES ",
             "<foreach collection='list' item='info' separator=','>",
