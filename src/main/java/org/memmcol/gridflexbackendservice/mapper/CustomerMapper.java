@@ -1,9 +1,12 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.util.List;
 import java.util.UUID;
@@ -81,9 +84,37 @@ public interface CustomerMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getSmartMeter"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getSmartMeter")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getTariff"))
+
     })
     List<Meter> getByCustomerId(String customerId);
+
+    @Select("SELECT * FROM tariffs WHERE id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "band_id", column = "band_id"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getBand"))
+    })
+    Tariff getTariff(UUID id);
+
+
+    @Select("SELECT * FROM bands WHERE id = #{bandId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+    })
+    Band getBand(UUID bandId);
+
+    @Select("SELECT node_id AS nodeId, parent_id AS parentId, asset_id AS assetId, name, type, created_at AS createdAt, updated_at AS updatedAt FROM substation_trans_feeder_lines WHERE node_id = #{id}")
+    SubStationTransformerFeederLine getFeederDss(UUID id);
 
     @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) " +
             "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat})")

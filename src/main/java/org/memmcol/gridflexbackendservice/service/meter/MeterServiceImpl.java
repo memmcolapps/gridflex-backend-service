@@ -48,6 +48,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -813,51 +814,70 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
+    @Transactional
+    @Override
+    public Map<String, Object> detachMeter(UUID meterId, String reason) {
+        try{
+            // Gather client metadata
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel um = handleUserValidation();
 
-//    private void handleContinueMeterAssign(MeterView request){
-//        // Assign meter to customer
-//        request.setDescription("Meter Assigned");
-//        request.setMeterStage("Pending-assigned");
-//        request.setStatus("Active");
-//        int customerAssignResult;
-//        int customerAssignResult1;
-//        if(request.getMeterCategory().equalsIgnoreCase("Non-MD")
-//                || request.getMeterCategory().equalsIgnoreCase("MD")){
-//            request.setType("VIRTUAL");
-//            request.setMeterCategory("Postpaid");
-//            request.setSmartStatus(false);
-//            request.setSimNumber("VIRTUAL");
-//            request.setMeterType("Electricity");
-//            customerAssignResult = meterMapper.insertVirtualVersionMeterToCustomer(request);
-//            request.setMeterId(request.getId());
-//            customerAssignResult1 = meterMapper.assignedVirtualVersionMeterToCustomer(request);
-//            if(customerAssignResult == 0 || customerAssignResult1 == 0)
-//                throw new GlobalExceptionHandler.NotFoundException("Assigning virtual meter to customer failed");
-//        } else {
-//            request.setType("NON-VIRTUAL");
-//            customerAssignResult = meterMapper.assignedMeterToCustomer(request.getMeterStage(), request.getStatus(), request.getMeterId(), request.getUpdatedAt());
-//            customerAssignResult1 = meterMapper.assignedVersionMeterToCustomer(request);
-//            if(customerAssignResult == 0 || customerAssignResult1 == 0)
-//                throw new GlobalExceptionHandler.NotFoundException("Assigning meter to customer failed");
-//
-//            // Handle prepaid meter assignment
-//            if ("prepaid".equalsIgnoreCase(request.getMeterCategory())) {
-//                request.setDescription("Payment mode assigned");
-//                int paymentModeResult = meterMapper.assignPaymentModeVersion(request);
-//
-//                if (paymentModeResult == 0) {
-//                    throw new GlobalExceptionHandler.NotFoundException("Payment mode assignment failed");
-//                }
-//            }
-//        }
-//
-//        request.setMeterId(request.getMeterId());
-//        int locationAssignResult = meterMapper.assignVersionMeterToLocation(request);
-//
-//        if (locationAssignResult == 0) {
-//            throw new GlobalExceptionHandler.NotFoundException("Meter assignment to location failed");
-//        }
-//    }
+            // verify if meter exist
+            Meter meterById = meterMapper.findById(meterId, um.getOrgId());
+            if(meterById == null) {
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
+            }
+            if (meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter has a pending record that needs to be cleared");
+            }
+
+            if(meterById.getMeterStage().equalsIgnoreCase("Deactivated")
+                    || meterById.getType().equalsIgnoreCase("virtual")
+                    || meterById.getCustomerId() == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Meters detaching failed because meter is either unassigned, deactivated and virtual");
+            }
+
+            // Validate feeder line
+            UUID parentNode = meterMapper.getFeederParentNode(meterById.getNodeId());
+            if (parentNode == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
+            }
+
+            //set meter Id
+            meterById.setMeterId(meterById.getId());
+            meterById.setCreatedBy(um.getId());
+            meterById.setDescription("Meter detached");
+            meterById.setMeterStage("Pending-detached");
+            meterMapper.updateMeterCategory(um.getOrgId(), meterId, "Pending-detached", meterById.getUpdatedAt());
+
+            meterById.setDss(null);
+            meterById.setNodeId(parentNode);
+            meterById.setCustomerId(null);
+            meterById.setAccountNumber(null);
+            meterById.setTariff(null);
+            meterById.setCin(null);
+            meterById.setStatus("Active");
+            meterById.setReason(reason);
+            int m = meterMapper.insertMeterVersion(meterById);
+            if(m == 0) {
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
+            }
+
+            // get recent meter record
+            Meter meter =  meterMapper.findById(meterId, um.getOrgId());
+
+            AuditLog auditLog = buildAuditLog(um, "Meter detached", meterName, meter, metadata, reason);
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Meter detached successfully", "");
+        } catch (Exception exception) {
+            log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Migrating meter service failed");
+            genericHandler.logAndSaveException(exception, "migrating meter");
+            throw exception;
+        }
+
+    }
 
     @Transactional
     @Override
@@ -1007,71 +1027,6 @@ public class MeterServiceImpl implements MeterService {
             genericHandler.logAndSaveException(ex, "approving meter");
             throw ex;
         }
-    }
-
-    @Transactional
-    @Override
-    public Map<String, Object> detachMeter(UUID meterId, String reason) {
-        try{
-            // Gather client metadata
-            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-            UserModel um = handleUserValidation();
-
-            // verify if meter exist
-            Meter meterById = meterMapper.findById(meterId, um.getOrgId());
-            if(meterById == null) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
-            }
-            if (meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
-                throw new GlobalExceptionHandler.NotFoundException("Meter has a pending record that needs to be cleared");
-            }
-
-            if(meterById.getMeterStage().equalsIgnoreCase("Deactivated")
-                    || meterById.getType().equalsIgnoreCase("virtual")
-                    || meterById.getCustomerId() == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Meters detaching failed because meter is either unassigned, deactivated and virtual");
-            }
-
-            // Validate feeder line
-            UUID parentNode = meterMapper.getFeederParentNode(meterById.getNodeId());
-            if (parentNode == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
-            }
-
-            //set meter Id
-            meterById.setMeterId(meterById.getId());
-            meterById.setCreatedBy(um.getId());
-            meterById.setDescription("Meter detached");
-            meterById.setMeterStage("Pending-detached");
-            meterMapper.updateMeterCategory(um.getOrgId(), meterId, "Pending-detached", meterById.getUpdatedAt());
-
-            meterById.setDss(null);
-            meterById.setNodeId(parentNode);
-            meterById.setCustomerId(null);
-            meterById.setAccountNumber(null);
-            meterById.setTariff(null);
-            meterById.setCin(null);
-            meterById.setStatus("Active");
-            meterById.setReason(reason);
-            int m = meterMapper.insertMeterVersion(meterById);
-            if(m == 0) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
-            }
-
-            // get recent meter record
-            Meter meter =  meterMapper.findById(meterId, um.getOrgId());
-
-            AuditLog auditLog = buildAuditLog(um, "Meter detached", meterName, meter, metadata, reason);
-            auditRepository.save(auditLog);
-
-            return ResponseMap.response(status.getSuccessCode(), "Meter detached successfully", "");
-        } catch (Exception exception) {
-            log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Migrating meter service failed");
-            genericHandler.logAndSaveException(exception, "migrating meter");
-            throw exception;
-        }
-
     }
 
 
@@ -1575,6 +1530,27 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+//    @Async("bulkUploadExecutor")
+//    public CompletableFuture<Integer> approveSingleAsync(
+//            String meterNumber,
+//            String approveState,
+//            UserModel user,
+//            List<String> failedRecords
+//    ) {
+//        try {
+//            // Calls the REQUIRES_NEW transactional method
+//            approveSingleTransactional(meterNumber, approveState, user);
+//            return CompletableFuture.completedFuture(1);
+//        } catch (Exception e) {
+//            String reason = extractErrorMessage(e);
+//            // thread-safe add (failedRecords is a synchronizedList)
+//            failedRecords.add(meterNumber + " (" + reason + ")");
+//            log.warn("Bulk async approval failed for {}: {}", meterNumber, reason);
+//            return CompletableFuture.completedFuture(0);
+//        }
+//    }
+
+
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
         try {
@@ -1600,6 +1576,215 @@ public class MeterServiceImpl implements MeterService {
             log.error("Error in bulk upload: {}", e.getMessage(), e);
             throw new IOException("Bulk upload failed: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Map<String, Object> bulkApproval(MultipartFile file) throws IOException {
+        try {
+            UserModel user = handleUserValidation();
+
+            // Determine file type
+            String filename = Optional.ofNullable(file.getOriginalFilename())
+                    .orElseThrow(() -> new IOException("File has no name"));
+
+            List<Meter> meters;
+            if (filename.endsWith(".csv")) {
+                meters = processApproveCsv(file.getInputStream());
+            } else if (filename.endsWith(".xlsx")) {
+                meters = processApproveExcel(file.getInputStream());
+            } else {
+                throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+            }
+            Map<String, Object> result = bulkApproveMeters(meters, user);
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error in bulk approve upload: {}", e.getMessage(), e);
+            throw new IOException("Bulk approve failed: " + e.getMessage(), e);
+        }
+    }
+    // ---------------------------
+    // Public entry called by controller
+    // ---------------------------
+    public Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (meters == null || meters.isEmpty()) {
+            throw new IllegalArgumentException("No rows to process");
+        }
+
+        // Thread-safe collection for failures
+        List<String> failedRecords = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger successCount = new AtomicInteger(0);
+
+        // Partition to batches to avoid overloading executor
+        final int OUTER_BATCH_SIZE = 1000;   // how many meters we submit in each outer iteration
+        final int INNER_BATCH_PROCESS = 50;  // how many meter numbers we try to update per DB batch
+
+        for (int i = 0; i < meters.size(); i += OUTER_BATCH_SIZE) {
+            int outerEnd = Math.min(i + OUTER_BATCH_SIZE, meters.size());
+            List<Meter> outerBatch = meters.subList(i, outerEnd);
+
+            // Group outerBatch by desired outcome (approve vs reject) - helps run bulk SQL per state
+            Map<String, List<Meter>> grouped = outerBatch.stream()
+                    .filter(m -> m.getStatus() != null && !m.getStatus().isBlank())
+                    .collect(Collectors.groupingBy(m -> m.getStatus().trim().toLowerCase()));
+
+            // For each group (e.g., "approve", "reject") we run inner parallel tasks (async)
+            List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+            for (Map.Entry<String, List<Meter>> entry : grouped.entrySet()) {
+                String stateKey = entry.getKey();
+                List<Meter> groupMeters = entry.getValue();
+
+                // Partition this group's meter numbers into inner chunks
+                List<String> meterNumbers = groupMeters.stream()
+                        .map(Meter::getMeterNumber)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                for (int j = 0; j < meterNumbers.size(); j += INNER_BATCH_PROCESS) {
+                    int innerEnd = Math.min(j + INNER_BATCH_PROCESS, meterNumbers.size());
+                    List<String> subList = meterNumbers.subList(j, innerEnd);
+
+                    // Submit an async batch operation (approve or reject)
+                    futures.add(approveOrRejectBatchAsync(subList, stateKey, user, failedRecords));
+                }
+            }
+
+            // Wait for all futures in this outer batch
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+            // Sum up successes
+            int batchSuccess = futures.stream().mapToInt(f -> f.join()).sum();
+            successCount.addAndGet(batchSuccess);
+        }
+
+        // Prepare response
+        result.put("totalRecords", meters.size());
+        result.put("successCount", successCount.get());
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount.get() + " of " + meters.size() + " meters processed successfully",
+                result
+        );
+    }
+
+    // ---------------------------
+    // Async wrapper - runs on executor defined in AsyncConfig
+    // ---------------------------
+    @Async("bulkApprovalExecutor")
+    public CompletableFuture<Integer> approveOrRejectBatchAsync(
+            List<String> meterNumbers,
+            String stateKey,
+            UserModel user,
+            List<String> failedRecords
+    ) {
+        try {
+            int updated = approveBatchTransactional(meterNumbers, stateKey, user);
+            return CompletableFuture.completedFuture(updated);
+        } catch (Exception ex) {
+            // Add all meterNumbers to failedRecords (they can be retried later individually)
+            meterNumbers.forEach(mn -> failedRecords.add(mn + " (batch failed: " + extractErrorMessage1(ex) + ")"));
+            // Log and return zero successes for this batch
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    // ---------------------------
+    // Transactional batch operation (single DB transaction per batch)
+    // ---------------------------
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public int approveBatchTransactional(List<String> meterNumbers, String stateKey, UserModel user) {
+        // Decide meterStage value based on stateKey (you may adapt to exact allowed words)
+        String normalized = stateKey.trim().toLowerCase();
+//        LocalDateTime now = LocalDateTime.now();
+        UUID actor = user.getId();
+        UUID orgId = user.getOrgId();
+
+        if (normalized.startsWith("approve")) {
+            // Use batch update mapper
+//            int updated = meterMapper.approveMetersBatch(meterNumbers, "Created", actor, "now", orgId);
+//            // Save a single audit entry for this batch
+//            AuditLog auditLog = buildAuditLog(user,
+//                    "Bulk approve (" + meterNumbers.size() + " meters)",
+//                    "MeterVersionBatch",
+//                    null,
+//                    genericHandler.extractRequestMetadata(null), // adjust if you want http metadata
+//                    "Approved " + updated + " of " + meterNumbers.size() + " records");
+//            auditRepository.save(auditLog);
+//            return updated;
+            return 0;
+        } else if (normalized.startsWith("reject")) {
+//            int updated = meterMapper.rejectMetersBatch(meterNumbers, "Rejected", actor, "now", orgId);
+//            AuditLog auditLog = buildAuditLog(user,
+//                    "Bulk reject (" + meterNumbers.size() + " meters)",
+//                    "MeterVersionBatch",
+//                    null,
+//                    genericHandler.extractRequestMetadata(null),
+//                    "Rejected " + updated + " of " + meterNumbers.size() + " records");
+//            auditRepository.save(auditLog);
+//            return updated;
+            return 0;
+        } else {
+            // Unknown state - throw and let caller mark as failed
+            throw new IllegalArgumentException("Invalid approval state: " + stateKey);
+        }
+    }
+
+    // ---------------------------
+    // Simple helper to extract human-friendly message from exceptions
+    // ---------------------------
+    private String extractErrorMessage1(Exception ex) {
+        if (ex == null) return "Unknown error";
+        String m = ex.getMessage();
+        return m == null ? ex.getClass().getSimpleName() : m;
+    }
+
+
+    private List<Meter> processApproveExcel(InputStream inputStream) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                Meter meter = new Meter();
+
+                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
+                meter.setStatus(getStringCellValue(row.getCell(1)));
+
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+    private List<Meter> processApproveCsv(InputStream inputStream) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                Meter meter = new Meter();
+                meter.setMeterNumber(record.get("meterNumber"));
+                meter.setStatus(record.get("approveState"));
+
+                meters.add(meter);
+            }
+        }
+        return meters;
     }
 
     public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
@@ -1768,20 +1953,6 @@ public class MeterServiceImpl implements MeterService {
             meter.setDescription("Newly Added");
         }
     }
-
-
-
-
-//    private void prepareMeters(List<Meter> batch, UserModel user) {
-//        for (Meter meter : batch) {
-//            meter.setOrgId(user.getOrgId());
-//            meter.setCreatedBy(user.getId());
-//            meter.setStatus("Active");
-//            meter.setMeterStage("Pending-created");
-//            meter.setType("NON-VIRTUAL");
-//            meter.setDescription("Newly Added");
-//        }
-//    }
 
     private void insertChildMeterData(List<Meter> batch, UserModel user) {
         List<SmartMeterInfo> smartInfos = new ArrayList<>();

@@ -160,7 +160,13 @@ public interface MeterMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
 
     })
     Meter findById(UUID meterId, UUID orgId);
@@ -214,6 +220,50 @@ public interface MeterMapper {
     })
     Meter findByIdVersion(UUID meterId, UUID orgId);
 
+    @Select("SELECT * FROM meters_version WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
+            "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+            "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "customer", column = "customer_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+            @Result(property = "meterAssignLocation", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
+            @Result(property = "mdMeterInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
+            @Result(property = "paymentMode", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
+            @Result(property = "smartMeterInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
+
+//            @Result(property = "manufacturer", column = "meter_manufacturer",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+    })
+    Meter findByNameVersion(String meterNumber, UUID orgId);
+
+
 
     @Select("SELECT * FROM meters WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
     @Results({
@@ -249,7 +299,13 @@ public interface MeterMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "meter_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
     })
     Meter findByMeterNumber(String meterNumber, UUID orgId);
 
@@ -426,7 +482,13 @@ public interface MeterMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
 
     })
     Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber, String cin);
@@ -577,7 +639,11 @@ public interface MeterMapper {
             @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
             @Result(property = "tariffInfo", column = "tariff",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
     })
     List<Meter> getAllocatedMeters(UUID orgId);
 
@@ -639,7 +705,11 @@ public interface MeterMapper {
             @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
             @Result(property = "tariffInfo", column = "tariff",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
     })
     List<Meter> getAssignedMeters(UUID orgId);
 
@@ -683,8 +753,12 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
-//            @Result(property = "tariffInfo", column = "tariff",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
     })
     List<Meter> getAssignedVirtualMeters(UUID orgId);
 
@@ -723,7 +797,13 @@ public interface MeterMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
     })
     List<Meter> getMeters(UUID orgId);
 
@@ -770,7 +850,11 @@ public interface MeterMapper {
             @Result(property = "oldMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterById")),
             @Result(property = "nodeInfo", column = "node_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
 
     })
     List<Meter> getMetersVersion(UUID orgId);
@@ -780,6 +864,9 @@ public interface MeterMapper {
             @Result(property = "regionId", column = "region_id"),
     })
     RegionBhubServiceCenter getNodeInfo(UUID nodeId);
+
+    @Select("SELECT node_id AS nodeId, parent_id AS parentId, asset_id AS assetId, name, type, created_at AS createdAt, updated_at AS updatedAt FROM substation_trans_feeder_lines WHERE node_id = #{id}")
+    SubStationTransformerFeederLine getFeederDss(UUID id);
 
 
     @Select("SELECT * FROM meters WHERE id = #{meterId}")
@@ -817,7 +904,13 @@ public interface MeterMapper {
             @Result(property = "manufacturer", column = "meter_manufacturer",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
 
     })
     Meter getMeterById(UUID meterId);
@@ -1228,6 +1321,63 @@ public interface MeterMapper {
     })
     void insertBatchMDMeterInfoVersion(@Param("list") List<MDMeterInfo> list);
 
+
+//    // Find version row by meter number and org (used to load the version record)
+//    @Select("SELECT * FROM meters_version WHERE org_id = #{orgId} AND meter_number = #{meterNumber} LIMIT 1")
+//    Meter getVersionMeter(@Param("orgId") UUID orgId,
+//                          @Param("meterId") UUID meterId,   // optional param in your app, pass null if not used
+//                          @Param("meterNumber") String meterNumber,
+//                          @Param("somethingElse") Object somethingElse);
+//
+//    // Batch approve meters: set meter_stage and approved_by for all meter_numbers in list
+//    @Update({
+//            "<script>",
+//            "UPDATE meters_version",
+//            "SET meter_stage = #{meterStage}, approved_by = #{approvedBy}, updated_at = #{updatedAt}",
+//            "WHERE org_id = #{orgId}",
+//            "AND meter_number IN",
+//            "<foreach collection='meterNumbers' item='meterNumber' open='(' separator=',' close=')'>",
+//            "#{meterNumber}",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    int approveMetersBatch(@Param("meterNumbers") List<String> meterNumbers,
+//                           @Param("meterStage") String meterStage,
+//                           @Param("approvedBy") UUID approvedBy,
+//                           @Param("updatedAt") String updatedAt,//LocalDateTime updatedAt,
+//                           @Param("orgId") UUID orgId);
+//
+//    // Batch reject meters: set meter_stage and rejected_by (or approved_by depending on schema)
+//    @Update({
+//            "<script>",
+//            "UPDATE meters_version",
+//            "SET meter_stage = #{meterStage}, approved_by = #{rejectedBy}, updated_at = #{updatedAt}",
+//            "WHERE org_id = #{orgId}",
+//            "AND meter_number IN",
+//            "<foreach collection='meterNumbers' item='meterNumber' open='(' separator=',' close=')'>",
+//            "#{meterNumber}",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    int rejectMetersBatch(@Param("meterNumbers") List<String> meterNumbers,
+//                          @Param("meterStage") String meterStage,
+//                          @Param("rejectedBy") UUID rejectedBy,
+//                          @Param("updatedAt") String updatedAt,//LocalDateTime updatedAt,
+//                          @Param("orgId") UUID orgId);
+//
+//    // Optional: find existing list by meter numbers
+//    @Select({
+//            "<script>",
+//            "SELECT * FROM meters_version",
+//            "WHERE org_id = #{orgId}",
+//            "AND meter_number IN",
+//            "<foreach collection='meterNumbers' item='meterNumber' open='(' separator=',' close=')'>",
+//            "#{meterNumber}",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    List<Meter> findVersionsByMeterNumbers(@Param("orgId") UUID orgId,
+//                                           @Param("meterNumbers") List<String> meterNumbers);
 
 
 }

@@ -48,4 +48,5 @@ public interface MeterService {
 
     Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
 
+    Map<String, Object> bulkApproval(MultipartFile file) throws IOException;
 }
