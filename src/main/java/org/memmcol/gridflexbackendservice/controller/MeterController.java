@@ -43,6 +43,7 @@ public class MeterController {
             "meterNumber",
             "simNumber",
             "meterCategory",
+            "meterClass",
             "meterManufacturerName",
             "meterType",
             "oldSgc",

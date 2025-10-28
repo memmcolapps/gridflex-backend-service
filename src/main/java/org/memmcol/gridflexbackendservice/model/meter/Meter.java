@@ -63,8 +63,6 @@ public class Meter implements Serializable {
     private SubStationTransformerFeederLine FeederInfo;
     private SubStationTransformerFeederLine DssInfo;
     private Tariff tariffInfo;
-//    private Tariff tariffInfo;
-//    private DebitCreditAdjust debitCreditAdjust;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;

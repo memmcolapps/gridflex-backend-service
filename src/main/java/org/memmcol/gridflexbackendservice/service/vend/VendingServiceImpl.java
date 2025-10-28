@@ -86,9 +86,25 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
             BigDecimal totalWithVat = netBalance.add(vatAmount);
 
-            BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
-            BigDecimal units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-            BigDecimal costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+            // --- Tariff Rate (safe parse) ---
+            BigDecimal tariffRate;
+            try {
+                tariffRate = new BigDecimal(meter.getTariffRate());
+            } catch (Exception e) {
+                tariffRate = BigDecimal.ZERO; // invalid rate should act as 0
+            }
+
+            BigDecimal units = BigDecimal.ZERO;
+            BigDecimal costPerUnit = BigDecimal.ZERO;
+
+            if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
+                // Normal calculation if tariffRate is valid
+                units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
+
+                if (units.compareTo(BigDecimal.ZERO) > 0) {
+                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+                }
+            }
 
             // --- Update Transaction ---
             Transaction transaction = new Transaction();
@@ -98,7 +114,7 @@ public class VendingServiceImpl implements VendingService {
             transaction.setMeterId(meter.getMeterId());
             transaction.setTariffId(meter.getTariffId());
             transaction.setToken(generateDummyToken());
-            transaction.setStatus("Completed");
+            transaction.setStatus("Successful");
             transaction.setReceiptNo(generateReceiptNumber(creditToken.getMeterNumber()));
             transaction.setOrgId(user.getOrgId());
             transaction.setUserId(user.getId());
@@ -138,7 +154,11 @@ public class VendingServiceImpl implements VendingService {
             UserModel user = handleUserValidation();
 
             // --- Fetch meter info ---
-            List<MeterView> meters = vendMapper.getMeterInfo(creditToken.getMeterNumber(), creditToken.getAccountNumber(),  user.getOrgId());
+            List<MeterView> meters = vendMapper.getMeterInfo(
+                    creditToken.getMeterNumber(),
+                    creditToken.getAccountNumber(),
+                    user.getOrgId()
+            );
             if (meters.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found for provided details.");
             }
@@ -149,7 +169,6 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal totalDebit = calculateTotalByType(meters, "debit");
             BigDecimal totalCredit = calculateTotalByType(meters, "credit");
 
-            // (credit + amountTendered) - debit
             BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
 
             // --- VAT and Unit Calculations ---
@@ -157,9 +176,25 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
             BigDecimal totalWithVat = netBalance.add(vatAmount);
 
-            BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
-            BigDecimal units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-            BigDecimal costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+            // --- Tariff Rate (safe parse) ---
+            BigDecimal tariffRate;
+            try {
+                tariffRate = new BigDecimal(meter.getTariffRate());
+            } catch (Exception e) {
+                tariffRate = BigDecimal.ZERO; // invalid rate should act as 0
+            }
+
+            BigDecimal units = BigDecimal.ZERO;
+            BigDecimal costPerUnit = BigDecimal.ZERO;
+
+            if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
+                // Normal calculation if tariffRate is valid
+                units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
+
+                if (units.compareTo(BigDecimal.ZERO) > 0) {
+                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+                }
+            }
 
             // --- Build Response Data ---
             creditToken.setVat(vatRate);
@@ -184,6 +219,60 @@ public class VendingServiceImpl implements VendingService {
     }
 
 
+//    @Transactional
+//    @Override
+//    public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
+//        try {
+//            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+//            UserModel user = handleUserValidation();
+//
+//            // --- Fetch meter info ---
+//            List<MeterView> meters = vendMapper.getMeterInfo(creditToken.getMeterNumber(), creditToken.getAccountNumber(),  user.getOrgId());
+//            if (meters.isEmpty()) {
+//                throw new GlobalExceptionHandler.NotFoundException("Meter not found for provided details.");
+//            }
+//
+//            MeterView meter = meters.get(0);
+//
+//            // --- Balance Calculations ---
+//            BigDecimal totalDebit = calculateTotalByType(meters, "debit");
+//            BigDecimal totalCredit = calculateTotalByType(meters, "credit");
+//
+//            // (credit + amountTendered) - debit
+//            BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
+//
+//            // --- VAT and Unit Calculations ---
+//            BigDecimal vatRate = new BigDecimal("0.075");
+//            BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
+//            BigDecimal totalWithVat = netBalance.add(vatAmount);
+//
+//            BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
+//            BigDecimal units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
+//            BigDecimal costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+//
+//            // --- Build Response Data ---
+//            creditToken.setVat(vatRate);
+//            creditToken.setCostOfUnit(costPerUnit);
+//            creditToken.setUnit(units);
+//            creditToken.setVatAmount(vatAmount);
+//            creditToken.setFinalAmount(netBalance);
+//
+//            Map<String, Object> responseData = new HashMap<>();
+//            responseData.put("data", creditToken);
+//            responseData.put("meter", meters);
+//            responseData.put("totalDebitBalance", totalDebit);
+//            responseData.put("totalCreditBalance", totalCredit);
+//
+//            return ResponseMap.response(status.getSuccessCode(), "Credit token calculated successfully", responseData);
+//
+//        } catch (Exception ex) {
+//            genericHandler.logIncidentReport("Calculating credit token service failed");
+//            genericHandler.logAndSaveException(ex, "calculate credit token");
+//            throw ex;
+//        }
+//    }
+
+
     private String generateReceiptNumber(String meterNumber) {
         String prefix = "RCPT";
         String timestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
@@ -200,9 +289,14 @@ public class VendingServiceImpl implements VendingService {
     }
 
     private BigDecimal calculateNetBalance(BigDecimal totalCredit, BigDecimal amount, BigDecimal totalDebit) {
-        return totalCredit
-                .add(amount)
-                .subtract(totalDebit)
+        // Treat nulls as zero
+        BigDecimal safeCredit = totalCredit != null ? totalCredit : BigDecimal.ZERO;
+        BigDecimal safeAmount = amount != null ? amount : BigDecimal.ZERO;
+        BigDecimal safeDebit = totalDebit != null ? totalDebit : BigDecimal.ZERO;
+        System.out.println("safeAmount:: "+safeAmount);
+        return safeCredit
+                .add(safeAmount)
+                .subtract(safeDebit)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -226,7 +320,7 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setKct1(generateDummyToken());
             kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
-            kctToken.setStatus("Completed");
+            kctToken.setStatus("Successful");
             kctToken.setOrgId(user.getOrgId());
             kctToken.setCustomerId(meter.getCustomerId());
             kctToken.setUserId(user.getId());
@@ -304,7 +398,7 @@ public class VendingServiceImpl implements VendingService {
 
             clearTamper.setToken(generateDummyToken());
             clearTamper.setMeterId(meter.getMeterId());
-            clearTamper.setStatus("Completed");
+            clearTamper.setStatus("Successful");
             clearTamper.setOrgId(user.getOrgId());
             clearTamper.setCustomerId(meter.getCustomerId());
             clearTamper.setUserId(user.getId());
@@ -347,7 +441,7 @@ public class VendingServiceImpl implements VendingService {
 
             clearCredit.setToken(generateDummyToken());
             clearCredit.setMeterId(meter.getMeterId());
-            clearCredit.setStatus("Completed");
+            clearCredit.setStatus("Successful");
             clearCredit.setOrgId(user.getOrgId());
             clearCredit.setCustomerId(meter.getCustomerId());
             clearCredit.setUserId(user.getId());
@@ -398,7 +492,7 @@ public class VendingServiceImpl implements VendingService {
 
             kctAndClearTamper.setToken(generateDummyToken());
             kctAndClearTamper.setMeterId(meter.getMeterId());
-            kctAndClearTamper.setStatus("Completed");
+            kctAndClearTamper.setStatus("Successful");
             kctAndClearTamper.setOrgId(user.getOrgId());
             kctAndClearTamper.setCustomerId(meter.getCustomerId());
             kctAndClearTamper.setUserId(user.getId());
@@ -441,7 +535,7 @@ public class VendingServiceImpl implements VendingService {
 
             kctToken.setToken(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
-            kctToken.setStatus("Completed");
+            kctToken.setStatus("Successful");
             kctToken.setOrgId(user.getOrgId());
             kctToken.setCustomerId(meter.getCustomerId());
             kctToken.setUserId(user.getId());

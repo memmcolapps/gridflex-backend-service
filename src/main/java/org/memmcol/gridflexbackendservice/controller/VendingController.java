@@ -33,7 +33,7 @@ public class VendingController {
         }
     }
 
-    @GetMapping("/credit/calculate")
+    @PostMapping("/credit/calculate")
     ResponseEntity<?> calculateCreditToken(@RequestBody CreditToken creditToken){
         try {
             Map<String, Object> result = vendingService.calculateCreditToken(creditToken);

@@ -4,11 +4,13 @@ import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.BulkApproveMeter;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,4 +51,6 @@ public interface MeterService {
     Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
 
     Map<String, Object> bulkApproval(MultipartFile file) throws IOException;
+
+    Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user);
 }

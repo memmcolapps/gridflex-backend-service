@@ -12,6 +12,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.customer.CustomerServiceImpl;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -231,11 +232,13 @@ public class BillingServiceImpl implements BillingService {
             if ("MD".equalsIgnoreCase(meterClass)){
                 selectItem.setMeterClass("MD");
                 allReadings = readingMetersMapper.getMeterReadingSheet(selectItem, offset, size);
-            }else {
+            } else if("Non-MD".equalsIgnoreCase(meterClass)){
                 selectItem.setMeterClass("single-phase");
                 selectItem.setMeterClass2("three-phase");
                 allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
-
+            }
+            else {
+               throw new GlobalExceptionHandler.NotFoundException("Meter class provided not found");
             }
 
             int totalCount = allReadings.size();
