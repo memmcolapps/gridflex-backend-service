@@ -75,6 +75,12 @@ public class MeterController {
             "approveState",
     };
 
+    // Common headers for both formats
+    private static final String[] ALLOCATEHEADERS = {
+            "meterNumber",
+            "business hub",
+    };
+
     @PostMapping("/create")
     public ResponseEntity<?> createMeter(@RequestBody Meter meter) {
         try {
@@ -401,6 +407,56 @@ public class MeterController {
 //        }
     }
 
+    @GetMapping("/download/allocate/template/csv")
+    public ResponseEntity<Resource> downloadAllocateCsvTemplate() throws IOException {
+        String sampleRow = "0048675416677, region-id";
+
+        // Build CSV content in memory
+        String csvContent = String.join(",", ALLOCATEHEADERS) + "\n" + sampleRow;
+        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meter_allocate_template.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(resource.contentLength())
+                .body(resource);
+    }
+
+    @GetMapping("/download/allocate/template/excel")
+    public void downloadAllocateExcelTemplate(HttpServletResponse response) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Meter Bulk Allocate Template");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < ALLOCATEHEADERS.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(ALLOCATEHEADERS[i]);
+            }
+
+            // Optional: Add a sample row
+            Row sampleRow = sheet.createRow(1);
+
+            Object[] sampleData = {
+                    "0048675416677","region-id"
+            };
+
+            for (int i = 0; i < sampleData.length; i++) {
+                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < HEADERS.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Set response headers
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=meter_allocate_template.xlsx");
+
+            workbook.write(response.getOutputStream());
+        }
+    }
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {

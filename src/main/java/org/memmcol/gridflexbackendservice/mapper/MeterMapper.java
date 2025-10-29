@@ -1621,4 +1621,102 @@ public interface MeterMapper {
     })
     void insertBatchApproveSmartMeterInfo(@Param("list") List<SmartMeterInfo> newSmartMeters);
 
+
+
+    @Delete({
+            "<script>",
+            "DELETE FROM meters WHERE id IN",
+            "<foreach collection='meterIds' item='ids' open='(' separator=',' close=')'>",
+            "#{ids}",
+            "</foreach>",
+            "</script>"
+    })
+    void deleteMetersByMeterIds(@Param("meterIds") List<UUID> meterIds);
+
+    @Update({
+            "<script>",
+            "UPDATE smart_meter_info_version",
+            "SET ",
+            "  meter_stage = #{meterStage}, ",
+            "  approve_by = #{approveBy}, ",
+            "  updated_at = NOW() ",
+            "WHERE org_id = #{orgId} AND meter_id IN ",
+            "  <foreach collection='meterIds' item='id' open='(' separator=',' close=')'>",
+            "    #{id}",
+            "  </foreach> ",
+            "AND org_id = #{orgId}",
+            "</script>"
+    })
+    void rejectSmartMeterInfoVersion(
+            @Param("meterIds") List<UUID> meterIds,
+            @Param("orgId") UUID orgId,
+            @Param("approveBy") UUID approveBy,
+            String meterStage);
+
+
+    @Update({
+            "<script>",
+            "UPDATE md_meter_info_version",
+            "SET ",
+            "  meter_stage = #{meterStage}, ",
+            "  approve_by = #{approveBy}, ",
+            "  updated_at = NOW() ",
+            "WHERE  org_id = #{orgId} AND meter_id IN ",
+            "  <foreach collection='meterIds' item='id' open='(' separator=',' close=')'>",
+            "    #{id}",
+            "  </foreach> ",
+            "AND org_id = #{orgId}",
+            "</script>"
+    })
+    void rejectMDMeterInfoVersion(
+            @Param("meterIds") List<UUID> meterIds,
+            @Param("orgId") UUID orgId,
+            @Param("approveBy") UUID approveBy,
+            String meterStage);
+
+
+
+//    @Delete({
+//            "<script>",
+//            "DELETE FROM smart_meter_info WHERE meter_number IN",
+//            "<foreach collection='meterNumbers' item='num' open='(' separator=',' close=')'>",
+//            "#{num}",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    void deleteSmartMeterInfoByMeterNumbers(@Param("meterNumbers") List<String> meterNumbers);
+
+//    @Delete({
+//            "<script>",
+//            "DELETE FROM md_meter_info WHERE AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')" +
+//                    " AND meter_number IN",
+//            "<foreach collection='meterNumbers' item='num' open='(' separator=',' close=')'>",
+//            "#{num}",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    void deleteMDMeterInfoByMeterNumbers(@Param("meterNumbers") List<String> meterNumbers);
+
+    @Update({
+            "<script>",
+            "UPDATE meters_version",
+            "SET ",
+            "  meter_stage = #{meterStage}, ",
+            "  approve_by = #{approveBy}, ",
+            "  updated_at = NOW() ",
+            "WHERE org_id = #{orgId} ",
+            "  AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated') ",
+            "  AND meter_id IN ",
+            "  <foreach collection='meterIds' item='id' open='(' separator=',' close=')'>",
+            "    #{id}",
+            "  </foreach>",
+            "</script>"
+    })
+    void rejectVersionMeters(
+            @Param("meterIds")List<UUID> meterIds,
+            @Param("orgId") UUID orgId,
+            @Param("approveBy") UUID approveBy,
+            String meterStage);
+
+
 }
