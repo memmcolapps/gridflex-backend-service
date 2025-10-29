@@ -1,11 +1,13 @@
 package org.memmcol.gridflexbackendservice.model.meter;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Data
@@ -22,15 +24,33 @@ public class MeterReadingSheet implements Serializable {
     private String readingType;
     private BigDecimal lastReading;
     private BigDecimal currentReading;
-    private LocalDateTime currentReadingDate;
-    private LocalDateTime lastReadingDate;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date currentReadingDate;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date lastReadingDate;
+
     private String billMonth;
     private String billYear;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date updatedAt;
+
     private String tariffType;
     private String name;
     private String meterClass;
+
+    public MeterReadingSheet() {
+        this.currentReadingDate = new Date();
+        this.lastReadingDate = new Date();
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+    }
+
 
     // Getters and Setters
     public UUID getId() {
@@ -105,19 +125,19 @@ public class MeterReadingSheet implements Serializable {
         this.currentReading = currentReading;
     }
 
-    public LocalDateTime getCurrentReadingDate() {
+    public Date getCurrentReadingDate() {
         return currentReadingDate;
     }
 
-    public void setCurrentReadingDate(LocalDateTime currentReadingDate) {
+    public void setCurrentReadingDate(Date currentReadingDate) {
         this.currentReadingDate = currentReadingDate;
     }
 
-    public LocalDateTime getLastReadingDate() {
+    public Date getLastReadingDate() {
         return lastReadingDate;
     }
 
-    public void setLastReadingDate(LocalDateTime lastReadingDate) {
+    public void setLastReadingDate(Date lastReadingDate) {
         this.lastReadingDate = lastReadingDate;
     }
 
@@ -137,19 +157,19 @@ public class MeterReadingSheet implements Serializable {
         this.billYear = billYear;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Date getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Date getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
 
