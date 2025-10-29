@@ -1580,6 +1580,7 @@ public class MeterServiceImpl implements MeterService {
             throw new IOException("Bulk approve failed: " + e.getMessage(), e);
         }
     }
+
     @Override
     public Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user) {
         Map<String, Object> result = new HashMap<>();
@@ -1590,20 +1591,38 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("No records found in file");
         }
 
-        final int BATCH_SIZE = 500;
+        final int BATCH_SIZE = 500; // Tune as needed for performance
 
         for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, meters.size());
             List<Meter> subBatch = meters.subList(i, end);
 
+            System.out.println("Processing subBatch from index " + i + " to " + (end - 1));
+            System.out.println("SubBatch size: " + subBatch.size());
+            subBatch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
+
+            // Collect all meter numbers in this subBatch
             List<String> meterNumbers = subBatch.stream()
                     .map(m -> m.getMeterNumber().trim())
-                    .collect(Collectors.toList());
+                    .filter(num -> !num.isEmpty())
+                    .toList();
 
-            List<Meter> versionBatch = meterMapper.getMeterByVersionMeterNumber(meterNumbers, user.getOrgId());
+            // One DB call to fetch all corresponding version records
+            List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
+
+            if (versionBatch.isEmpty()) {
+                failedRecords.addAll(meterNumbers.stream()
+                        .map(num -> num + " (Not found in version table)")
+                        .toList());
+                continue;
+            }
 
             try {
                 prepareUpdateMeters(versionBatch, user, failedRecords);
+
+                System.out.println(">>> Version batch size: " + versionBatch.size());
+                versionBatch.forEach(v -> System.out.println(">>> Updating meter: " + v.getMeterNumber()));
+
                 int updatedCount = updateBatchTransactional(versionBatch, user);
                 successCount += updatedCount;
 
@@ -1627,6 +1646,8 @@ public class MeterServiceImpl implements MeterService {
         );
     }
 
+
+
     /** Validate and enrich meters before DB update. */
     private void prepareUpdateMeters(List<Meter> batch, UserModel user, List<String> failedRecords) {
         Iterator<Meter> iterator = batch.iterator();
@@ -1640,17 +1661,18 @@ public class MeterServiceImpl implements MeterService {
 
             meter.setOrgId(user.getOrgId());
             meter.setApproveBy(user.getId());
-            meter.setUpdatedAt(new Date());
-            meter.setMeterStage("Approved");
+            meter.setMeterStage("Created");
             meter.setStatus("Active");
 
             if (meter.getMdMeterInfo() != null) {
+                meter.getMdMeterInfo().setApproveBy(user.getId());
                 meter.getMdMeterInfo().setMeterId(meter.getMeterId());
                 meter.getMdMeterInfo().setOrgId(user.getOrgId());
                 meter.getMdMeterInfo().setApproveBy(user.getId());
             }
 
             if (meter.getSmartMeterInfo() != null) {
+                meter.getSmartMeterInfo().setApproveBy(user.getId());
                 meter.getSmartMeterInfo().setMeterId(meter.getMeterId());
                 meter.getSmartMeterInfo().setOrgId(user.getOrgId());
                 meter.getSmartMeterInfo().setApproveBy(user.getId());
@@ -1665,11 +1687,11 @@ public class MeterServiceImpl implements MeterService {
 
         try {
 
-            // Update version meters
-            meterMapper.updateBatchVersionMeters(batch);
-
             // Update main meters
             meterMapper.updateBatchMeters(batch);
+
+            // Update version meters
+            meterMapper.updateBatchVersionMeters(batch);
 
             // Update children
             updateChildMeterData(batch, user);
@@ -1704,22 +1726,125 @@ public class MeterServiceImpl implements MeterService {
         return success;
     }
 
-    /** Update related tables */
+    /** Update or insert approved child meter data */
     private void updateChildMeterData(List<Meter> batch, UserModel user) {
         List<MDMeterInfo> mdList = new ArrayList<>();
         List<SmartMeterInfo> smartList = new ArrayList<>();
         List<PaymentMode> prepaidList = new ArrayList<>();
+        List<MDMeterInfo> newMDMeters = new ArrayList<>();
+        List<SmartMeterInfo> newSmartMeters = new ArrayList<>();
 
         for (Meter meter : batch) {
-            if (meter.getMdMeterInfo() != null) mdList.add(meter.getMdMeterInfo());
-            if (meter.getSmartMeterInfo() != null) smartList.add(meter.getSmartMeterInfo());
-            if (meter.getPaymentMode() != null) prepaidList.add(meter.getPaymentMode());
+            if (meter.getMdMeterInfo() != null) {
+                if ("Pending-created".equalsIgnoreCase(meter.getMdMeterInfo().getMeterStage())) {
+                    meter.getMdMeterInfo().setMeterStage("Created");
+                    newMDMeters.add(meter.getMdMeterInfo());
+                } else {
+                    System.out.println("nop::: "+meter.getMdMeterInfo().getApproveBy());
+                    mdList.add(meter.getMdMeterInfo());
+                }
+            }
+
+            if (meter.getSmartMeterInfo() != null) {
+                if ("Pending-created".equalsIgnoreCase(meter.getSmartMeterInfo().getMeterStage())) {
+                    meter.getSmartMeterInfo().setMeterStage("Created");
+                    newSmartMeters.add(meter.getSmartMeterInfo());
+                } else {
+                    smartList.add(meter.getSmartMeterInfo());
+                }
+            }
         }
 
+        // Approve existing version data
         if (!mdList.isEmpty()) meterMapper.batchApproveMDMeterInfo(mdList);
         if (!smartList.isEmpty()) meterMapper.batchApproveSmartMeterInfo(smartList);
-        if (!prepaidList.isEmpty()) meterMapper.batchApprovePrepaidMeterInfo(prepaidList);
+
+        // Insert new ones into main tables
+        if (!newMDMeters.isEmpty()) {
+            meterMapper.batchApproveMDMeterInfo(newMDMeters);
+            meterMapper.insertBatchApproveMDMeterInfo(newMDMeters);
+        }
+        if (!newSmartMeters.isEmpty()) {
+            meterMapper.batchApproveSmartMeterInfo(newSmartMeters);
+            meterMapper.insertBatchApproveSmartMeterInfo(newSmartMeters);
+        }
     }
+
+//    private void updateChildMeterData(List<Meter> batch, UserModel user) {
+//        System.out.println("meterStage1: "+batch.get(0).getSmartMeterInfo().getMeterStage());
+//        System.out.println("meterStage2: "+batch.get(0).getMdMeterInfo().getMeterStage());
+//        List<MDMeterInfo> mdList = new ArrayList<>();
+//        List<SmartMeterInfo> smartList = new ArrayList<>();
+//        List<PaymentMode> prepaidList = new ArrayList<>();
+//
+//        List<MDMeterInfo> newMDMeters = new ArrayList<>();     // Pending Created → insert into main table
+//        List<SmartMeterInfo> newSmartMeters = new ArrayList<>();
+////        List<Meter> newPrepaidMeters = new ArrayList<>();
+////        List<Meter> existingMeters = new ArrayList<>(); // Pending Update → update main table
+//
+//        for (Meter meter : batch) {
+//            if ("Pending-created".equalsIgnoreCase(meter.getMdMeterInfo().getMeterStage())) {
+//                meter.getMdMeterInfo().setMeterStage("Created");
+//                newMDMeters.add(meter.getMdMeterInfo());
+//            } else {
+//                mdList.add(meter.getMdMeterInfo());
+//            }
+//            if("Pending-created".equalsIgnoreCase(meter.getSmartMeterInfo().getMeterStage())) {
+//                meter.getSmartMeterInfo().setMeterStage("Created");
+//                newSmartMeters.add(meter.getSmartMeterInfo());
+//
+//            }
+////            else {
+////                existingMeters.add(meter);
+////            }
+//
+//            // Collect child tables
+//            if (meter.getMdMeterInfo() != null) mdList.add(meter.getMdMeterInfo());
+//            if (meter.getSmartMeterInfo() != null) smartList.add(meter.getSmartMeterInfo());
+////            if (meter.getPaymentMode() != null) prepaidList.add(meter.getPaymentMode());
+//        }
+//
+//        // Step 1: Approve child version tables (in batch)
+//        if (!mdList.isEmpty()) meterMapper.batchApproveMDMeterInfo(mdList);
+//        if (!smartList.isEmpty()) meterMapper.batchApproveSmartMeterInfo(smartList);
+////        if (!prepaidList.isEmpty()) meterMapper.batchApprovePrepaidMeterInfo(prepaidList);
+//
+//        // Step 2: Insert new meters into main table
+//        if (!newMDMeters.isEmpty()) {
+//            meterMapper.insertBatchApproveMDMeterInfo(newMDMeters);
+//        }
+//
+//        if (!newSmartMeters.isEmpty()) {
+//            meterMapper.insertBatchApproveSmartMeterInfo(newSmartMeters);
+//        }
+//
+////        if (!newPrepaidMeters.isEmpty()) {
+////            meterMapper.insertBatchApprovePrepaidMeterInfo(newPrepaidMeters);
+////        }
+//
+////        // Step 3: Update existing meters in main table
+////        if (!existingMeters.isEmpty()) {
+////            meterMapper.updateBatchMeters(existingMeters);
+////        }
+//    }
+
+/**-------------**/
+//    /** Update related tables */
+//    private void updateChildMeterData(List<Meter> batch, UserModel user) {
+//        List<MDMeterInfo> mdList = new ArrayList<>();
+//        List<SmartMeterInfo> smartList = new ArrayList<>();
+//        List<PaymentMode> prepaidList = new ArrayList<>();
+//
+//        for (Meter meter : batch) {
+//            if (meter.getMdMeterInfo() != null) mdList.add(meter.getMdMeterInfo());
+//            if (meter.getSmartMeterInfo() != null) smartList.add(meter.getSmartMeterInfo());
+//            if (meter.getPaymentMode() != null) prepaidList.add(meter.getPaymentMode());
+//        }
+//
+//        if (!mdList.isEmpty()) meterMapper.batchApproveMDMeterInfo(mdList);
+//        if (!smartList.isEmpty()) meterMapper.batchApproveSmartMeterInfo(smartList);
+//        if (!prepaidList.isEmpty()) meterMapper.batchApprovePrepaidMeterInfo(prepaidList);
+//    }
 
     /**
      * Record audit logs for each approved meter.
