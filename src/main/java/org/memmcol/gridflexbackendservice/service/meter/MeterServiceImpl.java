@@ -1582,6 +1582,97 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
+    public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
+        try {
+            UserModel user = handleUserValidation();
+
+            // Determine file type
+            String filename = Optional.ofNullable(file.getOriginalFilename())
+                    .orElseThrow(() -> new IOException("File has no name"));
+
+            List<Meter> meters;
+            if (filename.endsWith(".csv")) {
+                meters = processAllocateCsv(file.getInputStream());
+            } else if (filename.endsWith(".xlsx")) {
+                meters = processAllocateExcel(file.getInputStream());
+            } else {
+                throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+            }
+            Map<String, Object> result = bulkAllocateMeters(meters, user);
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error in bulk allocate upload: {}", e.getMessage(), e);
+            throw new IOException("Bulk allocate failed: " + e.getMessage(), e);
+        }
+    }
+
+//    @Override
+    public Map<String, Object> bulkAllocateMeters(List<Meter> meters, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+
+        if (meters == null || meters.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
+        }
+
+        final int BATCH_SIZE = 500; // Tune as needed for performance
+
+        for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, meters.size());
+            List<Meter> subBatch = meters.subList(i, end);
+
+            System.out.println("Processing subBatch from index " + i + " to " + (end - 1));
+            System.out.println("SubBatch size: " + subBatch.size());
+            subBatch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
+
+            // Collect all meter numbers in this subBatch
+            List<String> meterNumbers = subBatch.stream()
+                    .map(m -> m.getMeterNumber().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            // One DB call to fetch all corresponding version records
+            List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
+
+            if (versionBatch.isEmpty()) {
+                failedRecords.addAll(meterNumbers.stream()
+                        .map(num -> num + " (Not found in version table)")
+                        .toList());
+                continue;
+            }
+
+            try {
+                prepareUpdateMeters(versionBatch, user, failedRecords);
+
+                System.out.println(">>> Version batch size: " + versionBatch.size());
+                versionBatch.forEach(v -> System.out.println(">>> Updating meter: " + v.getMeterNumber()));
+
+                int updatedCount = updateBatchTransactional(versionBatch, user);
+                successCount += updatedCount;
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
+                successCount += updateSubBatchTransactional(versionBatch, user, failedRecords);
+            }
+        }
+
+        int total = successCount + failedRecords.size();
+
+        result.put("totalRecords", total);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + total + " meters approved successfully",
+                result
+        );
+    }
+
+    @Override
     public Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user) {
         Map<String, Object> result = new HashMap<>();
         List<String> failedRecords = new ArrayList<>();
@@ -1918,84 +2009,6 @@ public class MeterServiceImpl implements MeterService {
     }
 
 
-//    private void updateChildMeterData(List<Meter> batch, UserModel user) {
-//        System.out.println("meterStage1: "+batch.get(0).getSmartMeterInfo().getMeterStage());
-//        System.out.println("meterStage2: "+batch.get(0).getMdMeterInfo().getMeterStage());
-//        List<MDMeterInfo> mdList = new ArrayList<>();
-//        List<SmartMeterInfo> smartList = new ArrayList<>();
-//        List<PaymentMode> prepaidList = new ArrayList<>();
-//
-//        List<MDMeterInfo> newMDMeters = new ArrayList<>();     // Pending Created → insert into main table
-//        List<SmartMeterInfo> newSmartMeters = new ArrayList<>();
-////        List<Meter> newPrepaidMeters = new ArrayList<>();
-////        List<Meter> existingMeters = new ArrayList<>(); // Pending Update → update main table
-//
-//        for (Meter meter : batch) {
-//            if ("Pending-created".equalsIgnoreCase(meter.getMdMeterInfo().getMeterStage())) {
-//                meter.getMdMeterInfo().setMeterStage("Created");
-//                newMDMeters.add(meter.getMdMeterInfo());
-//            } else {
-//                mdList.add(meter.getMdMeterInfo());
-//            }
-//            if("Pending-created".equalsIgnoreCase(meter.getSmartMeterInfo().getMeterStage())) {
-//                meter.getSmartMeterInfo().setMeterStage("Created");
-//                newSmartMeters.add(meter.getSmartMeterInfo());
-//
-//            }
-////            else {
-////                existingMeters.add(meter);
-////            }
-//
-//            // Collect child tables
-//            if (meter.getMdMeterInfo() != null) mdList.add(meter.getMdMeterInfo());
-//            if (meter.getSmartMeterInfo() != null) smartList.add(meter.getSmartMeterInfo());
-////            if (meter.getPaymentMode() != null) prepaidList.add(meter.getPaymentMode());
-//        }
-//
-//        // Step 1: Approve child version tables (in batch)
-//        if (!mdList.isEmpty()) meterMapper.batchApproveMDMeterInfo(mdList);
-//        if (!smartList.isEmpty()) meterMapper.batchApproveSmartMeterInfo(smartList);
-////        if (!prepaidList.isEmpty()) meterMapper.batchApprovePrepaidMeterInfo(prepaidList);
-//
-//        // Step 2: Insert new meters into main table
-//        if (!newMDMeters.isEmpty()) {
-//            meterMapper.insertBatchApproveMDMeterInfo(newMDMeters);
-//        }
-//
-//        if (!newSmartMeters.isEmpty()) {
-//            meterMapper.insertBatchApproveSmartMeterInfo(newSmartMeters);
-//        }
-//
-////        if (!newPrepaidMeters.isEmpty()) {
-////            meterMapper.insertBatchApprovePrepaidMeterInfo(newPrepaidMeters);
-////        }
-//
-////        // Step 3: Update existing meters in main table
-////        if (!existingMeters.isEmpty()) {
-////            meterMapper.updateBatchMeters(existingMeters);
-////        }
-//    }
-
-/**-------------**/
-//    /** Update related tables */
-//    private void updateChildMeterData(List<Meter> batch, UserModel user) {
-//        List<MDMeterInfo> mdList = new ArrayList<>();
-//        List<SmartMeterInfo> smartList = new ArrayList<>();
-//        List<PaymentMode> prepaidList = new ArrayList<>();
-//
-//        for (Meter meter : batch) {
-//            if (meter.getMdMeterInfo() != null) mdList.add(meter.getMdMeterInfo());
-//            if (meter.getSmartMeterInfo() != null) smartList.add(meter.getSmartMeterInfo());
-//            if (meter.getPaymentMode() != null) prepaidList.add(meter.getPaymentMode());
-//        }
-//
-//        if (!mdList.isEmpty()) meterMapper.batchApproveMDMeterInfo(mdList);
-//        if (!smartList.isEmpty()) meterMapper.batchApproveSmartMeterInfo(smartList);
-//        if (!prepaidList.isEmpty()) meterMapper.batchApprovePrepaidMeterInfo(prepaidList);
-//    }
-
-
-
     // ---------------------------
     // Simple helper to extract human-friendly message from exceptions
     // ---------------------------
@@ -2004,7 +2017,6 @@ public class MeterServiceImpl implements MeterService {
         String m = ex.getMessage();
         return m == null ? ex.getClass().getSimpleName() : m;
     }
-
 
     private List<Meter> processApproveExcel(InputStream inputStream) throws IOException {
         List<Meter> meters = new ArrayList<>();
@@ -2039,8 +2051,50 @@ public class MeterServiceImpl implements MeterService {
 
             for (CSVRecord record : csvParser) {
                 Meter meter = new Meter();
-                meter.setMeterNumber(record.get("meterNumber"));
-                meter.setApproveState(record.get("approveState"));
+                meter.setMeterNumber(record.get("meter number"));
+                meter.setApproveState(record.get("approve state"));
+
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+    private List<Meter> processAllocateExcel(InputStream inputStream) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                Meter meter = new Meter();
+
+                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
+                meter.setApproveState(getStringCellValue(row.getCell(1)));
+
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+    private List<Meter> processAllocateCsv(InputStream inputStream) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                Meter meter = new Meter();
+                meter.setMeterNumber(record.get("meter number"));
+                meter.setApproveState(record.get("business hub"));
 
                 meters.add(meter);
             }

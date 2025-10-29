@@ -53,4 +53,6 @@ public interface MeterService {
     Map<String, Object> bulkApproval(MultipartFile file) throws IOException;
 
     Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user);
+
+    Map<String, Object> bulkAllocate(MultipartFile file) throws IOException;
 }

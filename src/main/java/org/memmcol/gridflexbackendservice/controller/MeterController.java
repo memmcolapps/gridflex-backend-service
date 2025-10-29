@@ -71,13 +71,13 @@ public class MeterController {
 
     // Common headers for both formats
     private static final String[] APPROVEHEADERS = {
-            "meterNumber",
-            "approveState",
+            "meter number",
+            "approve state",
     };
 
     // Common headers for both formats
     private static final String[] ALLOCATEHEADERS = {
-            "meterNumber",
+            "meter number",
             "business hub",
     };
 
@@ -458,6 +458,19 @@ public class MeterController {
         }
     }
 
+
+    @PutMapping("/bulk-allocate")
+    public ResponseEntity<Map<String, Object>> bulkAllocateMeter(@RequestParam("file") MultipartFile file) {
+        try {
+            Map<String, Object> result =  service.bulkAllocate(file);
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
