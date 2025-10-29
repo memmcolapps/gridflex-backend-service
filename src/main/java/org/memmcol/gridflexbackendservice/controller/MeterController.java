@@ -370,6 +370,21 @@ public class MeterController {
         }
     }
 
+    @GetMapping("/download/approve/template/csv")
+    public ResponseEntity<Resource> downloadApproveCsvTemplate() throws IOException {
+        String sampleRow = "0048675416677,approve or reject";
+
+        // Build CSV content in memory
+        String csvContent = String.join(",", APPROVEHEADERS) + "\n" + sampleRow;
+        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meter_approval_template.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(resource.contentLength())
+                .body(resource);
+    }
+
     @PutMapping("/bulk-approve")
     public ResponseEntity<Map<String, Object>> bulkApproveMeter(@RequestParam("file") MultipartFile file) {
         try {

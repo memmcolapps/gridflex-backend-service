@@ -126,7 +126,7 @@ public class  SecurityConfig {
 						"meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/service/create","/billing/service/meter/reading/service/generate", "/billing/service/meter/reading/service/update",
 						"/billing/service/meter/reading/service/all", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/service/download/template/excel",
 						"/billing/service/meter/reading/service/bulk-upload",
-						"/meter/service/download/template/excel", "/meter/service/download/template/csv",
+						"/meter/service/download/template/excel", "/meter/service/download/template/csv", "/meter/service/download/approve/template/excel", "/meter/service/download/approve/template/csv",
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management",
