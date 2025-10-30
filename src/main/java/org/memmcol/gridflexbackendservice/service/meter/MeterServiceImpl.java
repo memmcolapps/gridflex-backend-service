@@ -1591,6 +1591,98 @@ public class MeterServiceImpl implements MeterService {
             throw new IOException("Bulk approve failed: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
+        try {
+            UserModel user = handleUserValidation();
+
+            // Determine file type
+            String filename = Optional.ofNullable(file.getOriginalFilename())
+                    .orElseThrow(() -> new IOException("File has no name"));
+
+            List<Meter> meters;
+            if (filename.endsWith(".csv")) {
+                meters = processAllocateCsv(file.getInputStream());
+            } else if (filename.endsWith(".xlsx")) {
+                meters = processAllocateExcel(file.getInputStream());
+            } else {
+                throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+            }
+            Map<String, Object> result = bulkAllocateMeters(meters, user);
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error in bulk allocate upload: {}", e.getMessage(), e);
+            throw new IOException("Bulk allocate failed: " + e.getMessage(), e);
+        }
+    }
+
+//    @Override
+    public Map<String, Object> bulkAllocateMeters(List<Meter> meters, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+
+        if (meters == null || meters.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
+        }
+
+        final int BATCH_SIZE = 500; // Tune as needed for performance
+
+        for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, meters.size());
+            List<Meter> subBatch = meters.subList(i, end);
+
+            System.out.println("Processing subBatch from index " + i + " to " + (end - 1));
+            System.out.println("SubBatch size: " + subBatch.size());
+            subBatch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
+
+            // Collect all meter numbers in this subBatch
+            List<String> meterNumbers = subBatch.stream()
+                    .map(m -> m.getMeterNumber().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            // One DB call to fetch all corresponding version records
+            List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
+
+            if (versionBatch.isEmpty()) {
+                failedRecords.addAll(meterNumbers.stream()
+                        .map(num -> num + " (Not found in version table)")
+                        .toList());
+                continue;
+            }
+
+            try {
+                prepareUpdateMeters(versionBatch, user, failedRecords);
+
+                System.out.println(">>> Version batch size: " + versionBatch.size());
+                versionBatch.forEach(v -> System.out.println(">>> Updating meter: " + v.getMeterNumber()));
+
+                int updatedCount = updateBatchTransactional(versionBatch, user);
+                successCount += updatedCount;
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
+                successCount += updateSubBatchTransactional(versionBatch, user, failedRecords);
+            }
+        }
+
+        int total = successCount + failedRecords.size();
+
+        result.put("totalRecords", total);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + total + " meters approved successfully",
+                result
+        );
+    }
+
     @Override
     public Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user) {
         Map<String, Object> result = new HashMap<>();
@@ -1601,20 +1693,38 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("No records found in file");
         }
 
-        final int BATCH_SIZE = 500;
+        final int BATCH_SIZE = 500; // Tune as needed for performance
 
         for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, meters.size());
             List<Meter> subBatch = meters.subList(i, end);
 
+            System.out.println("Processing subBatch from index " + i + " to " + (end - 1));
+            System.out.println("SubBatch size: " + subBatch.size());
+            subBatch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
+
+            // Collect all meter numbers in this subBatch
             List<String> meterNumbers = subBatch.stream()
                     .map(m -> m.getMeterNumber().trim())
-                    .collect(Collectors.toList());
+                    .filter(num -> !num.isEmpty())
+                    .toList();
 
-            List<Meter> versionBatch = meterMapper.getMeterByVersionMeterNumber(meterNumbers, user.getOrgId());
+            // One DB call to fetch all corresponding version records
+            List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
+
+            if (versionBatch.isEmpty()) {
+                failedRecords.addAll(meterNumbers.stream()
+                        .map(num -> num + " (Not found in version table)")
+                        .toList());
+                continue;
+            }
 
             try {
                 prepareUpdateMeters(versionBatch, user, failedRecords);
+
+                System.out.println(">>> Version batch size: " + versionBatch.size());
+                versionBatch.forEach(v -> System.out.println(">>> Updating meter: " + v.getMeterNumber()));
+
                 int updatedCount = updateBatchTransactional(versionBatch, user);
                 successCount += updatedCount;
 
@@ -1651,17 +1761,33 @@ public class MeterServiceImpl implements MeterService {
 
             meter.setOrgId(user.getOrgId());
             meter.setApproveBy(user.getId());
-            meter.setUpdatedAt(new Date());
-            meter.setMeterStage("Approved");
-            meter.setStatus("Active");
+//            meter.setMeterStage("Created");
+//            meter.setStatus("Active");
+            // APPROVE path
+            if ("approve".equalsIgnoreCase(meter.getApproveState())) {
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+            }
+
+            // REJECT path
+            else if ("reject".equalsIgnoreCase(meter.getApproveState())) {
+                meter.setMeterStage("Rejected");
+                meter.setStatus("Deactivated");
+            }
+//            else {
+//                failedRecords.add("(Meter approve state provided is not allowed)");
+//                iterator.remove();
+//            }
 
             if (meter.getMdMeterInfo() != null) {
+                meter.getMdMeterInfo().setApproveBy(user.getId());
                 meter.getMdMeterInfo().setMeterId(meter.getMeterId());
                 meter.getMdMeterInfo().setOrgId(user.getOrgId());
                 meter.getMdMeterInfo().setApproveBy(user.getId());
             }
 
             if (meter.getSmartMeterInfo() != null) {
+                meter.getSmartMeterInfo().setApproveBy(user.getId());
                 meter.getSmartMeterInfo().setMeterId(meter.getMeterId());
                 meter.getSmartMeterInfo().setOrgId(user.getOrgId());
                 meter.getSmartMeterInfo().setApproveBy(user.getId());
@@ -1675,26 +1801,141 @@ public class MeterServiceImpl implements MeterService {
         if (batch.isEmpty()) return 0;
 
         try {
+            // Split the batch
+            List<Meter> approveList = batch.stream()
+                    .filter(m -> "approve".equalsIgnoreCase(m.getApproveState()))
+                    .toList();
 
-            // Update version meters
-            meterMapper.updateBatchVersionMeters(batch);
+            List<Meter> rejectList = batch.stream()
+                    .filter(m -> "reject".equalsIgnoreCase(m.getApproveState()))
+                    .toList();
 
-            // Update main meters
-            meterMapper.updateBatchMeters(batch);
+            int total = 0;
 
-            // Update children
-            updateChildMeterData(batch, user);
+            // ✅ APPROVE flow
+            if (!approveList.isEmpty()) {
+                meterMapper.updateBatchMeters(approveList);
+                meterMapper.updateBatchVersionMeters(approveList);
+                updateChildMeterData(approveList, user);
+                auditApproveBatch(approveList, user);
+                total += approveList.size();
+            }
 
-            // Audit
-            auditApproveBatch(batch, user);
+            // ❌ REJECT flow
+            if (!rejectList.isEmpty()) {
+                handleRejectionBatch(rejectList, user);
+            }
 
-            log.info("Batch updated successfully: {}", batch.size());
-            return batch.size();
+            log.info("Batch completed: {} approved, {} rejected", approveList.size(), rejectList.size());
+            return total;
+
+//            // Update main meters
+//            meterMapper.updateBatchMeters(batch);
+//
+//            // Update version meters
+//            meterMapper.updateBatchVersionMeters(batch);
+//
+//            // Update children
+//            updateChildMeterData(batch, user);
+//
+//            // Audit
+//            auditApproveBatch(batch, user);
+//
+//            log.info("Batch updated successfully: {}", batch.size());
+//            return batch.size();
 
         } catch (Exception e) {
             log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
             throw new RuntimeException("Batch transaction failed. Rolled back.", e);
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleRejectionBatch(List<Meter> rejectList, UserModel user) {
+
+        // Separate PENDING-CREATED and others
+        List<Meter> pendingCreatedMeters = rejectList.stream()
+                .filter(m -> "Pending-created".equalsIgnoreCase(m.getMeterStage()))
+                .toList();
+
+        List<Meter> otherRejections = rejectList.stream()
+                .filter(m -> !"Pending-created".equalsIgnoreCase(m.getMeterStage()))
+                .toList();
+
+        // Extract IDs for each group
+        List<UUID> pendingMeterIds = pendingCreatedMeters.stream()
+                .map(Meter::getMeterId)
+                .toList();
+
+        List<UUID> otherMeterIds = otherRejections.stream()
+                .map(Meter::getMeterId)
+                .toList();
+
+        // Handle Pending-created Meters (DELETE + REJECT)
+        if (!pendingCreatedMeters.isEmpty()) {
+            log.info("Deleting meters: {}", pendingCreatedMeters.stream()
+                    .map(Meter::getMeterNumber)
+                    .toList());
+
+            // --- SmartMeterInfo (only if not null)
+            List<UUID> smartMeterIds = pendingCreatedMeters.stream()
+                    .filter(m -> m.getSmartMeterInfo() != null)
+                    .map(Meter::getMeterId)
+                    .toList();
+
+            if (!smartMeterIds.isEmpty()) {
+                meterMapper.rejectSmartMeterInfoVersion(smartMeterIds, user.getOrgId(), user.getId(), "Rejected");
+            }
+
+            // --- MDMeterInfo (only if not null)
+            List<UUID> mdMeterIds = pendingCreatedMeters.stream()
+                    .filter(m -> m.getMdMeterInfo() != null)
+                    .map(Meter::getMeterId)
+                    .toList();
+
+            if (!mdMeterIds.isEmpty()) {
+                meterMapper.rejectMDMeterInfoVersion(mdMeterIds, user.getOrgId(), user.getId(), "Rejected");
+            }
+
+            // --- Update version table
+            meterMapper.rejectVersionMeters(pendingMeterIds, user.getOrgId(), user.getId(), "Rejected");
+
+            // --- Finally, delete from main meter table
+            meterMapper.deleteMetersByMeterIds(pendingMeterIds);
+        }
+
+        // Handle Other Rejections (Only Mark Rejected, No Delete)
+        if (!otherRejections.isEmpty()) {
+            log.info("Marking other meters as rejected: {}", otherRejections.stream()
+                    .map(Meter::getMeterNumber)
+                    .toList());
+
+            // --- SmartMeterInfo (only if not null)
+            List<UUID> smartMeterIds = otherRejections.stream()
+                    .filter(m -> m.getSmartMeterInfo() != null)
+                    .map(Meter::getMeterId)
+                    .toList();
+
+            if (!smartMeterIds.isEmpty()) {
+                meterMapper.rejectSmartMeterInfoVersion(smartMeterIds, user.getOrgId(), user.getId(), "Rejected");
+            }
+
+            // --- MDMeterInfo (only if not null)
+            List<UUID> mdMeterIds = otherRejections.stream()
+                    .filter(m -> m.getMdMeterInfo() != null)
+                    .map(Meter::getMeterId)
+                    .toList();
+
+            if (!mdMeterIds.isEmpty()) {
+                meterMapper.rejectMDMeterInfoVersion(mdMeterIds, user.getOrgId(), user.getId(), "Rejected");
+            }
+
+            // --- Update version meter record
+            meterMapper.rejectVersionMeters(otherMeterIds, user.getOrgId(), user.getId(), "Rejected");
+        }
+
+        // Audit
+        auditRejectBatch(rejectList, user);
     }
 
     /** Retry mechanism for smaller sub-batches */
@@ -1715,21 +1956,48 @@ public class MeterServiceImpl implements MeterService {
         return success;
     }
 
-    /** Update related tables */
+    /** Update or insert approved child meter data */
     private void updateChildMeterData(List<Meter> batch, UserModel user) {
         List<MDMeterInfo> mdList = new ArrayList<>();
         List<SmartMeterInfo> smartList = new ArrayList<>();
         List<PaymentMode> prepaidList = new ArrayList<>();
+        List<MDMeterInfo> newMDMeters = new ArrayList<>();
+        List<SmartMeterInfo> newSmartMeters = new ArrayList<>();
 
         for (Meter meter : batch) {
-            if (meter.getMdMeterInfo() != null) mdList.add(meter.getMdMeterInfo());
-            if (meter.getSmartMeterInfo() != null) smartList.add(meter.getSmartMeterInfo());
-            if (meter.getPaymentMode() != null) prepaidList.add(meter.getPaymentMode());
+            if (meter.getMdMeterInfo() != null) {
+                if ("Pending-created".equalsIgnoreCase(meter.getMdMeterInfo().getMeterStage())) {
+                    meter.getMdMeterInfo().setMeterStage("Created");
+                    newMDMeters.add(meter.getMdMeterInfo());
+                } else {
+                    System.out.println("nop::: "+meter.getMdMeterInfo().getApproveBy());
+                    mdList.add(meter.getMdMeterInfo());
+                }
+            }
+
+            if (meter.getSmartMeterInfo() != null) {
+                if ("Pending-created".equalsIgnoreCase(meter.getSmartMeterInfo().getMeterStage())) {
+                    meter.getSmartMeterInfo().setMeterStage("Created");
+                    newSmartMeters.add(meter.getSmartMeterInfo());
+                } else {
+                    smartList.add(meter.getSmartMeterInfo());
+                }
+            }
         }
 
+        // Approve existing version data
         if (!mdList.isEmpty()) meterMapper.batchApproveMDMeterInfo(mdList);
         if (!smartList.isEmpty()) meterMapper.batchApproveSmartMeterInfo(smartList);
-        if (!prepaidList.isEmpty()) meterMapper.batchApprovePrepaidMeterInfo(prepaidList);
+
+        // Insert new ones into main tables
+        if (!newMDMeters.isEmpty()) {
+            meterMapper.batchApproveMDMeterInfo(newMDMeters);
+            meterMapper.insertBatchApproveMDMeterInfo(newMDMeters);
+        }
+        if (!newSmartMeters.isEmpty()) {
+            meterMapper.batchApproveSmartMeterInfo(newSmartMeters);
+            meterMapper.insertBatchApproveSmartMeterInfo(newSmartMeters);
+        }
     }
 
     /**
@@ -1738,10 +2006,19 @@ public class MeterServiceImpl implements MeterService {
     private void auditApproveBatch(List<Meter> batch, UserModel user) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Meter m : batch) {
-            AuditLog auditLog = buildAuditLog(user, "Meter approve", "Meter", m, metadata, "");
+            AuditLog auditLog = buildAuditLog(user, "Meter approve", "Bulk Meter", m, metadata, "");
             auditRepository.save(auditLog);
         }
     }
+
+    private void auditRejectBatch(List<Meter> batch, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (Meter m : batch) {
+            AuditLog auditLog = buildAuditLog(user, "Meter reject", "Bulk Meter", m, metadata, "");
+            auditRepository.save(auditLog);
+        }
+    }
+
 
     // ---------------------------
     // Simple helper to extract human-friendly message from exceptions
@@ -1751,7 +2028,6 @@ public class MeterServiceImpl implements MeterService {
         String m = ex.getMessage();
         return m == null ? ex.getClass().getSimpleName() : m;
     }
-
 
     private List<Meter> processApproveExcel(InputStream inputStream) throws IOException {
         List<Meter> meters = new ArrayList<>();
@@ -1770,7 +2046,7 @@ public class MeterServiceImpl implements MeterService {
                 Meter meter = new Meter();
 
                 meter.setMeterNumber(getStringCellValue(row.getCell(0)));
-                meter.setStatus(getStringCellValue(row.getCell(1)));
+                meter.setApproveState(getStringCellValue(row.getCell(1)));
 
                 meters.add(meter);
             }
@@ -1786,8 +2062,50 @@ public class MeterServiceImpl implements MeterService {
 
             for (CSVRecord record : csvParser) {
                 Meter meter = new Meter();
-                meter.setMeterNumber(record.get("meterNumber"));
-                meter.setStatus(record.get("approveState"));
+                meter.setMeterNumber(record.get("meter number"));
+                meter.setApproveState(record.get("approve state"));
+
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+    private List<Meter> processAllocateExcel(InputStream inputStream) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                Meter meter = new Meter();
+
+                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
+                meter.setApproveState(getStringCellValue(row.getCell(1)));
+
+                meters.add(meter);
+            }
+        }
+        return meters;
+    }
+
+    private List<Meter> processAllocateCsv(InputStream inputStream) throws IOException {
+        List<Meter> meters = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                Meter meter = new Meter();
+                meter.setMeterNumber(record.get("meter number"));
+                meter.setApproveState(record.get("business hub"));
 
                 meters.add(meter);
             }
