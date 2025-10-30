@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.meter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
@@ -37,10 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -83,6 +82,9 @@ public class MeterServiceImpl implements MeterService {
     private final IMap<String, Object> meterCache;
 
     private final IMap<String, Object> auditCache;
+
+    @Autowired
+    private CustomerMapper customerMapper;
 
 
     public MeterServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
@@ -588,6 +590,7 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
+
             // Validate DSS
             SubStationTransformerFeederLine dss = meterMapper.verifyDssFeeder(request.getDssAssetId(), user.getOrgId());
             if (dss == null) {
@@ -683,6 +686,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleMeterAssign(AssignMeterToCustomer request){
+        UserModel user = handleUserValidation();
         // Assign meter to customer
         request.setDescription("Meter Assigned");
         request.setMeterStage("Pending-assigned");
@@ -699,6 +703,7 @@ public class MeterServiceImpl implements MeterService {
             customerAssignResult = meterMapper.insertVirtualVersionMeterToCustomer(request);
             request.setMeterId(request.getId());
             customerAssignResult1 = meterMapper.assignedVirtualVersionMeterToCustomer(request);
+
             if(customerAssignResult == 0 || customerAssignResult1 == 0)
                 throw new GlobalExceptionHandler.NotFoundException("Assigning virtual meter to customer failed");
         } else {
@@ -724,6 +729,12 @@ public class MeterServiceImpl implements MeterService {
 
         if (locationAssignResult == 0) {
             throw new GlobalExceptionHandler.NotFoundException("Meter assignment to location failed");
+        }
+
+        //Change customer status to Active
+        int customerStatus = customerMapper.changeStatusCustomer(request.getCustomerId(), "Active",user.getOrgId());
+        if (customerStatus == 0) {
+            throw new GlobalExceptionHandler.NotFoundException("Customer status updated failed");
         }
     }
 
@@ -2495,6 +2506,110 @@ public class MeterServiceImpl implements MeterService {
         }
         return meters;
     }
+
+    @Override
+    public ByteArrayInputStream exportActualMeter() {
+
+        UserModel user = handleUserValidation();
+
+        List<Meter> allMeters = meterMapper.getAllMeters(user.getOrgId(), "NON-VIRTUAL");
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Meter Report");
+
+            // Create header
+            String[] headers = {
+                    "S/N", "Meter Number", "SIM No", "Old SGC",
+                    "New SGC", "Manufacturer", "Class", "Category", "Meter Stage", "Activation Status", "Feeder", "DSS", "Tariff"
+            };
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            // Data rows
+            for (int i = 0; i < allMeters.size(); i++) {
+                Meter meter = allMeters.get(i);
+                Row row = sheet.createRow(i + 1);
+                row.createCell(0).setCellValue(i + 1);
+                row.createCell(1).setCellValue(meter.getMeterNumber());
+                row.createCell(2).setCellValue(meter.getSimNumber());
+                row.createCell(3).setCellValue(meter.getOldSgc());
+                row.createCell(4).setCellValue(meter.getNewSgc());
+                row.createCell(5).setCellValue(meter.getManufacturer().getName());
+                row.createCell(6).setCellValue(meter.getMeterClass());
+                row.createCell(7).setCellValue(meter.getMeterCategory());
+                row.createCell(8).setCellValue(meter.getMeterStage());
+                row.createCell(9).setCellValue(meter.getStatus());
+                row.createCell(10).setCellValue(meter.getFeederInfo() == null ? "" : meter.getFeederInfo().getName());
+                row.createCell(11).setCellValue(meter.getDssInfo() == null ? "" : meter.getDssInfo().getName());
+                row.createCell(12).setCellValue(meter.getTariffInfo() == null ? "" : meter.getTariffInfo().getName());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error exporting meter data", e);
+        }
+    }
+
+    @Override
+    public ByteArrayInputStream exportVirtualMeter() {
+
+        UserModel user = handleUserValidation();
+
+        List<Meter> allMeters = meterMapper.getAllMeters(user.getOrgId(), "VIRTUAL");
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Meter Report");
+
+            // Create header
+            String[] headers = {
+                    "S/N", "Customer ID", "Meter Number", "Account Number",
+                        "Feeder", "DSS", "CIN", "Tariff", "Status"
+                };
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            // Data rows
+            for (int i = 0; i < allMeters.size(); i++) {
+                Meter meter = allMeters.get(i);
+                Row row = sheet.createRow(i + 1);
+                row.createCell(0).setCellValue(i + 1);
+                row.createCell(1).setCellValue(meter.getCustomerId());
+                row.createCell(2).setCellValue(meter.getMeterNumber());
+                row.createCell(3).setCellValue(meter.getAccountNumber());
+                row.createCell(4).setCellValue(meter.getFeederInfo().getName());
+                row.createCell(5).setCellValue(meter.getDssInfo().getName());
+                row.createCell(6).setCellValue(meter.getCin());
+                row.createCell(7).setCellValue(meter.getTariffInfo().getName());
+                row.createCell(8).setCellValue(meter.getStatus());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error exporting meter data", e);
+        }
+    }
+
+
 
     // Helper method to avoid NumberFormatException
     private static Long parseLongSafe(String value) {

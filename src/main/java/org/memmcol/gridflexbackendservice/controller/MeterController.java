@@ -10,10 +10,12 @@ import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
+import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -35,7 +38,6 @@ public class MeterController {
 
     @Autowired
     private GlobalExceptionHandler exception;
-
 
 
     // Common headers for both formats
@@ -405,6 +407,31 @@ public class MeterController {
 //        catch (MissingServletRequestParameterException e) {
 //            throw new RuntimeException(e);
 //        }
+    }
+
+
+    @GetMapping("/export")
+    public ResponseEntity<Resource> exportActualMeter() {
+        ByteArrayInputStream stream = service.exportActualMeter();
+
+        InputStreamResource resource = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tariff_report.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(resource);
+    }
+
+    @GetMapping("/virtual/export")
+    public ResponseEntity<Resource> exportVirtualMeter() {
+        ByteArrayInputStream stream = service.exportVirtualMeter();
+
+        InputStreamResource resource = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tariff_report.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(resource);
     }
 
     @GetMapping("/download/allocate/template/csv")

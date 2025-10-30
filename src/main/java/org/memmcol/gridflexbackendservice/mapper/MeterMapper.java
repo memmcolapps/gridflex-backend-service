@@ -1719,4 +1719,20 @@ public interface MeterMapper {
             String meterStage);
 
 
+    @Select("""
+            SELECT * FROM Meters WHERE org_id = #{orgId} AND type = #{type} ORDER BY created_at DESC
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "manufacturer", column = "meter_manufacturer",
+                    one = @One(select = "getMeterManufacturer")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "getTariff"))
+    })
+    List<Meter> getAllMeters(UUID orgId, String type);
+
 }
