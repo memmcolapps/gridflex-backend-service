@@ -58,4 +58,6 @@ public interface MeterService {
     ByteArrayInputStream exportActualMeter();
 
     Map<String, Object> bulkAllocate(MultipartFile file) throws IOException;
+
+    ByteArrayInputStream exportVirtualMeter();
 }
