@@ -2492,7 +2492,6 @@ public class MeterServiceImpl implements MeterService {
     public void insertBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<String> failedRecords) {
         prepareMeters(batch, user, manufacturerNameToId, failedRecords);
 
-        System.out.println(">>>>>>>>insertMeters");
         // Step 1: Insert main meters
         meterMapper.insertMeters(batch);
 
@@ -2500,13 +2499,11 @@ public class MeterServiceImpl implements MeterService {
         for (Meter meter : batch) {
             meter.setMeterId(meter.getId()); // Copy generated ID
         }
-        System.out.println(">>>>>>>>insertMeterVersions");
         // Insert into meter_versions (replica)
         meterMapper.insertMeterVersions(batch);
 
         // Insert related info
         insertChildMeterData(batch, user);
-        System.out.println(">>>>>>>>insertChildMeterData");
         // Audit logs
         auditBatch(batch, user, "Meter created");
     }
@@ -2735,17 +2732,6 @@ public class MeterServiceImpl implements MeterService {
                     meter.getMdMeterInfo().setLatitude(record.get("latitude"));
                     meter.getMdMeterInfo().setLongitude(record.get("longitude"));
                 }
-//
-//                String meterCategory = record.get("meterCategory");
-//                if ("Prepaid".equalsIgnoreCase(meterCategory)) { // or whatever condition applies
-//                    if (meter.getPaymentMode() == null) {
-//                        meter.setPaymentMode(new PaymentMode());
-//                    }
-//                    meter.getPaymentMode().setCreditPaymentMode(record.get("creditPaymentMode"));
-//                    meter.getPaymentMode().setCreditPaymentPlan(record.get("creditPaymentPlan"));
-//                    meter.getPaymentMode().setDebitPaymentMode(record.get("debitPaymentMode"));
-//                    meter.getPaymentMode().setDebitPaymentPlan(record.get("debitPaymentPlan"));
-//                }
 
                 meters.add(meter);
             }
@@ -2816,20 +2802,6 @@ public class MeterServiceImpl implements MeterService {
                     meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
                     meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
                 }
-
-//                String meterCategory = meter.getMeterCategory();
-//                if ("Prepaid".equalsIgnoreCase(meterCategory)) { // or whatever condition applies
-//                    if (meter.getPaymentMode() == null) {
-//                        meter.setPaymentMode(new PaymentMode());
-//                    }
-//                    meter.getPaymentMode().setCreditPaymentMode(record.get("creditPaymentMode"));
-//                    meter.getPaymentMode().setCreditPaymentPlan(record.get("creditPaymentPlan"));
-//                    meter.getPaymentMode().setDebitPaymentMode(record.get("debitPaymentMode"));
-//                    meter.getPaymentMode().setDebitPaymentPlan(record.get("debitPaymentPlan"));
-//                }
-
-                // Optionally attach the user who uploaded
-                // meter.setCreatedBy(user);
 
                 meters.add(meter);
             }
@@ -2977,101 +2949,6 @@ public class MeterServiceImpl implements MeterService {
         // default fallback
         return message.split("\n")[0];
     }
-
-
-////    @Transactional
-//    public void insertBatchTransactional(List<Meter> batch, UserModel user) {
-//        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-//        for (Meter meter : batch) {
-//            meter.setOrgId(user.getOrgId());
-//            meter.setCreatedBy(user.getId());
-//            meter.setStatus("Active");
-//            meter.setMeterStage("Pending-created");
-//            meter.setType("NON-VIRTUAL");
-//            meter.setDescription("Newly Added");
-//
-//        }
-//        System.out.println(">>>>>>>>>>>1:: "+batch.get(0).getCreatedBy());
-//
-//        meterMapper.insertMeters(batch);
-//
-//        System.out.println(">>>>>>>>>>>2:: "+batch.get(1).getCreatedBy());
-//
-//        // Prepare smart and MD info lists
-//        List<Meter> versions = new ArrayList<>();
-//        List<SmartMeterInfo> smartInfos = new ArrayList<>();
-//        List<MDMeterInfo> mdInfos = new ArrayList<>();
-//
-//        for (Meter m : batch) {
-//            if (m.getSmartMeterInfo() != null) {
-//                System.out.println(">>>>>>>>>>>Smart:: "+batch.get(1).getCreatedBy());
-//                m.getSmartMeterInfo().setMeterId(m.getId());
-//                m.getSmartMeterInfo().setCreatedBy(user.getId());
-//                m.getSmartMeterInfo().setOrgId(user.getOrgId());
-//                m.getSmartMeterInfo().setMeterStage("Pending-created");
-//                m.getSmartMeterInfo().setDescription("Newly Added");
-//                smartInfos.add(m.getSmartMeterInfo());
-//            }
-//
-//            // Smart meter info
-//            if (m.getMdMeterInfo() != null) {
-//                System.out.println(">>>>>>>>>>>MD:: "+batch.get(1).getCreatedBy());
-//                m.getMdMeterInfo().setMeterId(m.getId());
-//                m.getMdMeterInfo().setCreatedBy(user.getId());
-//                m.getMdMeterInfo().setOrgId(user.getOrgId());
-//                m.getMdMeterInfo().setMeterStage("Pending-created");
-//                m.getMdMeterInfo().setDescription("Newly Added");
-//                mdInfos.add(m.getMdMeterInfo());
-//            }
-//        }
-//
-////        if (!batch.isEmpty()) {
-//        System.out.println(">>>>>>>>>>>3:: "+batch.get(1).getCreatedBy());
-//            meterMapper.insertMeterVersions(batch);
-//        System.out.println(">>>>>>>>>>>4:: "+batch.get(1).getCreatedBy());
-//
-//        // Bulk insert child info
-//        if (!smartInfos.isEmpty()) {
-//            System.out.println(">>>>>>>>>>>smart batch:: "+smartInfos.get(0).getCreatedBy());
-//            meterMapper.insertBatchSmartMeterInfoVersion(smartInfos);
-//        }
-//        if (!mdInfos.isEmpty()) {
-//            System.out.println(">>>>>>>>>>>MD batch:: "+mdInfos.get(0).getCreatedBy());
-//            meterMapper.insertBatchMDMeterInfoVersion(mdInfos);
-//        }
-//
-//        // --- Step 3: Fetch created meter & Audit ---
-////        Meter newMeter = meterMapper.findByIdVersion(m.getId(), meter.getOrgId());
-//        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
-//        auditRepository.save(auditLog);
-//
-//    }
-//
-//    @Transactional
-//    public void insertSingleTransactional(Meter meter, UserModel user) {
-//        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-//        validateMeterRequest(meter, user);
-//
-//        // --- Step 2: Insert Meter + Versions ---
-//        int result1 = meterMapper.insertMeter(meter);
-//        meter.setMeterId(meter.getId());
-//        int result2 = meterMapper.insertMeterVersion(meter);
-//        if (result1 == 0 || result2 == 0) {
-//            throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
-//        }
-//        if ("md".trim().equalsIgnoreCase(meter.getMeterClass())) {
-//            insertMDMeterInfo(meter, user);
-//        }
-//        if (Boolean.TRUE.equals(meter.getSmartStatus())) {
-//            insertSmartMeterInfo(meter, user);
-//        }
-//
-//        // --- Step 3: Fetch created meter & Audit ---
-//        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), meter.getOrgId());
-//        AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
-//        auditRepository.save(auditLog);
-//
-//    }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Meter createdEntity, Map<String, String> metadata, String reason) {
         AuditLog log = new AuditLog();
