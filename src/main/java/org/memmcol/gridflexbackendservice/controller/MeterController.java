@@ -7,6 +7,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.MeterRequest;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
@@ -27,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -394,9 +396,9 @@ public class MeterController {
     }
 
     @PutMapping("/bulk-approve")
-    public ResponseEntity<Map<String, Object>> bulkApproveMeter(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, Object>> bulkApproveMeter(@RequestBody List<MeterRequest> meterNumber) {
         try {
-            Map<String, Object> result =  service.bulkApproval(file);
+            Map<String, Object> result =  service.bulkApproval(meterNumber);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {

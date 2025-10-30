@@ -40,7 +40,7 @@ public class Meter implements Serializable {
     private String meterManufacturerName;
     private String meterStage;
     private String status;
-    private String approveState;
+//    private String approveState;
     private Boolean smartStatus;
     private String customerId;
     private String oldSgc;
@@ -228,13 +228,13 @@ public class Meter implements Serializable {
         this.status = status;
     }
 
-    public String getApproveState() {
+   /* public String getApproveState() {
         return approveState;
     }
 
     public void setApproveState(String approveState) {
         this.approveState = approveState;
-    }
+    }*/
 
     public Boolean getSmartStatus() {
         return smartStatus;
