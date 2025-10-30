@@ -1369,6 +1369,20 @@ public interface MeterMapper {
 //    List<Meter> getMetersByVersionMeterNumbers(String meterNumber, UUID orgId);
 
 
+//    @Select({
+//            "<script>",
+//            "SELECT * FROM meters_version m",
+//            "LEFT JOIN customers c ON c.customer_id = m.customer_id",
+//            "WHERE m.meter_number IN",
+//            "<foreach item='meterNumber' collection='meterNumbers' open='(' separator=',' close=')'>",
+//            "#{meterNumber}",
+//            "</foreach>",
+//            "AND (m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned')",
+//            "AND m.status IN ('Active')",
+//            "AND m.org_id = #{orgId}",
+//            "</script>"
+//    })
+
     @Select({
             "<script>",
             "SELECT * FROM meters_version m",
@@ -1377,10 +1391,11 @@ public interface MeterMapper {
             "<foreach item='meterNumber' collection='meterNumbers' open='(' separator=',' close=')'>",
             "#{meterNumber}",
             "</foreach>",
-            "AND (m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')",
-            "OR m.status IN ('Pending-deactivated', 'Pending-activated'))",
+            "AND (",
+            "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned')",
+            "AND m.status IN ('Active')",
             "AND m.org_id = #{orgId}",
-            "ORDER BY m.created_at DESC",
+            ")",
             "</script>"
     })
     @Results({
@@ -1563,6 +1578,11 @@ public interface MeterMapper {
             "  meter_stage = CASE meter_number",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterNumber} THEN #{m.meterStage}",
+            "    </foreach>",
+            "  END,",
+            "  node_id = CASE meter_number",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterNumber} THEN #{m.nodeId}",
             "    </foreach>",
             "  END,",
             "  status = CASE meter_number",

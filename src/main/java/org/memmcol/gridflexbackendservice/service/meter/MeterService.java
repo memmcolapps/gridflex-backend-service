@@ -26,13 +26,7 @@ public interface MeterService {
 
     Map<String, Object> getManufacturers();
 
-//    Map<String, Object> bulkApproveMeter(BulkApproveMeter request);
-
     Map<String, Object> singleCustomer(String customerId);
-
-//    Map<String, Object> assignMeterToCustomer(String accountNumber, String tariff, String customerId, UUID meterId, UUID cId, String feederLine, String transformer, String substation);
-
-//    Map<String, Object> createVirtualMeter(Meter meter);
 
     Map<String, Object> allocateMeter(String meterNumber, String regionId);
 
@@ -48,12 +42,9 @@ public interface MeterService {
 
     Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
 
-    ///
     Map<String, Object> bulkAllocateMeters(List<MeterRequest> allocations, UserModel user);
 
     Map<String, Object> bulkApproval(List<MeterRequest> meterNumber) throws IOException;
-
-//    Map<String, Object> bulkApproveMeters(List<Meter> meters, UserModel user);
 
     ByteArrayInputStream exportActualMeter();
 

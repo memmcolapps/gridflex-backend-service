@@ -1140,74 +1140,6 @@ public class MeterServiceImpl implements MeterService {
                 meter.setStatus("Active");
             }
 
-
-//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-//                && (meter.getMdMeterInfo() != null || meter.getSmartMeterInfo() != null)){
-//            System.out.println("meterStage>> "+meter.getMeterStage());
-//            System.out.println("getMdMeterInfo>> "+meter.getMdMeterInfo().getMeterStage());
-//            System.out.println("getSmartMeterInfo>> "+meter.getSmartMeterInfo().getMeterStage());
-//            meter.setMeterStage("Created");
-//            meter.setStatus("Active");
-//            meter.getMdMeterInfo().setMeterStage("Created");
-//            meter.getSmartMeterInfo().setMeterStage("Created");
-//        }
-//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-//                && (meter.getMdMeterInfo() == null || meter.getSmartMeterInfo() != null)){
-//            meter.setMeterStage("Created");
-//            meter.setStatus("Active");
-//            meter.getSmartMeterInfo().setMeterStage("Created");
-//        }
-//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-//                && (meter.getMdMeterInfo() != null || meter.getSmartMeterInfo() == null)){
-//            meter.setMeterStage("Created");
-//            meter.setStatus("Active");
-//            meter.getMdMeterInfo().setMeterStage("Created");
-//        }
-//        if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")
-//                && meter.getMdMeterInfo() == null && meter.getSmartMeterInfo() == null){
-//            meter.setMeterStage("Created");
-//            meter.setStatus("Active");
-//        }
-//        else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-assigned")){
-//            meter.setMeterStage("Assigned");
-//            meter.setStatus("Active");
-//        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-allocated")){
-//            meter.setMeterStage("Unassigned");
-//            meter.setStatus("Active");
-//        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-detached")) {
-//            meter.setMeterStage("Unassigned");
-//            meter.setStatus("Deactivated");
-//        }
-//        else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-migrated") && meter.getSmartMeterInfo() != null){
-//            meter.getSmartMeterInfo().setMeterStage("Active");
-//            meter.getPaymentMode().setMeterStage("Active");
-//            meter.setMeterStage("Active");
-//            meter.setStatus("Active");
-//        } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited"))
-//                && meter.getCustomerId() == null && meter.getNodeId() != null) {
-//            meter.setMeterStage("Unassigned");
-//            meter.setStatus("Active");
-//        } else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited"))
-//                && meter.getCustomerId() == null && meter.getNodeId() == null) {
-//            meter.setMeterStage("Created");
-//            meter.setStatus("Active");
-////            handleMeterInfoRejection(meter, user);
-//        } else if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-edited")
-//                && meter.getCustomerId() != null && meter.getNodeId() != null) {
-//            meter.setMeterStage("Assigned");
-//            meter.setStatus("Active");
-//        } else if(meter.getStatus().trim().equalsIgnoreCase("Pending-deactivated")) {
-//            meter.setStatus("Deactivated");
-//        } else if(meter.getStatus().trim().equalsIgnoreCase("Pending-activated")) {
-//            meter.setStatus("Activated");
-//        } else {
-//            //pending-detached & pending-migrated
-////            meter.getMdMeterInfo().setMeterStage("Active");
-//            meter.getPaymentMode().setMeterStage("Active");
-//            meter.setMeterStage("Active");
-//            meter.setStatus("Active");
-//        }
-
         int approved = meterMapper.approvedMeterVersion(meter.getMeterStage(), meter.getStatus(), meter.getApproveBy(), meter.getUpdatedAt(), meter.getMeterNumber());
         if (approved == 0) {
             throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
@@ -1560,7 +1492,9 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Error in bulk upload: {}", e.getMessage(), e);
-            throw new IOException("Bulk upload failed: " + e.getMessage(), e);
+            genericHandler.logIncidentReport("Bulk upload service failed");
+            genericHandler.logAndSaveException(e, "Bulk upload meter");
+            throw new IOException("Bulk upload failed: " + e.getMessage());
         }
     }
 
@@ -1612,7 +1546,9 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Error in bulk allocate upload: {}", e.getMessage(), e);
-            throw new IOException("Bulk allocate failed: " + e.getMessage(), e);
+            genericHandler.logIncidentReport("Bulk allocate service failed");
+            genericHandler.logAndSaveException(e, "Bulk allocate meter");
+            throw new IOException("Bulk allocate failed: " + e.getMessage());
         }
     }
 
@@ -1721,144 +1657,6 @@ public class MeterServiceImpl implements MeterService {
         );
     }
 
-
-//    public Map<String, Object> bulkAllocateMeters(List<MeterRequest> allocations, UserModel user) {
-//        Map<String, List<String>> groupedFailures = new HashMap<>(); // key: reason, value: meter numbers
-//
-//        Map<String, Object> result = new HashMap<>();
-////        List<String> failedRecords = new ArrayList<>();
-//        int successCount = 0;
-//
-//        if (allocations == null || allocations.isEmpty()) {
-//            throw new GlobalExceptionHandler.NotFoundException("No records found in uploaded file");
-//        }
-//
-//        final int BATCH_SIZE = 500;
-//
-//        for (int i = 0; i < allocations.size(); i += BATCH_SIZE) {
-//            int end = Math.min(i + BATCH_SIZE, allocations.size());
-//            List<MeterRequest> subBatch = allocations.subList(i, end);
-//
-//            log.info("Processing subBatch {} - {} ({} records)", i, end - 1, subBatch.size());
-//
-//            // Extract meter numbers and region IDs
-//            List<String> meterNumbers = subBatch.stream()
-//                    .map(MeterRequest::getMeterNumber)
-//                    .filter(num -> num != null && !num.trim().isEmpty())
-//                    .map(String::trim)
-//                    .toList();
-//
-//            List<String> regionIds = subBatch.stream()
-//                    .map(MeterRequest::getRegionId)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            if (meterNumbers.isEmpty() || regionIds.isEmpty()) {
-//                addGroupedFailure(groupedFailures, "Invalid meter/region",
-//                        subBatch.stream().map(MeterRequest::getMeterNumber).toList());
-//                continue;
-//            }
-//
-////            if (meterNumbers.isEmpty() || regionIds.isEmpty()) {
-////                log.warn("SubBatch {} - {} missing valid meters or regions", i, end - 1);
-////                failedRecords.addAll(
-////                        subBatch.stream()
-////                                .map(r -> String.format("%s (Invalid meter/region)", r.getMeterNumber()))
-////                                .toList()
-////                );
-////                continue;
-////            }
-//
-//            // Fetch meters by meter number
-//            List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId());
-//            Map<String, Meter> meterMap = meters.stream()
-//                    .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
-//
-//            System.out.println(">>>>>>>>>>>>:: "+regionIds.get(0));
-//            // Fetch region → businesshub mappings
-//            List<RegionBhubServiceCenter> regionHubs = meterMapper.getRegionBhubMappings(regionIds, user.getOrgId());
-//            Map<String, UUID> regionNodeIdMap = regionHubs.stream()
-//                    .collect(Collectors.toMap(RegionBhubServiceCenter::getRegionId, RegionBhubServiceCenter::getId));
-//
-//            // Prepare valid allocations
-//            List<Meter> validAllocations = new ArrayList<>();
-//            List<String> regionNotFound = new ArrayList<>();
-//            List<String> meterNotFound = new ArrayList<>();
-//
-//            for (MeterRequest req : subBatch) {
-//                Meter meter = meterMap.get(req.getMeterNumber());
-//                UUID nodeId = regionNodeIdMap.get(req.getRegionId());
-//
-//                if (meter == null) {
-//                    meterNotFound.add(req.getMeterNumber());
-//                    continue;
-//                }
-//
-//                if (nodeId == null) {
-//                    regionNotFound.add(req.getMeterNumber());
-//                    continue;
-//                }
-//
-////                if (meter == null) {
-////                    failedRecords.add(req.getMeterNumber() + " [Region: " + req.getRegionId() + "] (Meter not found)");
-////                    continue;
-////                }
-////
-////                if (nodeId == null) {
-////                    failedRecords.add(req.getMeterNumber() + " [Region: " + req.getRegionId() + "] (Region not found in region_bhub)");
-////                    continue;
-////                }
-//
-//                meter.setNodeId(nodeId);
-//                meter.setMeterStage("Pending-allocated");
-//                meter.setCreatedBy(user.getId());
-//                validAllocations.add(meter);
-//            }
-//
-//            // Add grouped failures for this batch
-//            if (!meterNotFound.isEmpty()) {
-//                addGroupedFailure(groupedFailures, "Meter not found", meterNotFound);
-//            }
-//            if (!regionNotFound.isEmpty()) {
-//                addGroupedFailure(groupedFailures, "Region not found in region_bhub", regionNotFound);
-//            }
-//
-//            if (validAllocations.isEmpty()) continue;
-//
-//            // Try full batch allocation
-//            try {
-//                int allocated = allocateBatchTransactional(validAllocations, user);
-//                successCount += allocated;
-//            } catch (Exception e) {
-//                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-//                successCount += allocateSubBatchTransactional(validAllocations, user, regionNotFound);
-//            }
-//        }
-//
-//        // Combine grouped failures into a readable format
-//        List<String> failedRecords = groupedFailures.entrySet().stream()
-//                .map(e -> String.format("%s: %s", e.getKey(), String.join(", ", e.getValue())))
-//                .toList();
-//
-//        int total = successCount + failedRecords.size();
-//
-////        int total = successCount + failedRecords.size();
-//
-//        result.put("totalRecords", total);
-//        result.put("successCount", successCount);
-//        result.put("failedCount", failedRecords.size());
-//        result.put("failedRecords", failedRecords);
-//
-//        return ResponseMap.response(
-//                status.getSuccessCode(),
-//                String.format("%d of %d meters allocated successfully", successCount, total),
-//                result
-//        );
-//    }
-
-
-
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public int allocateBatchTransactional(List<Meter> batch, UserModel user) {
         if (batch.isEmpty()) return 0;
@@ -1878,33 +1676,42 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Transaction failed during allocation, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+            genericHandler.logIncidentReport("Bulk allocate batch service failed");
+            genericHandler.logAndSaveException(e, "Bulk allocate batch meter");
             throw new RuntimeException("Batch allocation transaction failed. Rolled back.", e);
         }
     }
 
 
     public int allocateSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords) {
-        int successCount = 0;
-        int subBatchSize = 100;
+        try {
+            int successCount = 0;
+            int subBatchSize = 100;
 
-        for (int i = 0; i < batch.size(); i += subBatchSize) {
-            int end = Math.min(i + subBatchSize, batch.size());
-            List<Meter> subBatch = batch.subList(i, end);
+            for (int i = 0; i < batch.size(); i += subBatchSize) {
+                int end = Math.min(i + subBatchSize, batch.size());
+                List<Meter> subBatch = batch.subList(i, end);
 
-            try {
-                successCount += allocateBatchTransactional(subBatch, user);
-            } catch (Exception e) {
-                log.warn("Sub-batch allocation failed (size={}): {}", subBatch.size(), e.getMessage());
+                try {
+                    successCount += allocateBatchTransactional(subBatch, user);
+                } catch (Exception e) {
+                    log.warn("Sub-batch allocation failed (size={}): {}", subBatch.size(), e.getMessage());
 
-                if (subBatch.size() > 50) {
-                    successCount += allocateSinglesFallbackAsync(subBatch, user, failedRecords);
-                } else {
-                    successCount += allocateSinglesFallback(subBatch, user, failedRecords);
+                    if (subBatch.size() > 50) {
+                        successCount += allocateSinglesFallbackAsync(subBatch, user, failedRecords);
+                    } else {
+                        successCount += allocateSinglesFallback(subBatch, user, failedRecords);
+                    }
                 }
             }
+
+            return successCount;
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("Bulk allocate sub batch service failed");
+            genericHandler.logAndSaveException(e, "Bulk allocate sub batch meter");
+            throw new RuntimeException("Sub Batch allocation transaction failed. Rolled back.", e);
         }
 
-        return successCount;
     }
 
     public int allocateSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
@@ -1918,8 +1725,6 @@ public class MeterServiceImpl implements MeterService {
 
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
-
-
 
     public int allocateSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
         int successCount = 0;
@@ -1962,7 +1767,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void allocateSingleTransactional(Meter meter, UserModel user) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
@@ -1996,24 +1801,6 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
-
-//    public int allocateSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords) {
-//        int success = 0;
-//        int subSize = 100;
-//
-//        for (int i = 0; i < batch.size(); i += subSize) {
-//            int end = Math.min(i + subSize, batch.size());
-//            List<Meter> subList = batch.subList(i, end);
-//            try {
-//                success += allocateBatchTransactional(subList, user);
-//            } catch (Exception e) {
-//                log.error("Sub-batch allocation failed: {}", e.getMessage());
-//                subList.forEach(m -> failedRecords.add(m.getMeterNumber() + " - " + e.getMessage()));
-//            }
-//        }
-//        return success;
-//    }
-
     @Override
     public Map<String, Object> bulkApproval(List<MeterRequest> meters) {
 
@@ -2030,14 +1817,14 @@ public class MeterServiceImpl implements MeterService {
 
         for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, meters.size());
-            List<MeterRequest> subBatch = meters.subList(i, end);
+            List<MeterRequest> batch = meters.subList(i, end);
 
-            System.out.println("Processing subBatch from index " + i + " to " + (end - 1));
-            System.out.println("SubBatch size: " + subBatch.size());
-            subBatch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
+            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
+            System.out.println("Batch size: " + batch.size());
+            batch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
 
             // Collect all meter numbers in this subBatch
-            List<String> meterNumbers = subBatch.stream()
+            List<String> meterNumbers = batch.stream()
                     .map(m -> m.getMeterNumber().trim())
                     .filter(num -> !num.isEmpty())
                     .toList();
@@ -2063,11 +1850,12 @@ public class MeterServiceImpl implements MeterService {
 
             } catch (Exception e) {
                 log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-                successCount += updateSubBatchTransactional(versionBatch, user, failedRecords);
+                int retrySuccess = updateSubBatchTransactional(versionBatch, user, failedRecords);
+                successCount += retrySuccess;
             }
         }
 
-        int total = successCount + failedRecords.size();
+        int total = meters.size();
 
         result.put("totalRecords", total);
         result.put("successCount", successCount);
@@ -2094,8 +1882,21 @@ public class MeterServiceImpl implements MeterService {
 
             meter.setOrgId(user.getOrgId());
             meter.setApproveBy(user.getId());
-            meter.setMeterStage("Created");
-            meter.setStatus("Active");
+
+
+            if("Pending-created".equalsIgnoreCase(meter.getMeterStage())){
+                meter.setMeterStage("Created");
+                meter.setStatus("Active");
+            } else if ("Pending-allocated".equalsIgnoreCase(meter.getMeterStage())){
+                meter.setMeterStage("Unassigned");
+                meter.setStatus("Active");
+            } else if ("Pending-assigned".equalsIgnoreCase(meter.getMeterStage())) {
+                meter.setMeterStage("Assigned");
+                meter.setStatus("Active");
+            } else {
+                failedRecords.add("(Meter stage is not in Pending-created, Pending-allocated or Pending-assigned)");
+            }
+
             // APPROVE path
 //            if ("approve".equalsIgnoreCase(meter.getApproveState())) {
 //                meter.setMeterStage("Created");
@@ -2134,7 +1935,7 @@ public class MeterServiceImpl implements MeterService {
         if (batch.isEmpty()) return 0;
 
         try {
-//            // Split the batch
+            // Split the batch
 //            List<Meter> approveList = batch.stream()
 //                    .filter(m -> "approve".equalsIgnoreCase(m.getApproveState()))
 //                    .toList();
@@ -2163,13 +1964,21 @@ public class MeterServiceImpl implements MeterService {
 //            return total;
 
             // Update main meters
+
+            List<Meter> pending= batch.stream()
+                    .filter(m -> "Pending-created".equalsIgnoreCase(m.getMeterStage()))
+                    .toList();
+
             meterMapper.updateBatchMeters(batch);
 
             // Update version meters
             meterMapper.updateBatchVersionMeters(batch);
 
             // Update children
-            updateChildMeterData(batch, user);
+            if(!pending.isEmpty()) {
+                updateChildMeterData(batch, user);
+            }
+
 
             // Audit
             auditApproveBatch(batch, user);

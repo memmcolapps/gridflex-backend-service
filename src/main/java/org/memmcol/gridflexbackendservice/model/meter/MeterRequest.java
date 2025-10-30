@@ -2,8 +2,10 @@ package org.memmcol.gridflexbackendservice.model.meter;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class MeterRequest {
+public class MeterRequest implements Serializable {
     private String meterNumber;
     private String regionId;
     private String approveState;
