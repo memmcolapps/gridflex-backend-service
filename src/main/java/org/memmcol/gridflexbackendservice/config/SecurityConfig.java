@@ -77,17 +77,9 @@ public class  SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-//		CustomAuthenticationFilter userAuthFilter = new CustomAuthenticationFilter(
-//				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
-//		userAuthFilter.setFilterProcessesUrl("/auth/service/user/login");
-
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
 				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance, genericHandler);
 		adminAuthFilter.setFilterProcessesUrl("/auth/service/admin/login");
-//
-//		CustomAuthenticationFilter portalAuthFilter = new CustomAuthenticationFilter(
-//				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance);
-//		adminAuthFilter.setFilterProcessesUrl("/portal/auth/service/login");
 
 		// disable csrf
 		http.csrf((csrf) -> csrf.disable());
@@ -126,7 +118,7 @@ public class  SecurityConfig {
 						"meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/service/create","/billing/service/meter/reading/service/generate", "/billing/service/meter/reading/service/update",
 						"/billing/service/meter/reading/service/all", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/service/download/template/excel",
 						"/billing/service/meter/reading/service/bulk-upload", "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv",
-						"/meter/service/download/template/excel", "/meter/service/download/template/csv", "/meter/service/download/approve/template/excel", "/meter/service/download/approve/template/csv",
+						"/meter/service/download/template/excel", "/meter/service/download/template/csv", "/meter/service/virtual/export", "/meter/service/export",
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management",
@@ -178,53 +170,3 @@ public class  SecurityConfig {
 	}
 
 }
-
-
-//		http.authorizeHttpRequests((authorize) -> authorize
-//				.requestMatchers(
-//						"/auth/service/login/**", "/auth/service/admin/login/**", "/auth/service/logout/**", "/auth/service/generate-otp/**","/auth/service/forget-password/**",
-//						"/band/service/create/**", "/band/service/update/**", "/band/service/all-band/**", "/band/service/single-band/**", "/band/service/change-state/**",
-//						"/tariff/service/create/**", "/tariff/service/all-tariff/**", "/tariff/service/single-tariff/**", "/tariff/service/change-state/**", "/tariff/service/filter-tariff/**", "/tariff/service/filter/unique-id/**"
-//						).permitAll()
-//
-//				.requestMatchers("/service/**").access((context, authSupplier) -> {
-//					RequestAuthorizationContext reqContext = (RequestAuthorizationContext) context;
-//					HttpServletRequest request = reqContext.getRequest();
-//
-//					return authSupplier.get().map(authentication -> {
-//						boolean accessGranted = permissionEvaluator.checkAccess(request, authentication);
-//						return new AuthorizationDecision(accessGranted);
-//					}).orElse(new AuthorizationDecision(false));
-//				})
-//
-//				.requestMatchers("/service/**").access((context, authSupplier) ->
-//						authSupplier.get().map(authentication -> {
-//							HttpServletRequest request = context.getRequest(); // ✅ valid, since context is of type RequestAuthorizationContext
-//							boolean accessGranted = permissionEvaluator.checkAccess(request, authentication);
-//							return new AuthorizationDecision(accessGranted);
-//						}).orElse(new AuthorizationDecision(false))
-//				)
-//				.requestMatchers("/service/**").access((RequestAuthorizationContext context, Supplier<Authentication> authSupplier) ->
-//						authSupplier.get().map(authentication -> {
-//							HttpServletRequest request = context.getRequest();
-//							boolean accessGranted = permissionEvaluator.checkAccess(request, authentication);
-//							return new AuthorizationDecision(accessGranted);
-//						}).orElse(new AuthorizationDecision(false))
-//				)
-//
-//				.requestMatchers("/service/**").access((RequestAuthorizationContext context, Supplier<Authentication> authSupplier) -> {
-//					Authentication authentication = authSupplier.get();
-//					if (authentication != null && authentication.isAuthenticated()) {
-//						HttpServletRequest request = context.getRequest();
-//						boolean accessGranted = permissionEvaluator.checkAccess(request, authentication);
-//						return new AuthorizationDecision(accessGranted);
-//					} else {
-//						return new AuthorizationDecision(false);
-//					}
-//				})
-//
-//
-//
-//
-////				.requestMatchers("/service/**").hasAuthority("VIEW")
-//				.anyRequest().authenticated());

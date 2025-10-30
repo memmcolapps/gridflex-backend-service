@@ -58,10 +58,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				"/service/trigger/daily",
 				"/service/trigger/monthly",
 				"/band/service/clear-cache"
+//				"/meter/service/virtual/export",
+//				"/meter/service/export"
 		);
 
 		// If the path is exempt, skip the authorization filter
 		if (exemptPaths.contains(path)) {
+			System.out.println("Requested path: " + path);
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -88,6 +91,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 			}
 			filterChain.doFilter(request, response);  // Proceed if valid API Key
 		} else {
+
+			System.out.println(">>>>heeeeeeeeeeeeee>>>:::");
 			// Token-based authorization for other paths
 			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -114,19 +119,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 					// Optionally: Parse permission_tree JSON (if needed)
 					String permissionTreeJson = decodedJWT.getClaim("permission_tree").toString();
-					// Dummy authority list; you can add real ones if needed
-//					List<GrantedAuthority> authorities = List.of();
-					// Store `permissionTree` somewhere if needed (e.g., in SecurityContext or thread-local)
-					// Add a custom Authentication object with permissions
+
 					CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
 					UsernamePasswordAuthenticationToken authToken =
 							new UsernamePasswordAuthenticationToken(principal, null, authorities);
 					SecurityContextHolder.getContext().setAuthentication(authToken);
-
-//					// Authenticate user
-//					UsernamePasswordAuthenticationToken authenticationToken =
-//							new UsernamePasswordAuthenticationToken(username, null, authorities);
-//					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
 					// Continue filter chain
 					filterChain.doFilter(request, response);

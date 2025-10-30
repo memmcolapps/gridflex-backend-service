@@ -344,57 +344,6 @@ public class MeterController {
     }
 
 
-    @GetMapping("/download/approve/template/excel")
-    public void downloadApproveExcelTemplate(HttpServletResponse response) throws IOException {
-        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            XSSFSheet sheet = workbook.createSheet("Meter Bulk Approve Template");
-
-            // Create header row
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < APPROVEHEADERS.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(APPROVEHEADERS[i]);
-            }
-
-            // Optional: Add a sample row
-            Row sampleRow = sheet.createRow(1);
-
-            Object[] sampleData = {
-                    "0048675416677","approve or reject"
-            };
-
-            for (int i = 0; i < sampleData.length; i++) {
-                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < HEADERS.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            // Set response headers
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=meter_approval_template.xlsx");
-
-            workbook.write(response.getOutputStream());
-        }
-    }
-
-    @GetMapping("/download/approve/template/csv")
-    public ResponseEntity<Resource> downloadApproveCsvTemplate() throws IOException {
-        String sampleRow = "0048675416677,approve or reject";
-
-        // Build CSV content in memory
-        String csvContent = String.join(",", APPROVEHEADERS) + "\n" + sampleRow;
-        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meter_approval_template.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .contentLength(resource.contentLength())
-                .body(resource);
-    }
-
     @PutMapping("/bulk-approve")
     public ResponseEntity<Map<String, Object>> bulkApproveMeter(@RequestBody List<MeterRequest> meterNumber) {
         try {

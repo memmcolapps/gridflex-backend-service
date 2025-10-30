@@ -33,7 +33,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-state", "/meter/service/approve",
                     "/meter/service/download/template/excel", "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/bulk-approve",
-                    "/meter/service/download/template/csv", "meter/service/bulk-upload",  "/meter/service/download/approve/template/excel", "/meter/service/download/approve/template/csv",
+                    "/meter/service/download/template/csv", "meter/service/bulk-upload", "/meter/service/virtual/export", "/meter/service/export",
                     "/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer", "/meter/reading/service/download/template/csv",
                     "/meter/reading/service/download/template/excel","/meter/reading/service/bulk-upload", "meter/service/allocate", "meter/service/detach", "/meter/reading/service/create",
                     "/meter/reading/service/generate", "/meter/reading/service/update", "/meter/reading/service/all", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate",
@@ -50,8 +50,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/node/service/single", "/node/service/all", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report",
                     "/audit-log/service/incident/report/get", "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single",
                     "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/assign", "meter/service/bulk-upload", "/meter/service/bulk-approve",
-                    "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach",  "/meter/service/download/approve/template/excel",
-                    "/meter/service/download/approve/template/csv", "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv",
+                    "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach",
+                    "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/virtual/export", "/meter/service/export",
                     "/manufacturer/service/create", "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all",
                     "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/dashboard/service/data-management")),
 
@@ -69,13 +69,13 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/service/change-state", "/meter/service/approve", "/meter/service/migrate", "/meter/service/assign", "/manufacturer/service/create",
                     "/manufacturer/service/update", "/manufacturer/service/single", "/manufacturer/service/all", "meter/service/bulk-upload",
                     "/meter/service/cin/assign", "meter/service/customer", "meter/service/allocate", "meter/service/detach", "/meter/service/download/allocate/template/excel",
-                    "/meter/service/download/allocate/template/csv",
+                    "/meter/service/download/allocate/template/csv", "/meter/service/virtual/export", "/meter/service/export",
                     "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/dashboard/service/data-management", "/audit-log/service/all",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("meter inventory", List.of("/node/service/single", "/node/service/all", "/dashboard/service/data-management",
                     "/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "meter/service/allocate",
-                    "/meter/service/download/template/excel", "/meter/service/download/template/csv", "meter/service/bulk-upload",
+                    "/meter/service/download/template/excel", "/meter/service/download/template/csv", "meter/service/bulk-upload", "/meter/service/virtual/export", "/meter/service/export",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("assigned meter", List.of("/node/service/single", "/node/service/all", "/meter/service/migrate", "/meter/service/detach", "meter/service/bulk-upload",
@@ -83,15 +83,14 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "meter/service/allocate", "/audit-log/service/single-log", "/audit-log/service/all", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("meter", List.of("/tariff/service/all", "/node/service/single", "/node/service/all", "/meter/service/create", "/dashboard/service/data-management",
-                    "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv",
+                    "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/virtual/export", "/meter/service/export",
                     "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/assign", "/meter/service/cin/assign", "/meter/service/cin/change-state",
                     "meter/service/allocate", "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("review and approval", List.of("/band/service/all", "/band/service/single", "/band/service/approve", "/meter/service/all",
                     "/meter/service/single", "/meter/service/approve", "/tariff/service/single", "/tariff/service/all", "/tariff/service/approve", "/meter/service/bulk-approve",
                     "/debt-setting/service/liability-cause/all", "/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/approve",
-                    "/debt-setting/service/liability-cause/approve", "/dashboard/service/data-management", "/user/service/update",  "/meter/service/download/approve/template/excel",
-                    "/meter/service/download/approve/template/csv",
+                    "/debt-setting/service/liability-cause/approve", "/dashboard/service/data-management", "/user/service/update",
                     "/audit-log/service/all", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("customer management", List.of("/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/all",
