@@ -215,4 +215,7 @@ public interface CustomerMapper {
     })
     PaymentMode getPaymentMode(UUID meterId);
 
+    @Update("UPDATE customers SET status = #{state} WHERE customer_id = #{customerId} AND org_id = #{orgId}")
+    int changeStatusCustomer(@Param("customerId") String customerId, String state,@Param("orgId") UUID orgId);
+
 }
