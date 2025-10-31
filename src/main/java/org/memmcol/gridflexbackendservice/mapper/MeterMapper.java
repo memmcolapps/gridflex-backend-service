@@ -1953,8 +1953,19 @@ public interface MeterMapper {
             @Param("orgId") UUID orgId
     );
 
-
-    void updateBatchMeterAssign(List<Meter> batch);
+    @Update({
+            "<script>",
+            "UPDATE meters",
+            "SET meter_stage = 'Pending-assigned',",
+            "updated_at = NOW()",
+            "WHERE org_id = #{batch[0].orgId}",
+            "AND meter_number IN",
+            "<foreach collection='batch' item='m' open='(' separator=',' close=')'>",
+            "#{m.meterNumber}",
+            "</foreach>",
+            "</script>"
+    })
+    void updateBatchMeterAssign(@Param("batch") List<Meter> batch);
 
     void assignMeterVersion(Meter meter, UUID nodeId, UUID id, String pendingAllocated);
 }
