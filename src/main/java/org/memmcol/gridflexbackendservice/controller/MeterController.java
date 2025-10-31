@@ -85,6 +85,24 @@ public class MeterController {
             "business hub",
     };
 
+    private static final String[] ASSIGNHEADERS = {
+            "meter number",
+            "customer id",
+            "tariff name",
+            "dss asset id",
+            "feeder asset id",
+            "cin",
+            "account number",
+            "state",
+            "city",
+            "house number",
+            "street name",
+            "credit payment mode",
+            "credit payment plan",
+            "debit payment mode",
+            "debit payment plan",
+    };
+
     @PostMapping("/create")
     public ResponseEntity<?> createMeter(@RequestBody Meter meter) {
         try {
@@ -436,11 +454,77 @@ public class MeterController {
         }
     }
 
+    @GetMapping("/download/assign/template/csv")
+    public ResponseEntity<Resource> downloadAssignCsvTemplate() throws IOException {
+        String sampleRow = "0048675416677, customer-id, tariff test, E3241, E3241, XXXXXXXX, XXXXXXXXX, " +
+                "Kwara, Iliorin, 40, Asa-dam, monthly, one-off, monthly, one-off";
+
+        // Build CSV content in memory
+        String csvContent = String.join(",", ASSIGNHEADERS) + "\n" + sampleRow;
+        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meter_assign_template.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(resource.contentLength())
+                .body(resource);
+    }
+
+    @GetMapping("/download/assign/template/excel")
+    public void downloadAssignExcelTemplate(HttpServletResponse response) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Meter Bulk Allocate Template");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < ASSIGNHEADERS.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(ASSIGNHEADERS[i]);
+            }
+
+            // Optional: Add a sample row
+            Row sampleRow = sheet.createRow(1);
+
+            Object[] sampleData = {
+                    "0048675416677","customer-id", "tariff test", "E3241", "E3241", "XXXXXXXX", "XXXXXXXXX",
+                    "Kwara", "Iliorin", "40", "Asa-dam", "monthly", "one-off", "monthly", "one-off"
+            };
+
+            for (int i = 0; i < sampleData.length; i++) {
+                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < HEADERS.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Set response headers
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=meter_assign_template.xlsx");
+
+            workbook.write(response.getOutputStream());
+        }
+    }
+
 
     @PutMapping("/bulk-allocate")
     public ResponseEntity<Map<String, Object>> bulkAllocateMeter(@RequestParam("file") MultipartFile file) {
         try {
             Map<String, Object> result =  service.bulkAllocate(file);
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PutMapping("/bulk-assign")
+    public ResponseEntity<Map<String, Object>> bulkAssignMeter(@RequestParam("file") MultipartFile file) {
+        try {
+            Map<String, Object> result =  service.bulkAssign(file);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {

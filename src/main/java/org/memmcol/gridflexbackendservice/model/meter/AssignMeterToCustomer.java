@@ -20,6 +20,7 @@ public class AssignMeterToCustomer implements Serializable {
     private String customerId;
     private String type;
     private UUID tariffId;
+    private String tariffName;
     private String dssAssetId;
     private String feederAssetId;
     private UUID dss;
@@ -65,7 +66,7 @@ public class AssignMeterToCustomer implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;
 
-    AssignMeterToCustomer(){
+    public AssignMeterToCustomer(){
         updatedAt = new Date();
         createdAt = new Date();
     }
@@ -132,6 +133,14 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setTariffId(UUID tariffId) {
         this.tariffId = tariffId;
+    }
+
+    public String getTariffName() {
+        return tariffName;
+    }
+
+    public void setTariffName(String tariffName) {
+        this.tariffName = tariffName;
     }
 
     public String getDssAssetId() {
