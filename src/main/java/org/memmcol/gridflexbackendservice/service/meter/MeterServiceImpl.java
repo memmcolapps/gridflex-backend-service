@@ -2833,12 +2833,12 @@ public class MeterServiceImpl implements MeterService {
                     .collect(Collectors.toMap(Customer::getCustomerId, Customer::getCustomerId));
 
             // Fetch dss
-            List<SubStationTransformerFeederLine> dssAssetId = meterMapper.getFeederDss(dssIds, user.getOrgId());
+            List<SubStationTransformerFeederLine> dssAssetId = meterMapper.getDss(dssIds, user.getOrgId());
             Map<String, UUID> dssIdMap = dssAssetId.stream()
                     .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
 
             // Fetch feeder
-            List<SubStationTransformerFeederLine> feederAssetId = meterMapper.getFeederDss(feederIds, user.getOrgId());
+            List<SubStationTransformerFeederLine> feederAssetId = meterMapper.getFeeder(feederIds, user.getOrgId());
             Map<String, UUID> feederIdMap = feederAssetId.stream()
                     .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
 

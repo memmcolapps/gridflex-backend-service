@@ -1921,7 +1921,38 @@ public interface MeterMapper {
 //            "ORDER BY t.created_at DESC",
 //            "</script>"
 //    })
-    List<SubStationTransformerFeederLine> getFeederDss(List<String> dssFeederIds, UUID orgId);
+    @Select({
+            "<script>",
+            "SELECT c.node_id AS nodeId",
+            "FROM substation_trans_feeder_lines c",
+            "WHERE c.org_id = #{orgId}",
+            "AND c.node_id IN",
+            "<foreach collection='dssFeederIds' item='dssFeederId' open='(' separator=',' close=')'>",
+            "#{dssFeederId}",
+            "</foreach>",
+            "</script>"
+    })
+    List<SubStationTransformerFeederLine> getFeeder(
+            @Param("dssFeederIds") List<String> dssFeederIds,
+            @Param("orgId") UUID orgId
+    );
+
+    @Select({
+            "<script>",
+            "SELECT c.node_id AS nodeId",
+            "FROM substation_trans_feeder_lines c",
+            "WHERE c.org_id = #{orgId}",
+            "AND c.node_id IN",
+            "<foreach collection='dssFeederIds' item='dssFeederId' open='(' separator=',' close=')'>",
+            "#{dssFeederId}",
+            "</foreach>",
+            "</script>"
+    })
+    List<SubStationTransformerFeederLine> getDss(
+            @Param("dssFeederIds") List<String> dssFeederIds,
+            @Param("orgId") UUID orgId
+    );
+
 
     void updateBatchMeterAssign(List<Meter> batch);
 
