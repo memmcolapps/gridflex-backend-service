@@ -106,6 +106,8 @@ public class VendingServiceImpl implements VendingService {
                 }
             }
 
+            BigDecimal finalAmount = netBalance.subtract(vatAmount);
+
             // --- Update Transaction ---
             Transaction transaction = new Transaction();
             transaction.setUnitCost(costPerUnit);
@@ -120,7 +122,7 @@ public class VendingServiceImpl implements VendingService {
             transaction.setUserId(user.getId());
             transaction.setCustomerId(meter.getCustomerId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
-            transaction.setFinalAmount(netBalance);
+            transaction.setFinalAmount(finalAmount);
             transaction.setTokenType(creditToken.getTokenType());
             transaction.setKct1(generateDummyToken());
             transaction.setKct2(generateDummyToken());
@@ -196,12 +198,14 @@ public class VendingServiceImpl implements VendingService {
                 }
             }
 
+            BigDecimal finalAmount = netBalance.subtract(vatAmount);
+
             // --- Build Response Data ---
             creditToken.setVat(vatRate);
             creditToken.setCostOfUnit(costPerUnit);
             creditToken.setUnit(units);
             creditToken.setVatAmount(vatAmount);
-            creditToken.setFinalAmount(netBalance);
+            creditToken.setFinalAmount(finalAmount);
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("data", creditToken);

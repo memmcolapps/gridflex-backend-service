@@ -237,7 +237,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
             // === Token statuses ===
             long success = filteredTransaction.stream()
-                    .filter(m -> m.getStatus().equalsIgnoreCase("Completed"))
+                    .filter(m -> m.getStatus().equalsIgnoreCase("Successful"))
                     .count();
 
             long pending = filteredTransaction.stream()
@@ -265,7 +265,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal totalProfit = filteredTransaction.stream()
-                    .filter(t -> "Completed".equalsIgnoreCase(t.getStatus()))
+                    .filter(t -> "Successful".equalsIgnoreCase(t.getStatus()))
                     .map(Transaction::getFinalAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -295,7 +295,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal previousTotalProfit = previousYearTransactions.stream()
-                    .filter(t -> "Completed".equalsIgnoreCase(t.getStatus()))
+                    .filter(t -> "Successful".equalsIgnoreCase(t.getStatus()))
                     .map(Transaction::getFinalAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);

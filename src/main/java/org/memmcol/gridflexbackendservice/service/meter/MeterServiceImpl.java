@@ -1683,7 +1683,6 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
     public int allocateSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords) {
         try {
             int successCount = 0;
