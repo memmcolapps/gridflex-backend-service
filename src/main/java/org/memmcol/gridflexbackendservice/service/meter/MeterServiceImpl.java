@@ -2801,11 +2801,43 @@ public class MeterServiceImpl implements MeterService {
                     .distinct()
                     .toList();
 
+            List<String> state = subBatch.stream()
+                    .map(AssignMeterToCustomer::getState)
+                    .filter(id -> id != null && !id.trim().isEmpty())
+                    .distinct()
+                    .toList();
+
+            List<String> city = subBatch.stream()
+                    .map(AssignMeterToCustomer::getCity)
+                    .filter(id -> id != null && !id.trim().isEmpty())
+                    .distinct()
+                    .toList();
+
+            List<String> houseNo = subBatch.stream()
+                    .map(AssignMeterToCustomer::getHouseNo)
+                    .filter(id -> id != null && !id.trim().isEmpty())
+                    .distinct()
+                    .toList();
+            List<String> streetName = subBatch.stream()
+                    .map(AssignMeterToCustomer::getStreetName)
+                    .filter(id -> id != null && !id.trim().isEmpty())
+                    .distinct()
+                    .toList();
+
             if (meterNumbers.isEmpty() || tariffNames.isEmpty() || customerIds.isEmpty() ||
                     dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
                 subBatch.forEach(req -> failedRecords.add(
-                        String.format("%s [Tariff: %s] (Invalid or missing data)",
-                                req.getMeterNumber(), req.getTariffName())
+                        String.format("%s [TariffName: %s, customerId: %s, dssAssetId: %s, feederAssetId: %s, cin: %s] (Invalid or missing data)",
+                                req.getMeterNumber(), req.getTariffName(), req.getCustomerId(), req.getDssAssetId(), req.getFeederAssetId(), req.getCin())
+                ));
+                continue;
+            }
+
+
+            if (state.isEmpty() || city.isEmpty() || houseNo.isEmpty() || streetName.isEmpty()) {
+                subBatch.forEach(req -> failedRecords.add(
+                        String.format("%s [State: %s, city: %s, houseNo: %s, streetName: %s] (Invalid or missing data)",
+                                req.getMeterNumber(), req.getState(), req.getCity(), req.getHouseNo(), req.getStreetName())
                 ));
                 continue;
             }
@@ -2831,7 +2863,11 @@ public class MeterServiceImpl implements MeterService {
             Map<String, UUID> feederIdMap = feederAssetId.stream()
                     .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
 
-            List<Meter> validAllocations = new ArrayList<>();
+            List<Meter> validAssign = new ArrayList<>();
+
+            List<MeterAssignLocation> validAssignLocation = new ArrayList<>();
+
+            List<PaymentMode> validAssignPayment = new ArrayList<>();
 
             for (AssignMeterToCustomer req : subBatch) {
                 Meter meter = meterMap.get(req.getMeterNumber());
@@ -2841,18 +2877,37 @@ public class MeterServiceImpl implements MeterService {
                 UUID feederId = feederIdMap.get(req.getFeederAssetId());
 
                 if (meter == null) {
-                    failedRecords.add(String.format("%s (Meter not found)", req.getMeterNumber()));
+                    failedRecords.add(String.format("%s (Meter not found, deactivated or have a pending state)", req.getMeterNumber()));
                     continue;
                 }
 
                 if (tariffId == null) {
-                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found)", req.getMeterNumber(), req.getTariffName()));
+                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found, deactivated or have a pending state)", req.getMeterNumber(), req.getTariffName()));
+                    continue;
+                }
+
+                if (customerId == null) {
+                    failedRecords.add(String.format("%s [Customer: %s] (Customer not found or blocked)", req.getMeterNumber(), req.getCustomerId()));
+                    continue;
+                }
+
+                System.out.println(">>>>dssId 1: "+dssId);
+                System.out.println(">>>>feederId 2: "+feederId);
+
+                if (dssId == null) {
+                    failedRecords.add(String.format("%s [DssAssetId: %s] (Dss not found)", req.getMeterNumber(), req.getDssAssetId()));
+                    continue;
+                }
+
+                if (feederId == null) {
+                    failedRecords.add(String.format("%s [FeederAssetId: %s] (Feeder not found)", req.getMeterNumber(), req.getFeederAssetId()));
                     continue;
                 }
 
                 // Auto-generate unique account number
                 String generatedAccountNumber = handleGetAccountNumber();
 
+                meter.setOrgId(user.getOrgId());
                 meter.setCin(req.getCin());
                 meter.setAccountNumber(generatedAccountNumber);
                 meter.setNodeId(feederId);
@@ -2864,28 +2919,56 @@ public class MeterServiceImpl implements MeterService {
                 meter.setCreatedBy(user.getId());
                 meter.setDescription("Meter Assigned");
 
-                // === New fields ===
-                meter.getMeterAssignLocation().setState(req.getState());
-                meter.getMeterAssignLocation().setCity(req.getCity());
-                meter.getMeterAssignLocation().setHouseNo(req.getHouseNo());
-                meter.getMeterAssignLocation().setStreetName(req.getStreetName());
-                meter.getPaymentMode().setCreditPaymentMode(req.getCreditPaymentMode());
-                meter.getPaymentMode().setDebitPaymentMode(req.getDebitPaymentMode());
-                meter.getPaymentMode().setCreditPaymentPlan(req.getCreditPaymentPlan());
-                meter.getPaymentMode().setDebitPaymentPlan(req.getDebitPaymentPlan());
+                System.out.println(">>>>meterId: "+meter.getId());
 
-                validAllocations.add(meter);
+                // === New fields ===
+                if (meter.getMeterAssignLocation() == null) {
+                    meter.setMeterAssignLocation(new MeterAssignLocation());
+                }
+                if (meter.getPaymentMode() == null) {
+                    meter.setPaymentMode(new PaymentMode());
+                }
+
+                MeterAssignLocation location = meter.getMeterAssignLocation();
+                location.setOrgId(user.getOrgId());
+                location.setCreatedBy(user.getId());
+                location.setMeterStage("Pending-assigned");
+                location.setDescription("Location assigned");
+                location.setMeterId(meter.getId());
+                location.setState(req.getState());
+                location.setCity(req.getCity());
+                location.setHouseNo(req.getHouseNo());
+                location.setStreetName(req.getStreetName());
+
+
+                // === Payment info only for PREPAID meters ===
+                if ("PREPAID".equalsIgnoreCase(meter.getMeterCategory())) {
+                    PaymentMode payment = new PaymentMode();
+                    payment.setOrgId(user.getOrgId());
+                    payment.setMeterId(meter.getId());
+                    payment.setCreatedBy(user.getId());
+                    payment.setDescription("Payment mode assigned");
+                    payment.setMeterStage("Pending-assigned");
+                    payment.setCreditPaymentMode(req.getCreditPaymentMode());
+                    payment.setDebitPaymentMode(req.getDebitPaymentMode());
+                    payment.setCreditPaymentPlan(req.getCreditPaymentPlan());
+                    payment.setDebitPaymentPlan(req.getDebitPaymentPlan());
+                    validAssignPayment.add(payment);
+                }
+                validAssign.add(meter);
+
+                validAssignLocation.add(location);
             }
 
-            if (validAllocations.isEmpty()) continue;
+            if (validAssign.isEmpty()) continue;
 
             try {
                 log.info("Processing batch {} - {} ({} records)", i, end - 1, subBatch.size());
-                int allocated = assignBatchTransactional(validAllocations, user);
-                successCount += allocated;
+                int assigned = assignBatchTransactional(validAssign, user, validAssignLocation,validAssignPayment);
+                successCount += assigned;
             } catch (Exception e) {
                 log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-                successCount += assignSubBatchTransactional(validAllocations, user, failedRecords);
+                successCount += assignSubBatchTransactional(validAssign, user, failedRecords, validAssignLocation, validAssignPayment);
             }
         }
 
@@ -2898,188 +2981,41 @@ public class MeterServiceImpl implements MeterService {
 
         return ResponseMap.response(
                 status.getSuccessCode(),
-                String.format("%d of %d meters allocated successfully", successCount, total),
+                String.format("%d of %d meters assigned successfully", successCount, total),
                 result
         );
     }
 
-//    /**
-//     * ✅ Generate unique account number from PostgreSQL sequence
-//     */
-//    private String generateAccountNumber() {
-//        Long nextVal = jdbcTemplate.queryForObject("SELECT nextval('meter_account_number_seq')", Long.class);
-//        return String.valueOf(nextVal);
-//    }
-////    @Override
-//    public Map<String, Object> bulkAssignMeters(List<AssignMeterToCustomer> assign, UserModel user) {
-//        Map<String, Object> result = new HashMap<>();
-//        List<String> failedRecords = new ArrayList<>();
-//        int successCount = 0;
-//
-//        if (assign == null || assign.isEmpty()) {
-//            throw new GlobalExceptionHandler.NotFoundException("No records found in uploaded file");
-//        }
-//
-//        final int BATCH_SIZE = 500;
-//
-//        for (int i = 0; i < assign.size(); i += BATCH_SIZE) {
-//            int end = Math.min(i + BATCH_SIZE, assign.size());
-//            List<AssignMeterToCustomer> subBatch = assign.subList(i, end);
-//
-//            // Extract meter numbers and region IDs
-//            List<String> meterNumbers = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getMeterNumber)
-//                    .filter(num -> num != null && !num.trim().isEmpty())
-//                    .map(String::trim)
-//                    .toList();
-//
-//            List<String> tariffNames = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getTariffName)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            List<String> customerIds = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getCustomerId)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            List<String> dssIds = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getDssAssetId)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            List<String> feederIds = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getFeederAssetId)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            List<String> accountIds = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getAccountNumber)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            List<String> cins = subBatch.stream()
-//                    .map(AssignMeterToCustomer::getCin)
-//                    .filter(id -> id != null && !id.trim().isEmpty())
-//                    .distinct()
-//                    .toList();
-//
-//            if (meterNumbers.isEmpty() || tariffNames.isEmpty() || customerIds.isEmpty() ||
-//                    dssIds.isEmpty() || feederIds.isEmpty() || accountIds.isEmpty() || cins.isEmpty()) {
-//                subBatch.forEach(req -> failedRecords.add(
-//                        String.format("%s [Region: %s] (Invalid meter/tariff)",
-//                                req.getMeterNumber(), req.getTariffName())
-//                ));
-//                continue;
-//            }
-//
-//            // Fetch meters
-//            List<Meter> meters = meterMapper.getUnassignMetersByMeterNumbers(meterNumbers, user.getOrgId());
-//            Map<String, Meter> meterMap = meters.stream()
-//                    .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
-//
-//            // Fetch tariffs
-//            List<Tariff> tariff = meterMapper.getTariffByNames(tariffNames, user.getOrgId());
-//            Map<String, UUID> tariffMap = tariff.stream()
-//                    .collect(Collectors.toMap(Tariff::getName, Tariff::getId));
-//
-//            // Fetch customers
-//            List<Customer> cId = meterMapper.getByCustomerIds(customerIds, user.getOrgId());
-//            Map<String, String> customerIdMap = cId.stream()
-//                    .collect(Collectors.toMap(Customer::getCustomerId, Customer::getCustomerId));
-//
-//            // Fetch dss
-//            List<SubStationTransformerFeederLine> dssAssetId = meterMapper.getDss(dssIds, user.getOrgId());
-//            Map<String, UUID> dssIdMap = dssAssetId.stream()
-//                    .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
-//
-//            // Fetch feeder
-//            List<SubStationTransformerFeederLine> feederAssetId = meterMapper.getFeeder(feederIds, user.getOrgId());
-//            Map<String, UUID> feederIdMap = feederAssetId.stream()
-//                    .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
-//
-////            System.out.println(">>>>>region1: "+regionHubs.get(0).getRegionId());
-////            System.out.println(">>>>>region2: "+regionHubs.get(0).getNodeId());
-//
-//            List<Meter> validAllocations = new ArrayList<>();
-//
-//            for (AssignMeterToCustomer req : subBatch) {
-//                Meter meter = meterMap.get(req.getMeterNumber());
-//                UUID tariffId = tariffMap.get(req.getTariffName());
-//                String customerId = customerIdMap.get(req.getCustomerId());
-//                UUID dssId = dssIdMap.get(req.getDssAssetId());
-//                UUID feederId = feederIdMap.get(req.getFeederAssetId());
-//
-////                System.out.println(">>>>>tariff name: "+name);
-//
-//                if (meter == null) {
-//                    failedRecords.add(String.format("%s (Meter not found)", req.getMeterNumber()));
-//                    continue;
-//                }
-//
-//                if (tariffId == null) {
-//                    failedRecords.add(String.format("%s [tariff: %s] (Region not found in business hub)", req.getMeterNumber(), req.getTariffName()));
-//                    continue;
-//                }
-//
-//                meter.setCin(req.getCin());
-//                meter.setAccountNumber(req.getAccountNumber());
-//                meter.setNodeId(feederId);
-//                meter.setDss(dssId);
-//                meter.setCustomerId(customerId);
-//                meter.setTariff(tariffId);
-//                meter.setOrgId(user.getOrgId());
-//                meter.setMeterStage("Pending-assigned");
-//                meter.setCreatedBy(user.getId());
-//                meter.setDescription("Meter Assigned");
-//                validAllocations.add(meter);
-//            }
-//
-//            if (validAllocations.isEmpty()) continue;
-//
-//            // Try allocating
-//            try {
-//                log.info("Processing batch {} - {} ({} records)", i, end - 1, subBatch.size());
-//                System.out.println(">>>>>>nodeVersionId: "+validAllocations.get(0).getNodeId());
-//                int allocated = assignBatchTransactional(validAllocations, user);
-//                log.info("Processing >>>>>");
-//                successCount += allocated;
-//            } catch (Exception e) {
-//                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-//                successCount += assignSubBatchTransactional(validAllocations, user, failedRecords);
-//            }
-//        }
-//
-//        int total = successCount + failedRecords.size();
-//
-//        result.put("totalRecords", total);
-//        result.put("successCount", successCount);
-//        result.put("failedCount", failedRecords.size());
-//        result.put("failedRecords", failedRecords);
-//
-//        return ResponseMap.response(
-//                status.getSuccessCode(),
-//                String.format("%d of %d meters allocated successfully", successCount, total),
-//                result
-//        );
-//    }
-
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
-    public int assignBatchTransactional(List<Meter> batch, UserModel user) {
+    public int assignBatchTransactional(List<Meter> batch, UserModel user, List<MeterAssignLocation> locations, List<PaymentMode> paymentModes) {
         if (batch.isEmpty()) return 0;
 
         try {
-            // Update main meter table
+            // === Step 1: Update main meter table ===
             meterMapper.updateBatchMeterAssign(batch);
 
-            // Update version table (node_id + meter_stage)
+            // === Step 2: Insert meter version records ===
             meterMapper.insertMeterVersions(batch);
+
+            // === Step 3: Bulk insert location assignments ===
+            meterMapper.insertAssignLocation(locations);
+
+            // === Step 4: Handle only prepaid meters for payment mode ===
+            List<PaymentMode> prepaidOnly = new ArrayList<>();
+
+            for (int i = 0; i < batch.size(); i++) {
+                Meter meter = batch.get(i);
+
+                // Example: assuming meterType field or isPrepaid flag
+                if ("PREPAID".equalsIgnoreCase(meter.getMeterCategory())) {
+                    prepaidOnly.add(paymentModes.get(i));  // keep matching record
+                }
+            }
+
+            if (!prepaidOnly.isEmpty()) {
+                meterMapper.insertAssignPayment(prepaidOnly);
+            }
 
             // Audit allocations
             auditBatch(batch, user, "Meter Assigned");
@@ -3096,7 +3032,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
 
-    public int assignSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int assignSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords,  List<MeterAssignLocation> locations, List<PaymentMode> paymentModes) {
         try {
             int successCount = 0;
             int subBatchSize = 100;
@@ -3106,7 +3042,7 @@ public class MeterServiceImpl implements MeterService {
                 List<Meter> subBatch = batch.subList(i, end);
 
                 try {
-                    successCount += assignBatchTransactional(subBatch, user);
+                    successCount += assignBatchTransactional(subBatch, user,  locations, paymentModes);
                 } catch (Exception e) {
                     log.warn("Sub-batch allocation failed (size={}): {}", subBatch.size(), e.getMessage());
 
@@ -3170,12 +3106,12 @@ public class MeterServiceImpl implements MeterService {
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
             failedRecords.add(String.format(
-                    "%s [Region: %s] (Allocation failed: %s)",
+                    "%s [Cin: %s] (Assign failed: %s)",
                     meter.getMeterNumber(),
-//                    meter.getNodeInfo().getRegionId(),
+                    meter.getCin(),
                     reason
             ));
-            log.warn("Async allocation failed for meter {}: {}", meter.getMeterNumber(), reason);
+            log.warn("Async assign failed for meter {}: {}", meter.getMeterNumber(), reason);
             return CompletableFuture.completedFuture(0);
         }
     }
@@ -3195,7 +3131,7 @@ public class MeterServiceImpl implements MeterService {
 //        String desc = meter.getMeterNumber() + " meter allocated to " + meter.getNodeInfo().getRegionId();
 
         // --- Step 2: Insert into main + version tables ---
-        meterMapper.assignMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Allocated");
+        meterMapper.allocateMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Assigned");
 //        if(result == 0){
 //            throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
 //        }
@@ -3236,15 +3172,15 @@ public class MeterServiceImpl implements MeterService {
                 meter.setDssAssetId(getStringCellValue(row.getCell(3)));
                 meter.setFeederAssetId(getStringCellValue(row.getCell(4)));
                 meter.setCin(getStringCellValue(row.getCell(5)));
-                meter.setAccountNumber(getStringCellValue(row.getCell(6)));
-                meter.setState(getStringCellValue(row.getCell(7)));
-                meter.setCity(getStringCellValue(row.getCell(8)));
-                meter.setHouseNo(getStringCellValue(row.getCell(9)));
-                meter.setStreetName(getStringCellValue(row.getCell(10)));
-                meter.setCreditPaymentMode(getStringCellValue(row.getCell(11)));
-                meter.setCreditPaymentPlan(getStringCellValue(row.getCell(12)));
-                meter.setDebitPaymentMode(getStringCellValue(row.getCell(13)));
-                meter.setDebitPaymentPlan(getStringCellValue(row.getCell(14)));
+//                meter.setAccountNumber(getStringCellValue(row.getCell(6)));
+                meter.setState(getStringCellValue(row.getCell(6)));
+                meter.setCity(getStringCellValue(row.getCell(7)));
+                meter.setHouseNo(getStringCellValue(row.getCell(8)));
+                meter.setStreetName(getStringCellValue(row.getCell(9)));
+                meter.setCreditPaymentMode(getStringCellValue(row.getCell(10)));
+                meter.setCreditPaymentPlan(getStringCellValue(row.getCell(11)));
+                meter.setDebitPaymentMode(getStringCellValue(row.getCell(12)));
+                meter.setDebitPaymentPlan(getStringCellValue(row.getCell(13)));
 
                 meters.add(meter);
             }
@@ -3262,16 +3198,17 @@ public class MeterServiceImpl implements MeterService {
                 AssignMeterToCustomer meter = new AssignMeterToCustomer();
                 meter.setMeterNumber(record.get("meter number"));
                 meter.setCustomerId(record.get("customer id"));
-                meter.setMeterNumber(record.get("tariff name"));
+                meter.setTariffName(record.get("tariff name"));
                 meter.setDssAssetId(record.get("dss asset id"));
 
                 meter.setFeederAssetId(record.get("feeder asset id"));
                 meter.setCin(record.get("cin"));
-                meter.setAccountNumber(record.get("account number"));
+//                meter.setAccountNumber(record.get("account number"));
                 meter.setState(record.get("state"));
 
                 meter.setCity(record.get("city"));
                 meter.setHouseNo(record.get("house number"));
+                meter.setStreetName(record.get("street name"));
                 meter.setCreditPaymentMode(record.get("credit payment mode"));
                 meter.setCreditPaymentPlan(record.get("credit payment plan"));
                 meter.setDebitPaymentMode(record.get("debit payment mode"));

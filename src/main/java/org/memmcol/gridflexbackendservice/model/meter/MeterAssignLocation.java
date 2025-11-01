@@ -19,9 +19,10 @@ public class MeterAssignLocation implements Serializable {
     private String houseNo;
     private String streetName;
     private String meterStage;
-    private String createdBy;
+    private UUID createdBy;
     private String updatedBy;
     private UUID approveBy;
+    private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -98,11 +99,11 @@ public class MeterAssignLocation implements Serializable {
         this.meterStage = meterStage;
     }
 
-    public String getCreatedBy() {
+    public UUID getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(String createdBy) {
+    public void setCreatedBy(UUID createdBy) {
         this.createdBy = createdBy;
     }
 
@@ -136,5 +137,13 @@ public class MeterAssignLocation implements Serializable {
 
     public void setApproveBy(UUID approveBy) {
         this.approveBy = approveBy;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

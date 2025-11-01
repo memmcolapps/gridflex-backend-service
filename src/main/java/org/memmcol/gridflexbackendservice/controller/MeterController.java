@@ -92,7 +92,6 @@ public class MeterController {
             "dss asset id",
             "feeder asset id",
             "cin",
-            "account number",
             "state",
             "city",
             "house number",
@@ -456,8 +455,8 @@ public class MeterController {
 
     @GetMapping("/download/assign/template/csv")
     public ResponseEntity<Resource> downloadAssignCsvTemplate() throws IOException {
-        String sampleRow = "0048675416677, customer-id, tariff test, E3241, E3241, XXXXXXXX, XXXXXXXXX, " +
-                "Kwara, Iliorin, 40, Asa-dam, monthly, one-off, monthly, one-off";
+        String sampleRow = "0048675416677, customer-id, tariff test, E3241, E3241, XXXXXXXXX, " +
+                "Kwara, Ilorin, 40, Asa-dam, monthly, one-off, monthly, one-off";
 
         // Build CSV content in memory
         String csvContent = String.join(",", ASSIGNHEADERS) + "\n" + sampleRow;
@@ -486,8 +485,8 @@ public class MeterController {
             Row sampleRow = sheet.createRow(1);
 
             Object[] sampleData = {
-                    "0048675416677","customer-id", "tariff test", "E3241", "E3241", "XXXXXXXX", "XXXXXXXXX",
-                    "Kwara", "Iliorin", "40", "Asa-dam", "monthly", "one-off", "monthly", "one-off"
+                    "0048675416677","customer-id", "tariff test", "E3241", "E3241", "XXXXXXXXX",
+                    "Kwara", "Ilorin", "40", "Asa-dam", "monthly", "one-off", "monthly", "one-off"
             };
 
             for (int i = 0; i < sampleData.length; i++) {

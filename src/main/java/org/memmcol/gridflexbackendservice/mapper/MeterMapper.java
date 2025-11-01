@@ -1489,6 +1489,7 @@ public interface MeterMapper {
             "#{meterNumber}",
             "</foreach>",
             "AND (m.meter_stage IN ('Unassigned'))",
+            "AND (m.status IN ('Active'))",
             "AND m.org_id = #{orgId}",
             "ORDER BY m.created_at DESC",
             "</script>"
@@ -1875,17 +1876,14 @@ public interface MeterMapper {
             "<foreach item='tariffName' collection='tariffNames' open='(' separator=',' close=')'>",
             "#{tariffName}",
             "</foreach>",
-            "AND (t.status IN ('Approved'))",
-            "AND t.org_id = #{org_id}",
-            "ORDER BY t.created_at DESC",
+            "AND (t.approve_status IN ('Approved'))",
+            "AND t.org_id = #{orgId}",
             "</script>"
     })
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "band_id", column = "band_id"),
             @Result(property = "band_id", column = "band"),
-//            @Result(property = "band", column = "band",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
     List<Tariff> getTariffByNames(@Param("tariffNames") List<String> tariffNames, @Param("orgId") UUID orgId);
 
@@ -1897,8 +1895,8 @@ public interface MeterMapper {
             "<foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>",
             "#{customerId}",
             "</foreach>",
-            "AND c.org_id = #{org_id}",
-            "ORDER BY t.created_at DESC",
+            "AND c.org_id = #{orgId}",
+            "AND (c.status IN ('Inactive', 'Active'))",
             "</script>"
     })
     List<Customer> getByCustomerIds(List<String> customerIds, UUID orgId);
@@ -1923,10 +1921,10 @@ public interface MeterMapper {
 //    })
     @Select({
             "<script>",
-            "SELECT c.node_id AS nodeId",
+            "SELECT c.node_id AS nodeId, c.asset_id AS assetId",
             "FROM substation_trans_feeder_lines c",
             "WHERE c.org_id = #{orgId}",
-            "AND c.node_id IN",
+            "AND c.asset_id IN",
             "<foreach collection='dssFeederIds' item='dssFeederId' open='(' separator=',' close=')'>",
             "#{dssFeederId}",
             "</foreach>",
@@ -1937,12 +1935,28 @@ public interface MeterMapper {
             @Param("orgId") UUID orgId
     );
 
+//    @Select({
+//            "<script>",
+//            "SELECT c.node_id AS nodeId",
+//            "FROM substation_trans_feeder_lines c",
+//            "WHERE c.org_id = #{orgId}",
+//            "AND c.node_id IN",
+//            "<foreach collection='dssFeederIds' item='dssFeederId' open='(' separator=',' close=')'>",
+//            "#{dssFeederId}",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    List<SubStationTransformerFeederLine> getDss(
+//            @Param("dssFeederIds") List<String> dssFeederIds,
+//            @Param("orgId") UUID orgId
+//    );
+
     @Select({
             "<script>",
-            "SELECT c.node_id AS nodeId",
+            "SELECT c.node_id AS nodeId, c.asset_id AS assetId",
             "FROM substation_trans_feeder_lines c",
             "WHERE c.org_id = #{orgId}",
-            "AND c.node_id IN",
+            "AND c.asset_id IN",
             "<foreach collection='dssFeederIds' item='dssFeederId' open='(' separator=',' close=')'>",
             "#{dssFeederId}",
             "</foreach>",
@@ -1952,6 +1966,7 @@ public interface MeterMapper {
             @Param("dssFeederIds") List<String> dssFeederIds,
             @Param("orgId") UUID orgId
     );
+
 
     @Update({
             "<script>",
@@ -1967,5 +1982,47 @@ public interface MeterMapper {
     })
     void updateBatchMeterAssign(@Param("batch") List<Meter> batch);
 
-    void assignMeterVersion(Meter meter, UUID nodeId, UUID id, String pendingAllocated);
+    @Insert({
+            "<script>",
+            "INSERT INTO meter_assign_locations_version (",
+            "org_id, meter_id, state, city, house_no, street_name, ",
+            "created_at, updated_at, meter_stage, description, created_by",
+            ") VALUES ",
+            "<foreach collection='batch' item='item' separator=','>",
+            "(",
+            "#{item.orgId}, #{item.meterId}, #{item.state}, #{item.city}, #{item.houseNo}, #{item.streetName}, ",
+            "#{item.createdAt}, #{item.updatedAt}, #{item.meterStage}, #{item.description}, #{item.createdBy}",
+            ")",
+            "</foreach>",
+            "</script>"
+    })
+    void insertAssignLocation(@Param("batch") List<MeterAssignLocation> batch);
+
+    @Insert({
+            "<script>",
+            "INSERT INTO payment_mode_version (",
+            "org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, ",
+            "created_at, updated_at, status, meter_stage, created_by, description",
+            ") VALUES ",
+            "<foreach collection='paymentModes' item='item' separator=','>",
+            "(",
+            "#{item.orgId}, #{item.meterId}, #{item.creditPaymentMode}, #{item.creditPaymentPlan}, ",
+            "#{item.debitPaymentMode}, #{item.debitPaymentPlan}, ",
+            "#{item.createdAt}, #{item.updatedAt}, true, #{item.meterStage}, #{item.createdBy}, #{item.description}",
+            ")",
+            "</foreach>",
+            "</script>"
+    })
+    void insertAssignPayment(@Param("paymentModes") List<PaymentMode> paymentModes);
+
+
+
+//    @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, meter_stage, description, created_by) " +
+//            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, #{meterStage}, #{description}, #{createdBy})")
+//    void insertAssignLocation(List<MeterAssignLocation> batch);
+//
+//
+//    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
+//            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
+//    void insertAssignPayment(List<PaymentMode> paymentModes);
 }
