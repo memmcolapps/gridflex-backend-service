@@ -732,11 +732,6 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("Meter assignment to location failed");
         }
 
-        //Change customer status to Active
-        int customerStatus = customerMapper.changeStatusCustomer(request.getCustomerId(), "Active",user.getOrgId());
-        if (customerStatus == 0) {
-            throw new GlobalExceptionHandler.NotFoundException("Customer status updated failed");
-        }
     }
 
     @Override
@@ -1153,6 +1148,11 @@ public class MeterServiceImpl implements MeterService {
                 if (meterMapper.approvePendingMeter(meter) == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
+                //Change customer status to Active
+                int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Active",user.getOrgId());
+                if (customerStatus == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+                }
             } else {
                 //Approve meter in meters table
                 if (meterMapper.approveMeter(meter) == 0) {
@@ -1210,6 +1210,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
         }
+
 
     }
 
