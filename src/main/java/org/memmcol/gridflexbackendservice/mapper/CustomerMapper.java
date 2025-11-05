@@ -218,4 +218,26 @@ public interface CustomerMapper {
     @Update("UPDATE customers SET status = #{state} WHERE customer_id = #{customerId} AND org_id = #{orgId}")
     int changeStatusCustomer(@Param("customerId") String customerId, String state,@Param("orgId") UUID orgId);
 
+    @Update({
+            "<script>",
+            "UPDATE customers",
+            "SET status = CASE customer_id",
+            "  <foreach collection='batch' item='m'>",
+            "    WHEN #{m.customerId} THEN 'Active'",
+            "  </foreach>",
+            "END",
+            "  updated_at = CASE customer_id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.customerId} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
+            "    </foreach>",
+            "  END",
+            "WHERE customer_id IN",
+            "  <foreach collection='batch' item='m' open='(' separator=',' close=')'>",
+            "    #{m.customerId}",
+            "  </foreach>",
+            "AND org_id = #{orgId}",
+            "</script>"
+    })
+    void changeStatusBulkCustomer(@Param("batch") List<Meter> batch, @Param("orgId") UUID orgId);
+
 }

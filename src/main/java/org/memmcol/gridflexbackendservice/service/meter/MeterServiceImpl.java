@@ -45,6 +45,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1815,6 +1816,7 @@ public class MeterServiceImpl implements MeterService {
 
         final int BATCH_SIZE = 500; // Tune as needed for performance
 
+
         for (int i = 0; i < meters.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, meters.size());
             List<MeterRequest> batch = meters.subList(i, end);
@@ -1829,6 +1831,14 @@ public class MeterServiceImpl implements MeterService {
                     .filter(num -> !num.isEmpty())
                     .toList();
 
+            if (meterNumbers.isEmpty()) {
+                batch.forEach(req -> failedRecords.add(
+                        String.format("%s (Invalid or missing data)",
+                                req.getMeterNumber())
+                ));
+                continue;
+            }
+
             // One DB call to fetch all corresponding version records
             List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
 
@@ -1841,9 +1851,6 @@ public class MeterServiceImpl implements MeterService {
 
             try {
                 prepareUpdateMeters(versionBatch, user, failedRecords);
-
-                System.out.println(">>> Version batch size: " + versionBatch.size());
-                versionBatch.forEach(v -> System.out.println(">>> Updating meter: " + v.getMeterNumber()));
 
                 int updatedCount = updateBatchTransactional(versionBatch, user);
                 successCount += updatedCount;
@@ -1883,12 +1890,10 @@ public class MeterServiceImpl implements MeterService {
             meter.setOrgId(user.getOrgId());
             meter.setApproveBy(user.getId());
 
-
             if("Pending-created".equalsIgnoreCase(meter.getMeterStage())){
                 meter.setMeterStage("Created");
                 meter.setStatus("Active");
             } else if ("Pending-allocated".equalsIgnoreCase(meter.getMeterStage())){
-                meter.setMeterStage("Unassigned");
                 meter.setStatus("Active");
             } else if ("Pending-assigned".equalsIgnoreCase(meter.getMeterStage())) {
                 meter.setMeterStage("Assigned");
@@ -1897,34 +1902,16 @@ public class MeterServiceImpl implements MeterService {
                 failedRecords.add("(Meter stage is not in Pending-created, Pending-allocated or Pending-assigned)");
             }
 
-            // APPROVE path
-//            if ("approve".equalsIgnoreCase(meter.getApproveState())) {
-//                meter.setMeterStage("Created");
-//                meter.setStatus("Active");
-//            }
-//
-//            // REJECT path
-//            else if ("reject".equalsIgnoreCase(meter.getApproveState())) {
-//                meter.setMeterStage("Rejected");
-//                meter.setStatus("Deactivated");
-//            }
-//            else {
-//                failedRecords.add("(Meter approve state provided is not allowed)");
-//                iterator.remove();
-//            }
-
             if (meter.getMdMeterInfo() != null) {
                 meter.getMdMeterInfo().setApproveBy(user.getId());
                 meter.getMdMeterInfo().setMeterId(meter.getMeterId());
                 meter.getMdMeterInfo().setOrgId(user.getOrgId());
-                meter.getMdMeterInfo().setApproveBy(user.getId());
             }
 
             if (meter.getSmartMeterInfo() != null) {
                 meter.getSmartMeterInfo().setApproveBy(user.getId());
                 meter.getSmartMeterInfo().setMeterId(meter.getMeterId());
                 meter.getSmartMeterInfo().setOrgId(user.getOrgId());
-                meter.getSmartMeterInfo().setApproveBy(user.getId());
             }
         }
     }
@@ -1932,10 +1919,82 @@ public class MeterServiceImpl implements MeterService {
     /** Transactionally update main + version + children + audit */
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public int updateBatchTransactional(List<Meter> batch, UserModel user) {
+        String desc = "";
         if (batch.isEmpty()) return 0;
 
         try {
-            // Split the batch
+            // 1 Update main meter table
+            meterMapper.updateBatchMeters(batch);
+
+            // 2 Update version table (meter_stage, status)
+            meterMapper.updateBatchVersionMeters(batch);
+
+            // Set action description
+            desc = "Meter allocated approved";
+
+            // 3 Handle "Pending-assigned" approvals — move from version → actual tables
+            List<Meter> approvedAssignedMeters = batch.stream()
+                    .filter(m -> "Assigned".equalsIgnoreCase(m.getMeterStage()))
+                    .toList();
+
+            System.out.println(">>>4: "+batch.get(0).getMeterNumber());
+
+            if (!approvedAssignedMeters.isEmpty()) {
+
+                // Set action description
+                desc = "Meter assigned approved";
+
+                // Copy approved locations from version → actual table
+                meterMapper.copyAssignLocationFromVersion(approvedAssignedMeters, user.getOrgId());
+
+                // Create a list of prepaid meters
+                List<Meter> prepaidMeters = approvedAssignedMeters.stream()
+                        .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
+                        .toList();
+
+                if (!prepaidMeters.isEmpty()) {
+                    // Copy approved payment modes from version → actual table (for prepaid)
+                    meterMapper.copyPaymentModeFromVersion(prepaidMeters, user.getOrgId());
+
+                    //   Update the version tables to mark as approved
+                    meterMapper.updatePaymentModeVersion(prepaidMeters);
+                }
+
+                // Clean up location version table
+                meterMapper.updateAssignLocationVersion(approvedAssignedMeters);
+
+                // Update customer record (status = active)
+                customerMapper.changeStatusBulkCustomer(batch, user.getOrgId());
+
+            }
+
+            // 4 Handle child data for pending-created (existing logic)
+            List<Meter> pending = batch.stream()
+                    .filter(m -> "Created".equalsIgnoreCase(m.getMeterStage()))
+                    .toList();
+
+            // Update children
+            if(!pending.isEmpty()) {
+
+                // Set action description
+                desc = "Meter created approved";
+
+                updateChildMeterData(batch, user);
+            }
+
+            //  Audit success
+            auditApproveBatch(batch, user, desc);
+
+            log.info("Batch updated successfully: {}", batch.size());
+            return batch.size();
+
+        } catch (Exception e) {
+            log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+            throw new RuntimeException("Batch transaction failed. Rolled back.", e);
+        }
+    }
+
+    // Split the batch
 //            List<Meter> approveList = batch.stream()
 //                    .filter(m -> "approve".equalsIgnoreCase(m.getApproveState()))
 //                    .toList();
@@ -1963,34 +2022,7 @@ public class MeterServiceImpl implements MeterService {
 //            log.info("Batch completed: {} approved, {} rejected", approveList.size(), rejectList.size());
 //            return total;
 
-            // Update main meters
-
-            List<Meter> pending= batch.stream()
-                    .filter(m -> "Pending-created".equalsIgnoreCase(m.getMeterStage()))
-                    .toList();
-
-            meterMapper.updateBatchMeters(batch);
-
-            // Update version meters
-            meterMapper.updateBatchVersionMeters(batch);
-
-            // Update children
-            if(!pending.isEmpty()) {
-                updateChildMeterData(batch, user);
-            }
-
-
-            // Audit
-            auditApproveBatch(batch, user);
-
-            log.info("Batch updated successfully: {}", batch.size());
-            return batch.size();
-
-        } catch (Exception e) {
-            log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
-            throw new RuntimeException("Batch transaction failed. Rolled back.", e);
-        }
-    }
+    // Update main meters
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void handleRejectionBatch(List<Meter> rejectList, UserModel user) {
@@ -2145,10 +2177,10 @@ public class MeterServiceImpl implements MeterService {
     /**
      * Record audit logs for each approved meter.
      */
-    private void auditApproveBatch(List<Meter> batch, UserModel user) {
+    private void auditApproveBatch(List<Meter> batch, UserModel user, String desc) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Meter m : batch) {
-            AuditLog auditLog = buildAuditLog(user, "Meter approve", "Bulk Meter", m, metadata, "");
+            AuditLog auditLog = buildAuditLog(user, desc, "Bulk Meter", m, metadata, "");
             auditRepository.save(auditLog);
         }
     }
@@ -2171,47 +2203,6 @@ public class MeterServiceImpl implements MeterService {
         return m == null ? ex.getClass().getSimpleName() : m;
     }
 
-//    private List<Meter> processApproveExcel(InputStream inputStream) throws IOException {
-//        List<Meter> meters = new ArrayList<>();
-//
-//        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-//            Sheet sheet = workbook.getSheetAt(0);
-//            Iterator<Row> rows = sheet.iterator();
-//
-//            // Skip header row safely
-//            if (rows.hasNext()) {
-//                rows.next();
-//            }
-//
-//            while (rows.hasNext()) {
-//                Row row = rows.next();
-//                Meter meter = new Meter();
-//
-//                meter.setMeterNumber(getStringCellValue(row.getCell(0)));
-//                meter.setApproveState(getStringCellValue(row.getCell(1)));
-//
-//                meters.add(meter);
-//            }
-//        }
-//        return meters;
-//    }
-//
-//    private List<Meter> processApproveCsv(InputStream inputStream) throws IOException {
-//        List<Meter> meters = new ArrayList<>();
-//
-//        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-//             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
-//
-//            for (CSVRecord record : csvParser) {
-//                Meter meter = new Meter();
-//                meter.setMeterNumber(record.get("meter number"));
-//                meter.setApproveState(record.get("approve state"));
-//
-//                meters.add(meter);
-//            }
-//        }
-//        return meters;
-//    }
 
     private List<MeterRequest> processAllocateExcel(InputStream inputStream) throws IOException {
         List<MeterRequest> meters = new ArrayList<>();
@@ -2285,14 +2276,14 @@ public class MeterServiceImpl implements MeterService {
             }
         }
 
-        result.put("totalRecords", successCount+failedRecords.size());
+        result.put("totalRecords", meters.size());
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
         return ResponseMap.response(
                 status.getSuccessCode(),
-                successCount + " of " + successCount+failedRecords.size() + " Meters uploaded successfully",
+                successCount + " of " + meters.size() + " Meters uploaded successfully",
                 result
         );
     }
@@ -3137,9 +3128,6 @@ public class MeterServiceImpl implements MeterService {
 //        }
 
         meterMapper.updateMeter(meter.getDescription(), meter.getId(), meter.getUpdatedAt(), meter.getStatus());
-//        if(result == 0){
-//            throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
-//        }
 
         //fetch meter from the database
         Meter m = meterMapper.getVersionMeter(meter.getOrgId(), null, meter.getMeterNumber(), null);
@@ -3288,11 +3276,24 @@ public class MeterServiceImpl implements MeterService {
         meterCache.put(meter.getId().toString()+"_"+meter.getOrgId(), meter);  // Cache updated or deleted entity
     }
 
-    private String handleGetAccountNumber(){
+//    private String handleGetAccountNumber(){
+//        String accountNumber;
+//        accountNumber = String.valueOf(Instant.now().getEpochSecond());
+//        return accountNumber;
+//    }
+
+    private String handleGetAccountNumber() {
         String accountNumber;
-        accountNumber = String.valueOf(Instant.now().getEpochSecond());
+        long millis = System.currentTimeMillis(); // e.g. 1730667129123
+        String base = String.valueOf(millis);
+
+        // Take last 7 digits of current milliseconds + 3 random digits = 10 total
+        int random = ThreadLocalRandom.current().nextInt(100, 999);
+        accountNumber = base.substring(base.length() - 7) + random;
+
         return accountNumber;
     }
+
 
     private String handleGetVirtualMeter(){
         String virtualMeterNo;
