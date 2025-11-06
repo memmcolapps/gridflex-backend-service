@@ -1158,6 +1158,11 @@ public class MeterServiceImpl implements MeterService {
                 if (meterMapper.approveMeter(meter) == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
+                //Change customer status to Active
+                int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
+                if (customerStatus == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+                }
             }
 
             //approve meter location
@@ -1166,23 +1171,10 @@ public class MeterServiceImpl implements MeterService {
                 approveMeterAssignLocation(meter);
             }
 
-            //approve MD meter Information
-//            if ("md".equalsIgnoreCase(meter.getMeterClass()) && meter.getMdMeterInfo() != null && (stage.equalsIgnoreCase("Pending-created")
-//                    || stage.equalsIgnoreCase("Pending-edited"))) {
-//                meter.getMdMeterInfo().setApproveBy(user.getId());
-//                approveMDMeterInfo(meter);
-//            }
-
             if (meter.getMdMeterInfo() != null) {
                 meter.getMdMeterInfo().setApproveBy(user.getId());
                 approveMDMeterInfo(meter);
             }
-
-            //approve smart meter Information
-//            if (Boolean.TRUE.equals(meter.getSmartStatus()) && (stage.equalsIgnoreCase("Pending-created")
-//                    || stage.equalsIgnoreCase("Pending-edited"))) {
-//                approveSmartMeterInfo(meter);
-//            }
 
             if (meter.getSmartMeterInfo() != null) {
                 meter.getSmartMeterInfo().setApproveBy(user.getId());
@@ -1853,7 +1845,7 @@ public class MeterServiceImpl implements MeterService {
             try {
                 prepareUpdateMeters(versionBatch, user, failedRecords);
 
-                int updatedCount = updateBatchTransactional(versionBatch, user);
+                int updatedCount = updateBatchTransactional(versionBatch, user, failedRecords);
                 successCount += updatedCount;
 
             } catch (Exception e) {
@@ -1890,14 +1882,26 @@ public class MeterServiceImpl implements MeterService {
 
             meter.setOrgId(user.getOrgId());
             meter.setApproveBy(user.getId());
+            meter.setId(meter.getMeterId());
 
             if("Pending-created".equalsIgnoreCase(meter.getMeterStage())){
-                meter.setMeterStage("Created");
                 meter.setStatus("Active");
             } else if ("Pending-allocated".equalsIgnoreCase(meter.getMeterStage())){
                 meter.setStatus("Active");
             } else if ("Pending-assigned".equalsIgnoreCase(meter.getMeterStage())) {
-                meter.setMeterStage("Assigned");
+                meter.setStatus("Active");
+            } else if ("Pending-migrated".equalsIgnoreCase(meter.getMeterStage())) {
+                meter.setStatus("Active");
+            } else if ("Pending-detached".equalsIgnoreCase(meter.getMeterStage())) {
+                meter.setStatus("Active");
+            } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getCustomerId() != null) {
+//                meter.setMeterStage("Assigned");
+                meter.setStatus("Active");
+            } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() != null && meter.getCustomerId() == null) {
+//                meter.setMeterStage("Unassigned");
+                meter.setStatus("Active");
+            } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() == null && meter.getCustomerId() == null) {
+//                meter.setMeterStage("Created");
                 meter.setStatus("Active");
             } else {
                 failedRecords.add("(Meter stage is not in Pending-created, Pending-allocated or Pending-assigned)");
@@ -1919,71 +1923,85 @@ public class MeterServiceImpl implements MeterService {
 
     /** Transactionally update main + version + children + audit */
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
-    public int updateBatchTransactional(List<Meter> batch, UserModel user) {
+    public int updateBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords) {
         String desc = "";
         if (batch.isEmpty()) return 0;
 
         try {
-            // 1 Update main meter table
-            meterMapper.updateBatchMeters(batch);
+            List<Meter> approvedCreatedMeters = getMetersByStage(batch, "Pending-created", "Created");
+            List<Meter> approvedAllocatedMeters = getMetersByStage(batch, "Pending-allocated", "Unassigned");
+            List<Meter> approvedAssignedMeters = getMetersByStage(batch, "Pending-assigned", "Assigned");
+            List<Meter> approvedMigratedMeters = getMetersByStage(batch, "Pending-migrated", "Assigned");
+            List<Meter> approvedDetachedMeters = getMetersByStage(batch, "Pending-detached", "Created");
+            List<Meter> approvedMetersStatus = getMetersByStatus(batch, "Pending-deactivated");
 
-            // 2 Update version table (meter_stage, status)
-            meterMapper.updateBatchVersionMeters(batch);
-
-            // Set action description
-            desc = "Meter allocated approved";
-
-            // 3 Handle "Pending-assigned" approvals — move from version → actual tables
-            List<Meter> approvedAssignedMeters = batch.stream()
-                    .filter(m -> "Assigned".equalsIgnoreCase(m.getMeterStage()))
+            // Handle "Pending-edited" dynamically
+            List<Meter> approvedEditedMeters = batch.stream()
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage()))
+                    .peek(m -> {
+                        if (m.getCustomerId() != null) {
+                            m.setMeterStage("Assigned");
+                        } else if (m.getNodeId() != null && m.getCustomerId() == null) {
+                            m.setMeterStage("Unassigned");
+                        } else {
+                            m.setMeterStage("Created");
+                        }
+                        m.setStatus("Active");
+                    })
                     .toList();
 
-            System.out.println(">>>4: "+batch.get(0).getMeterNumber());
+            // Combine all for main update
+            List<Meter> toUpdate = Stream.of(
+                            approvedCreatedMeters,
+                            approvedAllocatedMeters,
+                            approvedAssignedMeters,
+                            approvedMigratedMeters,
+                            approvedEditedMeters,
+                            approvedMetersStatus)
+                    .flatMap(Collection::stream)
+                    .toList();
 
-            if (!approvedAssignedMeters.isEmpty()) {
-
-                // Set action description
-                desc = "Meter assigned approved";
-
-                // Copy approved locations from version → actual table
-                meterMapper.copyAssignLocationFromVersion(approvedAssignedMeters, user.getOrgId());
-
-                // Create a list of prepaid meters
-                List<Meter> prepaidMeters = approvedAssignedMeters.stream()
-                        .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
-                        .toList();
-
-                if (!prepaidMeters.isEmpty()) {
-                    // Copy approved payment modes from version → actual table (for prepaid)
-                    meterMapper.copyPaymentModeFromVersion(prepaidMeters, user.getOrgId());
-
-                    //   Update the version tables to mark as approved
-                    meterMapper.updatePaymentModeVersion(prepaidMeters);
-                }
-
-                // Clean up location version table
-                meterMapper.updateAssignLocationVersion(approvedAssignedMeters);
-
-                // Update customer record (status = active)
-                customerMapper.changeStatusBulkCustomer(batch, user.getOrgId());
-
+            if (!toUpdate.isEmpty()) {
+                meterMapper.updateBatchMeters(toUpdate);
+                meterMapper.updateBatchVersionMeters(toUpdate);
             }
 
-            // 4 Handle child data for pending-created (existing logic)
-            List<Meter> pending = batch.stream()
-                    .filter(m -> "Created".equalsIgnoreCase(m.getMeterStage()))
+            // Combine all for main update
+            List<Meter> detach = Stream.of(approvedDetachedMeters)
+                    .flatMap(Collection::stream)
                     .toList();
 
-            // Update children
-            if(!pending.isEmpty()) {
+            if (!detach.isEmpty()) {
+                meterMapper.updateDetachBatchMeters(detach, user.getOrgId());
+                meterMapper.updateBatchVersionMeters(detach);
+                meterMapper.removeBulkAssignedLocations(detach);
+                meterMapper.removeBulkPaymentModes(detach);
+            }
 
-                // Set action description
+            // --- Migration ---
+            if (!approvedMigratedMeters.isEmpty()) {
+                desc = "Meter migration approved";
+                handleMigration(approvedMigratedMeters, user);
+            }
+
+            // --- Assigned ---
+            if (!approvedAssignedMeters.isEmpty()) {
+                desc = "Meter assigned approved";
+                handleAssignment(approvedAssignedMeters, user);
+            }
+
+            // --- Edited (can behave similar to assigned) ---
+            if (!approvedEditedMeters.isEmpty()) {
+                desc = "Meter edit approved";
+                handleEditedMeters(approvedEditedMeters, user);
+            }
+
+            // --- Created ---
+            if (!approvedCreatedMeters.isEmpty()) {
                 desc = "Meter created approved";
-
                 updateChildMeterData(batch, user);
             }
 
-            //  Audit success
             auditApproveBatch(batch, user, desc);
 
             log.info("Batch updated successfully: {}", batch.size());
@@ -1991,10 +2009,201 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+//            failedRecords.add("Sub-batch failed: " + e.getMessage());
+//            genericHandler.logIncidentReport("Bulk approve sub batch service failed");
+//            genericHandler.logAndSaveException(e, "Bulk approve sub batch meter");
             throw new RuntimeException("Batch transaction failed. Rolled back.", e);
         }
     }
 
+    private void handleEditedMeters(List<Meter> editedMeters, UserModel user) {
+        // Example: treat edited like assigned
+        meterMapper.editAssignLocationFromVersion(editedMeters, user.getOrgId());
+        meterMapper.updateAssignLocationVersion(editedMeters);
+
+        List<Meter> prepaidMeters = editedMeters.stream()
+                .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
+                .toList();
+
+        if (!prepaidMeters.isEmpty()) {
+            meterMapper.updatePaymentModeFromVersion(prepaidMeters, user.getOrgId());
+            meterMapper.updatePaymentModeVersion(prepaidMeters);
+        }
+//        customerMapper.changeStatusBulkCustomer(editedMeters, user.getOrgId());
+    }
+
+    private void handleAssignment(List<Meter> assignedMeters, UserModel user) {
+        // Copy approved locations from version → actual table
+        meterMapper.copyAssignLocationFromVersion(assignedMeters, user.getOrgId());
+
+        // Create a list of prepaid meters
+        List<Meter> prepaidMeters = assignedMeters.stream()
+                .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
+                .toList();
+
+        if (!prepaidMeters.isEmpty()) {
+            // Copy approved payment modes from version → actual table (for prepaid)
+            meterMapper.copyPaymentModeFromVersion(prepaidMeters, user.getOrgId());
+
+            //   Update the version tables to mark as approved
+            meterMapper.updatePaymentModeVersion(prepaidMeters);
+        }
+
+        // Clean up location version table
+        meterMapper.updateAssignLocationVersion(assignedMeters);
+
+        // Update customer record (status = active)
+        customerMapper.changeStatusBulkCustomer(assignedMeters, user.getOrgId());
+    }
+
+    private void handleMigration(List<Meter> migratedMeters, UserModel user) {
+
+            // Create a list of prepaid meters
+            List<Meter> prepaidMeters = migratedMeters.stream()
+                    .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
+                    .toList();
+
+            List<Meter> postpaidMeters = migratedMeters.stream()
+                    .filter(m -> "Postpaid".equalsIgnoreCase(m.getMeterCategory()))
+                    .toList();
+
+            if (!prepaidMeters.isEmpty()) {
+                // Copy approved payment modes from version → actual table (for prepaid)
+                meterMapper.copyPaymentModeFromVersion(prepaidMeters, user.getOrgId());
+
+                // Update the version tables to mark as approved
+                meterMapper.updatePaymentModeVersion(prepaidMeters);
+            }
+
+            if (!postpaidMeters.isEmpty()) {
+
+                // Copy approved payment modes from version → actual table (for prepaid)
+                meterMapper.deletePaymentModeFromVersion(prepaidMeters, user.getOrgId());
+
+                //   Update the version tables to mark as approved
+                meterMapper.updatePaymentModeVersion(prepaidMeters);
+            }
+    }
+
+    private List<Meter> getMetersByStage(List<Meter> batch, String stage, String newStage) {
+        List<Meter> ms;
+        ms = batch.stream()
+                .filter(m -> stage.equalsIgnoreCase(m.getMeterStage()))
+                .peek(m -> m.setMeterStage(newStage))
+                .peek(m -> m.setStatus("Active"))
+                .toList();
+
+        return ms;
+    }
+
+    private List<Meter> getMetersByStatus(List<Meter> batch, String status) {
+        List<Meter> ms;
+        ms = batch.stream()
+                .filter(m -> status.equalsIgnoreCase(m.getStatus()))
+                .peek(m -> {
+                    if ("Pending-activated".equalsIgnoreCase(status)) {
+                        m.setStatus("Active");
+                    } else if ("Pending-deactivated".equalsIgnoreCase(status)) {
+                        m.setStatus("Deactivated");
+                    }
+                })
+                .toList();
+        return ms;
+    }
+
+    //            if(!approvedCreatedMeters.isEmpty() || !approvedAllocatedMeters.isEmpty()
+//                    || !approvedAssignedMeters.isEmpty() || !approvedMigratedMeters.isEmpty()){
+//                // 1 Update main meter table
+//                meterMapper.updateBatchMeters(batch);
+//
+//                // 2 Update version table (meter_stage, status)
+//                meterMapper.updateBatchVersionMeters(batch);
+//            }
+
+
+    // Set action description
+//            desc = "Meter allocated approved";
+
+    // 3 Handle "Pending-assigned" approvals — move from version → actual tables
+//
+//            if (!approvedMigratedMeters.isEmpty()) {
+//
+//                // Set action description
+//                desc = "Meter migration approved";
+//
+//                // Create a list of prepaid meters
+//                List<Meter> prepaidMeters = approvedAssignedMeters.stream()
+//                        .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
+//                        .toList();
+//
+//                List<Meter> postpaidMeters = approvedAssignedMeters.stream()
+//                        .filter(m -> "Postpaid".equalsIgnoreCase(m.getMeterCategory()))
+//                        .toList();
+//
+//                if (!prepaidMeters.isEmpty()) {
+//                    // Copy approved payment modes from version → actual table (for prepaid)
+//                    meterMapper.copyPaymentModeFromVersion(prepaidMeters, user.getOrgId());
+//
+//                    // Update the version tables to mark as approved
+//                    meterMapper.updatePaymentModeVersion(prepaidMeters);
+//                }
+//
+//                if (!postpaidMeters.isEmpty()) {
+//
+//                    // Copy approved payment modes from version → actual table (for prepaid)
+//                    meterMapper.deletePaymentModeFromVersion(prepaidMeters, user.getOrgId());
+//
+//                    //   Update the version tables to mark as approved
+//                    meterMapper.updatePaymentModeVersion(prepaidMeters);
+//                }
+//
+//            }
+//
+//            if (!approvedAssignedMeters.isEmpty()) {
+//
+//                // Set action description
+//                desc = "Meter assigned approved";
+//
+//                // Copy approved locations from version → actual table
+//                meterMapper.copyAssignLocationFromVersion(approvedAssignedMeters, user.getOrgId());
+//
+//                // Create a list of prepaid meters
+//                List<Meter> prepaidMeters = approvedAssignedMeters.stream()
+//                        .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
+//                        .toList();
+//
+//                if (!prepaidMeters.isEmpty()) {
+//                    // Copy approved payment modes from version → actual table (for prepaid)
+//                    meterMapper.copyPaymentModeFromVersion(prepaidMeters, user.getOrgId());
+//
+//                    //   Update the version tables to mark as approved
+//                    meterMapper.updatePaymentModeVersion(prepaidMeters);
+//                }
+//
+//                // Clean up location version table
+//                meterMapper.updateAssignLocationVersion(approvedAssignedMeters);
+//
+//                // Update customer record (status = active)
+//                customerMapper.changeStatusBulkCustomer(batch, user.getOrgId());
+//
+//            }
+
+//            // 4 Handle child data for pending-created (existing logic)
+//            List<Meter> pending = batch.stream()
+//                    .filter(m -> "Created".equalsIgnoreCase(m.getMeterStage()))
+//                    .toList();
+//
+//            // Update children
+//            if(!pending.isEmpty()) {
+//
+//                // Set action description
+//                desc = "Meter created approved";
+//
+//                updateChildMeterData(batch, user);
+//            }
+
+    //  Audit success
+    ///----------------------
     // Split the batch
 //            List<Meter> approveList = batch.stream()
 //                    .filter(m -> "approve".equalsIgnoreCase(m.getApproveState()))
@@ -2122,14 +2331,90 @@ public class MeterServiceImpl implements MeterService {
             int end = Math.min(i + subSize, batch.size());
             List<Meter> subList = batch.subList(i, end);
             try {
-                success += updateBatchTransactional(subList, user);
+                success += updateBatchTransactional(subList, user, failedRecords);
             } catch (Exception e) {
                 log.error("Sub-batch {} failed: {}", (i / subSize) + 1, e.getMessage());
-                subList.forEach(m -> failedRecords.add(m.getMeterNumber() + " - " + e.getMessage()));
+//                subList.forEach(m -> failedRecords.add(m.getMeterNumber() + " - " + e.getMessage()));
+                if (batch.size() > 50) {
+                    success += approveSinglesFallbackAsync(batch, user, failedRecords);
+                } else {
+                    success += approveSinglesFallback(batch, user, failedRecords);
+                }
             }
         }
         return success;
     }
+
+    public int approveSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (Meter meter : batch) {
+            futures.add(approveSingleAsync(meter, user, failedRecords));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream().mapToInt(CompletableFuture::join).sum();
+    }
+
+    public int approveSinglesFallback(List<Meter> meters, UserModel user, List<String> failedRecords) {
+        int successCount = 0;
+
+        for (Meter meter : meters) {
+            try {
+                log.debug("Fallback single allocation for meter: {}", meter.getMeterNumber());
+                approveSingleTransactional(meter, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                failedRecords.add(String.format(
+                        "%s [Region: %s] (Allocation failed: %s)",
+                        meter.getMeterNumber(),
+//                        meter.getNodeInfo().getRegionId(),
+                        reason
+                ));
+                log.warn("Meter {} failed individually: {}",meter.getMeterNumber(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Async
+    public CompletableFuture<Integer> approveSingleAsync(Meter meter, UserModel user, List<String> failedRecords) {
+        try {
+            approveSingleTransactional(meter, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            failedRecords.add(String.format(
+                    "%s [Region: %s] (Allocation failed: %s)",
+                    meter.getMeterNumber(),
+//                    meter.getNodeInfo().getRegionId(),
+                    reason
+            ));
+            log.warn("Async allocation failed for meter {}: {}",  meter.getMeterNumber(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void approveSingleTransactional(Meter meter, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        // --- Step 2: Insert into main + version tables ---
+        meterMapper.approvedMeterVersion(meter.getMeterStage(), meter.getStatus(), meter.getApproveBy(), meter.getUpdatedAt(), meter.getMeterNumber());
+
+        meterMapper.approveMeter(meter);
+
+        //fetch meter from the database
+        Meter m = meterMapper.findById(meter.getMeterId(), user.getOrgId());
+        //save to audit (mongodb)
+        AuditLog auditLog = buildAuditLog(user, "Meter approved", meterName, m, metadata, "");
+        auditRepository.save(auditLog);
+
+    }
+
 
     /** Update or insert approved child meter data */
     private void updateChildMeterData(List<Meter> batch, UserModel user) {
@@ -2138,14 +2423,13 @@ public class MeterServiceImpl implements MeterService {
         List<PaymentMode> prepaidList = new ArrayList<>();
         List<MDMeterInfo> newMDMeters = new ArrayList<>();
         List<SmartMeterInfo> newSmartMeters = new ArrayList<>();
-
+        System.out.println(">>>>>>>>>>>> updateChildMeterData");
         for (Meter meter : batch) {
             if (meter.getMdMeterInfo() != null) {
                 if ("Pending-created".equalsIgnoreCase(meter.getMdMeterInfo().getMeterStage())) {
                     meter.getMdMeterInfo().setMeterStage("Created");
                     newMDMeters.add(meter.getMdMeterInfo());
                 } else {
-                    System.out.println("nop::: "+meter.getMdMeterInfo().getApproveBy());
                     mdList.add(meter.getMdMeterInfo());
                 }
             }

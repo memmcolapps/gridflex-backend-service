@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
-
+import java.util.List;
 @RestController
 @RequestMapping("/band/service")
 public class BandController {
@@ -78,6 +78,17 @@ public class BandController {
             return handleException(e);
         } catch (MissingServletRequestParameterException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @PutMapping("/bulk-approve")
+    public ResponseEntity<?> bulkApprove(
+            @RequestBody List<Band> band) {
+        try {
+            Map<String, Object> result = service.bulkApprove(band);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
         }
     }
 

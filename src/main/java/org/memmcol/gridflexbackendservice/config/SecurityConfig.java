@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,9 @@ public class  SecurityConfig {
 	@Autowired
 	private CustomAccessDeniedHandler customAccessDeniedHandler;
 
+	@Autowired
+	private ObjectMapper objectMapper;
+
 	private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
 	public void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -78,7 +82,7 @@ public class  SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
-				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance, genericHandler);
+				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance, genericHandler, objectMapper);
 		adminAuthFilter.setFilterProcessesUrl("/auth/service/admin/login");
 
 		// disable csrf
@@ -118,6 +122,7 @@ public class  SecurityConfig {
 						"meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/service/create","/billing/service/meter/reading/service/generate", "/billing/service/meter/reading/service/update",
 						"/billing/service/meter/reading/service/all", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/service/download/template/excel",
 						"/billing/service/meter/reading/service/bulk-upload", "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/download/assign/template/excel",
+						"/meter/service/download/v-assign/template/excel", "/meter/service/download/v-assign/template/excel",
 						"/meter/service/download/assign/template/csv", "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/meter/service/virtual/export", "/meter/service/export",
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",

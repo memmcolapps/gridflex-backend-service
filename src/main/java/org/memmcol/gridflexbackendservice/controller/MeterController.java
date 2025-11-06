@@ -102,6 +102,20 @@ public class MeterController {
             "debit payment plan",
     };
 
+    private static final String[] ASSIGNVHEADERS = {
+            "customer id",
+            "tariff name",
+            "dss asset id",
+            "feeder asset id",
+            "cin",
+            "meter class",
+            "state",
+            "city",
+            "house number",
+            "street name",
+            "fixed energy"
+    };
+
     @PostMapping("/create")
     public ResponseEntity<?> createMeter(@RequestBody Meter meter) {
         try {
@@ -505,6 +519,62 @@ public class MeterController {
             workbook.write(response.getOutputStream());
         }
     }
+
+
+
+
+
+    @GetMapping("/download/v-assign/template/csv")
+    public ResponseEntity<Resource> downloadVirtualAssignCsvTemplate() throws IOException {
+        String sampleRow = "customer-id, tariff test, E3241, E3241, XXXXXXXXX, MD/Non-MD, Kwara, Ilorin, 40, Asa-dam, 160";
+
+        // Build CSV content in memory
+        String csvContent = String.join(",", ASSIGNVHEADERS) + "\n" + sampleRow;
+        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meter_virtual_assign_template.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(resource.contentLength())
+                .body(resource);
+    }
+
+    @GetMapping("/download/v-assign/template/excel")
+    public void downloadVirtualAssignExcelTemplate(HttpServletResponse response) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Meter Bulk Allocate Template");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < ASSIGNVHEADERS.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(ASSIGNVHEADERS[i]);
+            }
+
+            // Optional: Add a sample row
+            Row sampleRow = sheet.createRow(1);
+
+            Object[] sampleData = {
+                    "customer-id", "tariff test", "E3241", "E3241", "XXXXXXXXX","MD/Non-MD", "Kwara", "Ilorin", "40", "Asa-dam", "150"
+            };
+
+            for (int i = 0; i < sampleData.length; i++) {
+                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < HEADERS.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Set response headers
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=meter_virtual_assign_template.xlsx");
+
+            workbook.write(response.getOutputStream());
+        }
+    }
+
 
 
     @PutMapping("/bulk-allocate")

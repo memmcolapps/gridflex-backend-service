@@ -199,6 +199,85 @@ public interface BandMapper {
     @Select("SELECT COUNT(*) FROM debt_percentage WHERE band_id = #{bandId} AND approve_status != 'Deactivated'")
     int getPercentageBandById(UUID bandId);
 
+    @Select({
+            "<script>",
+            "SELECT * FROM bands_version",
+            "WHERE org_id = #{orgId}",
+            "AND (approve_status IN ('Pending-created', 'Pending-edited', 'Pending-activated', 'Pending-deactivated'))",
+            "<if test='bandNames != null and bandNames.size() > 0'>",
+            "  AND band_name IN",
+            "  <foreach collection='bandNames' item='name' open='(' separator=',' close=')'>",
+            "    #{name}",
+            "  </foreach>",
+            "</if>",
+            "</script>"
+    })
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "bandId", column = "band_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdBy", column = "created_by"),
+            @Result(property = "approveBy", column = "approve_by"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    List<Band> getBandsByVersion(@Param("bandNames") List<String> bandNames, @Param("orgId") UUID orgId);
+
+    @Update({
+            "<script>",
+            "UPDATE bands",
+            "SET",
+            "  approve_status = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.approveStatus}",
+            "    </foreach>",
+            "  END,",
+            "  name = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.name}",
+            "    </foreach>",
+            "  END,",
+            "  hour = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.hour}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.updatedAt}",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='bands' item='b' open='(' separator=',' close=')'>",
+            "    #{b.bandId}",
+            "  </foreach>",
+            "</script>"
+    })
+    void updateBatchBands(@Param("bands") List<Band> bands);
+
+    @Update({
+            "<script>",
+            "UPDATE bands",
+            "SET",
+            "  approve_status = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.approveStatus}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.updatedAt}",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='bands' item='b' open='(' separator=',' close=')'>",
+            "    #{b.bandId}",
+            "  </foreach>",
+            "</script>"
+    })
+    void updateBatchVersionBands(List<Band> toUpdate);
+
+
 //    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
 //    String getOrgId(UUID orgId);
 }

@@ -9,6 +9,8 @@ import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.MeterRequest;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -21,11 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
 //import static org.memmcol.gridflexbackendservice.components.GenericHandler.getClientIp;
@@ -396,6 +402,272 @@ public class BandServiceImpl implements BandService {
         bandCache.clear();
         auditCache.clear();
         return ResponseMap.response(status.getSuccessCode(), "Cache cleared successfully", "");
+    }
+
+    @Override
+    public Map<String, Object> bulkApprove(List<Band> bands) {
+        UserModel user = handleUserValidation();
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+
+        if (bands == null || bands.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
+        }
+
+        final int BATCH_SIZE = 500; // Tune as needed for performance
+
+
+        for (int i = 0; i < bands.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, bands.size());
+            List<Band> batch = bands.subList(i, end);
+
+            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
+            System.out.println("Batch size: " + batch.size());
+            batch.forEach(m -> System.out.println("Band in subBatch: " + m.getName()));
+
+            // Collect all meter numbers in this subBatch
+            List<String> bandNames = batch.stream()
+                    .map(b -> b.getName().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            if (bandNames.isEmpty()) {
+                batch.forEach(req -> failedRecords.add(
+                        String.format("%s (Invalid or missing data)",
+                                req.getName())
+                ));
+                continue;
+            }
+
+            // One DB call to fetch all corresponding version records
+            List<Band> versionBatch = bandMapper.getBandsByVersion(bandNames, user.getOrgId());
+
+            if (versionBatch.isEmpty()) {
+                failedRecords.addAll(bandNames.stream()
+                        .map(num -> num + " (Not found in version table)")
+                        .toList());
+                continue;
+            }
+
+            try {
+                prepareUpdateBands(versionBatch, user, failedRecords);
+
+                int updatedCount = updateBatchTransactional(versionBatch, user);
+                successCount += updatedCount;
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
+                int retrySuccess = updateSubBatchTransactional(versionBatch, user, failedRecords);
+                successCount += retrySuccess;
+            }
+        }
+
+        int total = bands.size();
+
+        result.put("totalRecords", total);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + total + " bands approved successfully",
+                result
+        );
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public int updateBatchTransactional(List<Band> batch, UserModel user) {
+        String desc = "";
+        if (batch.isEmpty()) return 0;
+        try {
+            List<Band> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
+            List<Band> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
+            List<Band> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
+            List<Band> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+
+            // Combine all for main update
+            List<Band> toUpdate = Stream.of(
+                            approvedCreatedBands,
+                            approvedActivatedBands,
+                            approvedDeactivatedBands,
+                            approvedEditedBands)
+                    .flatMap(Collection::stream)
+                    .toList();
+
+            if (!toUpdate.isEmpty()) {
+                desc = "Meter migration approved";
+                bandMapper.updateBatchBands(toUpdate);
+                bandMapper.updateBatchVersionBands(toUpdate);
+            }
+
+            //  Audit success
+            auditApproveBatch(batch, user, desc);
+
+            log.info("Batch updated successfully: {}", batch.size());
+            return batch.size();
+
+        } catch (Exception e) {
+            log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+            throw new RuntimeException("Batch transaction failed. Rolled back.", e);
+        }
+    }
+
+    private int updateSubBatchTransactional(List<Band> batch, UserModel user, List<String> failedRecords) {
+        int success = 0;
+        int subSize = 100;
+
+        for (int i = 0; i < batch.size(); i += subSize) {
+            int end = Math.min(i + subSize, batch.size());
+            List<Band> subList = batch.subList(i, end);
+            try {
+                success += updateBatchTransactional(subList, user);
+            } catch (Exception e) {
+                log.error("Sub-batch {} failed: {}", (i / subSize) + 1, e.getMessage());
+//                subList.forEach(m -> failedRecords.add(m.getName() + " - " + e.getMessage()));
+                if (batch.size() > 50) {
+                    success += approveSinglesFallbackAsync(batch, user, failedRecords);
+                } else {
+                    success += approveSinglesFallback(batch, user, failedRecords);
+                }
+            }
+        }
+        return success;
+    }
+
+    public int approveSinglesFallbackAsync(List<Band> batch, UserModel user, List<String> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (Band band : batch) {
+            futures.add(approveSingleAsync(band, user, failedRecords));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream().mapToInt(CompletableFuture::join).sum();
+    }
+
+    public int approveSinglesFallback(List<Band> bands, UserModel user, List<String> failedRecords) {
+        int successCount = 0;
+
+        for (Band band : bands) {
+            try {
+                log.debug("Fallback single allocation for meter: {}", band.getName());
+                approveSingleTransactional(band, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                failedRecords.add(String.format(
+                        "%s [Region: %s] (Allocation failed: %s)",
+                        band.getName(),
+//                        meter.getNodeInfo().getRegionId(),
+                        reason
+                ));
+                log.warn("Meter {} failed individually: {}", band.getName(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Async
+    public CompletableFuture<Integer> approveSingleAsync(Band band, UserModel user, List<String> failedRecords) {
+        try {
+            approveSingleTransactional(band, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            failedRecords.add(String.format(
+                    "%s [Region: %s] (Allocation failed: %s)",
+                    band.getName(),
+//                    meter.getNodeInfo().getRegionId(),
+                    reason
+            ));
+            log.warn("Async allocation failed for meter {}: {}",  band.getName(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+
+    private String extractErrorMessage(Exception e) {
+        String message = e.getMessage();
+
+        if (message == null) return "Unknown error";
+
+        if (message.contains("duplicate key value")) {
+            return "Duplicate record — Band already exists.";
+        }
+        if (message.contains("violates not-null constraint")) {
+            return "Missing required field — one or more mandatory columns are empty.";
+        }
+        if (message.contains("foreign key constraint")) {
+            return "Invalid reference — linked data does not exist.";
+        }
+        if (message.contains("invalid input syntax")) {
+            return "Invalid data type — check number or date format.";
+        }
+
+        // default fallback
+        return message.split("\n")[0];
+    }
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void approveSingleTransactional(Band band, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        // --- Step 2: Insert into main + version tables ---
+        bandMapper.updateBandVer(band);
+
+
+        bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
+
+
+        //fetch meter from the database
+        Band m = bandMapper.getBand(band.getName());
+//            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
+        //save to audit (mongodb)
+        AuditLog auditLog = buildAuditLog(user, "Band approved", bandName, m, metadata);
+        auditRepository.save(auditLog);
+
+    }
+
+    /**
+     * Record audit logs for each approved meter.
+     */
+    private void auditApproveBatch(List<Band> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (Band m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc, bandName, m, metadata);
+            auditRepository.save(auditLog);
+        }
+    }
+
+    private List<Band> getMetersByStatus(List<Band> batch, String stage, String newStage) {
+        List<Band> ms;
+        ms = batch.stream()
+                .filter(m -> stage.equalsIgnoreCase(m.getApproveStatus()))
+                .peek(m -> m.setApproveStatus(newStage))
+                .toList();
+
+        return ms;
+    }
+
+    private void prepareUpdateBands(List<Band> batch, UserModel user, List<String> failedRecords) {
+        Iterator<Band> iterator = batch.iterator();
+        while (iterator.hasNext()) {
+            Band band = iterator.next();
+            if (band.getName() == null || band.getName().trim().isEmpty()) {
+                failedRecords.add("(Missing meter number)");
+                iterator.remove();
+                continue;
+            }
+
+            band.setOrgId(user.getOrgId());
+            band.setApproveBy(user.getId());
+            band.setId(band.getBandId());
+        }
     }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {

@@ -1382,7 +1382,8 @@ public interface MeterMapper {
 //            "AND m.org_id = #{orgId}",
 //            "</script>"
 //    })
-
+// "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+//         "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Select({
             "<script>",
             "SELECT * FROM meters_version m",
@@ -1392,10 +1393,10 @@ public interface MeterMapper {
             "#{meterNumber}",
             "</foreach>",
             "AND (",
-            "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned')",
-            "AND m.status IN ('Active')",
-            "AND m.org_id = #{orgId}",
+            "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned', 'Pending-edited', 'Pending-migrated', 'Pending-detached')",
+            "OR m.status IN ('Pending-deactivated', 'Pending-activated')",
             ")",
+            "AND m.org_id = #{orgId}",
             "</script>"
     })
     @Results({
@@ -1547,31 +1548,36 @@ public interface MeterMapper {
             "<script>",
             "UPDATE meters_version",
             "SET ",
-            "  meter_stage = CASE meter_number",
+            "  meter_stage = CASE meter_id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN #{m.meterStage}",
+            "      WHEN #{m.meterId} THEN #{m.meterStage}",
             "    </foreach>",
             "  END,",
-            "  status = CASE meter_number",
+
+            "  status = CASE meter_id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN #{m.status}",
+            "      WHEN #{m.meterId} THEN #{m.status}",
             "    </foreach>",
             "  END,",
-            "  approve_by = CASE meter_number",
+
+            "  approve_by = CASE meter_id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN CAST(#{m.approveBy} AS UUID)",
+            "      WHEN #{m.meterId} THEN CAST(#{m.approveBy} AS UUID)",
             "    </foreach>",
             "  END,",
-            "  updated_at = CASE meter_number",
+
+            "  updated_at = CASE meter_id",
             "    <foreach collection='batch' item='m'>",
-            "       WHEN #{m.meterNumber} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
+            "       WHEN #{m.meterId} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
             "    </foreach>",
             "  END",
-            "WHERE meter_number IN ",
+
+            "WHERE meter_id IN ",
             "  <foreach collection='batch' item='m' open='(' separator=',' close=')'>",
-            "    #{m.meterNumber}",
+            "    #{m.meterId}",
             "  </foreach>",
             "  AND org_id = #{batch[0].orgId}",
+            "  AND meter_stage ILIKE 'Pending%'",
             "</script>"
     })
     void updateBatchVersionMeters(@Param("batch") List<Meter> batch);
@@ -1580,46 +1586,53 @@ public interface MeterMapper {
             "<script>",
             "UPDATE meters",
             "SET ",
-            "  meter_stage = CASE meter_number",
+            "  meter_stage = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN #{m.meterStage}",
+            "      WHEN #{m.meterId} THEN #{m.meterStage}",
             "    </foreach>",
             "  END,",
-            "  node_id = CASE meter_number",
+
+            "  node_id = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN CAST(#{m.nodeId} AS uuid)",
+            "      WHEN #{m.meterId} THEN CAST(#{m.nodeId} AS uuid)",
             "    </foreach>",
             "  END,",
-            "  dss = CASE meter_number",
+
+            "  dss = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN CAST(#{m.dss} AS uuid)",
+            "      WHEN #{m.meterId} THEN CAST(#{m.dss} AS uuid)",
             "    </foreach>",
             "  END,",
-            "  account_number = CASE meter_number",
+
+            "  account_number = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN #{m.accountNumber}",
+            "      WHEN #{m.meterId} THEN #{m.accountNumber}",
             "    </foreach>",
             "  END,",
-            "  cin = CASE meter_number",
+            "  cin = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN #{m.cin}",
+            "      WHEN #{m.meterId} THEN #{m.cin}",
             "    </foreach>",
             "  END,",
-            "  status = CASE meter_number",
+
+            "  status = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterNumber} THEN #{m.status}",
+            "      WHEN #{m.meterId} THEN #{m.status}",
             "    </foreach>",
             "  END,",
-            "  updated_at = CASE meter_number",
+
+            "  updated_at = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "       WHEN #{m.meterNumber} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
+            "       WHEN #{m.meterId} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
             "    </foreach>",
             "  END",
-            "WHERE meter_number IN ",
+
+            "WHERE id IN ",
             "  <foreach collection='batch' item='m' open='(' separator=',' close=')'>",
-            "    #{m.meterNumber}",
+            "    #{m.meterId}",
             "  </foreach>",
             "  AND org_id = #{batch[0].orgId}",
+            "  AND meter_stage ILIKE '%Pending%'",
             "</script>"
     })
     void updateBatchMeters(@Param("batch") List<Meter> batch);
@@ -2002,30 +2015,111 @@ public interface MeterMapper {
             "<script>",
             "INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at)",
             "SELECT org_id, meter_id, state, city, house_no, street_name, created_at, updated_at",
-            "FROM meter_assign_locations_version",
+            "FROM meter_assign_locations_version malv",
             "WHERE meter_id IN",
             "<foreach collection='list' item='meter' open='(' separator=',' close=')'>",
             "#{meter.meterId}",
             "</foreach>",
-            "AND org_id = #{orgId}",
+            "AND org_id = #{orgId} AND malv.meter_stage ILIKE 'Pending%'",
             "</script>"
     })
     void copyAssignLocationFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
 
 
+//    @Insert({
+//            "<script>",
+//            "INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at)",
+//            "SELECT org_id, meter_id, state, city, house_no, street_name, created_at, updated_at",
+//            "FROM meter_assign_locations_version",
+//            "WHERE meter_id IN",
+//            "<foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+//            "#{meter.meterId}",
+//            "</foreach>",
+//            "AND org_id = #{orgId}",
+//            "</script>"
+//    })
+//    void updateAssignLocationFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+
+    @Update({
+            "<script>",
+            "UPDATE meter_assign_locations AS mal",
+            "SET ",
+            "  state = malv.state,",
+            "  city = malv.city,",
+            "  house_no = malv.house_no,",
+            "  street_name = malv.street_name,",
+            "  updated_at = malv.updated_at",
+            "FROM meter_assign_locations_version AS malv",
+            "WHERE mal.meter_id = malv.meter_id",
+            "  AND mal.org_id = malv.org_id",
+            "  AND malv.meter_stage LIKE 'Pending%'",
+            "  AND mal.meter_id IN ",
+            "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+            "    #{meter.meterId}",
+            "  </foreach>",
+            "  AND mal.org_id = #{orgId}",
+            "</script>"
+    })
+    void editAssignLocationFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
     @Insert({
             "<script>",
-            "INSERT INTO payment_mode (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status)",
-            "SELECT org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, true",
-            "FROM payment_mode_version",
-            "WHERE meter_id IN",
-            "<foreach collection='list' item='meter' open='(' separator=',' close=')'>",
-            "#{meter.meterId}",
-            "</foreach>",
-            "AND org_id = #{orgId}",
+            "INSERT INTO payment_mode (",
+            "  org_id, meter_id, credit_payment_mode, credit_payment_plan, ",
+            "  debit_payment_mode, debit_payment_plan, created_at, updated_at, status",
+            ")",
+            "SELECT ",
+            "  pmv.org_id, pmv.meter_id, pmv.credit_payment_mode, pmv.credit_payment_plan, ",
+            "  pmv.debit_payment_mode, pmv.debit_payment_plan, pmv.created_at, pmv.updated_at, true ",
+            "FROM payment_mode_version pmv ",
+            "WHERE pmv.org_id = #{orgId} ",
+            "  AND pmv.meter_id IN ",
+            "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+            "    #{meter.meterId}",
+            "  </foreach> ",
+            "  AND pmv.meter_stage ILIKE 'Pending%'",
             "</script>"
     })
     void copyPaymentModeFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+
+    @Update({
+            "<script>",
+            "UPDATE payment_mode AS pm",
+            "SET ",
+            "  credit_payment_mode = pmv.credit_payment_mode,",
+            "  credit_payment_plan = pmv.credit_payment_plan,",
+            "  debit_payment_mode = pmv.debit_payment_mode,",
+            "  debit_payment_plan = pmv.debit_payment_plan,",
+            "  updated_at = pmv.updated_at,",
+            "  status = true",
+            "FROM payment_mode_version AS pmv",
+            "WHERE pm.meter_id = pmv.meter_id",
+            "  AND pm.org_id = pmv.org_id",
+            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND pm.meter_id IN ",
+            "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+            "    #{meter.meterId}",
+            "  </foreach>",
+            "  AND pm.org_id = #{orgId}",
+            "</script>"
+    })
+    void updatePaymentModeFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+
+    @Delete({
+            "<script>",
+            "DELETE FROM payment_mode",
+            "WHERE meter_id IN ",
+            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
+            "    #{m.meterId}",
+            "  </foreach>",
+            "  AND org_id = #{orgId}",
+            "</script>"
+    })
+    void deletePaymentModeFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
 
     @Update({
             "<script>",
@@ -2050,7 +2144,7 @@ public interface MeterMapper {
             "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
             "    #{m.meterId}",
             "  </foreach> ",
-            "  AND org_id = #{list[0].orgId}",
+            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
             "</script>"
     })
     void updateAssignLocationVersion(@Param("list") List<Meter> meters);
@@ -2112,10 +2206,159 @@ public interface MeterMapper {
             "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
             "    #{m.meterId}",
             "  </foreach> ",
-            "  AND org_id = #{list[0].orgId}",
+            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
             "</script>"
     })
     void updatePaymentModeVersion(@Param("list") List<Meter> meters);
+
+    @Update({
+            "<script>",
+            "UPDATE meters",
+            "SET",
+            "  sim_number = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.simNumber}",
+            "    </foreach>",
+            "  END,",
+            "  meter_category = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterCategory}",
+            "    </foreach>",
+            "  END,",
+            "  meter_class = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterClass}",
+            "    </foreach>",
+            "  END,",
+            "  meter_type = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterType}",
+            "    </foreach>",
+            "  END,",
+            "  meter_stage = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterStage}",
+            "    </foreach>",
+            "  END,",
+            "  status = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.status}",
+            "    </foreach>",
+            "  END,",
+            "  customer_id = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.customerId} AS uuid)",
+            "    </foreach>",
+            "  END,",
+            "  cin = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.cin}",
+            "    </foreach>",
+            "  END,",
+            "  tariff = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.tariff}",
+            "    </foreach>",
+            "  END,",
+            "  meter_number = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterNumber}",
+            "    </foreach>",
+            "  END,",
+            "  type = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.type}",
+            "    </foreach>",
+            "  END,",
+            "  smart_status = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.smartStatus}",
+            "    </foreach>",
+            "  END,",
+            "  old_sgc = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.oldSgc}",
+            "    </foreach>",
+            "  END,",
+            "  new_sgc = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.newSgc}",
+            "    </foreach>",
+            "  END,",
+            "  old_krn = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.oldKrn}",
+            "    </foreach>",
+            "  END,",
+            "  new_krn = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.newKrn}",
+            "    </foreach>",
+            "  END,",
+            "  old_tariff_index = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.oldTariffIndex}",
+            "    </foreach>",
+            "  END,",
+            "  new_tariff_index = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.newTariffIndex}",
+            "    </foreach>",
+            "  END,",
+            "  account_number = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.accountNumber}",
+            "    </foreach>",
+            "  END,",
+            "  dss = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.dss} AS uuid)",
+            "    </foreach>",
+            "  END,",
+            "  node_id = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.nodeId} AS uuid)",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
+            "    #{m.meterId}",
+            "  </foreach>",
+            "  AND org_id = #{orgId}",
+            "</script>"
+    })
+    void updateDetachBatchMeters(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+    @Delete({
+            "<script>",
+            "DELETE FROM meter_assign_locations",
+            "WHERE meter_id IN",
+            "<foreach collection='meterIds' item='meterId' open='(' separator=',' close=')'>",
+            "  #{meterId}",
+            "</foreach>",
+            "AND org_id = #{orgId}",
+            "</script>"
+    })
+    void removeBulkAssignedLocations(List<Meter> meterIds);
+
+    @Delete({
+            "<script>",
+            "DELETE FROM payment_mode",
+            "WHERE meter_id IN",
+            "<foreach collection='meterIds' item='meterId' open='(' separator=',' close=')'>",
+            "  #{meterId}",
+            "</foreach>",
+            "AND org_id = #{orgId}",
+            "</script>"
+    })
+    void removeBulkPaymentModes(List<Meter> meterIds);
+
+//    void updateDetachBatchMeters(List<Meter> toUpdate);
 
 //    @Update({
 //            "<script>",
