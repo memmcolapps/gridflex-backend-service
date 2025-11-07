@@ -361,7 +361,7 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-            nodeCache.put(cacheKey, roots);
+//            nodeCache.put(cacheKey, roots);
 
             return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), roots);
         } catch (Exception exception) {

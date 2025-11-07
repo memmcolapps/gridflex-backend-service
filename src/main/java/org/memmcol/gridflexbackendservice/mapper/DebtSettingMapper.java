@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -116,7 +117,7 @@ public interface DebtSettingMapper {
 
     @Update("UPDATE liability_cause_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE liability_cause_id = #{liabilityCauseId}")
-    int rejectedLiabilityVersion(String approveStatus, UUID liabilityCauseId, Date updatedAt, UUID approveBy);
+    int rejectedLiabilityVersion(String approveStatus, UUID liabilityCauseId, LocalDateTime updatedAt, UUID approveBy);
 
     @Select("SELECT * FROM liability_cause_version WHERE liability_cause_id = #{liabilityCauseId} AND org_id = #{orgId} AND " +
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
@@ -142,7 +143,7 @@ public interface DebtSettingMapper {
                     " WHERE id = #{liabilityCauseId} "+
                     "</script>"
     })
-    int updateLiabilityCause(String approveStatus, UUID liabilityCauseId, Date updatedAt);
+    int updateLiabilityCause(String approveStatus, UUID liabilityCauseId, LocalDateTime updatedAt);
 
     @Delete("DELETE FROM liability_cause WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
@@ -325,7 +326,7 @@ public interface DebtSettingMapper {
     @Update("UPDATE debt_percentage_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE debt_percentage_id = #{percentageId} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
-    int rejectedPercentageVersion(String approveStatus, UUID percentageId, Date updatedAt, UUID approveBy);
+    int rejectedPercentageVersion(String approveStatus, UUID percentageId, LocalDateTime updatedAt, UUID approveBy);
 
     @Update({
             "<script>",
@@ -336,7 +337,7 @@ public interface DebtSettingMapper {
                     " WHERE id = #{percentageId} "+
                     "</script>"
     })
-    int updatePercentage(String approveStatus, UUID percentageId, Date updatedAt);
+    int updatePercentage(String approveStatus, UUID percentageId, LocalDateTime updatedAt);
 
     @Delete("DELETE FROM debt_percentage WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")

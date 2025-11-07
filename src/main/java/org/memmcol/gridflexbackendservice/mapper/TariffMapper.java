@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -83,7 +84,7 @@ public interface TariffMapper {
     @Update("UPDATE tariffs_version SET approve_status = #{approveStatus}, approved_by = #{approveBy} " +
             "WHERE t_id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
-    int rejectedTariffVersion(String approveStatus, UUID id, Date updatedAt, UUID approveBy);
+    int rejectedTariffVersion(String approveStatus, UUID id, LocalDateTime updatedAt, UUID approveBy);
 
 
     @Select("SELECT org_id, name, tariff_rate, band_id FROM tariffs WHERE org_id = #{orgId} AND approve_status = 'Approved' ORDER BY created_at DESC")
@@ -137,7 +138,7 @@ public interface TariffMapper {
                     " WHERE id = #{id} "+
                     "</script>"
     })
-    int updateTariff(String approveStatus, UUID id, Date updatedAt);
+    int updateTariff(String approveStatus, UUID id, LocalDateTime updatedAt);
 
     @Select("SELECT COUNT(*) FROM tariffs WHERE band_id = #{bandId} AND org_id = #{orgId} AND approve_status != 'Deactivated'")
     int getTariffBandById(UUID bandId, UUID orgId);
