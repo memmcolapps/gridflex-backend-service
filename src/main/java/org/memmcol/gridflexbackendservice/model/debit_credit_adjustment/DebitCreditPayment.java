@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -20,10 +21,10 @@ public class DebitCreditPayment implements Serializable {
     private String paymentMethod;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
+    private LocalDateTime createdAt;
 
     public DebitCreditPayment() {
-        this.createdAt = new Date();
+        this.createdAt = LocalDateTime.now();
     }
 
     public UUID getId() {
@@ -66,11 +67,11 @@ public class DebitCreditPayment implements Serializable {
         this.paymentMethod = paymentMethod;
     }
 
-    public Date getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

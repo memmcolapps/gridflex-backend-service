@@ -2,6 +2,9 @@ package org.memmcol.gridflexbackendservice.model.audit;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -17,10 +20,10 @@ public class AuditLogDto {
     private String reason;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date timeStamp;
+    private LocalDateTime timeStamp;
 
     public AuditLogDto(String id, String type, String username, String email, String groupPermission, String activity,
-                       String userAgent, String ipAddress, Date timeStamp, String reason) {
+                       String userAgent, String ipAddress, LocalDateTime timeStamp, String reason) {
         this.id = id;
         this.type = type;
         this.username = username;
@@ -69,8 +72,8 @@ public class AuditLogDto {
     public String getIpAddress() { return ipAddress; }
     public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
 
-    public Date getTimeStamp() { return timeStamp; }
-    public void setTimeStamp(Date timeStamp) { this.timeStamp = timeStamp; }
+    public LocalDateTime getTimeStamp() { return timeStamp; }
+    public void setTimeStamp(LocalDateTime timeStamp) { this.timeStamp = timeStamp; }
 
     public String getReason() {
         return reason;

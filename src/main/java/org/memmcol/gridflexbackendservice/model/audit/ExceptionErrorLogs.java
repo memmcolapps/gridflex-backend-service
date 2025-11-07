@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 
@@ -21,10 +23,10 @@ public class ExceptionErrorLogs implements Serializable {
     private String error;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
+    private LocalDateTime createdAt;
 
     public ExceptionErrorLogs() {
-        this.createdAt = new Date();
+        this.createdAt = LocalDateTime.now();
     }
 
     public String getId() {
@@ -59,11 +61,11 @@ public class ExceptionErrorLogs implements Serializable {
         this.error = error;
     }
 
-    public Date getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

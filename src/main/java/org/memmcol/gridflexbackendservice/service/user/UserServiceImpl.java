@@ -396,8 +396,8 @@ public class UserServiceImpl implements  UserService {
                 userStream = userStream.filter(u -> {
                     if (u.getCreatedAt() == null) return false;
                     return !u.getCreatedAt()
-                            .toInstant()
-                            .atZone(ZoneId.systemDefault())
+//                            .toInstant()
+//                            .atZone(ZoneId.systemDefault())
                             .toLocalDate()
                             .isBefore(date);
                 });

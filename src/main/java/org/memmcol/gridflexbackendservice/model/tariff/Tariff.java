@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -46,14 +47,14 @@ public class Tariff implements Serializable {
     private Tariff oldTariffInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date created_at;
+    private LocalDateTime created_at;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updated_at;
+    private LocalDateTime updated_at;
 
     public Tariff() {
-        this.created_at = new Date();
-        this.updated_at = new Date();
+        this.created_at = LocalDateTime.now();
+        this.updated_at = LocalDateTime.now();
     }
 
     public UUID getId() {
@@ -168,19 +169,19 @@ public class Tariff implements Serializable {
         this.approve_status = approve_status;
     }
 
-    public Date getCreated_at() {
+    public LocalDateTime getCreated_at() {
         return created_at;
     }
 
-    public void setCreated_at(Date created_at) {
+    public void setCreated_at(LocalDateTime created_at) {
         this.created_at = created_at;
     }
 
-    public Date getUpdated_at() {
+    public LocalDateTime getUpdated_at() {
         return updated_at;
     }
 
-    public void setUpdated_at(Date updated_at) {
+    public void setUpdated_at(LocalDateTime updated_at) {
         this.updated_at = updated_at;
     }
 }

@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +25,7 @@ public interface BandMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "approveStatus", column = "approve_status"),
-            @Result(property = "createdAt", column = "created_at "),
+            @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Band> fetchBands(UUID orgId);
@@ -160,7 +161,7 @@ public interface BandMapper {
     })
     int updateBand(@Param("approveStatus") String approveStatus,
                     @Param("bandId") UUID bandId,
-                    Date updatedAt);
+                   LocalDateTime updatedAt);
 
     @Update({
             "<script>",
@@ -173,7 +174,7 @@ public interface BandMapper {
                     " OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')"+
                     "</script>"
     })
-    int rejectedBandVersion(String approveStatus, UUID bandId, Date updatedAt, UUID approveBy);
+    int rejectedBandVersion(String approveStatus, UUID bandId, LocalDateTime updatedAt, UUID approveBy);
 
     @Select("SELECT * FROM bands_version WHERE name = #{name} AND org_id = #{orgId} AND " +
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
