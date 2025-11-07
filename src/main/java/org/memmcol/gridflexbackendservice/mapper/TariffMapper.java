@@ -62,10 +62,25 @@ public interface TariffMapper {
     })
     Tariff getTariffByName(String name, UUID orgId);
 
-    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
-            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
-    Tariff getTariffVersionByName(String name, UUID orgId);
+//    @Select("SELECT * FROM tariffs_version WHERE name = #{name} AND org_id = #{orgId} AND " +
+//            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
+//            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
+//    Tariff getTariffVersionByName(@Param("bandNames") List<String> bandNames, UUID orgId);
+
+    @Select({
+            "<script>",
+            "SELECT * FROM tariffs_version",
+            "WHERE name IN",
+            "<foreach collection='names' item='n' open='(' separator=',' close=')'>",
+            "  #{n}",
+            "</foreach>",
+            "AND org_id = #{orgId}",
+            "AND approve_status IN ('Pending-created','Pending-edited','Pending-activated','Pending-deactivated')",
+            "</script>"
+    })
+    List<Tariff> getTariffVersionByNames(@Param("names") List<String> names,
+                                         @Param("orgId") UUID orgId);
+
 
     @Select("SELECT * FROM tariffs_version WHERE t_id = #{tariffId} AND org_id = #{orgId} AND " +
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
@@ -143,5 +158,77 @@ public interface TariffMapper {
     @Select("SELECT COUNT(*) FROM tariffs WHERE band_id = #{bandId} AND org_id = #{orgId} AND approve_status != 'Deactivated'")
     int getTariffBandById(UUID bandId, UUID orgId);
 
+    @Update({
+            "<script>",
+            "UPDATE tariffs",
+            "SET",
+            "  approve_status = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.approve_status}",
+            "    </foreach>",
+            "  END,",
+            "  name = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.name}",
+            "    </foreach>",
+            "  END,",
+            "  tariff_type = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.tariff_type}",
+            "    </foreach>",
+            "  END,",
+            "  effective_date = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.effective_date}",
+            "    </foreach>",
+            "  END,",
+            "  tariff_rate = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.tariff_rate}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.updated_at}",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='tariffs' item='b' open='(' separator=',' close=')'>",
+            "    #{b.T_id}",
+            "  </foreach>",
+            "</script>"
+    })
+    void updateBatchTariffs(@Param("tariffs") List<Tariff> tariffs);
+
+    @Update({
+            "<script>",
+            "UPDATE tariffs",
+            "SET",
+            "  approve_status = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.approve_status}",
+            "    </foreach>",
+            "  END,",
+            "  approve_by = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.approve_by}",
+            "    </foreach>",
+            "  END",
+            "  updated_at = CASE id",
+            "    <foreach collection='tariffs' item='b'>",
+            "      WHEN #{b.T_id} THEN #{b.updated_at}",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='tariffs' item='b' open='(' separator=',' close=')'>",
+            "    #{b.T_id}",
+            "  </foreach>",
+            "</script>"
+    })
+    void updateBatchVersionTariffs(List<Tariff> tariffs);
+
+//    void updateBatchTariffs(List<Tariff> toUpdate);
+//
+//    void updateBatchVersionTariffs(List<Tariff> toUpdate);
 }
 

@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.band;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,4 +21,6 @@ public interface BandService {
     Map<String, Object> changeStatus(UUID bandId, Boolean status);
 
     Map<String, Object> clearCache();
+
+    Map<String, Object> bulkApprove(List<Band> band);
 }

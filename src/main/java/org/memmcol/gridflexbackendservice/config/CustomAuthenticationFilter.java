@@ -52,6 +52,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	private GenericHandler genericHandler;
 
+	private ObjectMapper objectMapper;
+
 //	private IMap<String, Boolean> authCache;
 
 	// Define the required headers
@@ -64,12 +66,14 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	public CustomAuthenticationFilter(
 			AuthenticationManager authenticationManager,
 			AuthMapper authMapper, AuditRepository auditRepository,
-			HazelcastInstance hazelcastInstance, GenericHandler genericHandler) {
+			HazelcastInstance hazelcastInstance, GenericHandler genericHandler,
+			ObjectMapper objectMapper) {
 		this.authenticationManager = authenticationManager;
 		this.authMapper = authMapper;
 		this.auditRepository = auditRepository;
 		this.auditCache = hazelcastInstance.getMap("auditCache");
 		this.genericHandler = genericHandler;
+		this.objectMapper = objectMapper;
 //		this.authCache = hazelcastInstance.getMap("auth-Cache");
 	}
 
@@ -168,7 +172,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
 		// Write the response as JSON
-		ObjectMapper objectMapper = new ObjectMapper();
+//		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.writeValue(response.getOutputStream(), resp);
 
 	}
