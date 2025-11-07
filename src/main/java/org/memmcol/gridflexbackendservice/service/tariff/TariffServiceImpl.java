@@ -10,11 +10,8 @@ import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.band.Band;
-import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
-import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -26,17 +23,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.getClientIp;
@@ -420,63 +417,63 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
-    @Transactional
-    @Override
-    public Map<String, Object> bulkApproveTariff(BulkApprovalRequest request) {
-        AuditLog auditNotificationDTO = new AuditLog();
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        try {
-            String ipAddress = getClientIp(httpServletRequest);
-            String userAgent = httpServletRequest.getHeader("User-Agent");
-            UserModel um = handleUserValidation();
-
-                for(UUID id : request.getTariffIds()) {
-                    Tariff t = tariffMapper.getTariffVersionById(id, um.getOrgId());
-                    if(t == null){
-                        throw new GlobalExceptionHandler.NotFoundException(status.getNotFoundDesc());
-                    }
-                    t.setApprove_status("approved");
-//                    t.setStatus(true);
-                    t.setApproved_by(um.getId());
-
-                    // update tariff version main table
-                    tariffMapper.approvedTariffVersion(t);
-
-                    // update tariff main table
-                    tariffMapper.approveTariff(t);
-                    Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
-                    if(tariff == null) {
-                        String desc = t.getApprove_status() + "tariff [" + id + "] does not exist ";
-                        auditNotificationDTO.setCreator(um);
-                        auditNotificationDTO.setDescription(desc);
-                        auditNotificationDTO.setType(tariffName);
-                        auditNotificationDTO.setCreatedTariff(null);
-                        auditRepository.save(auditNotificationDTO);
-                        continue;
-                    }
-                    handleAddCache(tariff);
-                    String desc = capitalizeFirstLetter(tariff.getName()) + t.getApprove_status();
-                    um.setPassword("");
-                    auditNotificationDTO.setCreator(um);
-                    auditNotificationDTO.setDescription(desc);
-                    auditNotificationDTO.setIpAddress(ipAddress);
-                    auditNotificationDTO.setUserAgent(userAgent);
-                    auditNotificationDTO.setType(tariffName);
-                    auditNotificationDTO.setCreatedTariff(tariff);
-                    auditRepository.save(auditNotificationDTO);
-                }
-                return ResponseMap.response(status.getSuccessCode(), tariffName + " approved successfully ", "");
-
-        } catch (Exception exception) {
-            log.error("Error occurred while bulk approving tariff(s): {}", exception.getMessage(), exception);
-            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-            exceptionErrorLogs.setError(exception.toString().trim());
-            exceptionAuditRepository.save(exceptionErrorLogs);
-            throw exception;
-        }
-
-    }
+//    @Transactional
+//    @Override
+//    public Map<String, Object> bulkApproveTariff(BulkApprovalRequest request) {
+//        AuditLog auditNotificationDTO = new AuditLog();
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        try {
+//            String ipAddress = getClientIp(httpServletRequest);
+//            String userAgent = httpServletRequest.getHeader("User-Agent");
+//            UserModel um = handleUserValidation();
+//
+//                for(UUID id : request.getTariffIds()) {
+//                    Tariff t = tariffMapper.getTariffVersionById(id, um.getOrgId());
+//                    if(t == null){
+//                        throw new GlobalExceptionHandler.NotFoundException(status.getNotFoundDesc());
+//                    }
+//                    t.setApprove_status("approved");
+////                    t.setStatus(true);
+//                    t.setApproved_by(um.getId());
+//
+//                    // update tariff version main table
+//                    tariffMapper.approvedTariffVersion(t);
+//
+//                    // update tariff main table
+//                    tariffMapper.approveTariff(t);
+//                    Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
+//                    if(tariff == null) {
+//                        String desc = t.getApprove_status() + "tariff [" + id + "] does not exist ";
+//                        auditNotificationDTO.setCreator(um);
+//                        auditNotificationDTO.setDescription(desc);
+//                        auditNotificationDTO.setType(tariffName);
+//                        auditNotificationDTO.setCreatedTariff(null);
+//                        auditRepository.save(auditNotificationDTO);
+//                        continue;
+//                    }
+//                    handleAddCache(tariff);
+//                    String desc = capitalizeFirstLetter(tariff.getName()) + t.getApprove_status();
+//                    um.setPassword("");
+//                    auditNotificationDTO.setCreator(um);
+//                    auditNotificationDTO.setDescription(desc);
+//                    auditNotificationDTO.setIpAddress(ipAddress);
+//                    auditNotificationDTO.setUserAgent(userAgent);
+//                    auditNotificationDTO.setType(tariffName);
+//                    auditNotificationDTO.setCreatedTariff(tariff);
+//                    auditRepository.save(auditNotificationDTO);
+//                }
+//                return ResponseMap.response(status.getSuccessCode(), tariffName + " approved successfully ", "");
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while bulk approving tariff(s): {}", exception.getMessage(), exception);
+//            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
+//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
+//            exceptionErrorLogs.setError(exception.toString().trim());
+//            exceptionAuditRepository.save(exceptionErrorLogs);
+//            throw exception;
+//        }
+//
+//    }
 
     @Transactional
     @Override
@@ -569,6 +566,275 @@ public class TariffServiceImpl implements TariffService {
             genericHandler.logAndSaveException(exception, "fetching tariff");
             throw exception;
         }
+    }
+
+
+    @Override
+    public Map<String, Object> bulkApproveTariff(List<Tariff> tariffs) {
+        UserModel user = handleUserValidation();
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+
+        if (tariffs == null || tariffs.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
+        }
+
+        final int BATCH_SIZE = 500; // Tune as needed for performance
+
+
+        for (int i = 0; i < tariffs.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, tariffs.size());
+            List<Tariff> batch = tariffs.subList(i, end);
+
+            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
+            System.out.println("Batch size: " + batch.size());
+            batch.forEach(m -> System.out.println("Band in subBatch: " + m.getName()));
+
+            // Collect all meter numbers in this subBatch
+            List<String> tariffNames = batch.stream()
+                    .map(b -> b.getName().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            if (tariffNames.isEmpty()) {
+                batch.forEach(req -> failedRecords.add(
+                        String.format("%s (Invalid or missing data)",
+                                req.getName())
+                ));
+                continue;
+            }
+
+            // One DB call to fetch all corresponding version records
+            List<Tariff> versionBatch = tariffMapper.getTariffVersionByNames(tariffNames, user.getOrgId());
+//            List<Tariff> versionBatch = bandMapper.getBandsByVersion(bandNames, user.getOrgId());
+
+            if (versionBatch.isEmpty()) {
+                failedRecords.addAll(tariffNames.stream()
+                        .map(num -> num + " (Not found in version table)")
+                        .toList());
+                continue;
+            }
+
+            try {
+                prepareUpdateTariffs(versionBatch, user, failedRecords);
+
+                int updatedCount = updateBatchTransactional(versionBatch, user);
+                successCount += updatedCount;
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
+                int retrySuccess = updateSubBatchTransactional(versionBatch, user, failedRecords);
+                successCount += retrySuccess;
+            }
+        }
+
+        int total = tariffs.size();
+
+        result.put("totalRecords", total);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + total + " bands approved successfully",
+                result
+        );
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public int updateBatchTransactional(List<Tariff> batch, UserModel user) {
+        String desc = "";
+        if (batch.isEmpty()) return 0;
+        try {
+            List<Tariff> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
+            List<Tariff> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
+            List<Tariff> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
+            List<Tariff> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+
+            // Combine all for main update
+            List<Tariff> toUpdate = Stream.of(
+                            approvedCreatedBands,
+                            approvedActivatedBands,
+                            approvedDeactivatedBands,
+                            approvedEditedBands)
+                    .flatMap(Collection::stream)
+                    .toList();
+
+            if (!toUpdate.isEmpty()) {
+                desc = "Meter migration approved";
+                tariffMapper.updateBatchTariffs(toUpdate);
+                tariffMapper.updateBatchVersionTariffs(toUpdate);
+//                bandMapper.updateBatchBands(toUpdate);
+//                bandMapper.updateBatchVersionBands(toUpdate);
+            }
+
+            //  Audit success
+            auditApproveBatch(batch, user, desc);
+
+            log.info("Batch updated successfully: {}", batch.size());
+            return batch.size();
+
+        } catch (Exception e) {
+            log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+            throw new RuntimeException("Batch transaction failed. Rolled back.", e);
+        }
+    }
+
+    private int updateSubBatchTransactional(List<Tariff> batch, UserModel user, List<String> failedRecords) {
+        int success = 0;
+        int subSize = 100;
+
+        for (int i = 0; i < batch.size(); i += subSize) {
+            int end = Math.min(i + subSize, batch.size());
+            List<Tariff> subList = batch.subList(i, end);
+            try {
+                success += updateBatchTransactional(subList, user);
+            } catch (Exception e) {
+                log.error("Sub-batch {} failed: {}", (i / subSize) + 1, e.getMessage());
+//                subList.forEach(m -> failedRecords.add(m.getName() + " - " + e.getMessage()));
+                if (batch.size() > 50) {
+                    success += approveSinglesFallbackAsync(batch, user, failedRecords);
+                } else {
+                    success += approveSinglesFallback(batch, user, failedRecords);
+                }
+            }
+        }
+        return success;
+    }
+
+    public int approveSinglesFallbackAsync(List<Tariff> batch, UserModel user, List<String> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (Tariff tariff : batch) {
+            futures.add(approveSingleAsync(tariff, user, failedRecords));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream().mapToInt(CompletableFuture::join).sum();
+    }
+
+    public int approveSinglesFallback(List<Tariff> tariffs, UserModel user, List<String> failedRecords) {
+        int successCount = 0;
+
+        for (Tariff tariff : tariffs) {
+            try {
+                log.debug("Fallback single allocation for meter: {}", tariff.getName());
+                approveSingleTransactional(tariff, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                failedRecords.add(String.format(
+                        "%s [Region: %s] (Allocation failed: %s)",
+                        tariff.getName(),
+//                        meter.getNodeInfo().getRegionId(),
+                        reason
+                ));
+                log.warn("Meter {} failed individually: {}", tariff.getName(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Async
+    public CompletableFuture<Integer> approveSingleAsync(Tariff tariff, UserModel user, List<String> failedRecords) {
+        try {
+            approveSingleTransactional(tariff, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            failedRecords.add(String.format(
+                    "%s [Region: %s] (Allocation failed: %s)",
+                    tariff.getName(),
+//                    meter.getNodeInfo().getRegionId(),
+                    reason
+            ));
+            log.warn("Async allocation failed for meter {}: {}",  tariff.getName(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void approveSingleTransactional(Tariff tariff, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        // --- Step 2: Insert into main + version tables ---
+
+        tariffMapper.approvedTariffVersion(tariff);
+//        bandMapper.updateBandVer(tariff);
+
+        tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+//        bandMapper.updateBand(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+
+
+        //fetch meter from the database
+        Tariff t = tariffMapper.getTariffByName(tariff.getName(), tariff.getOrg_id());
+//        Band m = bandMapper.getBand(tariff.getName());
+//            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
+        //save to audit (mongodb)
+        AuditLog auditLog = buildAuditLog(user, "Band approved", bandName, t, metadata);
+        auditRepository.save(auditLog);
+
+    }
+
+
+    private List<Tariff> getMetersByStatus(List<Tariff> batch, String stage, String newStage) {
+        List<Tariff> ms;
+        ms = batch.stream()
+                .filter(m -> stage.equalsIgnoreCase(m.getApprove_status()))
+                .peek(m -> m.setApprove_status(newStage))
+                .toList();
+
+        return ms;
+    }
+
+    private void prepareUpdateTariffs(List<Tariff> batch, UserModel user, List<String> failedRecords) {
+        Iterator<Tariff> iterator = batch.iterator();
+        while (iterator.hasNext()) {
+            Tariff tariff = iterator.next();
+            if (tariff.getName() == null || tariff.getName().trim().isEmpty()) {
+                failedRecords.add("(Missing meter number)");
+                iterator.remove();
+                continue;
+            }
+
+            tariff.setOrg_id(user.getOrgId());
+            tariff.setApproved_by(user.getId());
+            tariff.setId(tariff.getT_id());
+        }
+    }
+
+    private void auditApproveBatch(List<Tariff> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (Tariff m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc, tariffName, m, metadata);
+            auditRepository.save(auditLog);
+        }
+    }
+
+    private String extractErrorMessage(Exception e) {
+        String message = e.getMessage();
+
+        if (message == null) return "Unknown error";
+
+        if (message.contains("duplicate key value")) {
+            return "Duplicate record — Band already exists.";
+        }
+        if (message.contains("violates not-null constraint")) {
+            return "Missing required field — one or more mandatory columns are empty.";
+        }
+        if (message.contains("foreign key constraint")) {
+            return "Invalid reference — linked data does not exist.";
+        }
+        if (message.contains("invalid input syntax")) {
+            return "Invalid data type — check number or date format.";
+        }
+
+        // default fallback
+        return message.split("\n")[0];
     }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Tariff createdEntity, Map<String, String> metadata) {

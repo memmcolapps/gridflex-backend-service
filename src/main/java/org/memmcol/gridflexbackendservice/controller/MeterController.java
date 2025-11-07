@@ -521,9 +521,6 @@ public class MeterController {
     }
 
 
-
-
-
     @GetMapping("/download/v-assign/template/csv")
     public ResponseEntity<Resource> downloadVirtualAssignCsvTemplate() throws IOException {
         String sampleRow = "customer-id, tariff test, E3241, E3241, XXXXXXXXX, MD/Non-MD, Kwara, Ilorin, 40, Asa-dam, 160";
@@ -575,8 +572,6 @@ public class MeterController {
         }
     }
 
-
-
     @PutMapping("/bulk-allocate")
     public ResponseEntity<Map<String, Object>> bulkAllocateMeter(@RequestParam("file") MultipartFile file) {
         try {
@@ -594,6 +589,19 @@ public class MeterController {
     public ResponseEntity<Map<String, Object>> bulkAssignMeter(@RequestParam("file") MultipartFile file) {
         try {
             Map<String, Object> result =  service.bulkAssign(file);
+
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PutMapping("/bulk-virtual-assign")
+    public ResponseEntity<Map<String, Object>> bulkAssignVirtualMeter(@RequestParam("file") MultipartFile file) {
+        try {
+            Map<String, Object> result =  service.bulkVirtualAssign(file);
 
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {

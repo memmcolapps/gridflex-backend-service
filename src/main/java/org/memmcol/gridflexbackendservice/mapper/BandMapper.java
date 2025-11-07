@@ -264,6 +264,11 @@ public interface BandMapper {
             "      WHEN #{b.bandId} THEN #{b.approveStatus}",
             "    </foreach>",
             "  END,",
+            "  approve_by = CASE id",
+            "    <foreach collection='bands' item='b'>",
+            "      WHEN #{b.bandId} THEN #{b.approveBy}",
+            "    </foreach>",
+            "  END",
             "  updated_at = CASE id",
             "    <foreach collection='bands' item='b'>",
             "      WHEN #{b.bandId} THEN #{b.updatedAt}",
@@ -275,7 +280,7 @@ public interface BandMapper {
             "  </foreach>",
             "</script>"
     })
-    void updateBatchVersionBands(List<Band> toUpdate);
+    void updateBatchVersionBands(List<Band> bands);
 
 
 //    @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")

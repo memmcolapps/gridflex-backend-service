@@ -91,8 +91,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 			}
 			filterChain.doFilter(request, response);  // Proceed if valid API Key
 		} else {
-
-			System.out.println(">>>>heeeeeeeeeeeeee>>>:::");
 			// Token-based authorization for other paths
 			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 

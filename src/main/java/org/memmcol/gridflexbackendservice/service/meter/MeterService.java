@@ -53,4 +53,6 @@ public interface MeterService {
     ByteArrayInputStream exportVirtualMeter();
 
     Map<String, Object> bulkAssign(MultipartFile file) throws IOException;
+
+    Map<String, Object> bulkVirtualAssign(MultipartFile file) throws IOException;
 }

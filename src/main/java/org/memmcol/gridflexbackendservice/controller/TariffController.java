@@ -1,6 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
+//import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -98,9 +98,9 @@ public class TariffController {
     }
 
     @PutMapping("/bulk-approve")
-    public ResponseEntity<?> bulkApproveTariff(@RequestBody BulkApprovalRequest tariffIds) {
+    public ResponseEntity<?> bulkApproveTariff(@RequestBody List<Tariff> tariff) {
         try {
-            Map<String, Object> result = service.bulkApproveTariff(tariffIds);
+            Map<String, Object> result = service.bulkApproveTariff(tariff);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

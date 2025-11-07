@@ -1108,6 +1108,10 @@ public interface MeterMapper {
             "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, #{meterStage}, #{description}, #{createdBy})")
     int assignVersionMeterToLocation(AssignMeterToCustomer request);
 
+    @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, meter_stage, description, created_by) " +
+            "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, #{meterStage}, #{description}, #{createdBy})")
+    void assignVerMeterToLocation(MeterAssignLocation request);
+
     @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
             "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
     int assignPaymentModeVersion(AssignMeterToCustomer request);
@@ -1143,6 +1147,17 @@ public interface MeterMapper {
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 
+    @Insert("INSERT INTO meters_version (" +
+            "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, fixed_energy," +
+            "meter_stage, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
+            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status ) " +
+            "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
+            "#{meter.meterManufacturer}, #{meter.meterType}, #{meter.fixedEnergy}, 'Pending-assigned', 'Active', #{meter.meterNumber}, " +
+            "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus})")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int assignMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
+
 
     @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE meter_number = #{meterNumber} AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
@@ -1169,6 +1184,7 @@ public interface MeterMapper {
     int removePaymentModeInfo(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{meterId}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
     int updateMeter(String meterStage, UUID meterId, Date updatedAt, String status);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
@@ -1258,14 +1274,14 @@ public interface MeterMapper {
             "<script>",
             "INSERT INTO meters (",
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
-            "meter_type, status, type, old_sgc, new_sgc, old_krn, new_krn, ",
+            "meter_type, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, ",
             "old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
             "#{m.orgId}, #{m.meterNumber}, #{m.simNumber}, #{m.meterCategory}, #{m.meterClass}, ",
             "#{m.meterManufacturer}, #{m.meterType}, #{m.status}, #{m.type}, ",
-            "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, ",
+            "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.smartStatus}, #{m.meterStage}",
             ")",
@@ -1279,7 +1295,7 @@ public interface MeterMapper {
             "<script>",
             "INSERT INTO meters_version (",
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
-            "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, ",
+            "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, ",
             "old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, ",
             "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, tariff",
             ") VALUES ",
@@ -1287,7 +1303,7 @@ public interface MeterMapper {
             "(",
             "#{m.orgId}, #{m.meterNumber}, #{m.simNumber}, #{m.meterCategory}, #{m.meterClass}, ",
             "#{m.meterManufacturer}, #{m.meterType}, #{m.meterStage}, #{m.status}, #{m.type}, ",
-            "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, ",
+            "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
             "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.tariff}",
@@ -1482,6 +1498,20 @@ public interface MeterMapper {
     List<Meter> getMetersByMeterNumbers(@Param("meterNumbers") List<String> meterNumbers, @Param("orgId") UUID orgId);
 
 
+//    @Select({
+//            "<script>",
+//            "SELECT * FROM meters m",
+//            "WHERE (m.meter_number, m.cin) IN (",
+//            "<foreach item='req' collection='requests' separator=','>",
+//            "(#{req.meterNumber}, #{req.cin})",
+//            "</foreach>",
+//            ")",
+//            "AND m.meter_stage = 'Unassigned'",
+//            "AND m.status = 'Active'",
+//            "AND m.org_id = #{orgId}",
+//            "ORDER BY m.created_at DESC",
+//            "</script>"
+//    })
     @Select({
             "<script>",
             "SELECT * FROM meters m",
@@ -1526,7 +1556,48 @@ public interface MeterMapper {
     })
     List<Meter> getUnassignMetersByMeterNumbers(@Param("meterNumbers") List<String> meterNumbers, @Param("orgId") UUID orgId);
 
-
+    @Select({
+            "<script>",
+            "SELECT * FROM meters m",
+            "WHERE m.cin IN",
+            "<foreach item='cin' collection='cins' open='(' separator=',' close=')'>",
+            "#{cin}",
+            "</foreach>",
+            "AND (m.status IN ('Active', 'Inactive'))",
+            "AND m.org_id = #{orgId}",
+            "ORDER BY m.created_at DESC",
+            "</script>"
+    })
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "mdMeterInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
+            @Result(property = "smartMeterInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+    })
+    List<Meter> getMetersByCins(@Param("cins") List<String> cin, @Param("orgId") UUID orgId);
 
 //    @Update({
 //            "<script>",
