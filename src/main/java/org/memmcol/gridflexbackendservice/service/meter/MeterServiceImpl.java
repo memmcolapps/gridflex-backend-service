@@ -1928,11 +1928,11 @@ public class MeterServiceImpl implements MeterService {
         if (batch.isEmpty()) return 0;
 
         try {
-            List<Meter> approvedCreatedMeters = getMetersByStage(batch, "Pending-created", "Created");
-            List<Meter> approvedAllocatedMeters = getMetersByStage(batch, "Pending-allocated", "Unassigned");
-            List<Meter> approvedAssignedMeters = getMetersByStage(batch, "Pending-assigned", "Assigned");
-            List<Meter> approvedMigratedMeters = getMetersByStage(batch, "Pending-migrated", "Assigned");
-            List<Meter> approvedDetachedMeters = getMetersByStage(batch, "Pending-detached", "Created");
+            List<Meter> approvedCreatedMeters = getMetersByStage(batch, "Pending-created", "Created", "Active");
+            List<Meter> approvedAllocatedMeters = getMetersByStage(batch, "Pending-allocated", "Unassigned", "Active");
+            List<Meter> approvedAssignedMeters = getMetersByStage(batch, "Pending-assigned", "Assigned", "Active");
+            List<Meter> approvedMigratedMeters = getMetersByStage(batch, "Pending-migrated", "Assigned","Active");
+            List<Meter> approvedDetachedMeters = getMetersByStage(batch, "Pending-detached", "Created", "Deactivated");
             List<Meter> approvedMetersStatus = getMetersByStatus(batch, "Pending-deactivated");
 
             // Handle "Pending-edited" dynamically
@@ -1976,6 +1976,8 @@ public class MeterServiceImpl implements MeterService {
                 meterMapper.updateBatchVersionMeters(detach);
                 meterMapper.removeBulkAssignedLocations(detach);
                 meterMapper.removeBulkPaymentModes(detach);
+//                meterMapper.updatePaymentModeVersion(detach);
+//                meterMapper.updateAssignLocationVersion(detach);
             }
 
             // --- Migration ---
@@ -2085,12 +2087,12 @@ public class MeterServiceImpl implements MeterService {
             }
     }
 
-    private List<Meter> getMetersByStage(List<Meter> batch, String stage, String newStage) {
+    private List<Meter> getMetersByStage(List<Meter> batch, String stage, String newStage, String status) {
         List<Meter> ms;
         ms = batch.stream()
                 .filter(m -> stage.equalsIgnoreCase(m.getMeterStage()))
                 .peek(m -> m.setMeterStage(newStage))
-                .peek(m -> m.setStatus("Active"))
+                .peek(m -> m.setStatus(status))
                 .toList();
 
         return ms;
@@ -3538,6 +3540,7 @@ public class MeterServiceImpl implements MeterService {
         if (batch.isEmpty()) return 0;
 
         try {
+
             // === Step 1: Update main meter table ===
             meterMapper.insertMeters(batch);
 
@@ -3715,12 +3718,11 @@ public class MeterServiceImpl implements MeterService {
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
                 failedRecords.add(String.format(
-                        "%s [Region: %s] (Allocation failed: %s)",
-                        meter.getMeterNumber(),
-//                        meter.getNodeInfo().getRegionId(),
+                        "%s Assigned failed: %s",
+                        meter.getCin(),
                         reason
                 ));
-                log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
+                log.warn("Meter {} failed individually: {}", meter.getCin(), reason);
             }
         }
 
@@ -3753,8 +3755,7 @@ public class MeterServiceImpl implements MeterService {
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
             failedRecords.add(String.format(
-                    "%s [Cin: %s] (Assign failed: %s)",
-                    meter.getMeterNumber(),
+                    "%s Cin assign failed (%s)",
                     meter.getCin(),
                     reason
             ));
