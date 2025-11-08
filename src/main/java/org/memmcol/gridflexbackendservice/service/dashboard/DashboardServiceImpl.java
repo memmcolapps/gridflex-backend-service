@@ -19,10 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.Month;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,7 +57,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     if (year == null || year.isEmpty() || m.getCreatedAt() == null)
                         return true;
 
-                    Instant instant = m.getCreatedAt().toInstant();
+                    LocalDateTime instant = m.getCreatedAt();
                     ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
                     int meterYear = zoned.getYear();
                     return String.valueOf(meterYear).equals(year);
@@ -120,13 +117,13 @@ public class DashboardServiceImpl implements  DashboardService{
                 .filter(m -> m.getCustomerId() != null && m.getUpdatedAt() != null)
                 .collect(Collectors.groupingBy(
                         m -> {
-                            Instant instant = m.getUpdatedAt().toInstant();
+                            LocalDateTime instant = m.getUpdatedAt();
                             ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
                             return zoned.getYear();
                         },
                         Collectors.groupingBy(
                                 m -> {
-                                    Instant instant = m.getUpdatedAt().toInstant();
+                                    LocalDateTime instant = m.getUpdatedAt();
                                     ZonedDateTime zoned = instant.atZone(ZoneId.systemDefault());
                                     return zoned.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH); // e.g. "October"
                                 },
