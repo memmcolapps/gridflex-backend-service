@@ -160,7 +160,7 @@ public class BillingServiceImpl implements BillingService {
             MeterReadingSheet lastReadingRecord = readingMetersMapper.getLastReadingByMeterId(meterId,operatorOrgId);
             MeterReadingSheet nonZeroCurrentReading = readingMetersMapper.getNonZeroCurrentReadingByMeterId(meterId,operatorOrgId);
 
-            Date lastReadingDate = (lastReadingRecord != null)
+            LocalDateTime lastReadingDate = (lastReadingRecord != null)
                     ? lastReadingRecord.getCurrentReadingDate()
                     : null;
 
@@ -168,9 +168,9 @@ public class BillingServiceImpl implements BillingService {
             meterReadingSheet.setOrgId(orgId);
             meterReadingSheet.setNodeId(nodeId);
             meterReadingSheet.setTariffId(tariffId);
-            meterReadingSheet.setCurrentReadingDate(new Date());
-            meterReadingSheet.setCreatedAt(new Date());
-            meterReadingSheet.setUpdatedAt(new Date());
+//            meterReadingSheet.setCurrentReadingDate(new Date());
+//            meterReadingSheet.setCreatedAt(new Date());
+//            meterReadingSheet.setUpdatedAt(new Date());
 
             BigDecimal maxReading = new BigDecimal("999999");
             BigDecimal current = meterReadingSheet.getCurrentReading() != null

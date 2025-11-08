@@ -26,29 +26,29 @@ public class MeterReadingSheet implements Serializable {
     private BigDecimal currentReading;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date currentReadingDate;
+    private LocalDateTime currentReadingDate;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date lastReadingDate;
+    private LocalDateTime lastReadingDate;
 
     private String billMonth;
     private String billYear;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
+    private LocalDateTime createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedAt;
+    private LocalDateTime updatedAt;
 
     private String tariffType;
     private String name;
     private String meterClass;
 
     public MeterReadingSheet() {
-        this.currentReadingDate = new Date();
-        this.lastReadingDate = new Date();
-        this.createdAt = new Date();
-        this.updatedAt = new Date();
+        this.currentReadingDate = LocalDateTime.now();
+        this.lastReadingDate = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
 
@@ -125,20 +125,36 @@ public class MeterReadingSheet implements Serializable {
         this.currentReading = currentReading;
     }
 
-    public Date getCurrentReadingDate() {
+    public LocalDateTime getCurrentReadingDate() {
         return currentReadingDate;
     }
 
-    public void setCurrentReadingDate(Date currentReadingDate) {
+    public void setCurrentReadingDate(LocalDateTime currentReadingDate) {
         this.currentReadingDate = currentReadingDate;
     }
 
-    public Date getLastReadingDate() {
+    public LocalDateTime getLastReadingDate() {
         return lastReadingDate;
     }
 
-    public void setLastReadingDate(Date lastReadingDate) {
+    public void setLastReadingDate(LocalDateTime lastReadingDate) {
         this.lastReadingDate = lastReadingDate;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public String getBillMonth() {
@@ -157,21 +173,6 @@ public class MeterReadingSheet implements Serializable {
         this.billYear = billYear;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 
     public String getTariffType() {
         return tariffType;

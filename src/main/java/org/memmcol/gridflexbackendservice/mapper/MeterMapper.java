@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeeder
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -1123,10 +1124,10 @@ public interface MeterMapper {
     int assignPaymentModeWhenMigrationToPrepaid(PaymentMode request);
 
     @Select("UPDATE meters_version set meter_category = #{value}, meter_stage = #{meterStatge}, description = #{description}, update_at = #{updateAt} WHERE org_id = #{orgId} AND id = {meterId}")
-    void updateMeterVersionCategory(String value, UUID orgId, UUID meterId, String meterStage, Date updateAt);
+    void updateMeterVersionCategory(String value, UUID orgId, UUID meterId, String meterStage, LocalDateTime updateAt);
 
     @Select("UPDATE meters SET meter_stage = #{meterStage}, updated_at = #{updateAt} WHERE org_id = #{orgId} AND id = #{meterId}")
-    void updateMeterCategory(UUID orgId, UUID meterId, String meterStage, Date updateAt);
+    void updateMeterCategory(UUID orgId, UUID meterId, String meterStage, LocalDateTime updateAt);
 
     @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} " +
             "AND (type = 'dss' OR type = 'feeder line')")
@@ -1163,13 +1164,13 @@ public interface MeterMapper {
             "WHERE meter_number = #{meterNumber} AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
             "OR status = 'Pending-deactivated' OR status = 'Pending-activated')")
-    int approvedMeterVersion(String meterStage, String status, UUID approveBy, Date updatedAt, String meterNumber);
+    int approvedMeterVersion(String meterStage, String status, UUID approveBy, LocalDateTime updatedAt, String meterNumber);
 
     @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy} WHERE meter_number = #{meterNumber} " +
             "AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
             "OR status = 'Pending-deactivated' OR status = 'Pending-activated')")
-    int rejectedMeterVersion(String meterStage, String meterNumber, Date updatedAt, UUID approveBy, String status);
+    int rejectedMeterVersion(String meterStage, String meterNumber, LocalDateTime updatedAt, UUID approveBy, String status);
 
     @Delete("DELETE FROM meters WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
             "meter_stage IN ('Pending-created','Pending-assigned')")
@@ -1177,7 +1178,7 @@ public interface MeterMapper {
 
     @Update("UPDATE meter_assign_locations_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
             "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
-    int updateMeterAssignedLocation(String meterStage, UUID meterId, UUID orgId, Date updatedAt, UUID approveBy);
+    int updateMeterAssignedLocation(String meterStage, UUID meterId, UUID orgId, LocalDateTime updatedAt, UUID approveBy);
 
     @Update("UPDATE payment_mode_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
         "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
@@ -1185,15 +1186,15 @@ public interface MeterMapper {
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{meterId}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    int updateMeter(String meterStage, UUID meterId, Date updatedAt, String status);
+    int updateMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated','Pending-assigned', 'Pending-detached', 'Pending-migrated')")
-    int updateMDMeter(String meterStage, UUID meterId, Date updatedAt, String status, UUID approveBy);
+    int updateMDMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status, UUID approveBy);
 
     @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
-    int updateSmartMeter(String meterStage, UUID meterId, Date updatedAt, String status, UUID approveBy);
+    int updateSmartMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status, UUID approveBy);
 
     @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
@@ -1201,7 +1202,7 @@ public interface MeterMapper {
     int approveSmartMeterInfoVersion(SmartMeterInfo smartMeterInfo);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{id}")
-    int assignedMeterToCustomer(String meterStage, String status, UUID id, Date updatedAt);
+    int assignedMeterToCustomer(String meterStage, String status, UUID id, LocalDateTime updatedAt);
 
     @Select("SELECT parent_id FROM substation_trans_feeder_lines WHERE node_id = #{nodeId}")
     UUID getFeederParentNode(UUID nodeId);
