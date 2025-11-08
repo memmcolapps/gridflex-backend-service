@@ -103,13 +103,6 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             handleAddCache(liabilityCause);
             AuditLog auditLog = buildAuditLog(um, desc, lc, liabilityCause, metadata);
             auditRepository.save(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setType(lc);
-//            auditNotificationDTO.setLiabilityCause(liabilityCause);
-//            auditRepository.save(auditNotificationDTO);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);

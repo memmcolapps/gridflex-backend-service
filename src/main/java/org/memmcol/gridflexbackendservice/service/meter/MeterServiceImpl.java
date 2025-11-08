@@ -41,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -220,7 +221,7 @@ public class MeterServiceImpl implements MeterService {
             request.setDss(existingMeter.getDss());
             request.setCin(existingMeter.getCin());
             request.setAccountNumber(existingMeter.getAccountNumber());
-            request.setOrgId(existingMeter.getOrgId());
+            request.setOrgId(user.getOrgId());
             request.setMeterId(existingMeter.getMeterId());
             request.setCreatedBy(user.getId());
             request.setCustomerId(existingMeter.getCustomerId());
@@ -367,7 +368,7 @@ public class MeterServiceImpl implements MeterService {
                 meterStream = meterStream.filter(u -> {
                     if (u.getCreatedAt() == null) return false;
                     return !u.getCreatedAt()
-                            .toInstant()
+//                            .toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
                             .isBefore(date);
@@ -1142,6 +1143,8 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
         }
 
+        int c = customerMapper.totalCustomer(meter.getCustomerId());
+
         if(!"Pending-detached".equalsIgnoreCase(stage)){
 
             if("Pending-assigned".equalsIgnoreCase(stage)){
@@ -1159,10 +1162,13 @@ public class MeterServiceImpl implements MeterService {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
                 //Change customer status to Active
-                int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
-                if (customerStatus == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+                if(c <= 1) {
+                    int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
+                    if (customerStatus == 0) {
+                        throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+                    }
                 }
+
             }
 
             //approve meter location
@@ -1200,7 +1206,20 @@ public class MeterServiceImpl implements MeterService {
             if(meterMapper.removePaymentMode(meter.getMeterId()) == 0){
                 throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
             }
+//
+//            if(meterMapper.updateMeterAssignedLocation(meter.getMeterStage(), meter.getMeterId(), user.getOrgId(), meter.getUpdatedAt(), meter.getApproveBy()) == 0){
+//                throw new GlobalExceptionHandler.NotFoundException("Update meter assigned location failed");
+//            }
+//            if(meterMapper.removePaymentModeInfo(meter.getMeterStage(), meter.getPaymentMode().getMeterId(), meter.getOrgId(), user.getId()) == 0){
+//                throw new GlobalExceptionHandler.NotFoundException("Update meter payment mode failed");
+//            }
 
+            if(c <= 1) {
+                int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
+                if (customerStatus == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+                }
+            }
         }
 
 
@@ -1294,13 +1313,13 @@ public class MeterServiceImpl implements MeterService {
 
         //Update assigned location approve status to rejected in meter_assign_locations_version table
         if(meter.getMeterAssignLocation() != null) {
-            int result = meterMapper.updateMeterAssignedLocation("Rejected", meter.getMeterAssignLocation().getMeterId(), meter.getOrgId(), meter.getUpdatedAt(), user.getId());
+            int result = meterMapper.updateMeterAssignedLocation("Rejected", meter.getMeterAssignLocation().getMeterId(), user.getOrgId(), meter.getUpdatedAt(), user.getId());
             if(result == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assigned location failed");
         }
 
         if(meter.getPaymentMode() != null){
             //Update smart meter Info, mater-stage to rejected in payment_mode_version table
-            int result = meterMapper.removePaymentModeInfo("Rejected", meter.getPaymentMode().getMeterId(), meter.getOrgId(), user.getId());
+            int result = meterMapper.removePaymentModeInfo("Rejected", meter.getPaymentMode().getMeterId(), user.getOrgId(), user.getId());
             if(result == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assign payment mode failed");
         }
 
@@ -1308,7 +1327,7 @@ public class MeterServiceImpl implements MeterService {
         if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")){
 
             //Delete meter record in meters table
-           int res = meterMapper.removeMeter(meter.getMeterNumber(), meter.getOrgId());
+           int res = meterMapper.removeMeter(meter.getMeterNumber(), user.getOrgId());
 
             //Update MD meter Info, mater-stage to rejected in md_meters_info_version table
             if ("md".equalsIgnoreCase(meter.getMeterClass()) && !st.equalsIgnoreCase("Pending-allocated")) {
@@ -1325,7 +1344,7 @@ public class MeterServiceImpl implements MeterService {
         }
         else if (meter.getMeterStage().trim().equalsIgnoreCase("Pending-assigned")
                 && meter.getType().equalsIgnoreCase("virtual")) {
-            int u = meterMapper.removeMeter(meter.getMeterNumber(), meter.getOrgId());
+            int u = meterMapper.removeMeter(meter.getMeterNumber(), user.getOrgId());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "ed failed");
         }
         else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-allocated"))
@@ -1416,8 +1435,8 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
             }
 
-            verifyMeter.setCreatedAt(new Date());
-            verifyMeter.setUpdatedAt(new Date());
+            verifyMeter.setCreatedAt(LocalDateTime.now());
+            verifyMeter.setUpdatedAt(LocalDateTime.now());
 
             String desc = meterNumber + " meter allocated to " + regionId;
 
@@ -1787,7 +1806,7 @@ public class MeterServiceImpl implements MeterService {
 //        }
 
         //fetch meter from the database
-        Meter m = meterMapper.getVersionMeter(meter.getOrgId(), null, meter.getMeterNumber(), null);
+        Meter m = meterMapper.getVersionMeter(user.getOrgId(), null, meter.getMeterNumber(), null);
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Allocated", meterName, m, metadata, "");
@@ -2756,7 +2775,7 @@ public class MeterServiceImpl implements MeterService {
         }
 
         // --- Step 4: Audit logging ---
-        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), meter.getOrgId());
+        Meter newMeter = meterMapper.findByIdVersion(meter.getId(), user.getOrgId());
         AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
         auditRepository.save(auditLog);
 
@@ -3689,7 +3708,7 @@ public class MeterServiceImpl implements MeterService {
 
         for (Meter meter : batch) {
             try {
-                log.debug("Fallback single allocation for meter: {}", meter.getMeterNumber());
+                log.debug("Fallback single assign for meter: {}", meter.getMeterNumber());
                 assignSingleTransactional(meter, user);
                 successCount++;
             } catch (Exception e) {
@@ -3712,7 +3731,7 @@ public class MeterServiceImpl implements MeterService {
 
         for (Meter meter : batch) {
             try {
-                log.debug("Fallback single allocation for meter: {}", meter.getMeterNumber());
+                log.debug("Fallback single assign for meter: {}", meter.getMeterNumber());
                 assignVirtualSingleTransactional(meter, user);
                 successCount++;
             } catch (Exception e) {
@@ -3775,7 +3794,7 @@ public class MeterServiceImpl implements MeterService {
         meterMapper.assignVerMeterToLocation(meter.getMeterAssignLocation());
 
         //fetch meter from the database
-        Meter m = meterMapper.getVersionMeter(meter.getOrgId(), null, meter.getMeterNumber(), null);
+        Meter m = meterMapper.getVersionMeter(user.getOrgId(), null, meter.getMeterNumber(), null);
 
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Assigned", meterName, m, metadata, "");
@@ -3794,7 +3813,7 @@ public class MeterServiceImpl implements MeterService {
         meterMapper.assignVerMeterToLocation(meter.getMeterAssignLocation());
 
         //fetch meter from the database
-        Meter m = meterMapper.getVersionMeter(meter.getOrgId(), null, meter.getMeterNumber(), null);
+        Meter m = meterMapper.getVersionMeter(user.getOrgId(), null, meter.getMeterNumber(), null);
 
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Assigned", meterName, m, metadata, "");
@@ -3823,7 +3842,6 @@ public class MeterServiceImpl implements MeterService {
                 meter.setDssAssetId(getStringCellValue(row.getCell(3)));
                 meter.setFeederAssetId(getStringCellValue(row.getCell(4)));
                 meter.setCin(getStringCellValue(row.getCell(5)));
-//                meter.setAccountNumber(getStringCellValue(row.getCell(6)));
                 meter.setState(getStringCellValue(row.getCell(6)));
                 meter.setCity(getStringCellValue(row.getCell(7)));
                 meter.setHouseNo(getStringCellValue(row.getCell(8)));
@@ -3854,7 +3872,6 @@ public class MeterServiceImpl implements MeterService {
 
                 meter.setFeederAssetId(record.get("feeder asset id"));
                 meter.setCin(record.get("cin"));
-//                meter.setAccountNumber(record.get("account number"));
                 meter.setState(record.get("state"));
 
                 meter.setCity(record.get("city"));
