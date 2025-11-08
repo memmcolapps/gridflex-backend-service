@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Slf4j
 @Component
@@ -63,7 +66,11 @@ public class GenericHandler {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logIncidentReport(String msg) {
+        UserModel user = handleUserValidation();
+
         IncidentReport incidentReport = new IncidentReport();
+        incidentReport.setOrgId(user.getOrgId());
+        incidentReport.setUserId(user.getId());
         incidentReport.setMessage(msg);
         incidentReport.setType("auto");
         incidentReport.setStatus(false);
