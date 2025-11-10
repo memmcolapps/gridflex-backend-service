@@ -198,124 +198,6 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
-
-//    @Transactional
-//    @Override
-//    public Map<String, Object> createUser(CreateUserRequest request) {
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        AuditLog auditNotificationDTO = new AuditLog();
-//        try {
-//
-//            String ipAddress = getClientIp(httpServletRequest);
-//            String userAgent = httpServletRequest.getHeader("User-Agent");
-//            String endpoint = httpServletRequest.getRequestURI();
-//            String httpMethod = httpServletRequest.getMethod();
-//
-//            UserModel um = handleUserValidation();
-//
-//            UserModel operator = request.getUser();
-//            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
-//
-//            // check if operator exist
-//            UserModel isOperator = userMapper.findByEmail(operator.getEmail(), um.getOrgId());
-//            if (isOperator != null){
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getExistDesc());
-//            }
-//
-//            // check if groupId exist
-//            Group isGroupId = userMapper.checkGroupId(request.getGroupId(), um.getOrgId());
-//            if (isGroupId == null){
-//                throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
-//            }
-//            if(isGroupId.getStatus()) {
-//                throw new GlobalExceptionHandler.NotFoundException("Group deactivated and can not be assigned");
-//            }
-//
-//            operator.setOrgId(um.getOrgId());
-//
-//            // Insert into operators
-//            userMapper.insertUser(operator);
-//            UUID userId = operator.getId();
-//
-//            userMapper.assignUserToGroup(userId, request.getGroupId(), um.getOrgId());
-//
-//            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
-//            String desc = "User newly created";
-//            user.setPassword("");
-//            handleAddCache(user);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType(userName);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setCreatedUser(user);
-//            auditNotificationDTO.setEndpoint(endpoint);
-//            auditNotificationDTO.setHttpMethod(httpMethod);
-//            auditRepository.save(auditNotificationDTO);
-//
-//            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
-//        } catch (Exception exception) {
-//            log.error("Error occurred while creating user [ACTION]: {}", exception.getMessage(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//            throw exception;
-//        }
-//
-//    }
-//
-//    @Transactional
-//    @Override
-//    public Map<String, Object> updateUser(UserModel request) {
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        AuditLog auditNotificationDTO = new AuditLog();
-//        try {
-//            String ipAddress = getClientIp(httpServletRequest);
-//            String userAgent = httpServletRequest.getHeader("User-Agent");
-//            String endpoint = httpServletRequest.getRequestURI();
-//            String httpMethod = httpServletRequest.getMethod();
-//
-//            UserModel um = handleUserValidation();
-//
-//            // check if operator exist
-//            UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
-//            if (isOperator == null){
-//                throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
-//            }
-//
-//            request.setOrgId(um.getOrgId());
-//
-//            // Insert into operators
-//            userMapper.updateUser(request);
-//            UUID userId = request.getId();
-//
-//            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
-//            String desc = "User edited";
-//            user.setPassword("");
-//            handleAddCache(user);
-//
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setType(userName);
-//            auditNotificationDTO.setCreatedUser(user);
-//            auditNotificationDTO.setEndpoint(endpoint);
-//            auditNotificationDTO.setHttpMethod(httpMethod);
-//            auditRepository.save(auditNotificationDTO);
-//
-//            return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
-//        } catch (Exception exception) {
-//            log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to fetching user");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//            throw exception;
-//        }
-//    }
-
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getUsers(
@@ -609,16 +491,35 @@ public class UserServiceImpl implements  UserService {
                 userMapper.insertModule(module);  // ID will be set here
                 UUID moduleId = module.getId();   // Auto-generated ID
 
-                for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
-                    SubModule subModule = new SubModule();
-                    subModule.setName(smwp.getName());
-                    subModule.setAccess(smwp.getAccess());
-                    subModule.setModuleId(moduleId);
-                    subModule.setOrgId(orgId);
+                if(moduleWithSubs.getSubModules() != null || !moduleWithSubs.getSubModules().isEmpty()) {
+                    for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
+                        SubModule subModule = new SubModule();
+                        subModule.setName(smwp.getName());
+                        subModule.setAccess(smwp.getAccess());
+                        subModule.setModuleId(moduleId);
+                        subModule.setOrgId(orgId);
 
-                    /// Create and insert submodule
-                    userMapper.insertSubModule(subModule);
+                        /// Create and insert submodule
+                        userMapper.insertSubModule(subModule);
+                    }
+                } else {
+                    if(moduleWithSubs.getName().equalsIgnoreCase("hes")
+                            || moduleWithSubs.getName().equalsIgnoreCase("vending")
+                            || moduleWithSubs.getName().equalsIgnoreCase("billing")
+                            || moduleWithSubs.getName().equalsIgnoreCase("data management")
+                            || moduleWithSubs.getName().equalsIgnoreCase("user management")) {
+                        SubModule subModule = new SubModule();
+                        subModule.setName(moduleWithSubs.getName());
+                        subModule.setAccess(moduleWithSubs.getAccess());
+                        subModule.setModuleId(moduleId);
+                        subModule.setOrgId(orgId);
+
+                        /// Create and insert submodule
+                        userMapper.insertSubModule(subModule);
+                    }
                 }
+
+
             }
 
             /// Assign permission to the group created
