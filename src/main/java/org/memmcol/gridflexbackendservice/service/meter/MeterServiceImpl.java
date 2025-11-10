@@ -15,6 +15,7 @@ import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
@@ -1833,9 +1834,9 @@ public class MeterServiceImpl implements MeterService {
             int end = Math.min(i + BATCH_SIZE, meters.size());
             List<MeterRequest> batch = meters.subList(i, end);
 
-            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
-            System.out.println("Batch size: " + batch.size());
-            batch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
+//            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
+//            System.out.println("Batch size: " + batch.size());
+//            batch.forEach(m -> System.out.println("Meter in subBatch: " + m.getMeterNumber()));
 
             // Collect all meter numbers in this subBatch
             List<String> meterNumbers = batch.stream()
@@ -1854,12 +1855,26 @@ public class MeterServiceImpl implements MeterService {
             // One DB call to fetch all corresponding version records
             List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
 
-            if (versionBatch.isEmpty()) {
-                failedRecords.addAll(meterNumbers.stream()
-                        .map(num -> num + " (Not found in version table)")
-                        .toList());
-                continue;
-            }
+//            if (versionBatch.isEmpty()) {
+//                failedRecords.addAll(meterNumbers.stream()
+//                        .map(num -> num + " (Not found or does not have a pending state)")
+//                        .toList());
+//                continue;
+//            }
+
+            Set<String> foundNames = versionBatch.stream()
+                    .map(Meter::getMeterNumber)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            List<String> missingNames = meterNumbers.stream()
+                    .filter(name -> !foundNames.contains(name.trim()))
+                    .toList();
+
+            // Record missing/invalid tariffs
+            missingNames.forEach(name ->
+                    failedRecords.add(name + " (Not found or does not pending state)")
+            );
 
             try {
                 prepareUpdateMeters(versionBatch, user, failedRecords);

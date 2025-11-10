@@ -458,7 +458,7 @@ public class BandServiceImpl implements BandService {
 
             // Record missing/invalid tariffs
             missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found in version table or failed validation)")
+                    failedRecords.add(name + " (Not found or does not pending state)")
             );
 
             if (versionBatch.isEmpty()) {
