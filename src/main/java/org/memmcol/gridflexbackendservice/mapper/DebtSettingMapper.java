@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -13,7 +14,7 @@ import java.util.UUID;
 @Mapper
 public interface DebtSettingMapper {
 
-    @Select("SELECT * FROM liability_cause WHERE name = #{name} AND org_id = #{orgId} OR code = #{code}")
+    @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId} AND (name = #{name} OR code = #{code})")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -377,4 +378,174 @@ public interface DebtSettingMapper {
             @Result(column = "updated_at", property = "updatedAt")
     })
     PercentageRange getPercentageVersionByCode(String code, UUID orgId);
+
+    @Select({
+            "<script>",
+            "SELECT * FROM liability_cause_version",
+            "WHERE org_id = #{orgId}",
+            "AND name IN",
+            "<foreach item='name' collection='lcNames' open='(' separator=',' close=')'>",
+            "#{name}",
+            "</foreach>",
+            "AND approve_status IN ('Pending-created', 'Pending-edited', 'Pending-activated', 'Pending-deactivated')",
+            "</script>"
+    })
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    List<LiabilityCause> getLiabilityCauseBulkVersion(@Param("lcNames") List<String> lcNames,
+                                              @Param("orgId") UUID orgId);
+    @Update({
+            "<script>",
+            "UPDATE liability_cause",
+            "SET",
+            "  approve_status = CASE id",
+            "    <foreach collection='lcs' item='b'>",
+            "      WHEN #{b.liabilityCauseId} THEN #{b.approveStatus}",
+            "    </foreach>",
+            "  END,",
+            "  name = CASE id",
+            "    <foreach collection='lcs' item='b'>",
+            "      WHEN #{b.liabilityCauseId} THEN #{b.name}",
+            "    </foreach>",
+            "  END,",
+            "  code = CASE id",
+            "    <foreach collection='lcs' item='b'>",
+            "      WHEN #{b.liabilityCauseId} THEN #{b.code}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE id",
+            "    <foreach collection='lcs' item='b'>",
+            "      WHEN #{b.liabilityCauseId} THEN #{b.updatedAt}",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='lcs' item='b' open='(' separator=',' close=')'>",
+            "    #{b.liabilityCauseId}",
+            "  </foreach>",
+            "  AND org_id = #{lcs[0].orgId}",
+            "  AND approve_status ILIKE '%Pending%'",
+            "</script>"
+    })
+    void updateBatchLcs(@Param("lcs") List<LiabilityCause> toUpdate);
+
+    @Update({
+            "<script>",
+            "UPDATE liability_cause_version",
+            "SET",
+            "  approve_status = CASE liability_cause_id",
+            "    <foreach collection='lcs' item='b'>",
+            "      WHEN #{b.liabilityCauseId} THEN #{b.approveStatus}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE liability_cause_id",
+            "    <foreach collection='lcs' item='b'>",
+            "      WHEN #{b.liabilityCauseId} THEN #{b.updatedAt}",
+            "    </foreach>",
+            "  END",
+            "WHERE liability_cause_id IN",
+            "  <foreach collection='lcs' item='b' open='(' separator=',' close=')'>",
+            "    #{b.liabilityCauseId}",
+            "  </foreach>",
+            "  AND org_id = #{lcs[0].orgId}",
+            "  AND approve_status ILIKE '%Pending%'",
+            "</script>"
+    })
+    void updateBatchVersionLcs(@Param("lcs") List<LiabilityCause> toUpdate);
+
+
+    @Update({
+            "<script>",
+            "UPDATE debt_percentage",
+            "SET",
+            "  approve_status = CASE id",
+            "    <foreach collection='prs' item='b'>",
+            "      WHEN #{b.percentageId} THEN #{b.approveStatus}",
+            "    </foreach>",
+            "  END,",
+            "  percentage = CASE id",
+            "    <foreach collection='prs' item='b'>",
+            "      WHEN #{b.percentageId} THEN #{b.percentage}",
+            "    </foreach>",
+            "  END,",
+            "  code = CASE id",
+            "    <foreach collection='prs' item='b'>",
+            "      WHEN #{b.percentageId} THEN #{b.code}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE id",
+            "    <foreach collection='prs' item='b'>",
+            "      WHEN #{b.percentageId} THEN #{b.updatedAt}",
+            "    </foreach>",
+            "  END",
+            "WHERE id IN",
+            "  <foreach collection='prs' item='b' open='(' separator=',' close=')'>",
+            "    #{b.percentageId}",
+            "  </foreach>",
+            "  AND org_id = #{prs[0].orgId}",
+            "  AND approve_status ILIKE '%Pending%'",
+            "</script>"
+    })
+    void updateBatchPrs(@Param("prs") List<PercentageRange> toUpdate);
+
+    @Update({
+            "<script>",
+            "UPDATE debt_percentage_version",
+            "SET",
+            "  approve_status = CASE debt_percentage_id",
+            "    <foreach collection='prs' item='b'>",
+            "      WHEN #{b.percentageId} THEN #{b.approveStatus}",
+            "    </foreach>",
+            "  END,",
+            "  updated_at = CASE debt_percentage_id",
+            "    <foreach collection='prs' item='b'>",
+            "      WHEN #{b.percentageId} THEN #{b.updatedAt}",
+            "    </foreach>",
+            "  END",
+            "WHERE debt_percentage_id IN",
+            "  <foreach collection='prs' item='b' open='(' separator=',' close=')'>",
+            "    #{b.percentageId}",
+            "  </foreach>",
+            "  AND org_id = #{prs[0].orgId}",
+            "  AND approve_status ILIKE '%Pending%'",
+            "</script>"
+    })
+    void updateBatchVersionPrs(@Param("prs") List<PercentageRange> toUpdate);
+
+    @Select({
+            "<script>",
+            "SELECT * FROM debt_percentage_version",
+            "WHERE org_id = #{orgId}",
+            "AND code IN",
+            "<foreach collection='percentages' item='p' open='(' separator=',' close=')'>",
+            "#{p}",
+            "</foreach>",
+            "  AND approve_status ILIKE '%Pending%'",
+            "</script>"
+    })
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "amount_start_range", property = "amountStartRange"),
+            @Result(column = "amount_end_range", property = "amountEndRange"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+    })
+    List<PercentageRange> getPercentageBulkVersion(
+            @Param("percentages") List<String> percentages,
+            @Param("orgId") UUID orgId
+    );
+
+
 }

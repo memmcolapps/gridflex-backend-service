@@ -635,7 +635,8 @@ public class BandServiceImpl implements BandService {
         // --- Step 2: Insert into main + version tables ---
         bandMapper.updateBandVer(band);
 
-        bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
+        bandMapper.approveBand(band);
+//                updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
 
 
         //fetch meter from the database

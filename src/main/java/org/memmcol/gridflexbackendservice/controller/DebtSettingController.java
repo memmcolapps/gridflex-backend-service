@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.debit_setting.DebtSettingService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -158,6 +160,26 @@ public class DebtSettingController {
             @RequestParam Boolean status) {
         try {
             Map<String, Object> result = service.parcentageChangeState(percentageId, status);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PutMapping("/liability-cause/bulk-approve")
+    public ResponseEntity<?> bulkApproveLiabilityCause(@RequestBody List<LiabilityCause> lc) {
+        try {
+            Map<String, Object> result = service.bulkApproveLiabilityCause(lc);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PutMapping("/percentage-range/bulk-approve")
+    public ResponseEntity<?> bulkApprovePercentageRange(@RequestBody List<PercentageRange> pr) {
+        try {
+            Map<String, Object> result = service.bulkApprovePercentageRange(pr);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

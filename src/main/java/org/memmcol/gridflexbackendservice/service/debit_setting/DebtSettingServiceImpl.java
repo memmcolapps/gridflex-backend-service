@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
@@ -21,14 +22,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
@@ -666,6 +669,514 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
+    @Override
+    public Map<String, Object> bulkApproveLiabilityCause(List<LiabilityCause> lcs) {
+        UserModel user = handleUserValidation();
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+
+        if (lcs == null || lcs.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("No records found");
+        }
+
+        final int BATCH_SIZE = 500; // Tune as needed for performance
+
+
+        for (int i = 0; i < lcs.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, lcs.size());
+            List<LiabilityCause> batch = lcs.subList(i, end);
+
+            // Collect all meter numbers in this subBatch
+            List<String> lcNames = batch.stream()
+                    .map(b -> b.getName().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            if (lcNames.isEmpty()) {
+                batch.forEach(req -> failedRecords.add(
+                        String.format("%s (Invalid or missing data)",
+                                req.getName())
+                ));
+                continue;
+            }
+
+            // One DB call to fetch all corresponding version records
+            List<LiabilityCause> versionBatch = debtMapper.getLiabilityCauseBulkVersion(lcNames, user.getOrgId());
+
+            Set<String> foundNames = versionBatch.stream()
+                    .map(LiabilityCause::getName)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            List<String> missingNames = lcNames.stream()
+                    .filter(name -> !foundNames.contains(name.trim()))
+                    .toList();
+
+            // Record missing/invalid tariffs
+            missingNames.forEach(name ->
+                    failedRecords.add(name + " (Not found in version table or failed validation)")
+            );
+
+            if (versionBatch.isEmpty()) {
+                continue;
+            }
+
+            try {
+                prepareUpdateLc(versionBatch, user, failedRecords);
+
+                int updatedCount = updateBatchTransactional(versionBatch, user);
+                successCount += updatedCount;
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
+                int retrySuccess = updateSubBatchTransactional(versionBatch, user, failedRecords);
+                successCount += retrySuccess;
+            }
+        }
+        int total = lcs.size();
+
+        result.put("totalRecords", total);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + total + " Liability cause approved successfully",
+                result
+        );
+    }
+
+    private void prepareUpdateLc(List<LiabilityCause> batch, UserModel user, List<String> failedRecords) {
+        Iterator<LiabilityCause> iterator = batch.iterator();
+        while (iterator.hasNext()) {
+            LiabilityCause lc = iterator.next();
+            if (lc.getName() == null || lc.getName().trim().isEmpty()) {
+                failedRecords.add("(Missing tariff name)");
+                iterator.remove();
+                continue;
+            }
+
+            lc.setOrgId(user.getOrgId());
+            lc.setApproveBy(user.getId());
+            lc.setId(lc.getLiabilityCauseId());
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public int updateBatchTransactional(List<LiabilityCause> batch, UserModel user) {
+        String desc = "";
+        if (batch.isEmpty()) return 0;
+        try {
+            List<LiabilityCause> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
+            List<LiabilityCause> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
+            List<LiabilityCause> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
+            List<LiabilityCause> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+
+            // Combine all for main update
+            List<LiabilityCause> toUpdate = Stream.of(
+                            approvedCreatedBands,
+                            approvedActivatedBands,
+                            approvedDeactivatedBands,
+                            approvedEditedBands)
+                    .flatMap(Collection::stream)
+                    .toList();
+
+            if (!toUpdate.isEmpty()) {
+                desc = "Liability cause approved";
+                debtMapper.updateBatchLcs(toUpdate);
+                debtMapper.updateBatchVersionLcs(toUpdate);
+            }
+
+            //  Audit success
+            auditApproveBatch(batch, user, desc);
+
+            log.info("Batch updated successfully: {}", batch.size());
+            return batch.size();
+
+        } catch (Exception e) {
+            log.error("Approval failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+            throw new RuntimeException("Batch transaction failed. Rolled back.", e);
+        }
+    }
+
+    private int updateSubBatchTransactional(List<LiabilityCause> batch, UserModel user, List<String> failedRecords) {
+        int success = 0;
+        int subSize = 100;
+
+        for (int i = 0; i < batch.size(); i += subSize) {
+            int end = Math.min(i + subSize, batch.size());
+            List<LiabilityCause> subList = batch.subList(i, end);
+            try {
+                success += updateBatchTransactional(subList, user);
+            } catch (Exception e) {
+                log.error("Sub-batch {} failed: {}", (i / subSize) + 1, e.getMessage());
+                if (batch.size() > 50) {
+                    success += approveSinglesFallbackAsync(batch, user, failedRecords);
+                } else {
+                    success += approveSinglesFallback(batch, user, failedRecords);
+                }
+            }
+        }
+        return success;
+    }
+
+    public int approveSinglesFallbackAsync(List<LiabilityCause> batch, UserModel user, List<String> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (LiabilityCause lc : batch) {
+            futures.add(approveSingleAsync(lc, user, failedRecords));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream().mapToInt(CompletableFuture::join).sum();
+    }
+
+    public int approveSinglesFallback(List<LiabilityCause> lcs, UserModel user, List<String> failedRecords) {
+        int successCount = 0;
+
+        for (LiabilityCause lc : lcs) {
+            try {
+                log.debug("Fallback single allocation for meter: {}", lc.getName());
+                approveSingleTransactional(lc, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                failedRecords.add(String.format(
+                        "%s (Approve failed: %s)",
+                        lc.getName(),
+                        reason
+                ));
+                log.warn("Liability cause {} failed individually: {}", lc.getName(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Async
+    public CompletableFuture<Integer> approveSingleAsync(LiabilityCause lc, UserModel user, List<String> failedRecords) {
+        try {
+            approveSingleTransactional(lc, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            failedRecords.add(String.format(
+                    "%s (Approve failed: %s)",
+                    lc.getName(),
+                    reason
+            ));
+            log.warn("Async approve failed for tariff {}: {}",  lc.getName(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void approveSingleTransactional(LiabilityCause lca, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        debtMapper.approveLiability(lca);
+
+        debtMapper.approveLiabilityCauseVersion(lca);
+
+        //fetch meter from the database
+        LiabilityCause lbt = debtMapper.getLcById(lca.getLiabilityCauseId());
+
+        //save to audit (mongodb)
+        AuditLog auditLog = buildAuditLog(user, "Liability cause approved", lc, lbt, metadata);
+        auditRepository.save(auditLog);
+
+    }
+
+
+    private List<LiabilityCause> getMetersByStatus(List<LiabilityCause> batch, String stage, String newStage) {
+        List<LiabilityCause> ms;
+        ms = batch.stream()
+                .filter(m -> stage.equalsIgnoreCase(m.getApproveStatus()))
+                .peek(m -> m.setApproveStatus(newStage))
+                .toList();
+
+        return ms;
+    }
+
+
+    private void auditApproveBatch(List<LiabilityCause> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (LiabilityCause m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc, lc, m, metadata);
+            auditRepository.save(auditLog);
+        }
+    }
+
+
+    private String extractErrorMessage(Exception e) {
+        String message = e.getMessage();
+
+        if (message == null) return "Unknown error";
+
+        if (message.contains("duplicate key value")) {
+            return "Duplicate record — Record already exists.";
+        }
+        if (message.contains("violates not-null constraint")) {
+            return "Missing required field — one or more mandatory columns are empty.";
+        }
+        if (message.contains("foreign key constraint")) {
+            return "Invalid reference — linked data does not exist.";
+        }
+        if (message.contains("invalid input syntax")) {
+            return "Invalid data type — check number or date format.";
+        }
+
+        // default fallback
+        return message.split("\n")[0];
+    }
+
+    @Override
+    public Map<String, Object> bulkApprovePercentageRange(List<PercentageRange> prs) {
+        UserModel user = handleUserValidation();
+        Map<String, Object> result = new HashMap<>();
+        List<String> failedRecords = new ArrayList<>();
+        int successCount = 0;
+
+        if (prs == null || prs.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("No records found");
+        }
+
+        final int BATCH_SIZE = 500; // Tune as needed for performance
+
+
+        for (int i = 0; i < prs.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, prs.size());
+            List<PercentageRange> batch = prs.subList(i, end);
+
+            // Collect all meter numbers in this subBatch
+            List<String> prCodes = batch.stream()
+                    .map(b -> b.getCode().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            if (prCodes.isEmpty()) {
+                batch.forEach(req -> failedRecords.add(
+                        String.format("%s (Invalid or missing data)",
+                                req.getCode())
+                ));
+                continue;
+            }
+
+            System.out.println("code1: "+prCodes);
+            // One DB call to fetch all corresponding version records
+            List<PercentageRange> versionBatch = debtMapper.getPercentageBulkVersion(prCodes, user.getOrgId());
+
+            System.out.println("code2: "+versionBatch.get(0).getCode());
+
+            Set<String> foundNames = versionBatch.stream()
+                    .map(PercentageRange::getCode)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            List<String> missingNames = prCodes.stream()
+                    .filter(name -> !foundNames.contains(name.trim()))
+                    .toList();
+
+            // Record missing/invalid tariffs
+            missingNames.forEach(name ->
+                    failedRecords.add(name + " (Not found)")
+            );
+
+            if (versionBatch.isEmpty()) {
+                continue;
+            }
+
+            try {
+                prepareUpdatePr(versionBatch, user, failedRecords);
+
+                int updatedCount = updatePrBatchTransactional(versionBatch, user);
+                successCount += updatedCount;
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
+                int retrySuccess = updatePrSubBatchTransactional(versionBatch, user, failedRecords);
+                successCount += retrySuccess;
+            }
+        }
+        int total = prs.size();
+
+        result.put("totalRecords", total);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + total + " Liability cauese approved successfully",
+                result
+        );
+    }
+
+
+    private void prepareUpdatePr(List<PercentageRange> batch, UserModel user, List<String> failedRecords) {
+        Iterator<PercentageRange> iterator = batch.iterator();
+        while (iterator.hasNext()) {
+            PercentageRange pr = iterator.next();
+            if (pr.getCode() == null) {
+                failedRecords.add("(Missing percentage code)");
+                iterator.remove();
+                continue;
+            }
+
+            pr.setOrgId(user.getOrgId());
+            pr.setApproveBy(user.getId());
+            pr.setId(pr.getPercentageId());
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public int updatePrBatchTransactional(List<PercentageRange> batch, UserModel user) {
+        String desc = "";
+        if (batch.isEmpty()) return 0;
+        try {
+            List<PercentageRange> approvedCreatedBands = getPrByStatus(batch, "Pending-created", "Approved");
+            List<PercentageRange> approvedActivatedBands = getPrByStatus(batch, "Pending-activated", "Approved");
+            List<PercentageRange> approvedDeactivatedBands = getPrByStatus(batch, "Pending-deactivated", "Deactivated");
+            List<PercentageRange> approvedEditedBands = getPrByStatus(batch, "Pending-edited", "Approved");
+
+            // Combine all for main update
+            List<PercentageRange> toUpdate = Stream.of(
+                            approvedCreatedBands,
+                            approvedActivatedBands,
+                            approvedDeactivatedBands,
+                            approvedEditedBands)
+                    .flatMap(Collection::stream)
+                    .toList();
+
+            if (!toUpdate.isEmpty()) {
+                desc = "Percentage range approved";
+                debtMapper.updateBatchPrs(toUpdate);
+                debtMapper.updateBatchVersionPrs(toUpdate);
+            }
+
+            //  Audit success
+            auditPrApproveBatch(batch, user, desc);
+
+            log.info("Batch updated successfully: {}", batch.size());
+            return batch.size();
+
+        } catch (Exception e) {
+            log.error("Approval failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+            throw new RuntimeException("Batch transaction failed. Rolled back.", e);
+        }
+    }
+
+    private int updatePrSubBatchTransactional(List<PercentageRange> batch, UserModel user, List<String> failedRecords) {
+        int success = 0;
+        int subSize = 100;
+
+        for (int i = 0; i < batch.size(); i += subSize) {
+            int end = Math.min(i + subSize, batch.size());
+            List<PercentageRange> subList = batch.subList(i, end);
+            try {
+                success += updatePrBatchTransactional(subList, user);
+            } catch (Exception e) {
+                log.error("Sub-batch {} failed: {}", (i / subSize) + 1, e.getMessage());
+                if (batch.size() > 50) {
+                    success += approvePrSinglesFallbackAsync(batch, user, failedRecords);
+                } else {
+                    success += approvePrSinglesFallback(batch, user, failedRecords);
+                }
+            }
+        }
+        return success;
+    }
+
+    public int approvePrSinglesFallbackAsync(List<PercentageRange> batch, UserModel user, List<String> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (PercentageRange lc : batch) {
+            futures.add(approvePrSingleAsync(lc, user, failedRecords));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream().mapToInt(CompletableFuture::join).sum();
+    }
+
+    public int approvePrSinglesFallback(List<PercentageRange> lcs, UserModel user, List<String> failedRecords) {
+        int successCount = 0;
+
+        for (PercentageRange lc : lcs) {
+            try {
+                log.debug("Fallback single assign for pr: {}", lc.getCode());
+                approvePrSingleTransactional(lc, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                failedRecords.add(String.format(
+                        "%s (Approve failed: %s)",
+                        lc.getCode(),
+                        reason
+                ));
+                log.warn("Percentage range {} failed individually: {}", lc.getCode(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Async
+    public CompletableFuture<Integer> approvePrSingleAsync(PercentageRange lc, UserModel user, List<String> failedRecords) {
+        try {
+            approvePrSingleTransactional(lc, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            failedRecords.add(String.format(
+                    "%s (Approve failed: %s)",
+                    lc.getCode(),
+                    reason
+            ));
+            log.warn("Async approve failed for tariff {}: {}",  lc.getCode(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void approvePrSingleTransactional(PercentageRange lca, UserModel user) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        debtMapper.approvePercentage(lca);
+
+        debtMapper.approvePercentageVersion(lca);
+
+        //fetch meter from the database
+        PercentageRange percentageRange = debtMapper.getPercentageById(lca.getPercentageId(), user.getOrgId());
+
+        //save to audit (mongodb)
+        AuditLog auditLog = buildAuditLog(user, "Percentage range approved", lc, percentageRange, metadata);
+        auditRepository.save(auditLog);
+
+    }
+
+
+    private List<PercentageRange> getPrByStatus(List<PercentageRange> batch, String stage, String newStage) {
+        List<PercentageRange> ms;
+        ms = batch.stream()
+                .filter(m -> stage.equalsIgnoreCase(m.getApproveStatus()))
+                .peek(m -> m.setApproveStatus(newStage))
+                .toList();
+
+        return ms;
+    }
+
+
+    private void auditPrApproveBatch(List<PercentageRange> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (PercentageRange m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc, lc, m, metadata);
+            auditRepository.save(auditLog);
+        }
+    }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();

@@ -604,14 +604,6 @@ public class TariffServiceImpl implements TariffService {
             // One DB call to fetch all corresponding version records
             List<Tariff> versionBatch = tariffMapper.getTariffVersionByNames(tariffNames, user.getOrgId());
 
-//            if (versionBatch.isEmpty()) {
-//                failedRecords.addAll(tariffNames.stream()
-//                        .map(num -> num + " (Not found in version table)")
-//                        .toList());
-//                continue;
-//            }
-
-            // Detect missing or invalid names
             Set<String> foundNames = versionBatch.stream()
                     .map(Tariff::getName)
                     .map(String::trim)
@@ -777,8 +769,9 @@ public class TariffServiceImpl implements TariffService {
         tariffMapper.approvedTariffVersion(tariff);
 //        bandMapper.updateBandVer(tariff);
 
-        tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
-//        bandMapper.updateBand(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+        tariffMapper.approveTariff(tariff);
+//        tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+
 
 
         //fetch meter from the database
@@ -832,7 +825,7 @@ public class TariffServiceImpl implements TariffService {
         if (message == null) return "Unknown error";
 
         if (message.contains("duplicate key value")) {
-            return "Duplicate record — Band already exists.";
+            return "Duplicate record — Tariff already exists.";
         }
         if (message.contains("violates not-null constraint")) {
             return "Missing required field — one or more mandatory columns are empty.";
