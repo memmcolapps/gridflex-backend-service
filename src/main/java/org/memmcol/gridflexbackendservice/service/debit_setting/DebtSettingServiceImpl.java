@@ -715,7 +715,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             // Record missing/invalid tariffs
             missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found in version table or failed validation)")
+                    failedRecords.add(name + " (Not found or does not pending state)")
             );
 
             if (versionBatch.isEmpty()) {
@@ -965,11 +965,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 continue;
             }
 
-            System.out.println("code1: "+prCodes);
             // One DB call to fetch all corresponding version records
             List<PercentageRange> versionBatch = debtMapper.getPercentageBulkVersion(prCodes, user.getOrgId());
-
-            System.out.println("code2: "+versionBatch.get(0).getCode());
 
             Set<String> foundNames = versionBatch.stream()
                     .map(PercentageRange::getCode)
@@ -982,7 +979,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             // Record missing/invalid tariffs
             missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found)")
+                    failedRecords.add(name + " (Not found or does not pending state)")
             );
 
             if (versionBatch.isEmpty()) {

@@ -417,64 +417,6 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
-//    @Transactional
-//    @Override
-//    public Map<String, Object> bulkApproveTariff(BulkApprovalRequest request) {
-//        AuditLog auditNotificationDTO = new AuditLog();
-//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-//        try {
-//            String ipAddress = getClientIp(httpServletRequest);
-//            String userAgent = httpServletRequest.getHeader("User-Agent");
-//            UserModel um = handleUserValidation();
-//
-//                for(UUID id : request.getTariffIds()) {
-//                    Tariff t = tariffMapper.getTariffVersionById(id, um.getOrgId());
-//                    if(t == null){
-//                        throw new GlobalExceptionHandler.NotFoundException(status.getNotFoundDesc());
-//                    }
-//                    t.setApprove_status("approved");
-////                    t.setStatus(true);
-//                    t.setApproved_by(um.getId());
-//
-//                    // update tariff version main table
-//                    tariffMapper.approvedTariffVersion(t);
-//
-//                    // update tariff main table
-//                    tariffMapper.approveTariff(t);
-//                    Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
-//                    if(tariff == null) {
-//                        String desc = t.getApprove_status() + "tariff [" + id + "] does not exist ";
-//                        auditNotificationDTO.setCreator(um);
-//                        auditNotificationDTO.setDescription(desc);
-//                        auditNotificationDTO.setType(tariffName);
-//                        auditNotificationDTO.setCreatedTariff(null);
-//                        auditRepository.save(auditNotificationDTO);
-//                        continue;
-//                    }
-//                    handleAddCache(tariff);
-//                    String desc = capitalizeFirstLetter(tariff.getName()) + t.getApprove_status();
-//                    um.setPassword("");
-//                    auditNotificationDTO.setCreator(um);
-//                    auditNotificationDTO.setDescription(desc);
-//                    auditNotificationDTO.setIpAddress(ipAddress);
-//                    auditNotificationDTO.setUserAgent(userAgent);
-//                    auditNotificationDTO.setType(tariffName);
-//                    auditNotificationDTO.setCreatedTariff(tariff);
-//                    auditRepository.save(auditNotificationDTO);
-//                }
-//                return ResponseMap.response(status.getSuccessCode(), tariffName + " approved successfully ", "");
-//
-//        } catch (Exception exception) {
-//            log.error("Error occurred while bulk approving tariff(s): {}", exception.getMessage(), exception);
-//            exceptionErrorLogs.setDescription("Error occurred while trying to create tariff");
-//            exceptionErrorLogs.setError_message(exception.getMessage().trim());
-//            exceptionErrorLogs.setError(exception.toString().trim());
-//            exceptionAuditRepository.save(exceptionErrorLogs);
-//            throw exception;
-//        }
-//
-//    }
-
     @Transactional
     @Override
     public Map<String, Object> updateTariff(Tariff tariff) {
@@ -615,7 +557,7 @@ public class TariffServiceImpl implements TariffService {
 
             // Record missing/invalid tariffs
             missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found in version table or failed validation)")
+                    failedRecords.add(name + " (Not found or does not pending state)")
             );
 
             if (versionBatch.isEmpty()) {
