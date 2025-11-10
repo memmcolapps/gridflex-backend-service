@@ -101,9 +101,8 @@ public class  SecurityConfig {
 				).permitAll()
 				.requestMatchers("/band/service/create", "/band/service/update", "/band/service/change-state",
 						"/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/export",
-						"/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state",
-						"/tariff/service/bulk-approve","/user/service/single-user", "/user/service/all",
-						"/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/group/update",
+						"/tariff/service/all", "/tariff/service/create", "/tariff/service/change-state", "/tariff/service/bulk-approve",
+						"/user/service/single-user", "/user/service/all", "/user/service/change-state", "/user/service/update",  "/user/service/create", "/user/service/group/update",
 						"/user/service/groups",  "/user/service/create/group-permission", "/user/service/update/group-permission", "/user/service/group/change-state",
 						"/customer/service/create", "/customer/service/update", "/customer/service/change-state", "/customer/service/download/template/excel",
 						"/customer/service/all",  "/customer/service/single", "/customer/service/bulk-upload", "/customer/service/download/template/csv",

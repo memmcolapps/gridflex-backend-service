@@ -11,6 +11,7 @@ import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.MeterRequest;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
@@ -412,7 +414,7 @@ public class BandServiceImpl implements BandService {
         int successCount = 0;
 
         if (bands == null || bands.isEmpty()) {
-            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
+            throw new GlobalExceptionHandler.NotFoundException("No records found");
         }
 
         final int BATCH_SIZE = 500; // Tune as needed for performance
@@ -421,10 +423,6 @@ public class BandServiceImpl implements BandService {
         for (int i = 0; i < bands.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, bands.size());
             List<Band> batch = bands.subList(i, end);
-
-            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
-            System.out.println("Batch size: " + batch.size());
-            batch.forEach(m -> System.out.println("Band in subBatch: " + m.getName()));
 
             // Collect all meter numbers in this subBatch
             List<String> bandNames = batch.stream()
@@ -443,10 +441,27 @@ public class BandServiceImpl implements BandService {
             // One DB call to fetch all corresponding version records
             List<Band> versionBatch = bandMapper.getBandsByVersion(bandNames, user.getOrgId());
 
+//            if (versionBatch.isEmpty()) {
+//                failedRecords.addAll(bandNames.stream()
+//                        .map(num -> num + " (Not found in version table)")
+//                        .toList());
+//                continue;
+//            }
+            Set<String> foundNames = versionBatch.stream()
+                    .map(Band::getName)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            List<String> missingNames = bandNames.stream()
+                    .filter(name -> !foundNames.contains(name.trim()))
+                    .toList();
+
+            // Record missing/invalid tariffs
+            missingNames.forEach(name ->
+                    failedRecords.add(name + " (Not found in version table or failed validation)")
+            );
+
             if (versionBatch.isEmpty()) {
-                failedRecords.addAll(bandNames.stream()
-                        .map(num -> num + " (Not found in version table)")
-                        .toList());
                 continue;
             }
 
@@ -497,7 +512,7 @@ public class BandServiceImpl implements BandService {
                     .toList();
 
             if (!toUpdate.isEmpty()) {
-                desc = "Meter migration approved";
+                desc = "Band approved";
                 bandMapper.updateBatchBands(toUpdate);
                 bandMapper.updateBatchVersionBands(toUpdate);
             }
@@ -509,7 +524,7 @@ public class BandServiceImpl implements BandService {
             return batch.size();
 
         } catch (Exception e) {
-            log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
+//            log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
             throw new RuntimeException("Batch transaction failed. Rolled back.", e);
         }
     }
@@ -559,12 +574,12 @@ public class BandServiceImpl implements BandService {
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
                 failedRecords.add(String.format(
-                        "%s [Region: %s] (Allocation failed: %s)",
+                        "%s (Approve failed: %s)",
                         band.getName(),
 //                        meter.getNodeInfo().getRegionId(),
                         reason
                 ));
-                log.warn("Meter {} failed individually: {}", band.getName(), reason);
+                log.warn("Approve {} failed individually: {}", band.getName(), reason);
             }
         }
 
@@ -579,7 +594,7 @@ public class BandServiceImpl implements BandService {
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
             failedRecords.add(String.format(
-                    "%s [Region: %s] (Allocation failed: %s)",
+                    "%s (Approve failed: %s)",
                     band.getName(),
 //                    meter.getNodeInfo().getRegionId(),
                     reason

@@ -70,7 +70,7 @@ public class GenericHandler {
 
         IncidentReport incidentReport = new IncidentReport();
         incidentReport.setOrgId(user.getOrgId());
-        incidentReport.setUserId(user.getId());
+//        incidentReport.setUserId(user.getId());
         incidentReport.setMessage(msg);
         incidentReport.setType("auto");
         incidentReport.setStatus(false);
