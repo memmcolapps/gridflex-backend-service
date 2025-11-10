@@ -230,6 +230,15 @@ public class TariffServiceImpl implements TariffService {
             if(tariff == null){
                 throw new GlobalExceptionHandler.NotFoundException("Tariff not found");
             }
+            if(tariff.getApprove_status().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
+            }
+            if(tariff.getApprove_status().contains("Deactivated") && !state){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff already deactivated");
+            }
+            if(tariff.getApprove_status().contains("Approved") && state){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff already activated");
+            }
 
             if(state){
                 Band isBand = bandMapper.getApprovedBandById(tariff.getBand_id(), um.getOrgId());
@@ -237,7 +246,6 @@ public class TariffServiceImpl implements TariffService {
                     throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found, not approved or deactivated" );
                 }
             }
-
 
             if(!state){
                 int meter = meterMapper.getTariffMeterById(id, um.getOrgId());
@@ -254,18 +262,18 @@ public class TariffServiceImpl implements TariffService {
             String changeDescription = buildChangeStatusDescription(tariff, state);
             tariff.setDescription(state ? "Tariff Activated" : "Tariff Deactivated");
 
-            if(tariff.getApprove_status().contains("Pending")){
-                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
-            } else if(tariff.getApprove_status().contains("Deactivated") && !state){
-                throw new GlobalExceptionHandler.NotFoundException("Tariff already deactivated");
-            } else if(tariff.getApprove_status().contains("Approved") && state){
-                throw new GlobalExceptionHandler.NotFoundException("Tariff already activated");
-            } else {
+//            if(tariff.getApprove_status().contains("Pending")){
+//                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
+//            } else if(tariff.getApprove_status().contains("Deactivated") && !state){
+//                throw new GlobalExceptionHandler.NotFoundException("Tariff already deactivated");
+//            } else if(tariff.getApprove_status().contains("Approved") && state){
+//                throw new GlobalExceptionHandler.NotFoundException("Tariff already activated");
+//            } else {
                 result = tariffMapper.createTariffVersion(tariff);
                 if(result == 0){
                     throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getUpdateDesc());
                 }
-            }
+//            }
             int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getId(), tariff.getUpdated_at());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(tariffName + (state ? " activated " : " deactivated ")+ "failed");
             Tariff newTariff = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());

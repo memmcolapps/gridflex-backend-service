@@ -348,6 +348,16 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.NotFoundException("Band "+status.getNotFoundDesc());
             }
 
+            if(band.getApproveStatus().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Band have a pending state that needs to be cleared");
+            }
+            if(band.getApproveStatus().contains("Deactivated") && !state){
+                throw new GlobalExceptionHandler.NotFoundException("Band already deactivated");
+            }
+            if(band.getApproveStatus().contains("Approved") && state){
+                throw new GlobalExceptionHandler.NotFoundException("Band already activated");
+            }
+
             if(!state){
                 List<String> errors = new ArrayList<>();
                 int tariff = tariffMapper.getTariffBandById(bandId, um.getOrgId());
@@ -370,16 +380,16 @@ public class BandServiceImpl implements BandService {
             String changeDescription = buildChangeStatusDescription(band, state);
             band.setDescription(state ? "Band Activated" : "Band Deactivated");
 
-            if(band.getApproveStatus().contains("Pending")){
-                throw new GlobalExceptionHandler.NotFoundException("Band have a pending state that needs to be cleared");
-            } else if(band.getApproveStatus().contains("Deactivated") && !state){
-                throw new GlobalExceptionHandler.NotFoundException("Band already deactivated");
-            } else if(band.getApproveStatus().contains("Approved") && state){
-                throw new GlobalExceptionHandler.NotFoundException("Band already activated");
-            } else {
+//            if(band.getApproveStatus().contains("Pending")){
+//                throw new GlobalExceptionHandler.NotFoundException("Band have a pending state that needs to be cleared");
+//            } else if(band.getApproveStatus().contains("Deactivated") && !state){
+//                throw new GlobalExceptionHandler.NotFoundException("Band already deactivated");
+//            } else if(band.getApproveStatus().contains("Approved") && state){
+//                throw new GlobalExceptionHandler.NotFoundException("Band already activated");
+//            } else {
                 result = bandMapper.createBandVersion(band);
                 if(result == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());
-            }
+//            }
             int u = bandMapper.updateBand(band.getApproveStatus(), band.getId(), band.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " "+ status.getUpdateFailureDesc());
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());

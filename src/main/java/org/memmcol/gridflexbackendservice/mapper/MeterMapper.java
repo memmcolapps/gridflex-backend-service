@@ -1207,7 +1207,7 @@ public interface MeterMapper {
     @Select("SELECT parent_id FROM substation_trans_feeder_lines WHERE node_id = #{nodeId}")
     UUID getFeederParentNode(UUID nodeId);
 
-    @Select("SELECT COUNT(*) FROM meter WHERE tariff = #{id} AND org_id = #{orgId} AND status != 'Deactivated'")
+    @Select("SELECT COUNT(*) FROM meters WHERE tariff = #{id} AND org_id = #{orgId} AND status != 'Deactivated'")
     int getTariffMeterById(UUID id, UUID orgId);
 
     @Select("SELECT " +
