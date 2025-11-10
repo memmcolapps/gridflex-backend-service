@@ -1431,7 +1431,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // verify if node (organization id) exist
-            RegionBhubServiceCenter node = nodeMapper.verifyNode(regionId);
+            RegionBhubServiceCenter node = nodeMapper.verifyNode(regionId, um.getOrgId());
             if(node == null){
                 throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
             }

@@ -1185,7 +1185,7 @@ public interface MeterMapper {
     int removePaymentModeInfo(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{meterId}")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
     int updateMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
