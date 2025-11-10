@@ -577,7 +577,7 @@ public class TariffServiceImpl implements TariffService {
         int successCount = 0;
 
         if (tariffs == null || tariffs.isEmpty()) {
-            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
+            throw new GlobalExceptionHandler.NotFoundException("No records found");
         }
 
         final int BATCH_SIZE = 500; // Tune as needed for performance
@@ -586,10 +586,6 @@ public class TariffServiceImpl implements TariffService {
         for (int i = 0; i < tariffs.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, tariffs.size());
             List<Tariff> batch = tariffs.subList(i, end);
-
-            System.out.println("Processing Batch from index " + i + " to " + (end - 1));
-            System.out.println("Batch size: " + batch.size());
-            batch.forEach(m -> System.out.println("Band in subBatch: " + m.getName()));
 
             // Collect all meter numbers in this subBatch
             List<String> tariffNames = batch.stream()
@@ -607,12 +603,22 @@ public class TariffServiceImpl implements TariffService {
 
             // One DB call to fetch all corresponding version records
             List<Tariff> versionBatch = tariffMapper.getTariffVersionByNames(tariffNames, user.getOrgId());
-//            List<Tariff> versionBatch = bandMapper.getBandsByVersion(bandNames, user.getOrgId());
+
+            Set<String> foundNames = versionBatch.stream()
+                    .map(Tariff::getName)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            List<String> missingNames = tariffNames.stream()
+                    .filter(name -> !foundNames.contains(name.trim()))
+                    .toList();
+
+            // Record missing/invalid tariffs
+            missingNames.forEach(name ->
+                    failedRecords.add(name + " (Not found in version table or failed validation)")
+            );
 
             if (versionBatch.isEmpty()) {
-                failedRecords.addAll(tariffNames.stream()
-                        .map(num -> num + " (Not found in version table)")
-                        .toList());
                 continue;
             }
 
@@ -638,10 +644,11 @@ public class TariffServiceImpl implements TariffService {
 
         return ResponseMap.response(
                 status.getSuccessCode(),
-                successCount + " of " + total + " bands approved successfully",
+                successCount + " of " + total + " tariffs approved successfully",
                 result
         );
     }
+
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public int updateBatchTransactional(List<Tariff> batch, UserModel user) {
@@ -663,11 +670,9 @@ public class TariffServiceImpl implements TariffService {
                     .toList();
 
             if (!toUpdate.isEmpty()) {
-                desc = "Meter migration approved";
+                desc = "Tariff approved";
                 tariffMapper.updateBatchTariffs(toUpdate);
                 tariffMapper.updateBatchVersionTariffs(toUpdate);
-//                bandMapper.updateBatchBands(toUpdate);
-//                bandMapper.updateBatchVersionBands(toUpdate);
             }
 
             //  Audit success
@@ -693,7 +698,6 @@ public class TariffServiceImpl implements TariffService {
                 success += updateBatchTransactional(subList, user);
             } catch (Exception e) {
                 log.error("Sub-batch {} failed: {}", (i / subSize) + 1, e.getMessage());
-//                subList.forEach(m -> failedRecords.add(m.getName() + " - " + e.getMessage()));
                 if (batch.size() > 50) {
                     success += approveSinglesFallbackAsync(batch, user, failedRecords);
                 } else {
@@ -727,12 +731,11 @@ public class TariffServiceImpl implements TariffService {
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
                 failedRecords.add(String.format(
-                        "%s [Region: %s] (Allocation failed: %s)",
+                        "%s (Approve failed: %s)",
                         tariff.getName(),
-//                        meter.getNodeInfo().getRegionId(),
                         reason
                 ));
-                log.warn("Meter {} failed individually: {}", tariff.getName(), reason);
+                log.warn("Tariff {} failed individually: {}", tariff.getName(), reason);
             }
         }
 
@@ -747,12 +750,12 @@ public class TariffServiceImpl implements TariffService {
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
             failedRecords.add(String.format(
-                    "%s [Region: %s] (Allocation failed: %s)",
+                    "%s (Approve failed: %s)",
                     tariff.getName(),
 //                    meter.getNodeInfo().getRegionId(),
                     reason
             ));
-            log.warn("Async allocation failed for meter {}: {}",  tariff.getName(), reason);
+            log.warn("Async approve failed for tariff {}: {}",  tariff.getName(), reason);
             return CompletableFuture.completedFuture(0);
         }
     }
@@ -766,8 +769,9 @@ public class TariffServiceImpl implements TariffService {
         tariffMapper.approvedTariffVersion(tariff);
 //        bandMapper.updateBandVer(tariff);
 
-        tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
-//        bandMapper.updateBand(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+        tariffMapper.approveTariff(tariff);
+//        tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+
 
 
         //fetch meter from the database
@@ -775,7 +779,7 @@ public class TariffServiceImpl implements TariffService {
 //        Band m = bandMapper.getBand(tariff.getName());
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
         //save to audit (mongodb)
-        AuditLog auditLog = buildAuditLog(user, "Band approved", bandName, t, metadata);
+        AuditLog auditLog = buildAuditLog(user, "Tariff approved", bandName, t, metadata);
         auditRepository.save(auditLog);
 
     }
@@ -796,7 +800,7 @@ public class TariffServiceImpl implements TariffService {
         while (iterator.hasNext()) {
             Tariff tariff = iterator.next();
             if (tariff.getName() == null || tariff.getName().trim().isEmpty()) {
-                failedRecords.add("(Missing meter number)");
+                failedRecords.add("(Missing tariff name)");
                 iterator.remove();
                 continue;
             }
@@ -821,7 +825,7 @@ public class TariffServiceImpl implements TariffService {
         if (message == null) return "Unknown error";
 
         if (message.contains("duplicate key value")) {
-            return "Duplicate record — Band already exists.";
+            return "Duplicate record — Tariff already exists.";
         }
         if (message.contains("violates not-null constraint")) {
             return "Missing required field — one or more mandatory columns are empty.";

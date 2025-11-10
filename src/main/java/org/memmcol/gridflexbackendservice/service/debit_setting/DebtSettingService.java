@@ -4,6 +4,7 @@ import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,4 +32,8 @@ public interface DebtSettingService {
     Map<String, Object> liabilityCauseChangeState(UUID id, Boolean status);
 
     Map<String, Object> parcentageChangeState(UUID id, Boolean status);
+
+    Map<String, Object> bulkApproveLiabilityCause(List<LiabilityCause> lc);
+
+    Map<String, Object> bulkApprovePercentageRange(List<PercentageRange> pr);
 }
