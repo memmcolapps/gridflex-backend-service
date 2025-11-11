@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import java.util.Map;
 
 @Service
-public class HesClientServiceImpl {
+public class HesClientServiceImpl implements HesService {
     @Autowired
     private ResponseProperties status;
 
@@ -24,8 +25,10 @@ public class HesClientServiceImpl {
     @Autowired
     private WebClient webClient;
 
-    public Map<String, Object> loadSomething() {
-        System.out.println("loadSomething");
+    @Autowired
+    private GenericHandler genericHandler;
+
+    public Map<String, Object> dashboard() {
         String token = auth.getAccessToken();
 
         try {
@@ -43,9 +46,13 @@ public class HesClientServiceImpl {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException webClientResponseException) {
+            genericHandler.logIncidentReport("fetching hes dashboard service failed");
+            genericHandler.logAndSaveException(webClientResponseException, "fetching hes dashboard");
             // handles HTTP errors
             throw webClientResponseException;
         } catch (Exception exception) {
+            genericHandler.logIncidentReport("fetching hes dashboard service failed");
+            genericHandler.logAndSaveException(exception, "fetching hes dashboard");
             throw exception;
         }
     }

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.MethodNotAllowedException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -366,6 +367,16 @@ public class GlobalExceptionHandler {
 		errorMessage.put("responsedesc", "Database is busy, please try again later.");
 		errorMessage.put("responsedata", "");
 		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorMessage);
+	}
+
+	@ExceptionHandler(WebClientResponseException.class)
+	public ResponseEntity<Map<String, Object>> handleWebClientResponseException(WebClientResponseException ex) {
+		Map<String, Object> errorMessage = new HashMap<>();
+		errorMessage.put("responsecode", String.valueOf(ex.getRawStatusCode())); // HTTP status code
+		errorMessage.put("responsedesc", ex.getStatusText());                     // HTTP reason phrase
+		errorMessage.put("responsedata", "");           // API response body
+
+		return ResponseEntity.status(ex.getStatusCode()).body(errorMessage);
 	}
 
 //
