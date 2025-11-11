@@ -2072,6 +2072,7 @@ public interface MeterMapper {
     })
     void insertAssignLocation(@Param("batch") List<MeterAssignLocation> batch);
 
+
     @Insert({
             "<script>",
             "INSERT INTO payment_mode_version (",

@@ -29,10 +29,13 @@ public class HesAuthServiceImpl {
      * Get a valid access token. Refreshes if expired.
      */
     public synchronized String getAccessToken() {
+        System.out.println("getAccessToken");
         if (accessToken == null || Instant.now().isAfter(expiryTime)) {
             if (refreshToken != null) {
+                System.out.println("refreshToken");
                 refreshAccessToken();
             } else {
+                System.out.println("accessToken");
                 authenticate();  // initial login
             }
         }
