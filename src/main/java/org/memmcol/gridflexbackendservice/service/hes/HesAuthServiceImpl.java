@@ -61,7 +61,7 @@ public class HesAuthServiceImpl {
      */
     private void refreshAccessToken() {
         RefreshData response = webClient.post()
-                .uri("/refresh")
+                .uri("/api/auth/refresh")
                 .bodyValue(Map.of("refreshToken", refreshToken))
                 .retrieve()
                 .bodyToMono(RefreshData.class)
