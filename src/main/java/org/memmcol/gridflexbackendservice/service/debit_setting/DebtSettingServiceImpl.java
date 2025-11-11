@@ -579,13 +579,23 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(liabilityCause == null){
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause "+status.getNotFoundDesc());
             }
+
+            if(liabilityCause.getApproveStatus().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Liability cause have a pending state that needs to be cleared");
+            }
+            if(liabilityCause.getApproveStatus().contains("Deactivated") && !state){
+                throw new GlobalExceptionHandler.NotFoundException("Liability cause already deactivated");
+            }
+            if(liabilityCause.getApproveStatus().contains("Approved") && state){
+                throw new GlobalExceptionHandler.NotFoundException("Liability cause already activated");
+            }
             if(state){
                 DebitCreditAdjust resp = debitCreditAdjustmentMapper.getDebitAdjustmentByStatus(liabilityCause.getId(), um.getOrgId());
                 if (resp != null) {
                     throw new GlobalExceptionHandler.NotFoundException(lc+" can not be deactivated because is currently in use by debit or credit adjustment" );
                 }
             }
-            LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(id, um.getOrgId());
+//            LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(id, um.getOrgId());
             liabilityCause.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             liabilityCause.setOrgId(um.getOrgId());
             liabilityCause.setCreatedBy(um.getId());
@@ -593,14 +603,14 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             String changeDescription = buildLcChangeStatusDescription(liabilityCause, state);
             liabilityCause.setDescription(state ? "Liability Cause Activated" : "Liability Cause Deactivated");
 
-            if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
-            } else {
+//            if(isVersionExist != null){
+//                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
+//            } else {
                 result = debtMapper.createLiabilityCauseVersion(liabilityCause);
                 if(result == 0){
                     throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getUpdateDesc());
                 }
-            }
+//            }
             int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getId(), liabilityCause.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
             LiabilityCause lca = debtMapper.getLiabilityCauseById(id, um.getOrgId());
@@ -608,7 +618,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, lca, metadata);
             auditRepository.save(auditLog);
-            return ResponseMap.response(status.getSuccessCode(), lc+ (state ? " activated ": "deactivated ")+"successfully", "");
+            return ResponseMap.response(status.getSuccessCode(), lc + (state ? " activated ": " deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             genericHandler.logIncidentReport("changing liability cause status service failed");
             genericHandler.logAndSaveException(exception, "changing liability cause state");
@@ -627,6 +637,16 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(pr+" "+status.getNotFoundDesc());
             }
 
+            if(percentage.getApproveStatus().contains("Pending")){
+                throw new GlobalExceptionHandler.NotFoundException("Percentage range have a pending state that needs to be cleared");
+            }
+            if(percentage.getApproveStatus().contains("Deactivated") && !state){
+                throw new GlobalExceptionHandler.NotFoundException("percentage range already deactivated");
+            }
+            if(percentage.getApproveStatus().contains("Approved") && state){
+                throw new GlobalExceptionHandler.NotFoundException("percentage range already activated");
+            }
+
             if(state){
                 Band isBand = debtMapper.getBand(percentage.getBandId(), um.getOrgId());
                 if (isBand == null) {
@@ -635,7 +655,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
 
 
-            PercentageRange isVersionExist = debtMapper.getPercentageVersionById(id, um.getOrgId());
+//            PercentageRange isVersionExist = debtMapper.getPercentageVersionById(id, um.getOrgId());
             percentage.setApproveStatus("Pending-"+(state ? "activated" : "deactivated"));
             percentage.setOrgId(um.getOrgId());
             percentage.setCreatedBy(um.getId());
@@ -643,14 +663,14 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             String changeDescription = buildPrChangeStatusDescription(percentage, state);
             percentage.setDescription(state ? "Percentage Range Activated" : "Percentage Range Deactivated");
 
-            if(isVersionExist != null){
-                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ "code have a pending status needs to be cleared");
-            } else {
+//            if(isVersionExist != null){
+//                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ "code have a pending status needs to be cleared");
+//            } else {
                 result = debtMapper.createPercentageVersion(percentage);
                 if(result == 0){
                     throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getUpdateDesc());
                 }
-            }
+//            }
             int u = debtMapper.updatePercentage(percentage.getApproveStatus(), percentage.getId(), percentage.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activated " : " deactivated ")+ "failed");
 
