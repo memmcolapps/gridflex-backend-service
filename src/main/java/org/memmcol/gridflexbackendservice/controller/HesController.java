@@ -20,10 +20,24 @@ public class HesController {
     private HesService hesService;
 
     @GetMapping("/dashboard")
-    public ResponseEntity<?> manageTariffStatus() {
+    public ResponseEntity<?> dashboard() {
         try {
             Map<String, Object> result = hesService.dashboard();
-//            DashboardSummaryResponse response = dashboardService.getDashboardSummary();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/communication/report")
+    public ResponseEntity<?> report(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "type", required = false,  defaultValue = "") String type,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search
+    ) {
+        try {
+            Map<String, Object> result = hesService.communicationReport(page, size, type, search);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

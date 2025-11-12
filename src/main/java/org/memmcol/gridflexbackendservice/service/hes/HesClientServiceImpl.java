@@ -4,7 +4,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
+import org.memmcol.gridflexbackendservice.mapper.HesMapper;
 import org.memmcol.gridflexbackendservice.model.hes.DashboardSummaryResponse;
+import org.memmcol.gridflexbackendservice.model.hes.ReportSummaryResponse;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -32,6 +35,9 @@ public class HesClientServiceImpl implements HesService {
 
     @Autowired
     private DashboardAsyncService asyncService;
+
+    @Autowired
+    private HesMapper hesMapper;
 
     private final IMap<String, Object> hesTokenCache;
 
@@ -75,6 +81,36 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Override
+    public Map<String, Object> communicationReport(int page, int size, String type, String search) {
+        try {
+            // Call async method (now returns Map<String, Object>)
+            CompletableFuture<Map<String, Object>> communicationReportFuture =
+                    asyncService.getAllCommunicationReportAsync(page, size, "lastSync", true, type, search);
+
+            // Wait for completion
+            CompletableFuture.allOf(communicationReportFuture).join();
+
+            // Get the data from async response
+            Map<String, Object> result = communicationReportFuture.join();
+
+            // Wrap in your response format
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    "Communication Report fetched successfully",
+                    result
+            );
+
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("fetching communication report service failed");
+            genericHandler.logAndSaveException(exception, "fetching communication report");
+            throw exception;
+        }
+    }
+
+}
+
+
 //    public Map<String, Object> dashboard() {
 //        String token = auth.getAccessToken();
 //
@@ -103,4 +139,3 @@ public class HesClientServiceImpl implements HesService {
 //            throw exception;
 //        }
 //    }
-}

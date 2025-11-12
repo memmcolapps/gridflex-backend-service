@@ -34,7 +34,7 @@ public interface MeterRepository extends JpaRepository<MetersEntity, UUID> {
 	•	Retrieves all meter numbers with their corresponding models.
 	•	Joins meters with smart_meter_info.*/
     @Query("""
-        SELECT m.meterNumber, s.meterModel
+        SELECT m.meterNumber, s.meterModel, m.meterClass
         FROM MetersEntity m
         JOIN SmartMeterInfo s ON m.id = s.meter.id
     """)

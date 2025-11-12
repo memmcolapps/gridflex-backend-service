@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.memmcol.gridflexbackendservice.model.hes.DashboardSummaryResponse;
 import org.memmcol.gridflexbackendservice.model.hes.MetersConnectionEvent;
+import org.memmcol.gridflexbackendservice.model.hes.ReportSummaryResponse;
 import org.memmcol.gridflexbackendservice.repository.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -197,13 +199,13 @@ public class DashboardAsyncService {
                 );
             }
 
-            // ✅ Limit result to top 5 rows (for dashboard summary)
-            List<DashboardSummaryResponse.CommunicationReportRow> limitedReport = communicationReport
-                    .stream()
-                    .limit(topN)
-                    .collect(Collectors.toList());
-
-            log.info("📊 Returning top {} communication report rows for dashboard.", limitedReport.size());
+//            // ✅ Limit result to top 5 rows (for dashboard summary)
+//            List<DashboardSummaryResponse.CommunicationReportRow> limitedReport = communicationReport
+//                    .stream()
+//                    .limit(topN)
+//                    .collect(Collectors.toList());
+//
+//            log.info("📊 Returning top {} communication report rows for dashboard.", limitedReport.size());
 
             // 🔢 Optional Sorting
             Comparator<DashboardSummaryResponse.CommunicationReportRow> comparator = switch (sortBy) {
@@ -222,7 +224,7 @@ public class DashboardAsyncService {
                             .sorted(comparator)
                             .toList();
 
-// 📄 Pagination
+            // 📄 Pagination
             int fromIndex = Math.max(0, page * size);
             int toIndex = Math.min(fromIndex + size, sortedReport.size());
 
@@ -238,44 +240,171 @@ public class DashboardAsyncService {
         }
     }
 
-    public CompletableFuture<List<DashboardSummaryResponse.CommunicationReportRow>> getCommunicationReportAsync() {
-        log.info("🔄 Fetching communication report from DB …");
+
+//    @Async
+//    public CompletableFuture<Map<String, Object>> getAllCommunicationReportAsync(
+//            int page, int size, String sortBy, boolean ascending, String type, String search
+//    ) {
+//        log.info("🔄 Fetching communication report from DB … (page={}, size={})", page, size);
+//
+//        try {
+//            List<ReportSummaryResponse.CommunicationReportRow> communicationReport = new ArrayList<>();
+//
+//            // 1️⃣ Meter model map
+//            List<Object[]> meterModels = meterRepository.findAllMeterModels();
+//            Map<String, String> meterModelMap = meterModels.stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> (String) r[1],
+//                            (existing, replacement) -> existing
+//                    ));
+//
+//            // 2️⃣ Latest connection events
+//            List<Object[]> connectionEvents = metersConnectionEventRepository.findLatestConnectionEvents();
+//
+//            // Optional duplicate logging
+//            Set<String> duplicates = connectionEvents.stream()
+//                    .collect(Collectors.groupingBy(r -> (String) r[0], Collectors.counting()))
+//                    .entrySet().stream()
+//                    .filter(e -> e.getValue() > 1)
+//                    .map(Map.Entry::getKey)
+//                    .collect(Collectors.toSet());
+//            if (!duplicates.isEmpty()) {
+//                log.warn("⚠️ Duplicate meterNos found in connection events: {}", duplicates);
+//            }
+//
+//            Map<String, Object[]> connectionMap = connectionEvents.stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> r,
+//                            (existing, replacement) -> replacement
+//                    ));
+//
+//            // 3️⃣ Tamper events
+//            Map<String, Object[]> tamperMap = eventLogRepository.findLatestEventLogsByType(3)
+//                    .stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> r,
+//                            (existing, replacement) -> replacement
+//                    ));
+//
+//            // 4️⃣ Relay events
+//            Map<String, Object[]> relayMap = eventLogRepository.findLatestEventLogsByType(4)
+//                    .stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> r,
+//                            (existing, replacement) -> replacement
+//                    ));
+//
+//            // 5️⃣ Build full communication report
+//            int sn = 1;
+//            for (String meterNo : meterModelMap.keySet()) {
+//                Object[] conn = connectionMap.get(meterNo);
+//                Object[] tamp = tamperMap.get(meterNo);
+//                Object[] relay = relayMap.get(meterNo);
+//
+//                communicationReport.add(
+//                        new ReportSummaryResponse.CommunicationReportRow(
+//                                String.format("%02d", sn++),
+//                                meterNo,
+//                                meterModelMap.get(meterNo),
+//                                conn != null ? (String) conn[1] : "Unknown",
+//                                conn != null ? conn[2].toString() : "N/A",
+//                                tamp != null ? (String) tamp[1] : "No Tamper",
+//                                tamp != null ? tamp[2].toString() : "N/A",
+//                                relay != null ? (String) relay[1] : "Disconnected",
+//                                relay != null ? relay[2].toString() : "N/A"
+//                        )
+//                );
+//            }
+//
+//            // 6️⃣ Sorting
+//            Comparator<ReportSummaryResponse.CommunicationReportRow> comparator = switch (sortBy) {
+//                case "meterNo" -> Comparator.comparing(ReportSummaryResponse.CommunicationReportRow::meterNo);
+//                case "status" -> Comparator.comparing(ReportSummaryResponse.CommunicationReportRow::status);
+//                default -> Comparator.comparing(ReportSummaryResponse.CommunicationReportRow::lastSync);
+//            };
+//            if (!ascending) comparator = comparator.reversed();
+//
+//            List<ReportSummaryResponse.CommunicationReportRow> sortedReport = communicationReport.stream()
+//                    .sorted(comparator)
+//                    .toList();
+//
+//            // 7️⃣ Pagination logic (if size == 0 → all)
+//            List<ReportSummaryResponse.CommunicationReportRow> finalReport;
+//            int totalData = sortedReport.size();
+//            int totalPages = (size <= 0) ? 1 : (int) Math.ceil((double) totalData / size);
+//
+//            if (size <= 0) {
+//                log.info("📄 Returning all {} records (no pagination)", totalData);
+//                finalReport = sortedReport;
+//            } else {
+//                int fromIndex = Math.max(0, page * size);
+//                int toIndex = Math.min(fromIndex + size, sortedReport.size());
+//                finalReport = fromIndex < sortedReport.size()
+//                        ? sortedReport.subList(fromIndex, toIndex)
+//                        : List.of();
+//                log.info("📄 Returning paginated results: {} - {}", fromIndex, toIndex);
+//            }
+//
+//            // 8️⃣ Wrap into response map
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("data", finalReport);
+//            response.put("totalData", totalData);
+//            response.put("page", page);
+//            response.put("size", size);
+//            response.put("totalPages", totalPages);
+//
+//            return CompletableFuture.completedFuture(response);
+//
+//        } catch (Exception e) {
+//            log.error("❌ Error fetching communication report: {}", e.getMessage(), e);
+//            Map<String, Object> errorResponse = new HashMap<>();
+//            errorResponse.put("data", List.of());
+//            errorResponse.put("error", e.getMessage());
+//            return CompletableFuture.completedFuture(errorResponse);
+//        }
+//    }
+
+
+    @Async
+    public CompletableFuture<Map<String, Object>> getAllCommunicationReportAsync(
+            int page,
+            int size,
+            String sortBy,
+            boolean ascending,
+            String type,     // "MD" or "Non-MD"
+            String search    // free-text search
+    ) {
+        log.info("🔄 Fetching communication report from DB … (page={}, size={}, type={}, search='{}')",
+                page, size, type, search);
+
         try {
-            List<DashboardSummaryResponse.CommunicationReportRow> communicationReport = new ArrayList<>();
+            List<ReportSummaryResponse.CommunicationReportRow> communicationReport = new ArrayList<>();
 
             // 1️⃣ Meter model map
             List<Object[]> meterModels = meterRepository.findAllMeterModels();
-            Map<String, String> meterModelMap = meterModels.stream()
+            Map<String, Object[]> meterModelMap = meterModels.stream()
                     .collect(Collectors.toMap(
                             r -> (String) r[0],
-                            r -> (String) r[1],
-                            (existing, replacement) -> existing // keep first if duplicates
+                            r -> r,
+                            (existing, replacement) -> existing
                     ));
 
             // 2️⃣ Latest connection events
             List<Object[]> connectionEvents = metersConnectionEventRepository.findLatestConnectionEvents();
-
-            Set<String> duplicates = connectionEvents.stream()
-                    .collect(Collectors.groupingBy(r -> (String) r[0], Collectors.counting()))
-                    .entrySet().stream()
-                    .filter(e -> e.getValue() > 1)
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toSet());
-
-            if (!duplicates.isEmpty()) {
-                log.warn("⚠️ Duplicate meterNos found in connection events: {}", duplicates);
-            }
-
             Map<String, Object[]> connectionMap = connectionEvents.stream()
                     .collect(Collectors.toMap(
                             r -> (String) r[0],
                             r -> r,
-                            (existing, replacement) -> replacement // keep latest if duplicates
+                            (existing, replacement) -> replacement
                     ));
 
             // 3️⃣ Tamper events
-            List<Object[]> tamperEvents = eventLogRepository.findLatestEventLogsByType(3);
-            Map<String, Object[]> tamperMap = tamperEvents.stream()
+            Map<String, Object[]> tamperMap = eventLogRepository.findLatestEventLogsByType(3)
+                    .stream()
                     .collect(Collectors.toMap(
                             r -> (String) r[0],
                             r -> r,
@@ -283,26 +412,32 @@ public class DashboardAsyncService {
                     ));
 
             // 4️⃣ Relay events
-            List<Object[]> relayEvents = eventLogRepository.findLatestEventLogsByType(4);
-            Map<String, Object[]> relayMap = relayEvents.stream()
+            Map<String, Object[]> relayMap = eventLogRepository.findLatestEventLogsByType(4)
+                    .stream()
                     .collect(Collectors.toMap(
                             r -> (String) r[0],
                             r -> r,
                             (existing, replacement) -> replacement
                     ));
 
-            // 5️⃣ Build communication report
+            // 5️⃣ Build base report
             int sn = 1;
             for (String meterNo : meterModelMap.keySet()) {
+                Object[] modelData = meterModelMap.get(meterNo);
                 Object[] conn = connectionMap.get(meterNo);
                 Object[] tamp = tamperMap.get(meterNo);
                 Object[] relay = relayMap.get(meterNo);
 
+
+                String meterModel = modelData != null ? (String) modelData[1] : "Unknown";
+                String meterClass = modelData != null ? (String) modelData[2] : "Unknown";
+//                Object[] meterClass = relayMap.get(meterNo);
                 communicationReport.add(
-                        new DashboardSummaryResponse.CommunicationReportRow(
+                        new ReportSummaryResponse.CommunicationReportRow(
                                 String.format("%02d", sn++),
                                 meterNo,
-                                meterModelMap.get(meterNo),
+                                meterModel,
+                                meterClass,
                                 conn != null ? (String) conn[1] : "Unknown",
                                 conn != null ? conn[2].toString() : "N/A",
                                 tamp != null ? (String) tamp[1] : "No Tamper",
@@ -313,20 +448,172 @@ public class DashboardAsyncService {
                 );
             }
 
-            // ✅ Limit result to top 5 rows (for dashboard summary)
-            List<DashboardSummaryResponse.CommunicationReportRow> limitedReport = communicationReport
-                    .stream()
-                    .limit(topN)
-                    .collect(Collectors.toList());
+            // 6️⃣ Apply Filters — Type and Search
+            Stream<ReportSummaryResponse.CommunicationReportRow> filteredStream = communicationReport.stream();
 
-            log.info("📊 Returning top {} communication report rows for dashboard.", limitedReport.size());
+            if (type != null && !type.isBlank()) {
+                filteredStream = filteredStream.filter(row -> {
+                    String model = row.meterClass() != null ? row.meterClass().toLowerCase() : "";
+                    if (type.equalsIgnoreCase("MD")) {
+                        return model.contains("md");
+                    } else if (!type.equals("MD")) {
+                        return !model.contains("md");
+                    }
+                    return true;
+                });
+            }
 
-            return CompletableFuture.completedFuture(limitedReport);
+            if (search != null && !search.isBlank()) {
+                String s = search.toLowerCase();
+                filteredStream = filteredStream.filter(row ->
+                        (row.meterNo() != null && row.meterNo().toLowerCase().contains(s)) ||
+                                (row.meterModel() != null && row.meterModel().toLowerCase().contains(s)) ||
+                                (row.meterClass() != null && row.meterClass().toLowerCase().contains(s)) ||
+                                (row.status() != null && row.status().toLowerCase().contains(s)) ||
+                                (row.tamperState() != null && row.tamperState().toLowerCase().contains(s)) ||
+                                (row.relayControl() != null && row.relayControl().toLowerCase().contains(s))
+                );
+            }
+
+            List<ReportSummaryResponse.CommunicationReportRow> filteredReport = filteredStream.toList();
+
+            // 7️⃣ Sorting
+            Comparator<ReportSummaryResponse.CommunicationReportRow> comparator = switch (sortBy) {
+                case "meterNo" -> Comparator.comparing(ReportSummaryResponse.CommunicationReportRow::meterNo);
+                case "status" -> Comparator.comparing(ReportSummaryResponse.CommunicationReportRow::status);
+                default -> Comparator.comparing(ReportSummaryResponse.CommunicationReportRow::lastSync);
+            };
+            if (!ascending) comparator = comparator.reversed();
+
+            List<ReportSummaryResponse.CommunicationReportRow> sortedReport = filteredReport.stream()
+                    .sorted(comparator)
+                    .toList();
+
+            // 8️⃣ Pagination logic
+            List<ReportSummaryResponse.CommunicationReportRow> finalReport;
+            int totalData = sortedReport.size();
+            int totalPages = (size <= 0) ? 1 : (int) Math.ceil((double) totalData / size);
+
+            if (size <= 0) {
+                finalReport = sortedReport;
+            } else {
+                int fromIndex = Math.max(0, page * size);
+                int toIndex = Math.min(fromIndex + size, sortedReport.size());
+                finalReport = fromIndex < sortedReport.size()
+                        ? sortedReport.subList(fromIndex, toIndex)
+                        : List.of();
+            }
+
+            // 9️⃣ Wrap response
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", finalReport);
+            response.put("totalData", totalData);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", totalPages);
+
+            log.info("✅ Communication report ready with {} records (after filtering)", totalData);
+            return CompletableFuture.completedFuture(response);
+
         } catch (Exception e) {
             log.error("❌ Error fetching communication report: {}", e.getMessage(), e);
-            return CompletableFuture.completedFuture(List.of());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", List.of());
+            errorResponse.put("error", e.getMessage());
+            return CompletableFuture.completedFuture(errorResponse);
         }
     }
+
+
+//    public CompletableFuture<List<DashboardSummaryResponse.CommunicationReportRow>> getCommunicationReportAsync() {
+//        log.info("🔄 Fetching communication report from DB …");
+//        try {
+//            List<DashboardSummaryResponse.CommunicationReportRow> communicationReport = new ArrayList<>();
+//
+//            // 1️⃣ Meter model map
+//            List<Object[]> meterModels = meterRepository.findAllMeterModels();
+//            Map<String, String> meterModelMap = meterModels.stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> (String) r[1],
+//                            (existing, replacement) -> existing // keep first if duplicates
+//                    ));
+//
+//            // 2️⃣ Latest connection events
+//            List<Object[]> connectionEvents = metersConnectionEventRepository.findLatestConnectionEvents();
+//
+//            Set<String> duplicates = connectionEvents.stream()
+//                    .collect(Collectors.groupingBy(r -> (String) r[0], Collectors.counting()))
+//                    .entrySet().stream()
+//                    .filter(e -> e.getValue() > 1)
+//                    .map(Map.Entry::getKey)
+//                    .collect(Collectors.toSet());
+//
+//            if (!duplicates.isEmpty()) {
+//                log.warn("⚠️ Duplicate meterNos found in connection events: {}", duplicates);
+//            }
+//
+//            Map<String, Object[]> connectionMap = connectionEvents.stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> r,
+//                            (existing, replacement) -> replacement // keep latest if duplicates
+//                    ));
+//
+//            // 3️⃣ Tamper events
+//            List<Object[]> tamperEvents = eventLogRepository.findLatestEventLogsByType(3);
+//            Map<String, Object[]> tamperMap = tamperEvents.stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> r,
+//                            (existing, replacement) -> replacement
+//                    ));
+//
+//            // 4️⃣ Relay events
+//            List<Object[]> relayEvents = eventLogRepository.findLatestEventLogsByType(4);
+//            Map<String, Object[]> relayMap = relayEvents.stream()
+//                    .collect(Collectors.toMap(
+//                            r -> (String) r[0],
+//                            r -> r,
+//                            (existing, replacement) -> replacement
+//                    ));
+//
+//            // 5️⃣ Build communication report
+//            int sn = 1;
+//            for (String meterNo : meterModelMap.keySet()) {
+//                Object[] conn = connectionMap.get(meterNo);
+//                Object[] tamp = tamperMap.get(meterNo);
+//                Object[] relay = relayMap.get(meterNo);
+//
+//                communicationReport.add(
+//                        new DashboardSummaryResponse.CommunicationReportRow(
+//                                String.format("%02d", sn++),
+//                                meterNo,
+//                                meterModelMap.get(meterNo),
+//                                conn != null ? (String) conn[1] : "Unknown",
+//                                conn != null ? conn[2].toString() : "N/A",
+//                                tamp != null ? (String) tamp[1] : "No Tamper",
+//                                tamp != null ? tamp[2].toString() : "N/A",
+//                                relay != null ? (String) relay[1] : "Disconnected",
+//                                relay != null ? relay[2].toString() : "N/A"
+//                        )
+//                );
+//            }
+//
+//            // ✅ Limit result to top 5 rows (for dashboard summary)
+//            List<DashboardSummaryResponse.CommunicationReportRow> limitedReport = communicationReport
+//                    .stream()
+//                    .limit(topN)
+//                    .collect(Collectors.toList());
+//
+//            log.info("📊 Returning top {} communication report rows for dashboard.", limitedReport.size());
+//
+//            return CompletableFuture.completedFuture(limitedReport);
+//        } catch (Exception e) {
+//            log.error("❌ Error fetching communication report: {}", e.getMessage(), e);
+//            return CompletableFuture.completedFuture(List.of());
+//        }
+//    }
 
 
     // Utility
