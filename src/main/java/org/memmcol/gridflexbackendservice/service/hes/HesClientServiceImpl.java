@@ -108,6 +108,19 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Override
+    public Map<String, Object> profileEvent(String startDate, String endDate, String meterNumber, String profile, String profileType) {
+        try {
+            return Map.of();
+
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("profile event report service failed");
+            genericHandler.logAndSaveException(exception, "profile event report");
+            throw exception;
+        }
+
+    }
+
 }
 
 

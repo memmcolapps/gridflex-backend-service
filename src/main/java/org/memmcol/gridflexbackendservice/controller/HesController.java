@@ -44,6 +44,22 @@ public class HesController {
         }
     }
 
+    @GetMapping("/profile-event")
+    public ResponseEntity<?> report(
+            @RequestParam(value = "startDate", required = false,  defaultValue = "") String startDate,
+            @RequestParam(value = "endDate", required = false,  defaultValue = "") String endDate,
+            @RequestParam(value = "meterNumber", required = false,  defaultValue = "") String meterNumber,
+            @RequestParam(value = "profile", required = false,  defaultValue = "") String profile,
+            @RequestParam(value = "profileType", required = false,  defaultValue = "") String profileType
+    ) {
+        try {
+            Map<String, Object> result = hesService.profileEvent(startDate, endDate, meterNumber, profile, profileType);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
