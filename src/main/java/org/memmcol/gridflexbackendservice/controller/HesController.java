@@ -23,6 +23,7 @@ public class HesController {
     public ResponseEntity<?> manageTariffStatus() {
         try {
             Map<String, Object> result = hesService.dashboard();
+//            DashboardSummaryResponse response = dashboardService.getDashboardSummary();
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
