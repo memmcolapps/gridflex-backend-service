@@ -1,9 +1,12 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,12 @@ public class HesClientServiceImpl implements HesService {
 
     @Autowired
     private GenericHandler genericHandler;
+
+    private final IMap<String, Object> hesTokenCache;
+
+    public HesClientServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
+        this.hesTokenCache = hazelcastInstance.getMap("hesTokenCache");
+    }
 
     public Map<String, Object> dashboard() {
         String token = auth.getAccessToken();
