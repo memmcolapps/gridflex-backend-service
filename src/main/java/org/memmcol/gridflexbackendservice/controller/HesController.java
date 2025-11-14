@@ -3,9 +3,11 @@ package org.memmcol.gridflexbackendservice.controller;
 import org.memmcol.gridflexbackendservice.service.hes.HesService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 
@@ -44,16 +46,48 @@ public class HesController {
         }
     }
 
-    @GetMapping("/profile-event")
-    public ResponseEntity<?> report(
-            @RequestParam(value = "startDate", required = false,  defaultValue = "") String startDate,
-            @RequestParam(value = "endDate", required = false,  defaultValue = "") String endDate,
+    @GetMapping("/profile")
+    public ResponseEntity<?> profile(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
             @RequestParam(value = "meterNumber", required = false,  defaultValue = "") String meterNumber,
             @RequestParam(value = "profile", required = false,  defaultValue = "") String profile,
-            @RequestParam(value = "profileType", required = false,  defaultValue = "") String profileType
+            @RequestParam(value = "model", required = false,  defaultValue = "") String model,
+            @RequestParam(value = "search", required = false) String search
     ) {
         try {
-            Map<String, Object> result = hesService.profileEvent(startDate, endDate, meterNumber, profile, profileType);
+            Map<String, Object> result = hesService.profile(startDate, endDate, meterNumber, profile, model, page, size, search);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/event")
+    public ResponseEntity<?> event(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
+            @RequestParam(value = "meterNumber", required = false) String meterNumber,
+            @RequestParam(value = "eventTypeName", required = false) String eventTypeName,
+            @RequestParam(value = "model", required = false) String model,
+            @RequestParam(value = "search", required = false) String search
+    ) {
+        try {
+            Map<String, Object> result = hesService.event(startDate, endDate, meterNumber, eventTypeName, model, search, page, size);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/model")
+    public ResponseEntity<?> modelEventType() {
+        try {
+            Map<String, Object> result = hesService.modelEventType();
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public interface HesService {
@@ -8,5 +9,9 @@ public interface HesService {
 
     Map<String, Object> communicationReport(int page, int size, String type, String search);
 
-    Map<String, Object> profileEvent(String startDate, String endDate, String meterNumber, String profile, String profileType);
+    Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String profile, String model, int page, int size, String search);
+
+    Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String eventTypeName, String model, String search, int page, int size);
+
+    Map<String, Object> modelEventType();
 }

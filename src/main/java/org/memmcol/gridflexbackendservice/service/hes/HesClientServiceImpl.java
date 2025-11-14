@@ -6,18 +6,25 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
 import org.memmcol.gridflexbackendservice.model.hes.DashboardSummaryResponse;
-import org.memmcol.gridflexbackendservice.model.hes.ReportSummaryResponse;
+import org.memmcol.gridflexbackendservice.model.hes.Event;
+import org.memmcol.gridflexbackendservice.model.hes.Profile;
+import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
 public class HesClientServiceImpl implements HesService {
@@ -45,6 +52,7 @@ public class HesClientServiceImpl implements HesService {
         this.hesTokenCache = hazelcastInstance.getMap("hesTokenCache");
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> dashboard() {
 
         try {
@@ -81,6 +89,7 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> communicationReport(int page, int size, String type, String search) {
         try {
@@ -109,16 +118,136 @@ public class HesClientServiceImpl implements HesService {
     }
 
     @Override
-    public Map<String, Object> profileEvent(String startDate, String endDate, String meterNumber, String profile, String profileType) {
+    public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber,
+                                       String profile, String model,int page, int size, String search) {
         try {
-            return Map.of();
+
+            UserModel um = handleUserValidation();
+            List<Profile> events;
+
+            if(startDate == null || endDate == null) {
+                events = new ArrayList<>();
+            } else {
+                events = hesMapper.getProfiles(startDate, endDate, meterNumber, profile, model, page, size, um.getOrgId(), page, size);
+            }
+
+            // Normalize search text
+            String searchLower = (search == null) ? "" : search.toLowerCase();
+
+            // SEARCH ON ANY FIELD
+            List<Profile> filteredProfiles = events.stream()
+                    .filter(e -> searchLower.isEmpty()
+//                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
+//                            (e.getEventName() != null && e.getEventName().toLowerCase().equalsIgnoreCase(searchLower)) ||
+//                            (e.getEventTypeName() != null && e.getEventTypeName().toLowerCase().equalsIgnoreCase(searchLower)) ||
+//                            (e.getEventTypeDesc() != null && e.getEventTypeDesc().toLowerCase().equalsIgnoreCase(searchLower)) ||
+//                            (e.getEventTime() != null && e.getEventTime().toString().equalsIgnoreCase(searchLower))
+                    )
+                    .collect(Collectors.toList());
+
+            // Pagination logic
+            int totalProfiles = filteredProfiles.size();
+            List<Profile> paginatedProfiles;
+            if (size == 0) {
+                paginatedProfiles = filteredProfiles; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalProfiles);
+                int toIndex = Math.min(fromIndex + size, totalProfiles);
+                paginatedProfiles = filteredProfiles.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedProfiles);
+            response.put("totalData", totalProfiles);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedProfiles.size() / size));
+
+            return ResponseMap.response(status.getSuccessCode(), "Meter event fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("profile event report service failed");
-            genericHandler.logAndSaveException(exception, "profile event report");
+            genericHandler.logIncidentReport("profile report service failed");
+            genericHandler.logAndSaveException(exception, "profile report");
             throw exception;
         }
+    }
 
+    @Transactional(readOnly = true)
+    @Override
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String eventTypeName, String model, String search, int page, int size) {
+        try {
+            UserModel um = handleUserValidation();
+            List<Event> events;
+
+            if(startDate == null || endDate == null) {
+                events = new ArrayList<>();
+            } else {
+                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeName, model, page, size, um.getOrgId());
+            }
+
+            // Normalize search text
+            String searchLower = (search == null) ? "" : search.toLowerCase();
+
+            // SEARCH ON ANY FIELD
+            List<Event> filteredEvents = events.stream()
+                    .filter(e -> searchLower.isEmpty() ||
+                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventName() != null && e.getEventName().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventTypeName() != null && e.getEventTypeName().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventTypeDesc() != null && e.getEventTypeDesc().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventTime() != null && e.getEventTime().toString().equalsIgnoreCase(searchLower))
+                    )
+                    .collect(Collectors.toList());
+
+            // Pagination logic
+            int totalTariffs = filteredEvents.size();
+            List<Event> paginatedEvents;
+            if (size == 0) {
+                paginatedEvents = filteredEvents; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalTariffs);
+                int toIndex = Math.min(fromIndex + size, totalTariffs);
+                paginatedEvents = filteredEvents.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedEvents);
+            response.put("totalData", totalTariffs);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
+
+            return ResponseMap.response(status.getSuccessCode(), "Meter event fetched successfully", response);
+
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("event report service failed");
+            genericHandler.logAndSaveException(exception, "event report");
+            throw exception;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Map<String, Object> modelEventType() {
+        try {
+
+            List<Event> event_type = hesMapper.getEventType();
+
+            List<SmartMeterInfo> model = hesMapper.getModel();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("event_types", event_type);
+            response.put("models", model);
+
+            return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
+
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("event report service failed");
+            genericHandler.logAndSaveException(exception, "event report");
+            throw exception;
+        }
     }
 
 }

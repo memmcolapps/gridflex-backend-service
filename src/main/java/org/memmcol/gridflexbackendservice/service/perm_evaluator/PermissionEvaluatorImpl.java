@@ -40,7 +40,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/reading/service/generate", "/meter/reading/service/update", "/meter/reading/service/all", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate",
                     "/vending/service/generate/kct", "/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
                     "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management", "/vending/service/generate/meter-kct",
-                    "/vending/service/generate/token/print", "/dashboard/service/vending", "/hes/service/dashboard", "/hes/service/communication/report")),
+                    "/vending/service/generate/token/print", "/dashboard/service/vending", "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
+                    "/hes/service/model")),
 
             Map.entry("data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/user/service/update",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
@@ -153,7 +154,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/billing/service/meter/reading/service/bulk-upload", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("hes", List.of("/dashboard/service/hes-management", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",
-                    "/hes/service/dashboard", "/hes/service/communication/report"))
+                    "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile", "/hes/service/model"))
 
     );
 
