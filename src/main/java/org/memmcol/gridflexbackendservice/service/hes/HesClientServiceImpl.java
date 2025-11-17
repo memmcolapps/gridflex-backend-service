@@ -11,6 +11,7 @@ import org.memmcol.gridflexbackendservice.model.hes.Profile;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -123,25 +124,30 @@ public class HesClientServiceImpl implements HesService {
         try {
 
             UserModel um = handleUserValidation();
-            List<Profile> events;
+            List<Profile> profiles;
 
-            if(startDate == null || endDate == null) {
-                events = new ArrayList<>();
+            if(profile.equalsIgnoreCase("load-profile-one")) {
+                profiles = hesMapper.getProfileChannelOne(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+            } else if(profile.equalsIgnoreCase("load-profile-two")) {
+                profiles = hesMapper.getProfileChannelTwo(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+            } else if(profile.equalsIgnoreCase("daily-billing-profile")) {
+                profiles = hesMapper.getDailyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+            } else if(profile.equalsIgnoreCase("monthly-billing-profile")) {
+                profiles = hesMapper.getMonthlyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
             } else {
-                events = hesMapper.getProfiles(startDate, endDate, meterNumber, profile, model, page, size, um.getOrgId(), page, size);
+                throw new GlobalExceptionHandler.NotFoundException("Profile type not found");
             }
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
 
             // SEARCH ON ANY FIELD
-            List<Profile> filteredProfiles = events.stream()
-                    .filter(e -> searchLower.isEmpty()
-//                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
-//                            (e.getEventName() != null && e.getEventName().toLowerCase().equalsIgnoreCase(searchLower)) ||
-//                            (e.getEventTypeName() != null && e.getEventTypeName().toLowerCase().equalsIgnoreCase(searchLower)) ||
-//                            (e.getEventTypeDesc() != null && e.getEventTypeDesc().toLowerCase().equalsIgnoreCase(searchLower)) ||
-//                            (e.getEventTime() != null && e.getEventTime().toString().equalsIgnoreCase(searchLower))
+            List<Profile> filteredProfiles = profiles.stream()
+                    .filter(e -> searchLower.isEmpty() ||
+                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getMeterModel() != null && e.getMeterModel().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getReceivedAt() != null && e.getReceivedAt().toString().equalsIgnoreCase(searchLower)) ||
+                            (e.getMeterHealthIndicator() != null && e.getMeterHealthIndicator().toLowerCase().equalsIgnoreCase(searchLower))
                     )
                     .collect(Collectors.toList());
 

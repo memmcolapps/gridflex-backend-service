@@ -1,26 +1,27 @@
 package org.memmcol.gridflexbackendservice.model.hes;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 public class Profile implements Serializable {
-    private String meterSerial;
+    private String orgId;
     private String meterNumber;
     private String meterModel;
     private String entryTimestamp;
     private String totalImportActiveEnergy;
     private String totalExportActiveEnergy;
-    private String receiveAt;
+    private LocalDateTime receivedAt;
 
     // Profile channel one
     private String meterHealthIndicator;
     private String totalInstantaneousActivePower;
     private String totalInstantaneousApparentPower;
-    private String l1CurrentHarmonyThd;
-    private String l2CurrentHarmonyThd;
-    private String l3CurrentHarmonyThd;
-    private String l1VoltageHarmonyThd;
-    private String l2VoltageHarmonyThd;
-    private String l3VoltageHarmonyThd;
+    private String l1CurrentHarmonicThd;
+    private String l2CurrentHarmonicThd;
+    private String l3CurrentHarmonicThd;
+    private String l1VoltageHarmonicThd;
+    private String l2VoltageHarmonicThd;
+    private String l3VoltageHarmonicThd;
 
     // Daily and Monthly billing profile
     private String totalAbsoluteActiveEnergy;
@@ -45,12 +46,12 @@ public class Profile implements Serializable {
     private String totalApparentDemand;
     private String totalApparentDemandTime;
 
-    public String getMeterSerial() {
-        return meterSerial;
+    public String getOrgId() {
+        return orgId;
     }
 
-    public void setMeterSerial(String meterSerial) {
-        this.meterSerial = meterSerial;
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public String getMeterNumber() {
@@ -93,12 +94,12 @@ public class Profile implements Serializable {
         this.totalExportActiveEnergy = totalExportActiveEnergy;
     }
 
-    public String getReceiveAt() {
-        return receiveAt;
+    public LocalDateTime getReceivedAt() {
+        return receivedAt;
     }
 
-    public void setReceiveAt(String receiveAt) {
-        this.receiveAt = receiveAt;
+    public void setReceivedAt(LocalDateTime receivedAt) {
+        this.receivedAt = receivedAt;
     }
 
     public String getMeterHealthIndicator() {
@@ -125,52 +126,52 @@ public class Profile implements Serializable {
         this.totalInstantaneousApparentPower = totalInstantaneousApparentPower;
     }
 
-    public String getL1CurrentHarmonyThd() {
-        return l1CurrentHarmonyThd;
+    public String getL1CurrentHarmonicThd() {
+        return l1CurrentHarmonicThd;
     }
 
-    public void setL1CurrentHarmonyThd(String l1CurrentHarmonyThd) {
-        this.l1CurrentHarmonyThd = l1CurrentHarmonyThd;
+    public void setL1CurrentHarmonicThd(String l1CurrentHarmonicThd) {
+        this.l1CurrentHarmonicThd = l1CurrentHarmonicThd;
     }
 
-    public String getL2CurrentHarmonyThd() {
-        return l2CurrentHarmonyThd;
+    public String getL2CurrentHarmonicThd() {
+        return l2CurrentHarmonicThd;
     }
 
-    public void setL2CurrentHarmonyThd(String l2CurrentHarmonyThd) {
-        this.l2CurrentHarmonyThd = l2CurrentHarmonyThd;
+    public void setL2CurrentHarmonicThd(String l2CurrentHarmonicThd) {
+        this.l2CurrentHarmonicThd = l2CurrentHarmonicThd;
     }
 
-    public String getL3CurrentHarmonyThd() {
-        return l3CurrentHarmonyThd;
+    public String getL3CurrentHarmonicThd() {
+        return l3CurrentHarmonicThd;
     }
 
-    public void setL3CurrentHarmonyThd(String l3CurrentHarmonyThd) {
-        this.l3CurrentHarmonyThd = l3CurrentHarmonyThd;
+    public void setL3CurrentHarmonicThd(String l3CurrentHarmonicThd) {
+        this.l3CurrentHarmonicThd = l3CurrentHarmonicThd;
     }
 
-    public String getL1VoltageHarmonyThd() {
-        return l1VoltageHarmonyThd;
+    public String getL1VoltageHarmonicThd() {
+        return l1VoltageHarmonicThd;
     }
 
-    public void setL1VoltageHarmonyThd(String l1VoltageHarmonyThd) {
-        this.l1VoltageHarmonyThd = l1VoltageHarmonyThd;
+    public void setL1VoltageHarmonicThd(String l1VoltageHarmonicThd) {
+        this.l1VoltageHarmonicThd = l1VoltageHarmonicThd;
     }
 
-    public String getL2VoltageHarmonyThd() {
-        return l2VoltageHarmonyThd;
+    public String getL2VoltageHarmonicThd() {
+        return l2VoltageHarmonicThd;
     }
 
-    public void setL2VoltageHarmonyThd(String l2VoltageHarmonyThd) {
-        this.l2VoltageHarmonyThd = l2VoltageHarmonyThd;
+    public void setL2VoltageHarmonicThd(String l2VoltageHarmonicThd) {
+        this.l2VoltageHarmonicThd = l2VoltageHarmonicThd;
     }
 
-    public String getL3VoltageHarmonyThd() {
-        return l3VoltageHarmonyThd;
+    public String getL3VoltageHarmonicThd() {
+        return l3VoltageHarmonicThd;
     }
 
-    public void setL3VoltageHarmonyThd(String l3VoltageHarmonyThd) {
-        this.l3VoltageHarmonyThd = l3VoltageHarmonyThd;
+    public void setL3VoltageHarmonicThd(String l3VoltageHarmonicThd) {
+        this.l3VoltageHarmonicThd = l3VoltageHarmonicThd;
     }
 
     public String getTotalAbsoluteActiveEnergy() {

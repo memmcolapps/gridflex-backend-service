@@ -52,9 +52,9 @@ public class HesController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
-            @RequestParam(value = "meterNumber", required = false,  defaultValue = "") String meterNumber,
-            @RequestParam(value = "profile", required = false,  defaultValue = "") String profile,
-            @RequestParam(value = "model", required = false,  defaultValue = "") String model,
+            @RequestParam(value = "meterNumber", required = false) String meterNumber,
+            @RequestParam(value = "profile", required = false) String profile,
+            @RequestParam(value = "model", required = false) String model,
             @RequestParam(value = "search", required = false) String search
     ) {
         try {
