@@ -14,4 +14,8 @@ public interface HesService {
     Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String eventTypeName, String model, String search, int page, int size);
 
     Map<String, Object> modelEventType();
+
+    Map<String, Object> communicationDailyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, String meterNumber);
+
+    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }
