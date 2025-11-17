@@ -5,9 +5,7 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
-import org.memmcol.gridflexbackendservice.model.hes.DashboardSummaryResponse;
-import org.memmcol.gridflexbackendservice.model.hes.Event;
-import org.memmcol.gridflexbackendservice.model.hes.Profile;
+import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -94,22 +92,57 @@ public class HesClientServiceImpl implements HesService {
     @Override
     public Map<String, Object> communicationReport(int page, int size, String type, String search) {
         try {
-            // Call async method (now returns Map<String, Object>)
-            CompletableFuture<Map<String, Object>> communicationReportFuture =
-                    asyncService.getAllCommunicationReportAsync(page, size, "lastSync", true, type, search);
 
-            // Wait for completion
-            CompletableFuture.allOf(communicationReportFuture).join();
+            UserModel um = handleUserValidation();
+            List<MeterConnEvent> meterConnEvent = hesMapper.getCommunicationReport(page, size, um.getOrgId(), type);
 
-            // Get the data from async response
-            Map<String, Object> result = communicationReportFuture.join();
+            // Normalize search text
+            String searchLower = (search == null) ? "" : search.toLowerCase();
 
-            // Wrap in your response format
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Communication Report fetched successfully",
-                    result
-            );
+            // SEARCH ON ANY FIELD
+            List<MeterConnEvent> filteredComm = meterConnEvent.stream()
+                    .filter(e -> searchLower.isEmpty() ||
+                            (e.getMeterNo() != null && e.getMeterNo().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getUpdatedAt() != null && e.getUpdatedAt().toString().equalsIgnoreCase(searchLower)) ||
+                            (e.getConnectionType() != null && e.getConnectionType().toLowerCase().equalsIgnoreCase(searchLower))
+                    )
+                    .collect(Collectors.toList());
+
+            // Pagination logic
+            int totalComm = filteredComm.size();
+            List<MeterConnEvent> paginatedEvents;
+            if (size == 0) {
+                paginatedEvents = filteredComm; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalComm);
+                int toIndex = Math.min(fromIndex + size, totalComm);
+                paginatedEvents = filteredComm.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedEvents);
+            response.put("totalData", totalComm);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
+            return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
+//            // Call async method (now returns Map<String, Object>)
+//            CompletableFuture<Map<String, Object>> communicationReportFuture =
+//                    asyncService.getAllCommunicationReportAsync(page, size, "lastSync", true, type, search);
+//
+//            // Wait for completion
+//            CompletableFuture.allOf(communicationReportFuture).join();
+//
+//            // Get the data from async response
+//            Map<String, Object> result = communicationReportFuture.join();
+//
+//            // Wrap in your response format
+//            return ResponseMap.response(
+//                    status.getSuccessCode(),
+//                    "Communication Report fetched successfully",
+//                    result
+//            );
 
         } catch (Exception exception) {
             genericHandler.logIncidentReport("fetching communication report service failed");
@@ -126,7 +159,9 @@ public class HesClientServiceImpl implements HesService {
             UserModel um = handleUserValidation();
             List<Profile> profiles;
 
-            if(profile.equalsIgnoreCase("load-profile-one")) {
+            if(startDate == null || endDate == null) {
+                profiles = new ArrayList<>();
+            } else if(profile.equalsIgnoreCase("load-profile-one")) {
                 profiles = hesMapper.getProfileChannelOne(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
             } else if(profile.equalsIgnoreCase("load-profile-two")) {
                 profiles = hesMapper.getProfileChannelTwo(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
@@ -250,6 +285,62 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 
         } catch (Exception exception) {
+            genericHandler.logIncidentReport("event report service failed");
+            genericHandler.logAndSaveException(exception, "event report");
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> communicationDailyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, String meterNumber) {
+        try {
+            UserModel um = handleUserValidation();
+            List<MeterConnEvent> meterConnEvent = hesMapper.getDailyCommunicationReport(page, size, startDate, endDate, um.getOrgId(), type, meterNumber);
+
+            // Normalize search text
+            String searchLower = (search == null) ? "" : search.toLowerCase();
+
+            // SEARCH ON ANY FIELD
+            List<MeterConnEvent> filteredComm = meterConnEvent.stream()
+                    .filter(e -> searchLower.isEmpty() ||
+                            (e.getMeterNo() != null && e.getMeterNo().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getUpdatedAt() != null && e.getUpdatedAt().toString().equalsIgnoreCase(searchLower)) ||
+                            (e.getConnectionType() != null && e.getConnectionType().toLowerCase().equalsIgnoreCase(searchLower))
+                    )
+                    .collect(Collectors.toList());
+
+            // Pagination logic
+            int totalComm = filteredComm.size();
+            List<MeterConnEvent> paginatedEvents;
+            if (size == 0) {
+                paginatedEvents = filteredComm; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalComm);
+                int toIndex = Math.min(fromIndex + size, totalComm);
+                paginatedEvents = filteredComm.subList(fromIndex, toIndex);
+            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedEvents);
+            response.put("totalData", totalComm);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
+            return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
+        }  catch (Exception exception) {
+            genericHandler.logIncidentReport("event report service failed");
+            genericHandler.logAndSaveException(exception, "event report");
+            throw exception;
+        }
+
+    }
+
+    @Override
+    public Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate) {
+        try {
+            return Map.of();
+        }  catch (Exception exception) {
             genericHandler.logIncidentReport("event report service failed");
             genericHandler.logAndSaveException(exception, "event report");
             throw exception;

@@ -2,6 +2,8 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.hes.Event;
+import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
+import org.memmcol.gridflexbackendservice.model.hes.MetersConnectionEvent;
 import org.memmcol.gridflexbackendservice.model.hes.Profile;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 
@@ -107,7 +109,7 @@ public interface HesMapper {
             </if>
             AND m.org_id = #{orgId}
         </where>
-        ORDER BY received_at DESC
+        ORDER BY p.received_at DESC
            <if test="size > 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
@@ -134,7 +136,7 @@ public interface HesMapper {
 
     @Select("""
         <script>
-        SELECT * 
+        SELECT p.* 
         FROM profile_channel_two p
         JOIN meters m ON p.meter_serial = m.meter_number
         <where>
@@ -152,7 +154,7 @@ public interface HesMapper {
             </if>
         AND m.org_id = #{orgId}
         </where>
-        ORDER BY received_at DESC
+        ORDER BY p.received_at DESC
             <if test="size > 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
@@ -172,7 +174,7 @@ public interface HesMapper {
 
     @Select("""
         <script>
-        SELECT * 
+        SELECT p.* 
         FROM daily_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
         <where>
@@ -190,7 +192,7 @@ public interface HesMapper {
             </if>
         AND m.org_id = #{orgId}
         </where>
-        ORDER BY received_at DESC
+        ORDER BY p.received_at DESC
             <if test="size != 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
@@ -240,7 +242,7 @@ public interface HesMapper {
 
     @Select("""
         <script>
-        SELECT * 
+        SELECT p.* 
         FROM monthly_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
         <where>
@@ -258,7 +260,7 @@ public interface HesMapper {
             </if>
             AND m.org_id = #{orgId}
         </where>
-        ORDER BY received_at DESC
+        ORDER BY p.received_at DESC
         <if test="size != 0">
             LIMIT #{size} OFFSET #{page}
         </if>
@@ -304,4 +306,122 @@ public interface HesMapper {
             @Result(column = "received_at", property = "receivedAt")
     })
     List<Profile> getMonthlyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size);
+
+
+    @Select("""
+            SELECT mc.*, m.* FROM meters_connection_Event mc
+            JOIN meters m ON mc.meter_no = m.meter_number 
+            <where>
+                <if test="startDate != null">
+                    AND updated_at &gt;= #{startDate}
+                </if>
+                <if test="endDate != null">
+                    AND updated_at &lt;= #{endDate}
+                </if>
+                <if test="type != null">
+                    AND m.meter_class = #{type}
+                </if>
+                AND m.org_id = #{orgId}
+             </where>
+            ORDER BY mc.updated_at DESC
+                <if test="size != 0">
+                    LIMIT #{size} OFFSET #{page} * #{size}
+                </if>
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+            @Result(property = "onlineTime", column = "online_time"),
+            @Result(property = "offlineTime", column = "offline_time"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+    })
+    List<MeterConnEvent> getCommunicationReport(int page, int size, UUID orgId, String type);
+
+//    JOIN vw_flatten_node_records v ON m.node_id = feeder_node_id
+//    JOIN meter_assign_locations ma ON m.id = ma.meter_id
+//    WHERE (v.region_region_id = #{assetId}
+//    OR v.business_region_id= #{assetId}
+//    OR v.service_region_id= #{assetId}
+//    OR v.feeder_asset_id= #{assetId}) AND m.org_id= #{orgId} AND m.meter_class IN (#{meterClass}, #{s})
+    @Select("""
+            SELECT mc.*, m.*, v.* FROM meters_connection_Event mc
+            JOIN meters m ON mc.meter_no = m.meter_number 
+            JOIN vw_flatten_node_records v ON m.dss = dss_node_id
+            <where>
+                <if test="startDate != null">
+                    AND updated_at &gt;= #{startDate}
+                </if>
+                <if test="endDate != null">
+                    AND updated_at &lt;= #{endDate}
+                </if>
+                <if test="type != null">
+                    AND m.meter_class = #{type}
+                </if>
+                <if test="meterNumber != null">
+                    AND m.meter_number = #{meterNumber}
+                </if>
+                AND m.org_id = #{orgId}
+             </where>
+            ORDER BY updated_at DESC
+                <if test="size != 0">
+                    LIMIT #{size} OFFSET #{page} * #{size}
+                </if>
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+            @Result(property = "onlineTime", column = "online_time"),
+            @Result(property = "offlineTime", column = "offline_time"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+    })
+    List<MeterConnEvent> getDailyCommunicationReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, UUID orgId, String type, String meterNumber);
+
 }
