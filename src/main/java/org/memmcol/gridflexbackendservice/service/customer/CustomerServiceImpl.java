@@ -102,7 +102,7 @@ public class CustomerServiceImpl implements CustomerService {
             UUID id = request.getId();
 
             Customer customer = customerMapper.findById(id, um.getOrgId());
-            handleAddCache(customer);
+//            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, desc, "", customerName, customer, metadata);
             auditRepository.save(auditLog);
 
@@ -130,7 +130,7 @@ public class CustomerServiceImpl implements CustomerService {
             customerMapper.updateCustomer(request);
             Customer customer = customerMapper.findById(request.getId(), um.getOrgId());
 
-            handleAddCache(customer);
+//            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, "Edited customer", "", customerName, customer, metadata);
             auditRepository.save(auditLog);
 
@@ -250,7 +250,7 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
             }
 
-            handleAddCache(isCustomer);
+//            handleAddCache(isCustomer);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), isCustomer);
         } catch (Exception exception) {
@@ -287,7 +287,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             Customer customer = customerMapper.findById(customerId, um.getOrgId());
 
-            handleAddCache(customer);
+//            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, desc, reason, customerName, customer, metadata);
             auditRepository.save(auditLog);
 

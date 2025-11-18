@@ -103,7 +103,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             }
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(request.getId(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(liabilityCause);
+//            handleAddCache(liabilityCause);
             AuditLog auditLog = buildAuditLog(um, desc, lc, liabilityCause, metadata);
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
@@ -149,7 +149,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(liabilityCause);
+//            handleAddCache(liabilityCause);
             AuditLog auditLog = buildAuditLog(um, changeDescription, lc, liabilityCause, metadata);
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getUpdateDesc(), "");
@@ -183,7 +183,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
-            debtCache.put(cacheKey, result);
+//            debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -223,7 +223,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
 
-            handleAddCache(result);
+//            handleAddCache(result);
 
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
@@ -300,7 +300,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             LiabilityCause newLc = debtMapper.getLiabilityCauseById(liabilityCause.getId(), um.getOrgId());
 
-            handleAddCache(liabilityCause);
+//            handleAddCache(liabilityCause);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, lc, newLc, metadata);
             auditRepository.save(auditLog);
@@ -359,7 +359,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             PercentageRange percentageRange = debtMapper.getPercentageById(request.getId(), um.getOrgId());
 
             um.setPassword("");
-            handleAddPercentageCache(percentageRange);
+//            handleAddPercentageCache(percentageRange);
             AuditLog auditLog = buildAuditLog(um, desc, pr, percentageRange, metadata);
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
@@ -408,7 +408,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             PercentageRange percentageRange = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
             um.setPassword("");
-            handleAddPercentageCache(percentageRange);
+//            handleAddPercentageCache(percentageRange);
 
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
             auditRepository.save(auditLog);
@@ -443,7 +443,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
-            debtCache.put(cacheKey, result);
+//            debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -483,7 +483,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
 
-            handleAddPercentageCache(result);
+//            handleAddPercentageCache(result);
 
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
@@ -554,7 +554,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             PercentageRange newPercentageRange = debtMapper.getPercentageById(percentage.getId(), um.getOrgId());
 
-            handleAddPercentageCache(percentage);
+//            handleAddPercentageCache(percentage);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, pr, newPercentageRange, metadata);
             auditRepository.save(auditLog);
@@ -614,7 +614,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getId(), liabilityCause.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activate " : " deactivate ")+ "failed");
             LiabilityCause lca = debtMapper.getLiabilityCauseById(id, um.getOrgId());
-            handleAddCache(lca);
+//            handleAddCache(lca);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, lca, metadata);
             auditRepository.save(auditLog);
@@ -675,9 +675,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + (state ? " activated " : " deactivated ")+ "failed");
 
             PercentageRange percentageRange = debtMapper.getPercentageById(id, um.getOrgId());
-            handleAddPercentageCache(percentageRange);
+//            handleAddPercentageCache(percentageRange);
             um.setPassword("");
-            handleAddPercentageCache(percentageRange);
+//            handleAddPercentageCache(percentageRange);
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr +(state ? " activated ": "deactivated ")+"successfully", "");

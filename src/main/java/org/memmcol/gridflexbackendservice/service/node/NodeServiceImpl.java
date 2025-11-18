@@ -100,7 +100,7 @@ public class NodeServiceImpl implements NodeService {
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
-            handleClearCache(node);
+//            handleClearCache(node);
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub", regionBhubServiceCenter, metadata);
             auditRepository.save(auditLog);
 
@@ -159,7 +159,7 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
 
-            handleClearCache(node);
+//            handleClearCache(node);
 
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("dss") ? "dss" : request.getType().equals("feeder line") ? "feeder line" : "substation", subStationTransformerFeederLine, metadata);
             auditRepository.save(auditLog);
@@ -213,7 +213,7 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
 
-            handleClearCache(node);
+//            handleClearCache(node);
 
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "Region" : request.getType().equals("service center") ? "Service center" : "Business hub", regionBhubServiceCenter, metadata);
             auditRepository.save(auditLog);
@@ -267,7 +267,7 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
             }
 
-            handleClearCache(node);
+//            handleClearCache(node);
 
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equalsIgnoreCase("transformer") ? "Transformer" : request.getType().equalsIgnoreCase("feeder line") ? "Feeder line" : "Substation", subStationTransformerFeederLine, metadata);
             auditRepository.save(auditLog);
@@ -318,7 +318,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             assert root != null;
-            handleAddCache(root);
+//            handleAddCache(root);
             return ResponseMap.response(status.getSuccessCode(), "Node " + status.getDesc(), root);
 
         } catch (Exception exception) {
