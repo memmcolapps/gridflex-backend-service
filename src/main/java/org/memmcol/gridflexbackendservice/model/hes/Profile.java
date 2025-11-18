@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.model.hes;
 
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -45,6 +47,8 @@ public class Profile implements Serializable {
     private String activeMaximumDemand;
     private String totalApparentDemand;
     private String totalApparentDemandTime;
+
+    private Meter meter;
 
     public String getOrgId() {
         return orgId;
@@ -340,5 +344,13 @@ public class Profile implements Serializable {
 
     public void setTotalApparentDemandTime(String totalApparentDemandTime) {
         this.totalApparentDemandTime = totalApparentDemandTime;
+    }
+
+    public Meter getMeter() {
+        return meter;
+    }
+
+    public void setMeter(Meter meter) {
+        this.meter = meter;
     }
 }

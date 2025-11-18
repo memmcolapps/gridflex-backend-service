@@ -65,6 +65,7 @@ public class Meter implements Serializable {
     private SubStationTransformerFeederLine FeederInfo;
     private SubStationTransformerFeederLine DssInfo;
     private Tariff tariffInfo;
+    private FlatNode flatNode;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -228,14 +229,6 @@ public class Meter implements Serializable {
     public void setStatus(String status) {
         this.status = status;
     }
-
-   /* public String getApproveState() {
-        return approveState;
-    }
-
-    public void setApproveState(String approveState) {
-        this.approveState = approveState;
-    }*/
 
     public Boolean getSmartStatus() {
         return smartStatus;
@@ -443,5 +436,13 @@ public class Meter implements Serializable {
 
     public void setTariffInfo(Tariff tariffInfo) {
         this.tariffInfo = tariffInfo;
+    }
+
+    public FlatNode getFlatNode() {
+        return flatNode;
+    }
+
+    public void setFlatNode(FlatNode flatNode) {
+        this.flatNode = flatNode;
     }
 }

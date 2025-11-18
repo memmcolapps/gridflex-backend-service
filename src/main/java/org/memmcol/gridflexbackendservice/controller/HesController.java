@@ -35,8 +35,8 @@ public class HesController {
     public ResponseEntity<?> report(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
-            @RequestParam(value = "type", required = false,  defaultValue = "") String type,
-            @RequestParam(value = "search", required = false,  defaultValue = "") String search
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "search", required = false) String search
     ) {
         try {
             Map<String, Object> result = hesService.communicationReport(page, size, type, search);

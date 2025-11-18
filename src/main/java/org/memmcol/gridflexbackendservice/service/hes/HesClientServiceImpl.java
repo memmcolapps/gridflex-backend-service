@@ -94,7 +94,20 @@ public class HesClientServiceImpl implements HesService {
         try {
 
             UserModel um = handleUserValidation();
-            List<MeterConnEvent> meterConnEvent = hesMapper.getCommunicationReport(page, size, um.getOrgId(), type);
+            List<MeterConnEvent> meterConnEvent;
+
+            if("MD".equalsIgnoreCase(type)){
+                meterConnEvent = hesMapper.getCommunicationReport(page, size, um.getOrgId(), type);
+            } else if("Non-MD".equalsIgnoreCase(type)) {
+                String type1 = "three-phase";
+                String type2 = "single-phase";
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, "");
+            } else {
+                String type1 = "three-phase";
+                String type2 = "single-phase";
+                String type3 = "MD";
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, type3);
+            }
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
@@ -170,7 +183,7 @@ public class HesClientServiceImpl implements HesService {
             } else if(profile.equalsIgnoreCase("monthly-billing-profile")) {
                 profiles = hesMapper.getMonthlyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
             } else {
-                throw new GlobalExceptionHandler.NotFoundException("Profile type not found");
+                throw new GlobalExceptionHandler.NotFoundException("Unsupported type");
             }
 
             // Normalize search text
@@ -205,7 +218,7 @@ public class HesClientServiceImpl implements HesService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedProfiles.size() / size));
 
-            return ResponseMap.response(status.getSuccessCode(), "Meter event fetched successfully", response);
+            return ResponseMap.response(status.getSuccessCode(), "Meter profile fetched successfully", response);
 
         } catch (Exception exception) {
             genericHandler.logIncidentReport("profile report service failed");
@@ -235,8 +248,8 @@ public class HesClientServiceImpl implements HesService {
                     .filter(e -> searchLower.isEmpty() ||
                             (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
                             (e.getEventName() != null && e.getEventName().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventTypeName() != null && e.getEventTypeName().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventTypeDesc() != null && e.getEventTypeDesc().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventType().getName() != null && e.getEventType().getName().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventType().getDescription() != null && e.getEventType().getDescription().toLowerCase().equalsIgnoreCase(searchLower)) ||
                             (e.getEventTime() != null && e.getEventTime().toString().equalsIgnoreCase(searchLower))
                     )
                     .collect(Collectors.toList());
