@@ -5,8 +5,10 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
+import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
+import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -30,8 +32,8 @@ public class HesClientServiceImpl implements HesService {
     @Autowired
     private ResponseProperties status;
 
-//    @Autowired
-//    private HesAuthServiceImpl auth;
+    @Autowired
+    private NodeMapper nodeMapper;
 
     @Autowired
     private WebClient webClient;
@@ -287,13 +289,44 @@ public class HesClientServiceImpl implements HesService {
     public Map<String, Object> modelEventType() {
         try {
 
-            List<Event> event_type = hesMapper.getEventType();
+            UserModel um = handleUserValidation();
 
-            List<SmartMeterInfo> model = hesMapper.getModel();
+            // Fetch all event type
+            List<EventType> event_type = hesMapper.getEventType();
+
+            // Fetch all model
+            List<SmartMeterInfo> model = hesMapper.getModel(um.getOrgId());
+
+            // Fetch all nodes
+            List<Node> flatList =  hesMapper.getAllNode(um.getOrgId());
+            if(flatList == null || flatList.isEmpty()){
+                return ResponseMap.response(status.getSuccessCode(), status.getDesc(), flatList);
+            }
+            Map<UUID, Node> nodeMap = new HashMap<>();
+            List<Node> roots = new ArrayList<>();
+
+            // Map nodes by ID
+            for (Node node : flatList) {
+                nodeMap.put(node.getId(), node);
+                node.setNodesTree(new ArrayList<>()); // Initialize children list
+            }
+
+            // Reconstruct the tree
+            for (Node node : flatList) {
+                if (node.getParentId() == null) {
+                    roots.add(node); // Add root nodes to the list
+                } else {
+                    Node parent = nodeMap.get(node.getParentId());
+                    if (parent != null) {
+                        parent.getNodesTree().add(node); // Add as a child to the parent
+                    }
+                }
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("event_types", event_type);
             response.put("models", model);
+            response.put("nodes", roots);
 
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 
