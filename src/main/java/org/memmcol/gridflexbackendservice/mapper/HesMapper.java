@@ -2,9 +2,12 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.hes.Event;
+import org.memmcol.gridflexbackendservice.model.hes.EventType;
 import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
 import org.memmcol.gridflexbackendservice.model.hes.Profile;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
+import org.memmcol.gridflexbackendservice.model.node.Node;
+import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -126,15 +129,15 @@ public interface HesMapper {
 
     @Select("SELECT * FROM event_type")
     @Results({
-            @Result(column = "id", property = "eventTypeId"),
+            @Result(column = "id", property = "id"),
             @Result(column = "obis_code", property = "obisCode"),
-            @Result(column = "name", property = "eventTypeName"),
-            @Result(column = "description", property = "eventTypeDesc"),
+            @Result(column = "name", property = "name"),
+            @Result(column = "description", property = "description"),
     })
-    List<Event> getEventType();
+    List<EventType> getEventType();
 
-    @Select("SELECT DISTINCT meter_model AS meterModel FROM smart_meter_info")
-    List<SmartMeterInfo> getModel();
+    @Select("SELECT DISTINCT meter_model AS meterModel FROM smart_meter_info WHERE org_id = #{orgId}")
+    List<SmartMeterInfo> getModel(UUID orgId);
 
     @Select("""
         <script>
@@ -818,4 +821,37 @@ public interface HesMapper {
     })
     List<MeterConnEvent> getDailyCommunicationReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, UUID orgId, String type, String meterNumber);
 
+    @Select("""
+            SELECT
+                id, region_id,
+                node_id, name,
+                type, NULL AS asset_id
+            FROM region_bhub_service_centers
+            WHERE node_id = #{nodeId}
+            UNION
+            SELECT
+                id, NULL AS region_id, 
+                node_id, name,
+                type, asset_id
+            FROM substation_trans_feeder_lines
+            WHERE node_id = #{nodeId}
+            """)
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "bhubId", column = "bhub_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "regionId", column = "region_id"),
+    })
+    NodeInfo getHierarchyById(UUID nodeId);
+
+    @Select("SELECT * FROM nodes WHERE org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeInfo", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.HesMapper.getHierarchyById"))
+    })
+    List<Node> getAllNode(UUID orgId);
 }
