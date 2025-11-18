@@ -202,7 +202,7 @@ public class TariffServiceImpl implements TariffService {
             }
 
             Tariff newTariff = tariffMapper.getTariff(tariff.getId(), um.getOrgId());
-            handleAddCache(tariff);
+//            handleAddCache(tariff);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
             auditRepository.save(auditLog);

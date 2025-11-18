@@ -393,7 +393,7 @@ public class BandServiceImpl implements BandService {
             int u = bandMapper.updateBand(band.getApproveStatus(), band.getId(), band.getUpdatedAt());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " "+ status.getUpdateFailureDesc());
             Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
-            handleAddCache(bandById);
+//            handleAddCache(bandById);
             um.setPassword("");
 //			authCache.remove("dashboard");
             AuditLog auditLog = buildAuditLog(um, changeDescription, bandName, bandById, metadata);

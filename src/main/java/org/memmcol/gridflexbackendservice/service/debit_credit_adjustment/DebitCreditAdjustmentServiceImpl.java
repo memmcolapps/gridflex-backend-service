@@ -107,7 +107,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
             um.setPassword("");
-            handleAddCache(debitAdjustment);
+//            handleAddCache(debitAdjustment);
             AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
             auditRepository.save(auditLog);
 //            auditNotificationDTO.setCreator(um);
@@ -177,7 +177,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debitCreditAdjustmentId, um.getOrgId());
             String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
             um.setPassword("");
-            handleAddCache(debitAdjustment);
+//            handleAddCache(debitAdjustment);
             AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
