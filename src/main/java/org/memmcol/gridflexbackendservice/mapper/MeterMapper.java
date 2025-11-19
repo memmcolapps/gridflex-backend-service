@@ -1681,6 +1681,7 @@ public interface MeterMapper {
             "      WHEN #{m.meterId} THEN #{m.accountNumber}",
             "    </foreach>",
             "  END,",
+
             "  cin = CASE id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterId} THEN #{m.cin}",
@@ -1695,7 +1696,7 @@ public interface MeterMapper {
 
             "  tariff = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterId} THEN #{m.tariff}",
+            "      WHEN #{m.meterId} THEN CAST(#{m.tariff} AS uuid)",
             "    </foreach>",
             "  END,",
 
