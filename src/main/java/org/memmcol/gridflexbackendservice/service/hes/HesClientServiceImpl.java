@@ -236,6 +236,8 @@ public class HesClientServiceImpl implements HesService {
             UserModel um = handleUserValidation();
             List<Event> events;
 
+            System.out.println(">>>>>>>>>>>>>:::"+model);
+
             if(startDate == null || endDate == null) {
                 events = new ArrayList<>();
             } else {
@@ -331,17 +333,17 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("event report service failed");
-            genericHandler.logAndSaveException(exception, "event report");
+            genericHandler.logIncidentReport("profile event filter service failed");
+            genericHandler.logAndSaveException(exception, "profile event filter");
             throw exception;
         }
     }
 
     @Override
-    public Map<String, Object> communicationDailyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, String meterNumber) {
+    public Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber) {
         try {
             UserModel um = handleUserValidation();
-            List<MeterConnEvent> meterConnEvent = hesMapper.getDailyCommunicationReport(page, size, startDate, endDate, um.getOrgId(), type, meterNumber);
+            List<MeterConnEvent> meterConnEvent = hesMapper.getRangeCommunicationReport(page, size, startDate, endDate, um.getOrgId(), type, meterNumber);
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
@@ -375,22 +377,11 @@ public class HesClientServiceImpl implements HesService {
             response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
         }  catch (Exception exception) {
-            genericHandler.logIncidentReport("event report service failed");
-            genericHandler.logAndSaveException(exception, "event report");
+            genericHandler.logIncidentReport("communication daily/monthly report service failed");
+            genericHandler.logAndSaveException(exception, "communication daily/monthly report");
             throw exception;
         }
 
-    }
-
-    @Override
-    public Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate) {
-        try {
-            return Map.of();
-        }  catch (Exception exception) {
-            genericHandler.logIncidentReport("event report service failed");
-            genericHandler.logAndSaveException(exception, "event report");
-            throw exception;
-        }
     }
 
 }

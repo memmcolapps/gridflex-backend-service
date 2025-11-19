@@ -188,11 +188,20 @@ public class TariffServiceImpl implements TariffService {
                     int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
 
-                } else {
+                } else if(tariff.getApprove_status().trim().contains("Pending-activated")){
+
+                    tariff.setApprove_status("Deactivated");
+                    int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " activation failed");
+
+                } else if(tariff.getApprove_status().trim().equalsIgnoreCase("Pending-edited")){
 
                     tariff.setApprove_status("Approved");
                     int u = tariffMapper.updateTariff(tariff.getApprove_status(), tariff.getT_id(), tariff.getUpdated_at());
-                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " update failed");
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " edited failed");
+
+                } else {
+                    throw new GlobalExceptionHandler.NotFoundException("Pending state not found");
                 }
                 desc = capitalizeFirstLetter(tariff.getName()) + approveStatus;
             }
