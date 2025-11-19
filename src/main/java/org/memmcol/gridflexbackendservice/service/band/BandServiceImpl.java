@@ -232,12 +232,20 @@ public class BandServiceImpl implements BandService {
                     // Fallback to Approve if deactivate rejected
                     int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " deactivation failed");
+                } else if (band.getApproveStatus().trim().contains("Pending-activated")) {
+                    band.setApproveStatus("Deactivated");
+                    // Fallback to Approve if deactivate rejected
+                    int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " activation failed");
+                }
+                else if (band.getApproveStatus().trim().contains("Pending-edited")) {
+                    band.setApproveStatus("Approved");
+                    // Fallback to Approve if deactivate rejected
+                    int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " edited failed");
                 }
                 else {
-                    band.setApproveStatus("Approved");
-                    // Fallback to Approve if rejected
-                    int u = bandMapper.updateBand(band.getApproveStatus(), band.getBandId(), band.getUpdatedAt());
-                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(bandName + " update failed");
+                    throw new GlobalExceptionHandler.NotFoundException("Pending state not found");
                 }
 
                 desc = capitalizeFirstLetter(band.getName()) + " " + band.getApproveStatus();

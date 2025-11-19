@@ -286,11 +286,18 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                     int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getLiabilityCauseId(), liabilityCause.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + " deactivation failed");
 
-                } else {
+                } else if(liabilityCause.getApproveStatus().trim().contains("Pending-activated")){
+
+                    liabilityCause.setApproveStatus("Deactivated");
+                    int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getLiabilityCauseId(), liabilityCause.getUpdatedAt());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + " activated failed");
+                } else if(liabilityCause.getApproveStatus().trim().contains("Pending-edited")){
 
                     liabilityCause.setApproveStatus("Approved");
                     int u = debtMapper.updateLiabilityCause(liabilityCause.getApproveStatus(), liabilityCause.getLiabilityCauseId(), liabilityCause.getUpdatedAt());
-                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + " update failed");
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(lc + " edited failed");
+                } else {
+                    throw new GlobalExceptionHandler.NotFoundException("Pending state not found");
                 }
                 desc = capitalizeFirstLetter(liabilityCause.getName()) + " " + liabilityCause.getApproveStatus();
             } else {
@@ -309,6 +316,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+
             genericHandler.logIncidentReport("approve liability cause service failed");
             genericHandler.logAndSaveException(exception, "approving liability cause");
             throw exception;
@@ -540,11 +548,19 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                     int u = debtMapper.updatePercentage(percentage.getApproveStatus(), percentage.getPercentageId(), percentage.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(pr + " deactivation failed");
 
-                } else {
+                } else if(percentage.getApproveStatus().trim().contains("Pending-activated")){
 
+                    percentage.setApproveStatus("Deactivated");
+                    int u = debtMapper.updatePercentage(percentage.getApproveStatus(), percentage.getPercentageId(), percentage.getUpdatedAt());
+                    if(u == 0) throw new GlobalExceptionHandler.NotFoundException(pr + " activation failed");
+
+                } else if(percentage.getApproveStatus().trim().contains("Pending-edited")){
                     percentage.setApproveStatus("Approved");
                     int u = debtMapper.updatePercentage(percentage.getApproveStatus(), percentage.getPercentageId(), percentage.getUpdatedAt());
                     if(u == 0) throw new GlobalExceptionHandler.NotFoundException(pr + " update failed");
+                }
+                else {
+                    throw new GlobalExceptionHandler.NotFoundException("Pending state not found");
                 }
                 desc = capitalizeFirstLetter(percentage.getPercentage()) + " " + percentage.getApproveStatus();
             } else {

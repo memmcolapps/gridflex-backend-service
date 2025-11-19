@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 
@@ -52,12 +53,12 @@ public class HesController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
-            @RequestParam(value = "meterNumber", required = false) String meterNumber,
+            @RequestParam(value = "meterNumber", required = false) List<String> meterNumber,
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "search", required = false) String search
     ) {
         try {
-            Map<String, Object> result = hesService.communicationDailyReport(page, size, startDate, endDate, type,search, meterNumber);
+            Map<String, Object> result = hesService.communicationRangeReport(page, size, startDate, endDate, type,search, meterNumber);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

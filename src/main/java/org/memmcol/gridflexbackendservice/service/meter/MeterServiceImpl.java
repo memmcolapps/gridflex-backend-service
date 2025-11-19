@@ -1163,7 +1163,7 @@ public class MeterServiceImpl implements MeterService {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
                 //Change customer status to Active
-                if(c <= 1) {
+                if(c == 1) {
                     int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                     if (customerStatus == 0) {
                         throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
@@ -1215,7 +1215,7 @@ public class MeterServiceImpl implements MeterService {
 //                throw new GlobalExceptionHandler.NotFoundException("Update meter payment mode failed");
 //            }
 
-            if(c <= 1) {
+            if(c == 1) {
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
