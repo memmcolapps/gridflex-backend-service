@@ -1855,12 +1855,7 @@ public class MeterServiceImpl implements MeterService {
             // One DB call to fetch all corresponding version records
             List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId());
 
-//            if (versionBatch.isEmpty()) {
-//                failedRecords.addAll(meterNumbers.stream()
-//                        .map(num -> num + " (Not found or does not have a pending state)")
-//                        .toList());
-//                continue;
-//            }
+            System.out.println("versionBatch: "+versionBatch.size());
 
             Set<String> foundNames = versionBatch.stream()
                     .map(Meter::getMeterNumber)
@@ -1995,7 +1990,10 @@ public class MeterServiceImpl implements MeterService {
                     .flatMap(Collection::stream)
                     .toList();
 
+            System.out.println("toUpdate: "+toUpdate.size());
+            System.out.println("approvedAllocatedMeters: "+approvedAllocatedMeters.size());
             if (!toUpdate.isEmpty()) {
+                System.out.println(":::::::::::::::::::toUpdate::::::::::::::");
                 meterMapper.updateBatchMeters(toUpdate);
                 meterMapper.updateBatchVersionMeters(toUpdate);
             }
@@ -2122,6 +2120,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private List<Meter> getMetersByStage(List<Meter> batch, String stage, String newStage, String status) {
+        System.out.println("meter_stage2: "+batch.get(0).getMeterStage());
         List<Meter> ms;
         ms = batch.stream()
                 .filter(m -> stage.equalsIgnoreCase(m.getMeterStage()))
