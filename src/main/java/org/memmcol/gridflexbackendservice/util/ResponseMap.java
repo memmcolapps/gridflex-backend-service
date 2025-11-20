@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class ResponseMap {
 	
@@ -12,5 +13,13 @@ public class ResponseMap {
 	    responseMap.put("responsedata", responseData);
 	    return responseMap;
 	}
+
+//	public static Map<String, Object> bulkResponse(UUID id, String responseDesc, String responseData) {
+//		Map<String, Object> responseBulkMap = new HashMap<>();
+//		responseBulkMap.put("id", id);
+//		responseBulkMap.put("responsedesc", responseDesc);
+//		responseBulkMap.put("responsedata", responseData);
+//		return responseBulkMap;
+//	}
 	
 }

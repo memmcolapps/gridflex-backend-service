@@ -1649,7 +1649,7 @@ public interface MeterMapper {
             "    #{m.meterId}",
             "  </foreach>",
             "  AND org_id = #{batch[0].orgId}",
-            "  AND meter_stage ILIKE 'Pending%'",
+            "  AND (meter_stage ILIKE 'Pending%' OR status ILIKE 'Pending%')",
             "</script>"
     })
     void updateBatchVersionMeters(@Param("batch") List<Meter> batch);
@@ -1711,7 +1711,7 @@ public interface MeterMapper {
             "    #{m.meterId}",
             "  </foreach>",
             "  AND org_id = #{batch[0].orgId}",
-            "  AND meter_stage ILIKE '%Pending%'",
+            "  AND (meter_stage ILIKE '%Pending%' OR status ILIKE 'Pending%')",
             "</script>"
     })
     void updateBatchMeters(@Param("batch") List<Meter> batch);
