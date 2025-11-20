@@ -1,7 +1,5 @@
 package org.memmcol.gridflexbackendservice.util;
 
-import jakarta.ws.rs.NotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.MethodNotAllowedException;
@@ -37,6 +34,35 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
 	Map<String, String> errorMessage = new HashMap<>();
+
+	@ExceptionHandler(PartialFailureException.class)
+	public ResponseEntity<Map<String, Object>> handlePartialFailure(PartialFailureException ex) {
+
+		Map<String, Object> body = new HashMap<>();
+		body.put("responsecode", "131");
+		body.put("responsedesc", ex.getMessage());
+		body.put("responsedata",  ex.responseData());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(body);
+	}
+
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public static class PartialFailureException extends RuntimeException {
+
+		private final Map<String, Object> responsedata;
+
+		public PartialFailureException(String responsedesc, Map<String, Object> responsedata) {
+			super(responsedesc);
+			this.responsedata = responsedata;
+		}
+
+		public Map<String, Object> responseData() {
+			return responsedata;
+		}
+	}
+
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> handleGenericException(Exception ex, WebRequest request) {
@@ -452,4 +478,7 @@ public class GlobalExceptionHandler {
 			super(message);
 		}
 	}
+
+
+
 }
