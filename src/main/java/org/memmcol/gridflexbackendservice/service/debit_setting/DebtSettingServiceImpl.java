@@ -15,6 +15,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -709,7 +710,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> bulkApproveLiabilityCause(List<LiabilityCause> lcs) {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (lcs == null || lcs.isEmpty()) {
@@ -729,11 +730,24 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                     .filter(num -> !num.isEmpty())
                     .toList();
 
+//            if (lcNames.isEmpty()) {
+//                batch.forEach(req -> failedRecords.add(
+//                        String.format("%s (Invalid or missing data)",
+//                                req.getName())
+//                ));
+//                continue;
+//            }
+
             if (lcNames.isEmpty()) {
-                batch.forEach(req -> failedRecords.add(
-                        String.format("%s (Invalid or missing data)",
-                                req.getName())
-                ));
+                batch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing tariff name");
+                    resp.setData(req.getName());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
 
@@ -749,10 +763,17 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                     .filter(name -> !foundNames.contains(name.trim()))
                     .toList();
 
-            // Record missing/invalid tariffs
-            missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found or does not pending state)")
-            );
+//            // Record missing/invalid tariffs
+//            missingNames.forEach(name ->
+//                    failedRecords.add(name + " (Not found or does not pending state)")
+//            );
+            for (String name : missingNames) {
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Not found or not in pending state");
+                resp.setData(name);
+                failedRecords.add(resp);
+            }
 
             if (versionBatch.isEmpty()) {
                 continue;
@@ -777,6 +798,14 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        // If any failed → throw browser error
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " Liability cause approval failed",
+                    result
+            );
+        }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
                 successCount + " of " + total + " Liability cause approved successfully",
@@ -784,12 +813,17 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         );
     }
 
-    private void prepareUpdateLc(List<LiabilityCause> batch, UserModel user, List<String> failedRecords) {
+    private void prepareUpdateLc(List<LiabilityCause> batch, UserModel user, List<GenericResp> failedRecords) {
         Iterator<LiabilityCause> iterator = batch.iterator();
         while (iterator.hasNext()) {
             LiabilityCause lc = iterator.next();
             if (lc.getName() == null || lc.getName().trim().isEmpty()) {
-                failedRecords.add("(Missing tariff name)");
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Missing liability cause name");
+                resp.setData(lc.getName());
+                failedRecords.add(resp);
+//                failedRecords.add("(Missing tariff name)");
                 iterator.remove();
                 continue;
             }
@@ -805,17 +839,38 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-            List<LiabilityCause> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
-            List<LiabilityCause> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
-            List<LiabilityCause> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-            List<LiabilityCause> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+//            List<LiabilityCause> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
+//            List<LiabilityCause> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
+//            List<LiabilityCause> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
+//            List<LiabilityCause> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+
+
+            List<LiabilityCause> approvedCreatedLc = batch.stream()
+                    .filter(m -> "Pending-created".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Created"))
+                    .toList();
+
+            List<LiabilityCause> approvedActivatedLc = batch.stream()
+                    .filter(m -> "Pending-activated".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Approved"))
+                    .toList();
+
+            List<LiabilityCause> approvedDeactivatedLc = batch.stream()
+                    .filter(m -> "Pending-deactivated".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Deactivated"))
+                    .toList();
+
+            List<LiabilityCause> approvedEditedLc = batch.stream()
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Approved"))
+                    .toList();
 
             // Combine all for main update
             List<LiabilityCause> toUpdate = Stream.of(
-                            approvedCreatedBands,
-                            approvedActivatedBands,
-                            approvedDeactivatedBands,
-                            approvedEditedBands)
+                            approvedCreatedLc,
+                            approvedActivatedLc,
+                            approvedDeactivatedLc,
+                            approvedEditedLc)
                     .flatMap(Collection::stream)
                     .toList();
 
@@ -837,7 +892,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
-    private int updateSubBatchTransactional(List<LiabilityCause> batch, UserModel user, List<String> failedRecords) {
+    private int updateSubBatchTransactional(List<LiabilityCause> batch, UserModel user, List<GenericResp> failedRecords) {
         int success = 0;
         int subSize = 100;
 
@@ -858,7 +913,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         return success;
     }
 
-    public int approveSinglesFallbackAsync(List<LiabilityCause> batch, UserModel user, List<String> failedRecords) {
+    public int approveSinglesFallbackAsync(List<LiabilityCause> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (LiabilityCause lc : batch) {
@@ -870,7 +925,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int approveSinglesFallback(List<LiabilityCause> lcs, UserModel user, List<String> failedRecords) {
+    public int approveSinglesFallback(List<LiabilityCause> lcs, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (LiabilityCause lc : lcs) {
@@ -880,11 +935,17 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s (Approve failed: %s)",
-                        lc.getName(),
-                        reason
-                ));
+                GenericResp resp = new GenericResp();
+                resp.setId(lc.getLiabilityCauseId().toString());
+                resp.setMessage("Approve failed: "+reason);
+                resp.setData(lc.getName());
+                failedRecords.add(resp);
+
+//                failedRecords.add(String.format(
+//                        "%s (Approve failed: %s)",
+//                        lc.getName(),
+//                        reason
+//                ));
                 log.warn("Liability cause {} failed individually: {}", lc.getName(), reason);
             }
         }
@@ -893,17 +954,22 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     }
 
     @Async
-    public CompletableFuture<Integer> approveSingleAsync(LiabilityCause lc, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> approveSingleAsync(LiabilityCause lc, UserModel user, List<GenericResp> failedRecords) {
         try {
             approveSingleTransactional(lc, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s (Approve failed: %s)",
-                    lc.getName(),
-                    reason
-            ));
+            GenericResp resp = new GenericResp();
+            resp.setId(lc.getLiabilityCauseId().toString());
+            resp.setMessage("Approve failed: "+reason);
+            resp.setData(lc.getName());
+            failedRecords.add(resp);
+//            failedRecords.add(String.format(
+//                    "%s (Approve failed: %s)",
+//                    lc.getName(),
+//                    reason
+//            ));
             log.warn("Async approve failed for tariff {}: {}",  lc.getName(), reason);
             return CompletableFuture.completedFuture(0);
         }
@@ -973,7 +1039,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> bulkApprovePercentageRange(List<PercentageRange> prs) {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (prs == null || prs.isEmpty()) {
@@ -994,12 +1060,27 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                     .toList();
 
             if (prCodes.isEmpty()) {
-                batch.forEach(req -> failedRecords.add(
-                        String.format("%s (Invalid or missing data)",
-                                req.getCode())
-                ));
+                batch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing percentage code");
+                    resp.setData(req.getCode());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
+
+//            if (prCodes.isEmpty()) {
+//                batch.forEach(req -> failedRecords.add(
+//                        String.format("%s (Invalid or missing data)",
+//                                req.getCode())
+//                ));
+//                continue;
+//            }
+
+
 
             // One DB call to fetch all corresponding version records
             List<PercentageRange> versionBatch = debtMapper.getPercentageBulkVersion(prCodes, user.getOrgId());
@@ -1014,9 +1095,17 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                     .toList();
 
             // Record missing/invalid tariffs
-            missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found or does not pending state)")
-            );
+//            missingNames.forEach(name ->
+//                    failedRecords.add(name + " (Not found or does not pending state)")
+//            );
+
+            for (String name : missingNames) {
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Not found or not in pending state");
+                resp.setData(name);
+                failedRecords.add(resp);
+            }
 
             if (versionBatch.isEmpty()) {
                 continue;
@@ -1041,20 +1130,34 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        // If any failed → throw browser error
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " Percentage range approval failed",
+                    result
+            );
+        }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
-                successCount + " of " + total + " Liability cauese approved successfully",
+                successCount + " of " + total + " Percentage range approved successfully",
                 result
         );
     }
 
 
-    private void prepareUpdatePr(List<PercentageRange> batch, UserModel user, List<String> failedRecords) {
+    private void prepareUpdatePr(List<PercentageRange> batch, UserModel user, List<GenericResp> failedRecords) {
         Iterator<PercentageRange> iterator = batch.iterator();
         while (iterator.hasNext()) {
             PercentageRange pr = iterator.next();
             if (pr.getCode() == null) {
-                failedRecords.add("(Missing percentage code)");
+                GenericResp resp = new GenericResp();
+                resp.setId(pr.getPercentageId().toString());
+                resp.setMessage("Missing percentage code");
+                resp.setData(pr.getCode());
+
+                failedRecords.add(resp);
+//                failedRecords.add("(Missing percentage code)");
                 iterator.remove();
                 continue;
             }
@@ -1070,17 +1173,37 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-            List<PercentageRange> approvedCreatedBands = getPrByStatus(batch, "Pending-created", "Approved");
-            List<PercentageRange> approvedActivatedBands = getPrByStatus(batch, "Pending-activated", "Approved");
-            List<PercentageRange> approvedDeactivatedBands = getPrByStatus(batch, "Pending-deactivated", "Deactivated");
-            List<PercentageRange> approvedEditedBands = getPrByStatus(batch, "Pending-edited", "Approved");
+//            List<PercentageRange> approvedCreatedBands = getPrByStatus(batch, "Pending-created", "Approved");
+//            List<PercentageRange> approvedActivatedBands = getPrByStatus(batch, "Pending-activated", "Approved");
+//            List<PercentageRange> approvedDeactivatedBands = getPrByStatus(batch, "Pending-deactivated", "Deactivated");
+//            List<PercentageRange> approvedEditedBands = getPrByStatus(batch, "Pending-edited", "Approved");
+
+            List<PercentageRange> approvedCreatedPr = batch.stream()
+                    .filter(m -> "Pending-created".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Created"))
+                    .toList();
+
+            List<PercentageRange> approvedActivatedPr = batch.stream()
+                    .filter(m -> "Pending-activated".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Approved"))
+                    .toList();
+
+            List<PercentageRange> approvedDeactivatedPr = batch.stream()
+                    .filter(m -> "Pending-deactivated".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Deactivated"))
+                    .toList();
+
+            List<PercentageRange> approvedEditedPr = batch.stream()
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Approved"))
+                    .toList();
 
             // Combine all for main update
             List<PercentageRange> toUpdate = Stream.of(
-                            approvedCreatedBands,
-                            approvedActivatedBands,
-                            approvedDeactivatedBands,
-                            approvedEditedBands)
+                            approvedCreatedPr,
+                            approvedActivatedPr,
+                            approvedDeactivatedPr,
+                            approvedEditedPr)
                     .flatMap(Collection::stream)
                     .toList();
 
@@ -1102,7 +1225,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         }
     }
 
-    private int updatePrSubBatchTransactional(List<PercentageRange> batch, UserModel user, List<String> failedRecords) {
+    private int updatePrSubBatchTransactional(List<PercentageRange> batch, UserModel user, List<GenericResp> failedRecords) {
         int success = 0;
         int subSize = 100;
 
@@ -1123,7 +1246,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         return success;
     }
 
-    public int approvePrSinglesFallbackAsync(List<PercentageRange> batch, UserModel user, List<String> failedRecords) {
+    public int approvePrSinglesFallbackAsync(List<PercentageRange> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (PercentageRange lc : batch) {
@@ -1135,22 +1258,27 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int approvePrSinglesFallback(List<PercentageRange> lcs, UserModel user, List<String> failedRecords) {
+    public int approvePrSinglesFallback(List<PercentageRange> lcs, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
-        for (PercentageRange lc : lcs) {
+        for (PercentageRange pr : lcs) {
             try {
-                log.debug("Fallback single assign for pr: {}", lc.getCode());
-                approvePrSingleTransactional(lc, user);
+                log.debug("Fallback single assign for pr: {}", pr.getCode());
+                approvePrSingleTransactional(pr, user);
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s (Approve failed: %s)",
-                        lc.getCode(),
-                        reason
-                ));
-                log.warn("Percentage range {} failed individually: {}", lc.getCode(), reason);
+                GenericResp resp = new GenericResp();
+                resp.setId(pr.getPercentageId().toString());
+                resp.setMessage("Approve failed: "+reason);
+                resp.setData(pr.getCode());
+
+//                failedRecords.add(String.format(
+//                        "%s (Approve failed: %s)",
+//                        lc.getCode(),
+//                        reason
+//                ));
+                log.warn("Percentage range {} failed individually: {}", pr.getCode(), reason);
             }
         }
 
@@ -1158,18 +1286,23 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     }
 
     @Async
-    public CompletableFuture<Integer> approvePrSingleAsync(PercentageRange lc, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> approvePrSingleAsync(PercentageRange pr, UserModel user, List<GenericResp> failedRecords) {
         try {
-            approvePrSingleTransactional(lc, user);
+            approvePrSingleTransactional(pr, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s (Approve failed: %s)",
-                    lc.getCode(),
-                    reason
-            ));
-            log.warn("Async approve failed for tariff {}: {}",  lc.getCode(), reason);
+            GenericResp resp = new GenericResp();
+            resp.setId(pr.getPercentageId().toString());
+            resp.setMessage("Approve failed: "+reason);
+            resp.setData(pr.getCode());
+
+//            failedRecords.add(String.format(
+//                    "%s (Approve failed: %s)",
+//                    lc.getCode(),
+//                    reason
+//            ));
+            log.warn("Async approve failed for tariff {}: {}",  pr.getCode(), reason);
             return CompletableFuture.completedFuture(0);
         }
     }

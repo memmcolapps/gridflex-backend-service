@@ -16,6 +16,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -428,7 +429,7 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> bulkApprove(List<Band> bands) {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (bands == null || bands.isEmpty()) {
@@ -448,11 +449,24 @@ public class BandServiceImpl implements BandService {
                     .filter(num -> !num.isEmpty())
                     .toList();
 
+//            if (bandNames.isEmpty()) {
+//                batch.forEach(req -> failedRecords.add(
+//                        String.format("%s (Invalid or missing data)",
+//                                req.getName())
+//                ));
+//                continue;
+//            }
+
             if (bandNames.isEmpty()) {
-                batch.forEach(req -> failedRecords.add(
-                        String.format("%s (Invalid or missing data)",
-                                req.getName())
-                ));
+                batch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing band");
+                    resp.setData(req.getName());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
 
@@ -475,9 +489,17 @@ public class BandServiceImpl implements BandService {
                     .toList();
 
             // Record missing/invalid tariffs
-            missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found or does not pending state)")
-            );
+//            missingNames.forEach(name ->
+//                    failedRecords.add(name + " (Not found or does not pending state)")
+//            );
+
+            for (String name : missingNames) {
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Not found or not in pending state");
+                resp.setData(name);
+                failedRecords.add(resp);
+            }
 
             if (versionBatch.isEmpty()) {
                 continue;
@@ -503,6 +525,14 @@ public class BandServiceImpl implements BandService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        // If any failed → throw browser error
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " bands approval failed",
+                    result
+            );
+        }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
                 successCount + " of " + total + " bands approved successfully",
@@ -515,10 +545,30 @@ public class BandServiceImpl implements BandService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-            List<Band> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
-            List<Band> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
-            List<Band> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-            List<Band> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+//            List<Band> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
+//            List<Band> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
+//            List<Band> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
+//            List<Band> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+
+            List<Band> approvedCreatedBands = batch.stream()
+                    .filter(m -> "Pending-created".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Created"))
+                    .toList();
+
+            List<Band> approvedActivatedBands = batch.stream()
+                    .filter(m -> "Pending-activated".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Approved"))
+                    .toList();
+
+            List<Band> approvedDeactivatedBands = batch.stream()
+                    .filter(m -> "Pending-deactivated".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Deactivated"))
+                    .toList();
+
+            List<Band> approvedEditedBands = batch.stream()
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getApproveStatus()))
+                    .peek(m -> m.setApproveStatus("Approved"))
+                    .toList();
 
             // Combine all for main update
             List<Band> toUpdate = Stream.of(
@@ -547,7 +597,7 @@ public class BandServiceImpl implements BandService {
         }
     }
 
-    private int updateSubBatchTransactional(List<Band> batch, UserModel user, List<String> failedRecords) {
+    private int updateSubBatchTransactional(List<Band> batch, UserModel user, List<GenericResp> failedRecords) {
         int success = 0;
         int subSize = 100;
 
@@ -569,7 +619,7 @@ public class BandServiceImpl implements BandService {
         return success;
     }
 
-    public int approveSinglesFallbackAsync(List<Band> batch, UserModel user, List<String> failedRecords) {
+    public int approveSinglesFallbackAsync(List<Band> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (Band band : batch) {
@@ -581,7 +631,7 @@ public class BandServiceImpl implements BandService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int approveSinglesFallback(List<Band> bands, UserModel user, List<String> failedRecords) {
+    public int approveSinglesFallback(List<Band> bands, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Band band : bands) {
@@ -591,12 +641,17 @@ public class BandServiceImpl implements BandService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s (Approve failed: %s)",
-                        band.getName(),
-//                        meter.getNodeInfo().getRegionId(),
-                        reason
-                ));
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Approve failed: "+reason);
+                resp.setData(band.getName());
+                failedRecords.add(resp);
+//                failedRecords.add(String.format(
+//                        "%s (Approve failed: %s)",
+//                        band.getName(),
+////                        meter.getNodeInfo().getRegionId(),
+//                        reason
+//                ));
                 log.warn("Approve {} failed individually: {}", band.getName(), reason);
             }
         }
@@ -605,18 +660,24 @@ public class BandServiceImpl implements BandService {
     }
 
     @Async
-    public CompletableFuture<Integer> approveSingleAsync(Band band, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> approveSingleAsync(Band band, UserModel user, List<GenericResp> failedRecords) {
         try {
             approveSingleTransactional(band, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s (Approve failed: %s)",
-                    band.getName(),
-//                    meter.getNodeInfo().getRegionId(),
-                    reason
-            ));
+            GenericResp resp = new GenericResp();
+            resp.setId(band.getBandId().toString());
+            resp.setMessage("Band Approve failed: "+reason);
+            resp.setData(band.getName());
+
+            failedRecords.add(resp);
+//            failedRecords.add(String.format(
+//                    "%s (Approve failed: %s)",
+//                    band.getName(),
+////                    meter.getNodeInfo().getRegionId(),
+//                    reason
+//            ));
             log.warn("Async allocation failed for meter {}: {}",  band.getName(), reason);
             return CompletableFuture.completedFuture(0);
         }
@@ -687,12 +748,18 @@ public class BandServiceImpl implements BandService {
         return ms;
     }
 
-    private void prepareUpdateBands(List<Band> batch, UserModel user, List<String> failedRecords) {
+    private void prepareUpdateBands(List<Band> batch, UserModel user, List<GenericResp> failedRecords) {
         Iterator<Band> iterator = batch.iterator();
         while (iterator.hasNext()) {
             Band band = iterator.next();
             if (band.getName() == null || band.getName().trim().isEmpty()) {
-                failedRecords.add("(Missing meter number)");
+                GenericResp resp = new GenericResp();
+                resp.setId(band.getBandId().toString());
+                resp.setMessage("Missing band name");
+                resp.setData(band.getName());
+
+                failedRecords.add(resp);
+
                 iterator.remove();
                 continue;
             }
