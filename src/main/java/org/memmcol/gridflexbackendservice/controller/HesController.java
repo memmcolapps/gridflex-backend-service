@@ -1,11 +1,16 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
 import org.memmcol.gridflexbackendservice.service.hes.HesService;
+import org.memmcol.gridflexbackendservice.service.hes.HesServiceConsumer;
+import org.memmcol.gridflexbackendservice.service.hes.TenantMeterEmitterService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +26,16 @@ public class HesController {
 
     @Autowired
     private HesService hesService;
+
+    @Autowired
+    private TenantMeterEmitterService emitterService;
+
+    @Autowired
+    HesServiceConsumer hesServiceConsumer;
+
+//    public MeterForwardController(TenantMeterEmitterService emitterService) {
+//        this.emitterService = emitterService;
+//    }
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> dashboard() {
@@ -112,6 +127,42 @@ public class HesController {
             return handleException(e);
         }
     }
+
+    @GetMapping("/meter-status/stream")
+    public SseEmitter stream() {
+        // In production, validate tenantId from JWT/session
+        return emitterService.subscribe();
+    }
+
+    /**
+     * Parameterized SSE endpoint: the user wants a filtered stream.
+     * The controller will:
+     *  - validate the caller's tenant (inside subscribeWithOrg)
+     *  - connect the subscriber SSE emitter to the tenant registry
+     *  - start the upstream filtered stream (on demand) so events become available
+     *
+     * POST /meter-stream/subscribe-params
+     * Body: FilterStreamRequest JSON
+     */
+    @PostMapping("/stream")
+    public SseEmitter subscribeWithParams(@RequestBody RealTimeReadRequest req) {
+        // Create a tenant-scoped emitter (validate tenant inside)
+        SseEmitter emitter = emitterService.subscribe();
+
+        // Start the parameterized upstream stream; it will forward to emitterService for this org
+        hesServiceConsumer.startParameterizedStream(req);
+
+        return emitter;
+    }
+
+//    /**
+//     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
+//     */
+//    @PostMapping("/start-param-only")
+//    public String startParamOnly(@RequestBody RealTimeReadRequest req) {
+//        hesServiceConsumer.startParameterizedStream(req);
+//        return "started";
+//    }
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);

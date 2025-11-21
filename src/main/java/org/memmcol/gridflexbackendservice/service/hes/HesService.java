@@ -1,6 +1,8 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
 
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +19,8 @@ public interface HesService {
     Map<String, Object> modelEventType();
 
     Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber);
+
+    SseEmitter subscribe();
 
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

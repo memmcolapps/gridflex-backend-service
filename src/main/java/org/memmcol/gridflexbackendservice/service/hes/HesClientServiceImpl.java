@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 
 import java.time.LocalDateTime;
@@ -381,6 +382,11 @@ public class HesClientServiceImpl implements HesService {
             throw exception;
         }
 
+    }
+
+    @Override
+    public SseEmitter subscribe() {
+        return null;
     }
 
 }

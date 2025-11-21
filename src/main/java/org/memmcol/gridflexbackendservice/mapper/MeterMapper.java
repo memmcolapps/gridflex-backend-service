@@ -2337,7 +2337,7 @@ public interface MeterMapper {
             "  END,",
             "  tariff = CASE id",
             "    <foreach collection='list' item='m'>",
-            "      WHEN #{m.meterId} THEN #{m.tariff}",
+            "      WHEN #{m.meterId} THEN CAST(#{m.tariff} AS uuid)",
             "    </foreach>",
             "  END,",
             "  meter_number = CASE id",
@@ -2437,6 +2437,10 @@ public interface MeterMapper {
             "</script>"
     })
     void removeBulkPaymentModes(List<Meter> meterIds);
+
+
+    @Select("SELECT org_id FROM meters WHERE meter_number = #{meterNumber}")
+    UUID findOrgIdByMeterId(@Param("meterNumber") String meterNumber);
 
 //    void updateDetachBatchMeters(List<Meter> toUpdate);
 
