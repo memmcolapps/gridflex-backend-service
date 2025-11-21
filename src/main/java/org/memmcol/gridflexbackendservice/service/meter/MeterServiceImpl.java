@@ -1845,7 +1845,7 @@ public class MeterServiceImpl implements MeterService {
             for (String name : missingNames) {
                 GenericResp resp = new GenericResp();
                 resp.setId("");
-                resp.setMessage("Not found or not in pending state 1");
+                resp.setMessage("Not found or not in pending state");
                 resp.setData(name);
                 failedRecords.add(resp);
             }

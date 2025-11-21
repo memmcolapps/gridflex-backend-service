@@ -11,11 +11,13 @@ import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -532,7 +534,7 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> bulkApproveTariff(List<Tariff> tariffs) {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (tariffs == null || tariffs.isEmpty()) {
@@ -552,11 +554,23 @@ public class TariffServiceImpl implements TariffService {
                     .filter(num -> !num.isEmpty())
                     .toList();
 
+//            if (tariffNames.isEmpty()) {
+//                batch.forEach(req -> failedRecords.add(
+//                        String.format("%s (Invalid or missing data)",
+//                                req.getName())
+//                ));
+//                continue;
+//            }
             if (tariffNames.isEmpty()) {
-                batch.forEach(req -> failedRecords.add(
-                        String.format("%s (Invalid or missing data)",
-                                req.getName())
-                ));
+                batch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing tariff name");
+                    resp.setData(req.getName());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
 
@@ -573,10 +587,16 @@ public class TariffServiceImpl implements TariffService {
                     .toList();
 
             // Record missing/invalid tariffs
-            missingNames.forEach(name ->
-                    failedRecords.add(name + " (Not found or does not pending state)")
-            );
-
+//            missingNames.forEach(name ->
+//                    failedRecords.add(name + " (Not found or does not pending state)")
+//            );
+            for (String name : missingNames) {
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Not found or not in pending state");
+                resp.setData(name);
+                failedRecords.add(resp);
+            }
             if (versionBatch.isEmpty()) {
                 continue;
             }
@@ -601,6 +621,14 @@ public class TariffServiceImpl implements TariffService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        // If any failed → throw browser error
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " tariffs approval failed",
+                    result
+            );
+        }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
                 successCount + " of " + total + " tariffs approved successfully",
@@ -614,10 +642,30 @@ public class TariffServiceImpl implements TariffService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-            List<Tariff> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
-            List<Tariff> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
-            List<Tariff> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-            List<Tariff> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+//            List<Tariff> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
+//            List<Tariff> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
+//            List<Tariff> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
+//            List<Tariff> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
+
+            List<Tariff> approvedCreatedBands = batch.stream()
+                    .filter(m -> "Pending-created".equalsIgnoreCase(m.getApprove_status()))
+                    .peek(m -> m.setApprove_status("Created"))
+                    .toList();
+
+            List<Tariff> approvedActivatedBands = batch.stream()
+                    .filter(m -> "Pending-activated".equalsIgnoreCase(m.getApprove_status()))
+                    .peek(m -> m.setApprove_status("Approved"))
+                    .toList();
+
+            List<Tariff> approvedDeactivatedBands = batch.stream()
+                    .filter(m -> "Pending-deactivated".equalsIgnoreCase(m.getApprove_status()))
+                    .peek(m -> m.setApprove_status("Deactivated"))
+                    .toList();
+
+            List<Tariff> approvedEditedBands = batch.stream()
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getApprove_status()))
+                    .peek(m -> m.setApprove_status("Approved"))
+                    .toList();
 
             // Combine all for main update
             List<Tariff> toUpdate = Stream.of(
@@ -646,7 +694,7 @@ public class TariffServiceImpl implements TariffService {
         }
     }
 
-    private int updateSubBatchTransactional(List<Tariff> batch, UserModel user, List<String> failedRecords) {
+    private int updateSubBatchTransactional(List<Tariff> batch, UserModel user, List<GenericResp> failedRecords) {
         int success = 0;
         int subSize = 100;
 
@@ -667,7 +715,7 @@ public class TariffServiceImpl implements TariffService {
         return success;
     }
 
-    public int approveSinglesFallbackAsync(List<Tariff> batch, UserModel user, List<String> failedRecords) {
+    public int approveSinglesFallbackAsync(List<Tariff> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (Tariff tariff : batch) {
@@ -679,7 +727,7 @@ public class TariffServiceImpl implements TariffService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int approveSinglesFallback(List<Tariff> tariffs, UserModel user, List<String> failedRecords) {
+    public int approveSinglesFallback(List<Tariff> tariffs, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Tariff tariff : tariffs) {
@@ -689,11 +737,16 @@ public class TariffServiceImpl implements TariffService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s (Approve failed: %s)",
-                        tariff.getName(),
-                        reason
-                ));
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Approve failed: "+reason);
+                resp.setData(tariff.getName());
+                failedRecords.add(resp);
+//                failedRecords.add(String.format(
+//                        "%s (Approve failed: %s)",
+//                        tariff.getName(),
+//                        reason
+//                ));
                 log.warn("Tariff {} failed individually: {}", tariff.getName(), reason);
             }
         }
@@ -702,18 +755,23 @@ public class TariffServiceImpl implements TariffService {
     }
 
     @Async
-    public CompletableFuture<Integer> approveSingleAsync(Tariff tariff, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> approveSingleAsync(Tariff tariff, UserModel user, List<GenericResp> failedRecords) {
         try {
             approveSingleTransactional(tariff, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s (Approve failed: %s)",
-                    tariff.getName(),
-//                    meter.getNodeInfo().getRegionId(),
-                    reason
-            ));
+            GenericResp resp = new GenericResp();
+            resp.setId("");
+            resp.setMessage("Approve failed: "+reason);
+            resp.setData(tariff.getName());
+            failedRecords.add(resp);
+//            failedRecords.add(String.format(
+//                    "%s (Approve failed: %s)",
+//                    tariff.getName(),
+////                    meter.getNodeInfo().getRegionId(),
+//                    reason
+//            ));
             log.warn("Async approve failed for tariff {}: {}",  tariff.getName(), reason);
             return CompletableFuture.completedFuture(0);
         }
@@ -754,12 +812,18 @@ public class TariffServiceImpl implements TariffService {
         return ms;
     }
 
-    private void prepareUpdateTariffs(List<Tariff> batch, UserModel user, List<String> failedRecords) {
+    private void prepareUpdateTariffs(List<Tariff> batch, UserModel user, List<GenericResp> failedRecords) {
         Iterator<Tariff> iterator = batch.iterator();
         while (iterator.hasNext()) {
             Tariff tariff = iterator.next();
             if (tariff.getName() == null || tariff.getName().trim().isEmpty()) {
-                failedRecords.add("(Missing tariff name)");
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Missing tariff name");
+                resp.setData(tariff.getName());
+                failedRecords.add(resp);
+
+//                failedRecords.add("(Missing tariff name)");
                 iterator.remove();
                 continue;
             }
