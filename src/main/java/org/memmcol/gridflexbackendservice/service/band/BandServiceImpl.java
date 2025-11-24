@@ -89,12 +89,12 @@ public class BandServiceImpl implements BandService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            UUID orgId = um.getOrgId();
 
-            Band isExist = bandMapper.getBand(band.getName());
+            Band isExist = bandMapper.getBand(band.getName(), orgId);
             if (isExist != null) {
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(bandName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException(bandName + ": (" + band.getName() + ") " + status.getExistDesc());
             }
-
 //            Band isVersionExist = bandMapper.getVersionBand(band.getName(), um.getOrgId());
 //            if(isVersionExist != null) {
 //                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
@@ -141,6 +141,10 @@ public class BandServiceImpl implements BandService {
             Band isExist = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
+            }
+
+            if (isExist.getName() != null && isExist.getName().equalsIgnoreCase(band.getName())) {
+                throw new GlobalExceptionHandler.NotFoundException(bandName + " (" + band.getName() + ") " + status.getExistDesc());
             }
 
             band.setApproveStatus("Pending-edited");
@@ -710,7 +714,7 @@ public class BandServiceImpl implements BandService {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void approveSingleTransactional(Band band, UserModel user) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-
+        UUID orgId = user.getOrgId();
         // --- Step 2: Insert into main + version tables ---
         bandMapper.updateBandVer(band);
 
@@ -719,7 +723,7 @@ public class BandServiceImpl implements BandService {
 
 
         //fetch meter from the database
-        Band m = bandMapper.getBand(band.getName());
+        Band m = bandMapper.getBand(band.getName(), orgId);
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Band approved", bandName, m, metadata);

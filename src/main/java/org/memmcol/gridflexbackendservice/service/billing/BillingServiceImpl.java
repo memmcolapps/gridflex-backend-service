@@ -58,7 +58,7 @@ public class BillingServiceImpl implements BillingService {
         UserModel operatorAction = handleUserValidation();
         UUID orgId = operatorAction.getOrgId();
         try {
-            MeterReadingDTO info = readingMetersMapper.getType(assetId, type);
+            MeterReadingDTO info = readingMetersMapper.getType(assetId, type,orgId);
 
             if (info == null) {
                 return ResponseMap.response(status.getNotFoundCode(),

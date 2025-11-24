@@ -55,14 +55,14 @@ public interface BandMapper {
     })
     Band getBandId(UUID id);
 
-    @Select("SELECT * FROM bands WHERE name = #{name}")
+    @Select("SELECT * FROM bands WHERE name = #{name} AND org_id = #{orgId}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "approveStatus", column = "approve_status"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
-    Band getBand(String name);
+    Band getBand(String name, UUID orgId);
 
     @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
