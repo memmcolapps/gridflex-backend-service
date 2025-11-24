@@ -1,13 +1,14 @@
 package org.memmcol.gridflexbackendservice.model.hes;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class RealTimeReadRequest {
     private UUID orgId;
     private String meterType; // e.g., "MD" or "NonMD"
-    private List<String> meters; // List of meter serial numbers
-    private List<String> obisString; // List of OBIS codes
+    private List<Map<String, Object>> meters; // List of meter serial numbers
+    private List<Map<String, Object>> obisCode; // List of OBIS codes
 
     public UUID getOrgId() {
         return orgId;
@@ -25,19 +26,19 @@ public class RealTimeReadRequest {
         this.meterType = meterType;
     }
 
-    public List<String> getObisString() {
-        return obisString;
+    public List<Map<String, Object>> getObisCode() {
+        return obisCode;
     }
 
-    public void setObisString(List<String> obisString) {
-        this.obisString = obisString;
+    public void setObisCode(List<Map<String, Object>> obisCode) {
+        this.obisCode = obisCode;
     }
 
-    public List<String> getMeters() {
+    public List<Map<String, Object>> getMeters() {
         return meters;
     }
 
-    public void setMeters(List<String> meters) {
+    public void setMeters(List<Map<String, Object>> meters) {
         this.meters = meters;
     }
 }

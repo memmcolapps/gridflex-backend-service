@@ -9,6 +9,12 @@ public class MeterStreamEvent {
     private LocalDateTime lastSeen;
     private String status;
 
+    public MeterStreamEvent(String system, LocalDateTime now, String connected) {
+        this.meterNo = system;
+        this.lastSeen = now;
+        this.status = connected;
+    }
+
     public String getMeterNo() {
         return meterNo;
     }
