@@ -92,23 +92,23 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> communicationReport(int page, int size, String type, String search) {
+    public Map<String, Object> communicationReport(int page, int size, String type, String search,String node) {
         try {
 
             UserModel um = handleUserValidation();
             List<MeterConnEvent> meterConnEvent;
 
             if("MD".equalsIgnoreCase(type)){
-                meterConnEvent = hesMapper.getCommunicationReport(page, size, um.getOrgId(), type);
+                meterConnEvent = hesMapper.getCommunicationReport(page, size, um.getOrgId(), type, node);
             } else if("Non-MD".equalsIgnoreCase(type)) {
                 String type1 = "three-phase";
                 String type2 = "single-phase";
-                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, "");
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, "", node);
             } else {
                 String type1 = "three-phase";
                 String type2 = "single-phase";
                 String type3 = "MD";
-                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, type3);
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, type3, node);
             }
 
             // Normalize search text
@@ -168,7 +168,7 @@ public class HesClientServiceImpl implements HesService {
 
     @Override
     public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber,
-                                       String profile, String model,int page, int size, String search) {
+                                       String profile, String model,int page, int size, String search, String node) {
         try {
 
             UserModel um = handleUserValidation();
@@ -177,13 +177,13 @@ public class HesClientServiceImpl implements HesService {
             if(startDate == null || endDate == null) {
                 profiles = new ArrayList<>();
             } else if(profile.equalsIgnoreCase("load-profile-one")) {
-                profiles = hesMapper.getProfileChannelOne(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+                profiles = hesMapper.getProfileChannelOne(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("load-profile-two")) {
-                profiles = hesMapper.getProfileChannelTwo(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+                profiles = hesMapper.getProfileChannelTwo(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("daily-billing-profile")) {
-                profiles = hesMapper.getDailyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+                profiles = hesMapper.getDailyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("monthly-billing-profile")) {
-                profiles = hesMapper.getMonthlyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size);
+                profiles = hesMapper.getMonthlyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Unsupported type");
             }
@@ -231,17 +231,15 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String eventTypeName, String model, String search, int page, int size) {
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String eventTypeName, String model, String search, int page, int size, String node) {
         try {
             UserModel um = handleUserValidation();
             List<Event> events;
 
-            System.out.println(">>>>>>>>>>>>>:::"+model);
-
             if(startDate == null || endDate == null) {
                 events = new ArrayList<>();
             } else {
-                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeName, model, page, size, um.getOrgId());
+                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeName, model, page, size, um.getOrgId(), node);
             }
 
             // Normalize search text
@@ -340,10 +338,11 @@ public class HesClientServiceImpl implements HesService {
     }
 
     @Override
-    public Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber) {
+    public Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber,String node) {
+
         try {
             UserModel um = handleUserValidation();
-            List<MeterConnEvent> meterConnEvent = hesMapper.getRangeCommunicationReport(page, size, startDate, endDate, um.getOrgId(), type, meterNumber);
+            List<MeterConnEvent> meterConnEvent = hesMapper.getRangeCommunicationReport(page, size, startDate, endDate, um.getOrgId(), type, meterNumber, node);
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();

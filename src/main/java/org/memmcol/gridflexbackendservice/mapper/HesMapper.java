@@ -22,7 +22,7 @@ public interface HesMapper {
         FROM event_log e 
         JOIN event_type et ON e.event_type_id = et.id 
         JOIN meters m ON e.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND e.event_time &gt;= #{startDate}
@@ -40,6 +40,11 @@ public interface HesMapper {
                 AND e.meter_serial = #{meterNumber}
             </if>
         AND m.org_id = #{orgId}
+        AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY event_time DESC
         <if test="size > 0">
@@ -49,6 +54,7 @@ public interface HesMapper {
     """)
     @Results({
             @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
             @Result(column = "event_name", property = "eventName"),
             @Result(column = "event_time", property = "eventTime"),
             @Result(column = "event_type_id", property = "eventTypeId"),
@@ -108,13 +114,13 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
     List<Event> getEvents(
@@ -125,7 +131,7 @@ public interface HesMapper {
             @Param("meterModel") String meterModel,
             @Param("page") int page,
             @Param("size") int size,
-            UUID orgId);
+            UUID orgId, String node);
 
     @Select("SELECT * FROM event_type")
     @Results({
@@ -144,7 +150,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -159,6 +165,11 @@ public interface HesMapper {
                 AND meter_serial = #{meterNumber}
             </if>
             AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node} 
+                OR fn.service_region_id = #{node} 
+                OR fn.business_region_id = #{node}
+                OR fn.feeder_asset_id = #{node} 
+                OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
            <if test="size > 0">
@@ -231,16 +242,16 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getProfileChannelOne(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size);
+    List<Profile> getProfileChannelOne(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -248,7 +259,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -263,6 +274,11 @@ public interface HesMapper {
                 AND meter_serial = #{meterNumber}
             </if>
         AND m.org_id = #{orgId}
+        AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
             <if test="size > 0">
@@ -325,19 +341,25 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
+//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
+//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
+//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
+//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
+//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
+
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getProfileChannelTwo(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size);
+    List<Profile> getProfileChannelTwo(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -345,7 +367,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -360,6 +382,11 @@ public interface HesMapper {
                 AND meter_serial = #{meterNumber}
             </if>
         AND m.org_id = #{orgId}
+        AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
             <if test="size != 0">
@@ -451,19 +478,25 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
+//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
+//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
+//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
+//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
+//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
+
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getDailyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size);
+    List<Profile> getDailyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -471,7 +504,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -486,6 +519,11 @@ public interface HesMapper {
                 AND meter_serial = #{meterNumber}
             </if>
             AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
         <if test="size != 0">
@@ -577,19 +615,25 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
+//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
+//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
+//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
+//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
+//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
+
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getMonthlyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size);
+    List<Profile> getMonthlyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -597,12 +641,17 @@ public interface HesMapper {
         SELECT mc.*, m.*, fn.*
         FROM meters_connection_Event mc
         JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="type != null">
                 AND LOWER(m.meter_class) = LOWER(#{type})
             </if>
             AND m.org_id = #{orgId}
+             AND (fn.region_region_id = #{node} 
+                        OR fn.service_region_id = #{node} 
+                        OR fn.business_region_id = #{node}
+                        OR fn.feeder_asset_id = #{node} 
+                        OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY mc.updated_at DESC
         <if test="size != 0">
@@ -662,19 +711,25 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
+//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
+//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
+//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
+//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
+//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
+
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<MeterConnEvent> getCommunicationReport(int page, int size, UUID orgId, String type);
+    List<MeterConnEvent> getCommunicationReport(int page, int size, UUID orgId, String type, String node);
 
 
 
@@ -683,12 +738,17 @@ public interface HesMapper {
         SELECT mc.*, m.*, fn.*
         FROM meters_connection_Event mc
         JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.dss_node_id = m.dss
+        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="type != null">
                  AND LOWER(m.meter_class) IN (LOWER(#{type}), LOWER(#{type2}), LOWER(#{type3}))
             </if>
             AND m.org_id = #{orgId}
+             AND (fn.region_region_id = #{node} 
+                        OR fn.service_region_id = #{node} 
+                        OR fn.business_region_id = #{node}
+                        OR fn.feeder_asset_id = #{node} 
+                        OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY mc.updated_at DESC
         <if test="size != 0">
@@ -748,48 +808,81 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
+//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
+//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
+//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
+//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
+//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
+
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<MeterConnEvent> getCommunicationNonMDReport(int page, int size, UUID orgId, String type, String type2, String type3);
+    List<MeterConnEvent> getCommunicationNonMDReport(int page, int size, UUID orgId, String type, String type2, String type3, String node);
 
 
 
-    @Select("""
-            SELECT mc.*, m.*, v.* FROM meters_connection_Event mc
-            JOIN meters m ON mc.meter_no = m.meter_number 
-            JOIN vw_flatten_node_records v ON m.dss = dss_node_id
-            <where>
-                <if test="startDate != null">
-                    AND updated_at &gt;= #{startDate}
-                </if>
-            
-                <if test="endDate != null">
-                    AND updated_at &lt;= #{endDate}
-                </if>
-            
-                <if test="meterNumber != null and meterNumber.size() > 0">
-                     AND m.meter_number IN
-                     <foreach item="mn" collection="meterNumber" open="(" separator="," close=")">
-                         #{mn}
-                     </foreach>
-                 </if>
-             
-                AND m.org_id = #{orgId}
-             </where>
-            ORDER BY updated_at DESC
-                <if test="size != 0">
-                    LIMIT #{size} OFFSET #{page} * #{size}
-                </if>
+//    @Select("""
+//            SELECT mc.*, m.*, v.* FROM meters_connection_Event mc
+//            JOIN meters m ON mc.meter_no = m.meter_number
+//            JOIN vw_flatten_node_records v ON m.dss = dss_node_id
+//            <where>
+//              mc.updated_at BETWEEN #{startDate} AND #{endDate}
+//
+//                <if test="meterNumber != null and meterNumber.size() > 0">
+//                     AND mc.meter_no IN
+//                     <foreach item="mn" collection="meterNumber" open="(" separator="," close=")">
+//                         #{mn}
+//                     </foreach>
+//                 </if>
+//
+//                AND m.org_id = #{orgId}
+//             </where>
+//            ORDER BY updated_at DESC
+//                <if test="size != 0">
+//                    LIMIT #{size} OFFSET #{page} * #{size}
+//                </if>
+//    """)
+@Select("""
+    <script>
+        SELECT mc.*, m.*, v.*
+        FROM meters_connection_Event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        JOIN vw_flatten_node_records v ON m.node_id = v.feeder_node_id
+        <where>
+            mc.updated_at BETWEEN #{startDate} AND #{endDate}
+
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND mc.meter_no IN
+                <foreach item="mn" collection="meterNumber" open="(" separator="," close=")">
+                    #{mn}
+                </foreach>
+            </if>
+         
+            <if test='type != null and type != ""'>
+                AND m.meter_class = #{type}
+            </if>
+
+            AND m.org_id = #{orgId}
+             AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY mc.updated_at DESC
+        <if test="size != 0">
+            LIMIT #{size} OFFSET #{page} * #{size}
+        </if>
+    </script>
     """)
     @Results({
             @Result(property = "connectionType", column = "connection_type"),
@@ -843,19 +936,31 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
+//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
+//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
+//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
+//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
+//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
+
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
-            @Result(property = "meter.flatNode.feederRegionId", column = "feeder_region_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
             @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
 
             @Result(property = "meter.flatNode.dssId", column = "dss_id"),
             @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
-            @Result(property = "meter.flatNode.dssRegionId", column = "dss_region_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<MeterConnEvent> getRangeCommunicationReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, UUID orgId, String type, List<String> meterNumber);
+    List<MeterConnEvent> getRangeCommunicationReport(
+        int page, int size,
+        LocalDateTime startDate,
+        LocalDateTime endDate,
+        UUID orgId, String type,
+        @Param("meterNumber") List<String> meterNumber,
+        String node);
 
     @Select("""
             SELECT
