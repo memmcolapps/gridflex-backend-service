@@ -39,6 +39,15 @@ public class FlatNode implements Serializable {
     private String serviceName;
     private String serviceEmail;
 
+    // Substation
+    private UUID substationId;
+    private UUID substationNodeId;
+    private UUID substationParentId;
+    private UUID substationOrgId;
+    private String substationAssetId;
+    private String substationName;
+    private String substationEmail;
+
     // Feeder
     private UUID feederId;
     private UUID feederNodeId;
@@ -247,6 +256,62 @@ public class FlatNode implements Serializable {
 
     public void setServiceEmail(String serviceEmail) {
         this.serviceEmail = serviceEmail;
+    }
+
+    public UUID getSubstationId() {
+        return substationId;
+    }
+
+    public void setSubstationId(UUID substationId) {
+        this.substationId = substationId;
+    }
+
+    public UUID getSubstationNodeId() {
+        return substationNodeId;
+    }
+
+    public void setSubstationNodeId(UUID substationNodeId) {
+        this.substationNodeId = substationNodeId;
+    }
+
+    public UUID getSubstationParentId() {
+        return substationParentId;
+    }
+
+    public void setSubstationParentId(UUID substationParentId) {
+        this.substationParentId = substationParentId;
+    }
+
+    public UUID getSubstationOrgId() {
+        return substationOrgId;
+    }
+
+    public void setSubstationOrgId(UUID substationOrgId) {
+        this.substationOrgId = substationOrgId;
+    }
+
+    public String getSubstationAssetId() {
+        return substationAssetId;
+    }
+
+    public void setSubstationAssetId(String substationAssetId) {
+        this.substationAssetId = substationAssetId;
+    }
+
+    public String getSubstationName() {
+        return substationName;
+    }
+
+    public void setSubstationName(String substationName) {
+        this.substationName = substationName;
+    }
+
+    public String getSubstationEmail() {
+        return substationEmail;
+    }
+
+    public void setSubstationEmail(String substationEmail) {
+        this.substationEmail = substationEmail;
     }
 
     public UUID getFeederId() {

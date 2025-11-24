@@ -7,7 +7,6 @@ import org.memmcol.gridflexbackendservice.service.hes.TenantMeterEmitterService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -52,10 +51,11 @@ public class HesController {
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "search", required = false) String search
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "node", required = false) String node
     ) {
         try {
-            Map<String, Object> result = hesService.communicationReport(page, size, type, search);
+            Map<String, Object> result = hesService.communicationReport(page, size, type, search, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -63,17 +63,18 @@ public class HesController {
     }
 
     @GetMapping("/communication/range/report")
-    public ResponseEntity<?> dailyReport(
+    public ResponseEntity<?> communicationRangeReport(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
             @RequestParam(value = "meterNumber", required = false) List<String> meterNumber,
             @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "search", required = false) String search
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "node", required = false) String node
     ) {
         try {
-            Map<String, Object> result = hesService.communicationRangeReport(page, size, startDate, endDate, type,search, meterNumber);
+            Map<String, Object> result = hesService.communicationRangeReport(page, size, startDate, endDate, type,search, meterNumber, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -89,10 +90,11 @@ public class HesController {
             @RequestParam(value = "meterNumber", required = false) String meterNumber,
             @RequestParam(value = "profile", required = false) String profile,
             @RequestParam(value = "model", required = false) String model,
-            @RequestParam(value = "search", required = false) String search
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "node") String node
     ) {
         try {
-            Map<String, Object> result = hesService.profile(startDate, endDate, meterNumber, profile, model, page, size, search);
+            Map<String, Object> result = hesService.profile(startDate, endDate, meterNumber, profile, model, page, size, search, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -108,10 +110,11 @@ public class HesController {
             @RequestParam(value = "meterNumber", required = false) String meterNumber,
             @RequestParam(value = "eventTypeName", required = false) String eventTypeName,
             @RequestParam(value = "model", required = false) String model,
-            @RequestParam(value = "search", required = false) String search
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "node") String node
     ) {
         try {
-            Map<String, Object> result = hesService.event(startDate, endDate, meterNumber, eventTypeName, model, search, page, size);
+            Map<String, Object> result = hesService.event(startDate, endDate, meterNumber, eventTypeName, model, search, page, size, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

@@ -95,13 +95,8 @@ public class TariffServiceImpl implements TariffService {
 
             Tariff isExist = tariffMapper.getTariffByName(tariff.getName(), um.getOrgId());
             if (isExist != null) {
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " (" +tariff.getName()+ ") " + status.getExistDesc());
             }
-
-//            Tariff isVersionExist = tariffMapper.getTariffVersionByName(tariff.getName(), um.getOrgId());
-//            if(isExist.getApprove_status().contains("Pending")) {
-//                throw new GlobalExceptionHandler.NotFoundException("Tariff have a pending state that needs to be cleared");
-//            }
 
             Band isBand = bandMapper.getApprovedBandById(tariff.getBand_id(), um.getOrgId());
             if (isBand == null) {

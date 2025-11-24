@@ -11,6 +11,7 @@ public class Event implements Serializable {
 
     int id;
     String meterNumber;
+    String meterModel;
     String eventTypeId;
     String eventCode;
     LocalDateTime eventTime;
@@ -36,6 +37,14 @@ public class Event implements Serializable {
 
     public void setMeterNumber(String meterNumber) {
         this.meterNumber = meterNumber;
+    }
+
+    public String getMeterModel() {
+        return meterModel;
+    }
+
+    public void setMeterModel(String meterModel) {
+        this.meterModel = meterModel;
     }
 
     public String getEventTypeId() {
