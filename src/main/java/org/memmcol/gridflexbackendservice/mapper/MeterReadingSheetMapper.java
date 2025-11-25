@@ -100,15 +100,15 @@ public interface MeterReadingSheetMapper {
 
     @Select("""
                 SELECT name FROM substation_trans_feeder_lines f 
-                WHERE f.asset_id = #{assetId} And type = #{type}
+                WHERE f.asset_id = #{assetId} And type = #{type} AND org_id = #{orgId}
                 UNION
                 SELECT name FROM region_bhub_service_centers b 
-                WHERE b.region_id = #{assetId} And type = #{type}
+                WHERE b.region_id = #{assetId} And type = #{type} AND org_id = #{orgId}
             """)
     @Results({
             @Result(property = "name", column = "name")
     })
-    MeterReadingDTO getType(@Param("assetId") String assetId, @Param("type") String type);
+    MeterReadingDTO getType(@Param("assetId") String assetId, @Param("type") String type, @Param("orgId") UUID orgId);
 
 
     @Select("""
