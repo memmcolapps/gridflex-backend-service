@@ -68,4 +68,5 @@ public class MeterConnEvent implements Serializable {
     public void setMeter(Meter meter) {
         this.meter = meter;
     }
+
 }

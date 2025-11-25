@@ -1,13 +1,11 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
-import org.memmcol.gridflexbackendservice.model.hes.Event;
-import org.memmcol.gridflexbackendservice.model.hes.EventType;
-import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
-import org.memmcol.gridflexbackendservice.model.hes.Profile;
+import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,38 +16,38 @@ public interface HesMapper {
 
     @Select("""
         <script>
-        SELECT e.*, et.*, m.*, fn.*
-        FROM event_log e 
-        JOIN event_type et ON e.event_type_id = et.id 
-        JOIN meters m ON e.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
-        <where>
-            <if test="startDate != null">
-                AND e.event_time &gt;= #{startDate}
+            SELECT e.*, et.*, m.*, fn.*
+            FROM event_log e 
+            JOIN event_type et ON e.event_type_id = et.id 
+            JOIN meters m ON e.meter_serial = m.meter_number
+            LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+            <where>
+                <if test="startDate != null">
+                    AND e.event_time &gt;= #{startDate}
+                </if>
+                <if test="endDate != null">
+                    AND e.event_time &lt;= #{endDate}
+                </if>
+                <if test="eventTypeName != null">
+                    AND et.name = #{eventTypeName}
+                </if>
+                <if test="meterModel != null">
+                    AND e.meter_model = #{meterModel}
+                </if>
+                <if test="meterNumber != null">
+                    AND e.meter_serial = #{meterNumber}
+                </if>
+            AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node} 
+                        OR fn.service_region_id = #{node} 
+                        OR fn.business_region_id = #{node}
+                        OR fn.feeder_asset_id = #{node} 
+                        OR fn.dss_asset_id = #{node})
+            </where>
+            ORDER BY event_time DESC
+            <if test="size > 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
             </if>
-            <if test="endDate != null">
-                AND e.event_time &lt;= #{endDate}
-            </if>
-            <if test="eventTypeName != null">
-                AND et.name = #{eventTypeName}
-            </if>
-            <if test="meterModel != null">
-                AND e.meter_model = #{meterModel}
-            </if>
-            <if test="meterNumber != null">
-                AND e.meter_serial = #{meterNumber}
-            </if>
-        AND m.org_id = #{orgId}
-        AND (fn.region_region_id = #{node} 
-                    OR fn.service_region_id = #{node} 
-                    OR fn.business_region_id = #{node}
-                    OR fn.feeder_asset_id = #{node} 
-                    OR fn.dss_asset_id = #{node})
-        </where>
-        ORDER BY event_time DESC
-        <if test="size > 0">
-            LIMIT #{size} OFFSET #{page} * #{size}
-        </if>
         </script>
     """)
     @Results({
@@ -150,7 +148,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -259,7 +257,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -359,7 +357,10 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getProfileChannelTwo(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getProfileChannelTwo(
+            LocalDateTime startDate, LocalDateTime endDate,
+            String meterNumber, String meterModel,
+            UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -367,7 +368,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -504,7 +505,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -638,20 +639,15 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, fn.*
-        FROM meters_connection_Event mc
+        SELECT mc.*, m.*, sm.meter_model
+        FROM meters_connection_event mc
         JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        JOIN smart_meter_info sm ON m.id = sm.meter_id
         <where>
             <if test="type != null">
                 AND LOWER(m.meter_class) = LOWER(#{type})
             </if>
             AND m.org_id = #{orgId}
-             AND (fn.region_region_id = #{node} 
-                        OR fn.service_region_id = #{node} 
-                        OR fn.business_region_id = #{node}
-                        OR fn.feeder_asset_id = #{node} 
-                        OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY mc.updated_at DESC
         <if test="size != 0">
@@ -728,6 +724,8 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
     List<MeterConnEvent> getCommunicationReport(int page, int size, UUID orgId, String type, String node);
 
@@ -735,20 +733,16 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, fn.*
-        FROM meters_connection_Event mc
+        SELECT mc.*, m.*, sm.meter_model
+        FROM meters_connection_event mc
         JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        JOIN smart_meter_info sm ON m.id = sm.meter_id
         <where>
             <if test="type != null">
                  AND LOWER(m.meter_class) IN (LOWER(#{type}), LOWER(#{type2}), LOWER(#{type3}))
             </if>
             AND m.org_id = #{orgId}
-             AND (fn.region_region_id = #{node} 
-                        OR fn.service_region_id = #{node} 
-                        OR fn.business_region_id = #{node}
-                        OR fn.feeder_asset_id = #{node} 
-                        OR fn.dss_asset_id = #{node})
+        
         </where>
         ORDER BY mc.updated_at DESC
         <if test="size != 0">
@@ -825,6 +819,8 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
     List<MeterConnEvent> getCommunicationNonMDReport(int page, int size, UUID orgId, String type, String type2, String type3, String node);
 
@@ -853,10 +849,11 @@ public interface HesMapper {
 //    """)
 @Select("""
     <script>
-        SELECT mc.*, m.*, v.*
-        FROM meters_connection_Event mc
+        SELECT mc.*, m.*, v.*, sm.meter_model
+        FROM meters_connection_event mc
         JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN vw_flatten_node_records v ON m.node_id = v.feeder_node_id
+        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
         <where>
             mc.updated_at BETWEEN #{startDate} AND #{endDate}
 
@@ -872,11 +869,7 @@ public interface HesMapper {
             </if>
 
             AND m.org_id = #{orgId}
-             AND (fn.region_region_id = #{node} 
-                    OR fn.service_region_id = #{node} 
-                    OR fn.business_region_id = #{node}
-                    OR fn.feeder_asset_id = #{node} 
-                    OR fn.dss_asset_id = #{node})
+        
         </where>
         ORDER BY mc.updated_at DESC
         <if test="size != 0">
@@ -953,6 +946,8 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
     List<MeterConnEvent> getRangeCommunicationReport(
         int page, int size,
@@ -995,4 +990,68 @@ public interface HesMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.HesMapper.getHierarchyById"))
     })
     List<Node> getAllNode(UUID orgId);
+
+    @Select("SELECT COUNT(*) FROM smart_meter_info WHERE org_id = #{orgId}")
+    int countAll(UUID orgId);
+
+    @Select("SELECT COUNT(*) FROM meters_connection_event mc " +
+            "JOIN meters m ON m.meter_number = mc.meter_no " +
+            "AND mc.connection_type = #{online}")
+    int getActiveMeterCount(String online);
+
+    @Select("""
+        SELECT m 
+        FROM meters_connection_event m 
+        WHERE m.online_time = #{fromTime}
+        ORDER BY m.online_time ASC
+    """)
+    List<MeterConnEvent> findRecentEvents(@Param("fromTime") LocalDateTime fromTime);
+
+//  JOIN smart_meter_info sm ON m.id = sm.meter_id
+    @Select("""
+    <script>
+        SELECT mc.*, sm.meter_model
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        WHERE m.org_id = #{orgId}
+        ORDER BY mc.updated_at DESC
+        LIMIT 5
+    </script>
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+//            @Result(property = "onlineTime", column = "online_time"),
+//            @Result(property = "offlineTime", column = "offline_time"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
+    })
+    List<MeterConnEvent> getCommReport(UUID orgId);
+
+
+    @Select("""
+        <script>
+            SELECT e.*, et.*
+            FROM event_log e 
+            JOIN event_type et ON e.event_type_id = et.id 
+            JOIN meters m ON e.meter_serial = m.meter_number
+            WHERE m.org_id = #{orgId}
+            ORDER BY event_time DESC LIMIT 5
+        </script>
+    """)
+    @Results({
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "event_name", property = "eventName"),
+            @Result(column = "event_time", property = "eventTime"),
+            @Result(column = "event_type_id", property = "eventTypeId"),
+            @Result(column = "currentThreshold", property = "current_threshold"),
+            @Result(column = "eventCode", property = "event_code"),
+
+            @Result(property = "eventType.name", column = "name"),
+            @Result(property = "eventType.description", column = "description"),
+            @Result(property = "eventType.obisCode", column = "obis_code"),
+    })
+    List<Event> getEventsReport(UUID orgId);
 }
