@@ -141,7 +141,10 @@ public class MeterServiceImpl implements MeterService {
 
         Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null);
         if (existing != null) {
-            throw new GlobalExceptionHandler.NotFoundException("Meter already exists");
+            throw new GlobalExceptionHandler.NotFoundException("Meter number "+existing.getMeterNumber());
+        }
+        if (existing.getSimNumber().equalsIgnoreCase(request.getSimNumber())){
+            throw new GlobalExceptionHandler.NotFoundException("Sim Number "+status.getExistDesc());
         }
 
         String clazz = request.getMeterClass();
@@ -1472,13 +1475,19 @@ public class MeterServiceImpl implements MeterService {
 
     @Async("bulkUploadExecutor")
     public CompletableFuture<Integer> insertSingleAsync(
-            Meter meter, UserModel user, List<String> failedRecords) {
+            Meter meter, UserModel user, List<GenericResp> failedRecords) {
         try {
             insertSingleTransactional(meter, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+            GenericResp resp = new GenericResp();
+            resp.setId(meter.getMeterId().toString());
+            resp.setMessage("Meter Allocate failed: "+reason);
+            resp.setData(meter.getMeterNumber());
+
+            failedRecords.add(resp);
+//            failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
             log.warn("Async single insert failed for {}: {}", meter.getMeterNumber(), reason);
             return CompletableFuture.completedFuture(0);
         }
@@ -1544,7 +1553,7 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> bulkAllocateMeters(List<MeterRequest> allocations, UserModel user) {
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (allocations == null || allocations.isEmpty()) {
@@ -1570,41 +1579,67 @@ public class MeterServiceImpl implements MeterService {
                     .distinct()
                     .toList();
 
-            if (meterNumbers.isEmpty() || regionIds.isEmpty()) {
-                subBatch.forEach(req -> failedRecords.add(
-                        String.format("%s [Region: %s] (Invalid meter/region)",
-                                req.getMeterNumber(), req.getRegionId())
-                ));
+//            if (meterNumbers.isEmpty() || regionIds.isEmpty()) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meter.getMeterId().toString());
+//                resp.setMessage("Meter Approve failed: "+reason);
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+//                subBatch.forEach(req -> failedRecords.add(
+//                        String.format("%s [Region: %s] (Invalid meter/region)",
+//                                req.getMeterNumber(), req.getRegionId())
+//                ));
+//                continue;
+//            }
+
+            if (meterNumbers.isEmpty()  || regionIds.isEmpty()) {
+                subBatch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing meter number or region id");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
-
             // Fetch meters
             List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId());
             Map<String, Meter> meterMap = meters.stream()
                     .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
 
-            // Fetch region → businesshub mappings
+            // Fetch region → business-hub mappings
             List<RegionBhubServiceCenter> regionHubs = meterMapper.getRegionBhubMappings(regionIds, user.getOrgId());
             Map<String, UUID> regionNodeIdMap = regionHubs.stream()
                     .collect(Collectors.toMap(RegionBhubServiceCenter::getRegionId, RegionBhubServiceCenter::getNodeId));
-
-            System.out.println(">>>>>region1: "+regionHubs.get(0).getRegionId());
-            System.out.println(">>>>>region2: "+regionHubs.get(0).getNodeId());
 
             List<Meter> validAllocations = new ArrayList<>();
 
             for (MeterRequest req : subBatch) {
                 Meter meter = meterMap.get(req.getMeterNumber());
                 UUID nodeId = regionNodeIdMap.get(req.getRegionId());
-                System.out.println(">>>>>nodeId: "+nodeId);
 
                 if (meter == null) {
-                    failedRecords.add(String.format("%s [Region: %s] (Meter not found)", req.getMeterNumber(), req.getRegionId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("Meter Not found");
+                    resp.setData(meter.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [Region: %s] (Meter not found)", req.getMeterNumber(), req.getRegionId()));
                     continue;
                 }
 
                 if (nodeId == null) {
-                    failedRecords.add(String.format("%s [Region: %s] (Region not found in business hub)", req.getMeterNumber(), req.getRegionId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("Meter Allocate failed: region not found in business hub");
+                    resp.setData(meter.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [Region: %s] (Region not found in business hub)", req.getMeterNumber(), req.getRegionId()));
                     continue;
                 }
 
@@ -1622,9 +1657,7 @@ public class MeterServiceImpl implements MeterService {
             // Try allocating
             try {
                 log.info("Processing batch {} - {} ({} records)", i, end - 1, subBatch.size());
-                System.out.println(">>>>>>nodeVersionId: "+validAllocations.get(0).getNodeId());
                 int allocated = allocateBatchTransactional(validAllocations, user);
-                log.info("Processing >>>>>");
                 successCount += allocated;
             } catch (Exception e) {
                 log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
@@ -1638,6 +1671,13 @@ public class MeterServiceImpl implements MeterService {
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
+
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " Meters allocate failed",
+                    result
+            );
+        }
 
         return ResponseMap.response(
                 status.getSuccessCode(),
@@ -1671,7 +1711,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    public int allocateSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int allocateSubBatchTransactional(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         try {
             int successCount = 0;
             int subBatchSize = 100;
@@ -1702,7 +1742,7 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
-    public int allocateSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int allocateSinglesFallbackAsync(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (Meter meter : batch) {
@@ -1714,7 +1754,7 @@ public class MeterServiceImpl implements MeterService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int allocateSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int allocateSinglesFallback(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Meter meter : batch) {
@@ -1724,12 +1764,18 @@ public class MeterServiceImpl implements MeterService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s [Region: %s] (Allocation failed: %s)",
-                        meter.getMeterNumber(),
-//                        meter.getNodeInfo().getRegionId(),
-                        reason
-                ));
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterId().toString());
+                resp.setMessage("Meter single allocate failed: "+reason);
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(String.format(
+//                        "%s [Region: %s] (Allocation failed: %s)",
+//                        meter.getMeterNumber(),
+////                        meter.getNodeInfo().getRegionId(),
+//                        reason
+//                ));
                 log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
             }
         }
@@ -1738,18 +1784,24 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Async
-    public CompletableFuture<Integer> allocateSingleAsync(Meter meter, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> allocateSingleAsync(Meter meter, UserModel user, List<GenericResp> failedRecords) {
         try {
             allocateSingleTransactional(meter, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s [Region: %s] (Allocation failed: %s)",
-                    meter.getMeterNumber(),
-//                    meter.getNodeInfo().getRegionId(),
-                    reason
-            ));
+            GenericResp resp = new GenericResp();
+            resp.setId(meter.getMeterId().toString());
+            resp.setMessage("Meter single allocation failed: "+reason);
+            resp.setData(meter.getMeterNumber());
+
+            failedRecords.add(resp);
+//            failedRecords.add(String.format(
+//                    "%s [Region: %s] (Allocation failed: %s)",
+//                    meter.getMeterNumber(),
+////                    meter.getNodeInfo().getRegionId(),
+//                    reason
+//            ));
             log.warn("Async allocation failed for meter {}: {}", meter.getMeterNumber(), reason);
             return CompletableFuture.completedFuture(0);
         }
@@ -1996,7 +2048,7 @@ public class MeterServiceImpl implements MeterService {
 
             List<Meter> approvedDetachedMeters = batch.stream()
                     .filter(m -> "Pending-detached".equalsIgnoreCase(m.getMeterStage()))
-                    .peek(m -> m.setMeterStage("Assigned"))
+                    .peek(m -> m.setMeterStage("Unassigned"))
                     .peek(m -> m.setStatus("Active"))
                     .toList();
 
@@ -2487,7 +2539,7 @@ public class MeterServiceImpl implements MeterService {
 
     public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
 
         List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
         Map<String, UUID> manufacturerNameToId = manufacturers.stream()
@@ -2520,6 +2572,13 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + meters.size() + " Meters upload failed",
+                    result
+            );
+        }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
                 successCount + " of " + meters.size() + " Meters uploaded successfully",
@@ -2528,7 +2587,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
-    public void insertBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<String> failedRecords) {
+    public void insertBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<GenericResp> failedRecords) {
         prepareMeters(batch, user, manufacturerNameToId, failedRecords);
 
         // Step 1: Insert main meters
@@ -2547,7 +2606,7 @@ public class MeterServiceImpl implements MeterService {
         auditBatch(batch, user, "Meter created");
     }
 
-    public int insertSubBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<String> failedRecords) {
+    public int insertSubBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<GenericResp> failedRecords) {
         int successCount = 0;
         int subBatchSize = 100;
 
@@ -2574,7 +2633,7 @@ public class MeterServiceImpl implements MeterService {
         return successCount;
     }
 
-    public int insertSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int insertSinglesFallbackAsync(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (Meter meter : batch) {
@@ -2588,7 +2647,7 @@ public class MeterServiceImpl implements MeterService {
         return futures.stream().mapToInt(f -> f.join()).sum();
     }
 
-    public int insertSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int insertSinglesFallback(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Meter meter : batch) {
@@ -2598,7 +2657,13 @@ public class MeterServiceImpl implements MeterService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterId().toString());
+                resp.setMessage("Meter single save failed: "+reason);
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
                 log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
             }
         }
@@ -2610,7 +2675,7 @@ public class MeterServiceImpl implements MeterService {
             List<Meter> batch,
             UserModel user,
             Map<String, UUID> manufacturerNameToId,
-            List<String> failedRecords
+            List<GenericResp> failedRecords
     ) {
         Iterator<Meter> iterator = batch.iterator();
 
@@ -2620,14 +2685,26 @@ public class MeterServiceImpl implements MeterService {
             // --- Validate and set Manufacturer ID ---
             String manuName = meter.getMeterManufacturerName();
             if (manuName == null || manuName.trim().isEmpty()) {
-                failedRecords.add(meter.getMeterNumber() + " (Missing manufacturer name)");
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterId().toString());
+                resp.setMessage("Missing manufacturer name");
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(meter.getMeterNumber() + " (Missing manufacturer name)");
                 iterator.remove();
                 continue;
             }
 
             UUID manuId = manufacturerNameToId.get(manuName.trim().toLowerCase());
             if (manuId == null) {
-                failedRecords.add(meter.getMeterNumber() + " (Invalid manufacturer: " + manuName + ")");
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterId().toString());
+                resp.setMessage("Invalid manufacturer: "+manuName);
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(meter.getMeterNumber() + " (Invalid manufacturer: " + manuName + ")");
                 iterator.remove();
                 continue;
             }
@@ -3247,6 +3324,13 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " Meters assigned failed",
+                    result
+            );
+        }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
                 String.format("%d of %d meters assigned successfully", successCount, total),
@@ -3479,6 +3563,13 @@ public class MeterServiceImpl implements MeterService {
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
+
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + total + " Meters assigned failed",
+                    result
+            );
+        }
 
         return ResponseMap.response(
                 status.getSuccessCode(),
