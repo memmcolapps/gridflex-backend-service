@@ -87,6 +87,11 @@ public class CustomerServiceImpl implements CustomerService {
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
 
+            Customer email = customerMapper.findByEmail(request.getEmail(),um.getOrgId());
+            if (email != null && email.getEmail().equalsIgnoreCase(request.getEmail())) {
+                throw new GlobalExceptionHandler.NotFoundException("Email already used by a Customer");
+            }
+
 //            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
             String uniqueCustomerId = "C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             request.setCustomerId(uniqueCustomerId);
@@ -123,6 +128,11 @@ public class CustomerServiceImpl implements CustomerService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+
+            Customer email = customerMapper.findByEmail(request.getEmail(),um.getOrgId());
+            if (email != null && email.getEmail().equalsIgnoreCase(request.getEmail())) {
+                throw new GlobalExceptionHandler.NotFoundException("Email ("+request.getEmail()+") "+ status.getExistDesc()+" for a Customer");
+            }
 
             request.setOrgId(um.getOrgId());
 

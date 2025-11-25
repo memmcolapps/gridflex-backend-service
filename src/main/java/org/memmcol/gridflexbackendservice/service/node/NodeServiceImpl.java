@@ -68,8 +68,9 @@ public class NodeServiceImpl implements NodeService {
 
             RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
             if(n != null){
-                throw new GlobalExceptionHandler.NotFoundException("Node " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException("Region ID ("+ request.getRegionId()+") " + status.getExistDesc());
             }
+
             Node node = new Node();
             node.setName(request.getName());
             node.setOrgId(um.getOrgId());
@@ -126,7 +127,7 @@ public class NodeServiceImpl implements NodeService {
 
             SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
             if(sub != null){
-                throw new GlobalExceptionHandler.NotFoundException("Node " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc());
             }
 
             Node node = new Node();
@@ -196,6 +197,17 @@ public class NodeServiceImpl implements NodeService {
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Node does not exist");
             }
+
+            RegionBhubServiceCenter rb = nodeMapper.getRegionBhubServiceCenterById(request.getId(), um.getOrgId());
+            if (rb.getName().equalsIgnoreCase(request.getName())){
+                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
+            }
+
+            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
+            if(n != null){
+                throw new GlobalExceptionHandler.NotFoundException("Region ID ("+ request.getRegionId()+") " + status.getExistDesc());
+            }
+
             nodeMapper.updateNode(node);
 
             UUID nodeId = node.getId();
@@ -249,6 +261,17 @@ public class NodeServiceImpl implements NodeService {
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
+
+            SubStationTransformerFeederLine sub = nodeMapper.getSubStationTransformerFeederLineById(request.getId(), um.getOrgId());
+            if (sub.getName().equalsIgnoreCase(request.getName())){
+                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
+            }
+
+            SubStationTransformerFeederLine subAsset = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
+            if(subAsset != null){
+                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc());
+            }
+
             nodeMapper.updateNode(node);
 
             UUID nodeId = node.getId();

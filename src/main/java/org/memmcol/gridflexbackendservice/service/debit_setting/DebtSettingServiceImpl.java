@@ -130,6 +130,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
 
+            if (isExist.getName().equalsIgnoreCase(request.getName())) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " (" + request.getName() + ") "+status.getExistDesc());
+            }
+
             LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(request.getLiabilityCauseId(), um.getOrgId());
 
             request.setApproveStatus("Pending-edited");
@@ -335,7 +339,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             PercentageRange isExist = debtMapper.getPercentageByCode(request.getCode(), um.getOrgId());
             if (isExist != null) {
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Percentage range " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Percentage range code ("+request.getCode()+") " + status.getExistDesc());
             }
 
             PercentageRange isVersionExist = debtMapper.getPercentageVersionByCode(request.getCode(), um.getOrgId());
@@ -393,6 +397,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
+
+            if (isExist.getCode().equalsIgnoreCase(request.getCode())){
+                throw new GlobalExceptionHandler.NotFoundException(pr +"code ("+request.getCode()+") " + status.getExistDesc());
+            }
+
             Band band = debtMapper.getBand(request.getBandId(), um.getOrgId());
             if (band == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Band is either not found, not approved or deactivated" );

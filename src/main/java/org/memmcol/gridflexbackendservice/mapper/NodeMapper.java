@@ -36,6 +36,12 @@ public interface NodeMapper {
     @Select("SELECT * FROM region_bhub_service_centers WHERE node_id = #{id}")
     RegionBhubServiceCenter getRegionBhubServiceCenter(UUID id);
 
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE id = #{id} AND org_id= #{orgId}")
+    SubStationTransformerFeederLine getSubStationTransformerFeederLineById(UUID id, UUID orgId);
+
+    @Select("SELECT * FROM region_bhub_service_centers WHERE id = #{id} AND org_id= #{orgId}")
+    RegionBhubServiceCenter getRegionBhubServiceCenterById(UUID id, UUID orgId);
+
     @Select("SELECT * FROM nodes WHERE org_id = #{orgId} AND (id = #{nodeId} OR parent_id = #{nodeId} OR parent_id IN (SELECT id FROM nodes WHERE parent_id = #{nodeId}))")
     @Results({
             @Result(property = "id", column = "id"),

@@ -174,4 +174,21 @@ public interface DebitCreditAdjustmentMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getCustomer")),
     })
     Meter getAccountNumber(UUID orgId, String accountNumber);
+
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} AND org_id = #{orgId} AND liability_cause_id = #{liabilityCauseId}" +
+            " AND type = #{type}")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "meter_id", property = "meterId"),
+            @Result(column = "debit", property = "amount"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "liabilityCause", column = "liability_cause_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLcById")),
+            @Result(property = "meter", column = "meter_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter"))
+    })
+    DebitCreditAdjust getDebitAdjustmentByMeterIdAndLiabilityCause(UUID meterId, UUID orgId,UUID liabilityCauseId, String type);
 }
