@@ -444,6 +444,10 @@ public class TariffServiceImpl implements TariffService {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
 
+            if (isExist.getName().equalsIgnoreCase(tariff.getName())) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(tariffName + " (" +tariff.getName()+ ") " + status.getExistDesc());
+            }
+
             Band isBand = bandMapper.getApprovedBandById(tariff.getBand_id(), um.getOrgId());
             if (isBand == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " is either not found, not approved or deactivated" );

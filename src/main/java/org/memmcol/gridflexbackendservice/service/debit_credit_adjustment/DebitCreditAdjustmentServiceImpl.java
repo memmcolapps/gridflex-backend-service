@@ -97,6 +97,12 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause not found");
             }
 
+            DebitCreditAdjust liabilityResult = mapper.getDebitAdjustmentByMeterIdAndLiabilityCause(request.getMeterId(),um.getOrgId(),
+                    request.getLiabilityCauseId(),request.getType());
+            if (liabilityResult != null) {
+                throw new GlobalExceptionHandler.NotFoundException("This meter already has an adjustment for the selected liability cause");
+            }
+
             request.setOrgId(um.getOrgId());
             request.setStatus("UNPAID");
             result = mapper.createDebitAdjustment(request);

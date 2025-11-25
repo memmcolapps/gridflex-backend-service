@@ -83,7 +83,7 @@ public class UserServiceImpl implements  UserService {
 
             // check if operator exist
             if (userMapper.findByEmail(operator.getEmail(), um.getOrgId()) != null) {
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " Email " + status.getExistDesc());
             }
 
             // check if groupId exist
@@ -126,8 +126,9 @@ public class UserServiceImpl implements  UserService {
             UserModel operator = request.getUser();
 //            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
+            UserModel users = userMapper.findById(operator.getId(), um.getOrgId());
             // check if operator exist
-            if (userMapper.findById(operator.getId(), um.getOrgId()) == null) {
+            if (users == null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getNotFoundDesc());
             }
 
@@ -176,6 +177,10 @@ public class UserServiceImpl implements  UserService {
             UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
             if (isOperator == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
+            }
+
+            if (isOperator.getEmail().equalsIgnoreCase(request.getEmail())){
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " Email " + status.getExistDesc());
             }
 
             request.setOrgId(um.getOrgId());
