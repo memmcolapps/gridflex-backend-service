@@ -85,7 +85,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             LiabilityCause isExist = debtMapper.getLiabilityCauseByName(request.getName(), request.getCode(), um.getOrgId());
 
             if(isExist != null){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " ("+request.getName()+") " + status.getExistDesc());
             }
             request.setApproveStatus("Pending-created");
             request.setOrgId(um.getOrgId());
