@@ -2421,7 +2421,7 @@ public interface MeterMapper {
             "<foreach collection='meterIds' item='meterId' open='(' separator=',' close=')'>",
             "  #{meterId}",
             "</foreach>",
-            "AND org_id = #{orgId}",
+            "AND org_id = #{meterIds[0].orgId}",
             "</script>"
     })
     void removeBulkAssignedLocations(List<Meter> meterIds);
@@ -2433,7 +2433,7 @@ public interface MeterMapper {
             "<foreach collection='meterIds' item='meterId' open='(' separator=',' close=')'>",
             "  #{meterId}",
             "</foreach>",
-            "AND org_id = #{orgId}",
+            "AND org_id = #{meterIds[0].orgId}",
             "</script>"
     })
     void removeBulkPaymentModes(List<Meter> meterIds);
