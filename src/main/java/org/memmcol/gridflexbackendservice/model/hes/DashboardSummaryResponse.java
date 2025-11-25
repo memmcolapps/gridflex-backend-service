@@ -1,18 +1,20 @@
 package org.memmcol.gridflexbackendservice.model.hes;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record DashboardSummaryResponse(
         MeterSummary meterSummary,
         List<CommunicationLogPoint> communicationLogs,
-        DataSchedulerRate schedulerRate,
+        List<EventLogs> eventLogs,
+//        DataSchedulerRate schedulerRate,
         List<CommunicationReportRow> communicationReport
 ) {
     public record MeterSummary(
             int totalSmartMeters,
             int online,
-            int offline,
-            int failedCommands
+            int offline
+//            int failedCommands
     ) {}
 
     public record CommunicationLogPoint(
@@ -26,14 +28,23 @@ public record DashboardSummaryResponse(
     ) {}
 
     public record CommunicationReportRow(
-            String serialNumber,
             String meterNo,
             String meterModel,
-            String status,        // Online / Offline
-            String lastSync,      // "1 min ago", "2 hours ago"
-            String tamperState,   // "No Tamper", "Tamper Detected"
-            String tamperSync,    // e.g. "2 hours ago"
-            String relayControl,  // Connected / Disconnected
-            String relaySync      // e.g. "2 hours ago"
+            String connectionType,        // Online / Offline
+            LocalDateTime updatedAt      // "1 min ago", "2 hours ago"
+    ) {}
+
+    public record EventLogs(
+            String meterNumber,
+            String meterModel,
+            String eventTypeId,
+            String eventCode,
+            LocalDateTime eventTime,
+            String currentThreshold,
+            String eventName,
+            LocalDateTime createdAt,
+            String eventTypeName,
+            String obisCode,
+            String description
     ) {}
 }
