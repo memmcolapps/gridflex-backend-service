@@ -63,7 +63,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
             if (isManufacturer != null){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " ("+request.getName()+") " + status.getExistDesc());
             }
 
             request.setOrgId(um.getOrgId());
