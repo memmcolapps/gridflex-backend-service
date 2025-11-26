@@ -139,13 +139,13 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("Meter manufacturer not found");
         }
 
-        Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null);
+        Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null, request.getSimNumber());
         if (existing != null) {
-            throw new GlobalExceptionHandler.NotFoundException("Meter number "+existing.getMeterNumber());
+            throw new GlobalExceptionHandler.NotFoundException("Meter Number ("+existing.getMeterNumber()+") "+status.getExistDesc());
         }
-        if (existing.getSimNumber().equalsIgnoreCase(request.getSimNumber())){
-            throw new GlobalExceptionHandler.NotFoundException("Sim Number "+status.getExistDesc());
-        }
+//        if (existing.getSimNumber().equalsIgnoreCase(request.getSimNumber())){
+//            throw new GlobalExceptionHandler.NotFoundException("Sim Number "+status.getExistDesc());
+//        }
 
         String clazz = request.getMeterClass();
         if (!clazz.equalsIgnoreCase("md") &&
@@ -430,19 +430,19 @@ public class MeterServiceImpl implements MeterService {
 //            }
 
             if(meterNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
             }
 
             if(accountNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
             }
 
             if(meterId != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
             }
 
             if(cin != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
             }
 
             if(versionMeterNumber != null){
@@ -510,7 +510,7 @@ public class MeterServiceImpl implements MeterService {
 
             int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter" + (state ? " activated " : " deactivated ")+ "failed");
-            Meter meter = meterMapper.getMeter(um.getOrgId(), meterById.getMeterId(), null, null, null);
+            Meter meter = meterMapper.getMeter(um.getOrgId(), meterById.getMeterId(), null, null, null, "");
             um.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(um, changeDescription, meterName, meter, metadata, reason);
@@ -627,7 +627,7 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMeterClass() == null) {
 
                 // Validate main meter record
-                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null);
+                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber());
                 if (mainMeter == null) {
                     throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
                 }
@@ -1424,7 +1424,7 @@ public class MeterServiceImpl implements MeterService {
 
             UserModel um = handleUserValidation();
 
-            Meter verifyMeter = meterMapper.getMeter(um.getOrgId(), null, meterNumber, null, null);
+            Meter verifyMeter = meterMapper.getMeter(um.getOrgId(), null, meterNumber, null, null, "");
             if(verifyMeter == null){
                 throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
             }
