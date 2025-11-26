@@ -130,9 +130,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
 
-            if (isExist.getName().equalsIgnoreCase(request.getName())) {
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " (" + request.getName() + ") "+status.getExistDesc());
-            }
+//            if (isExist.getName().equalsIgnoreCase(request.getName())) {
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " (" + request.getName() + ") "+status.getExistDesc());
+//            }
 
             LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(request.getLiabilityCauseId(), um.getOrgId());
 
@@ -398,9 +398,9 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
 
-            if (isExist.getCode().equalsIgnoreCase(request.getCode())){
-                throw new GlobalExceptionHandler.NotFoundException(pr +"code ("+request.getCode()+") " + status.getExistDesc());
-            }
+//            if (isExist.getCode().equalsIgnoreCase(request.getCode())){
+//                throw new GlobalExceptionHandler.NotFoundException(pr +"code ("+request.getCode()+") " + status.getExistDesc());
+//            }
 
             Band band = debtMapper.getBand(request.getBandId(), um.getOrgId());
             if (band == null) {

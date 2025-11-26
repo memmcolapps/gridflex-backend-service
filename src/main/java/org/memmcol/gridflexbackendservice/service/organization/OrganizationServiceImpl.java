@@ -93,9 +93,9 @@ public class OrganizationServiceImpl implements OrganizationService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
             Organization originalData = organizationMapper.getOrganizationById(um.getOrgId());
-            if (originalData.getBusinessName().equalsIgnoreCase(organization.getBusinessName())) {
-                throw new GlobalExceptionHandler.NotFoundException("Organization ("+organization.getBusinessName()+") "+status.getExistDesc());
-            }
+//            if (originalData.getBusinessName().equalsIgnoreCase(organization.getBusinessName())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Organization ("+organization.getBusinessName()+") "+status.getExistDesc());
+//            }
 
             organizationMapper.updateOrganizationSelective(organization);
 

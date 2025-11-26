@@ -101,9 +101,9 @@ public class ManufacturerServiceImpl implements ManufacturerService {
                 throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " " + status.getNotFoundDesc());
             }
 
-            if (isManufacturer.getName().equals(request.getName())){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " ("+request.getName()+") " + status.getExistDesc());
-            }
+//            if (isManufacturer.getName().equals(request.getName())){
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " ("+request.getName()+") " + status.getExistDesc());
+//            }
 
             request.setOrgId(um.getOrgId());
 

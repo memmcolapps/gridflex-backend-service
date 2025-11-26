@@ -129,10 +129,10 @@ public class CustomerServiceImpl implements CustomerService {
 
             UserModel um = handleUserValidation();
 
-            Customer email = customerMapper.findByEmail(request.getEmail(),um.getOrgId());
-            if (email != null && email.getEmail().equalsIgnoreCase(request.getEmail())) {
-                throw new GlobalExceptionHandler.NotFoundException("Email ("+request.getEmail()+") "+ status.getExistDesc()+" for a Customer");
-            }
+//            Customer email = customerMapper.findByEmail(request.getEmail(),um.getOrgId());
+//            if (email != null && email.getEmail().equalsIgnoreCase(request.getEmail())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Email ("+request.getEmail()+") "+ status.getExistDesc()+" for a Customer");
+//            }
 
             request.setOrgId(um.getOrgId());
 
