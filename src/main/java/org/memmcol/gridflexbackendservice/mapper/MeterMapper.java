@@ -11,7 +11,6 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -446,7 +445,8 @@ public interface MeterMapper {
     int insertPrepaidMeterVersion(PaymentMode paymentMode);
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-            "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})")
+            "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} " +
+            "OR m.sim_number = #{simNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -492,7 +492,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
 
     })
-    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber, String cin);
+    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber, String cin, String simNumber);
 
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
