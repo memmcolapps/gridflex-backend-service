@@ -179,12 +179,12 @@ public class CustomerServiceImpl implements CustomerService {
             String cacheKey = cacheKeyBuilder.toString();
 
             // Return from cache if available
-            Object cachedCustomer = customerCache.get(cacheKey);
-            if (cachedCustomer != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached Customers " + status.getDesc(), cachedCustomer);
-            }
+//            Object cachedCustomer = customerCache.get(cacheKey);
+//            if (cachedCustomer != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached Customers " + status.getDesc(), cachedCustomer);
+//            }
 
-            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId());
+            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), page, size);
 
             // Apply filtering
             Stream<Customer> userStream = customers.stream();
@@ -217,7 +217,7 @@ public class CustomerServiceImpl implements CustomerService {
             if (size == 0) {
                 paginatedCustomers = filteredCustomers;
             } else {
-                int fromIndex = Math.min(page * size, totalCustomers);
+                int fromIndex = Math.min((page - 1) * size, totalCustomers);
                 int toIndex = Math.min(fromIndex + size, totalCustomers);
                 paginatedCustomers = filteredCustomers.subList(fromIndex, toIndex);
             }
@@ -230,7 +230,7 @@ public class CustomerServiceImpl implements CustomerService {
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedCustomers.size() / size));
 
-            customerCache.put(cacheKey, response);
+//            customerCache.put(cacheKey, response);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + "s " + status.getDesc(), response);
 
@@ -249,11 +249,11 @@ public class CustomerServiceImpl implements CustomerService {
 
             UserModel um = handleUserValidation();
 
-            Object cachedUser = customerCache.get(id.toString()+"_"+um.getOrgId());
+//            Object cachedUser = customerCache.get(id.toString()+"_"+um.getOrgId());
 
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + customerName + " " + status.getDesc(), cachedUser);
-            }
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + customerName + " " + status.getDesc(), cachedUser);
+//            }
             // check if customer exist
             Customer isCustomer = customerMapper.findById(id, um.getOrgId());
             if (isCustomer == null){
@@ -613,18 +613,18 @@ public class CustomerServiceImpl implements CustomerService {
         };
     }
 
-    private void handleAddCache(Customer customer) {
-        customerCache.remove(customer.getId().toString()+"_"+customer.getOrgId());
-        for (String key : auditCache.keySet()) {
-            if (key.startsWith("grid_flex_audit_log_page_")) {
-                auditCache.remove(key);
-            }
-        }
-        for (String key : customerCache.keySet()) {
-            if (key.startsWith("customers_"+customer.getOrgId())) {
-                customerCache.remove(key);
-            }
-        }
-        customerCache.put(customer.getId().toString()+"_"+customer.getOrgId(), customer);  // Cache updated or deleted entity
-    }
+//    private void handleAddCache(Customer customer) {
+//        customerCache.remove(customer.getId().toString()+"_"+customer.getOrgId());
+//        for (String key : auditCache.keySet()) {
+//            if (key.startsWith("grid_flex_audit_log_page_")) {
+//                auditCache.remove(key);
+//            }
+//        }
+//        for (String key : customerCache.keySet()) {
+//            if (key.startsWith("customers_"+customer.getOrgId())) {
+//                customerCache.remove(key);
+//            }
+//        }
+//        customerCache.put(customer.getId().toString()+"_"+customer.getOrgId(), customer);  // Cache updated or deleted entity
+//    }
 }

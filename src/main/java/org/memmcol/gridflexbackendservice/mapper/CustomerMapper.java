@@ -143,7 +143,15 @@ public interface CustomerMapper {
     @Update("UPDATE customers SET status = #{state} WHERE id = #{id} AND org_id = #{orgId}")
     int changeStatus(UUID id, String state, UUID orgId);
 
-    @Select("SELECT * FROM customers WHERE org_id = #{orgId} ORDER BY created_at DESC")
+    @Select("""
+            <script>
+                SELECT * FROM customers WHERE org_id = #{orgId} 
+                ORDER BY created_at DESC
+                <if test="size > 0">
+                    LIMIT #{size} OFFSET #{page} * #{size}
+                </if>
+            </script>
+            """)
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -157,7 +165,7 @@ public interface CustomerMapper {
             @Result(property = "meter", column = "customer_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getByCustomerId"))
     })
-    List<Customer> findAllCustomers(UUID orgId);
+    List<Customer> findAllCustomers(UUID orgId, int page, int size);
 
     @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId}")
     @Results({
