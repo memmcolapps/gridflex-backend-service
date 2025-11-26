@@ -198,15 +198,15 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Node does not exist");
             }
 
-            RegionBhubServiceCenter rb = nodeMapper.getRegionBhubServiceCenterById(request.getId(), um.getOrgId());
-            if (rb.getName().equalsIgnoreCase(request.getName())){
-                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
-            }
-
-            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
-            if(n != null){
-                throw new GlobalExceptionHandler.NotFoundException("Region ID ("+ request.getRegionId()+") " + status.getExistDesc());
-            }
+//            RegionBhubServiceCenter rb = nodeMapper.getRegionBhubServiceCenterById(request.getId(), um.getOrgId());
+//            if (rb.getName().equalsIgnoreCase(request.getName())){
+//                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
+//            }
+//
+//            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
+//            if(n != null){
+//                throw new GlobalExceptionHandler.NotFoundException("Region ID ("+ request.getRegionId()+") " + status.getExistDesc());
+//            }
 
             nodeMapper.updateNode(node);
 
@@ -262,15 +262,15 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
 
-            SubStationTransformerFeederLine sub = nodeMapper.getSubStationTransformerFeederLineById(request.getId(), um.getOrgId());
-            if (sub.getName().equalsIgnoreCase(request.getName())){
-                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
-            }
+//            SubStationTransformerFeederLine sub = nodeMapper.getSubStationTransformerFeederLineById(request.getId(), um.getOrgId());
+//            if (sub.getName().equalsIgnoreCase(request.getName())){
+//                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
+//            }
 
-            SubStationTransformerFeederLine subAsset = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
-            if(subAsset != null){
-                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc());
-            }
+//            SubStationTransformerFeederLine subAsset = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
+//            if(subAsset != null){
+//                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc());
+//            }
 
             nodeMapper.updateNode(node);
 

@@ -179,9 +179,9 @@ public class UserServiceImpl implements  UserService {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
 
-            if (isOperator.getEmail().equalsIgnoreCase(request.getEmail())){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " Email " + status.getExistDesc());
-            }
+//            if (isOperator.getEmail().equalsIgnoreCase(request.getEmail())){
+//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " Email " + status.getExistDesc());
+//            }
 
             request.setOrgId(um.getOrgId());
             userMapper.updateUser(request);

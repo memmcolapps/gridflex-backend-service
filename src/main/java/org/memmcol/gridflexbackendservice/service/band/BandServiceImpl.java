@@ -143,9 +143,9 @@ public class BandServiceImpl implements BandService {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
 
-            if (isExist.getName() != null && isExist.getName().equalsIgnoreCase(band.getName())) {
-                throw new GlobalExceptionHandler.NotFoundException(bandName + " (" + band.getName() + ") " + status.getExistDesc());
-            }
+//            if (isExist.getName() != null && isExist.getName().equalsIgnoreCase(band.getName())) {
+//                throw new GlobalExceptionHandler.NotFoundException(bandName + " (" + band.getName() + ") " + status.getExistDesc());
+//            }
 
             band.setApproveStatus("Pending-edited");
             band.setOrgId(um.getOrgId());
