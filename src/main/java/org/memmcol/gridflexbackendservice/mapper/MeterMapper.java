@@ -555,17 +555,25 @@ public interface MeterMapper {
     Customer getByCustomerId(String customerId);
 
 
-//    @Select("SELECT * FROM meters m " +
-//            "LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-//            "WHERE m.org_id = #{orgId} " +
-//            "AND m.node_id IS NULL " +
-//            "ORDER BY m.created_at DESC")
+//    @Select("""
+//            SELECT * FROM meters m
+//            WHERE m.org_id = #{orgId}
+//            AND m.node_id IS NULL
+//            ORDER BY m.created_at DESC
+//        """)
     @Select("""
-            SELECT * FROM meters m
+        <script>
+            SELECT *
+            FROM meters m
             WHERE m.org_id = #{orgId}
-            AND m.node_id IS NULL
+              AND m.node_id IS NULL
             ORDER BY m.created_at DESC
-        """)
+   
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -596,13 +604,31 @@ public interface MeterMapper {
             @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
     })
-    List<Meter> getInventoryMeters(UUID orgId);
+    List<Meter> getInventoryMeters(UUID orgId,int page, int size);
 
 
-    @Select("SELECT * FROM meters m " +
-            "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
-            "AND m.meter_stage IN ('Assigned', 'Unassigned', 'Pending-assigned') " +
-            "ORDER BY m.created_at DESC")
+//    @Select("SELECT * FROM meters m " +
+//            "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
+//            "AND m.meter_stage IN ('Assigned', 'Unassigned', 'Pending-assigned') " +
+//            "ORDER BY m.created_at DESC")
+    @Select("""
+        <script>
+            SELECT *
+            FROM meters m
+            WHERE m.org_id = #{orgId}
+              AND m.node_id IS NOT NULL
+              AND m.meter_stage IN (
+                    'Assigned',
+                    'Unassigned',
+                    'Pending-assigned'
+              )
+            ORDER BY m.created_at DESC
+            
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "tariff", column = "tariff"),
@@ -646,7 +672,7 @@ public interface MeterMapper {
             @Result(property = "DssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
     })
-    List<Meter> getAllocatedMeters(UUID orgId);
+    List<Meter> getAllocatedMeters(UUID orgId, int page, int size);
 
     @Select("SELECT * FROM tariffs WHERE id = #{id}")
     @Results({
@@ -666,10 +692,30 @@ public interface MeterMapper {
     Band getBand(UUID bandId);
 
 
-    @Select("SELECT * FROM meters m " +
-            "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
-            "AND m.meter_stage IN ('Assigned', 'Pending-detached', 'Pending-migrated') AND m.type != 'VIRTUAL'" +
-            "ORDER BY m.created_at DESC")
+//    @Select("SELECT * FROM meters m " +
+//            "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
+//            "AND m.meter_stage IN ('Assigned', 'Pending-detached', 'Pending-migrated') AND m.type != 'VIRTUAL'" +
+//            "ORDER BY m.created_at DESC")
+
+    @Select("""
+        <script>
+            SELECT *
+            FROM meters m
+            WHERE m.org_id = #{orgId}
+              AND m.node_id IS NOT NULL
+              AND m.meter_stage IN (
+                    'Assigned',
+                    'Pending-detached',
+                    'Pending-migrated'
+              )
+              AND m.type != 'VIRTUAL'
+            ORDER BY m.created_at DESC
+            
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -712,13 +758,27 @@ public interface MeterMapper {
             @Result(property = "DssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
     })
-    List<Meter> getAssignedMeters(UUID orgId);
+    List<Meter> getAssignedMeters(UUID orgId, int page, int size);
 
 
-    @Select("SELECT * FROM meters m " +
-            "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
-            "AND m.type = 'VIRTUAL' " +
-            "ORDER BY m.created_at DESC")
+//    @Select("SELECT * FROM meters m " +
+//            "WHERE m.org_id = #{orgId} AND m.node_id IS NOT NULL " +
+//            "AND m.type = 'VIRTUAL' " +
+//            "ORDER BY m.created_at DESC")
+    @Select("""
+        <script>
+            SELECT *
+            FROM meters m
+            WHERE m.org_id = #{orgId}
+              AND m.node_id IS NOT NULL
+              AND m.type = 'VIRTUAL'
+            ORDER BY m.created_at DESC
+    
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -761,9 +821,22 @@ public interface MeterMapper {
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
     })
-    List<Meter> getAssignedVirtualMeters(UUID orgId);
+    List<Meter> getAssignedVirtualMeters(UUID orgId, int page, int size);
 
-    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} ORDER BY m.created_at DESC")
+//    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} ORDER BY m.created_at DESC")
+    @Select("""
+        <script>
+            SELECT *
+            FROM meters m
+            LEFT JOIN customers c ON c.customer_id = m.customer_id
+            WHERE m.org_id = #{orgId}
+            ORDER BY m.created_at DESC
+    
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -806,12 +879,30 @@ public interface MeterMapper {
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
     })
-    List<Meter> getMeters(UUID orgId);
+    List<Meter> getMeters(UUID orgId, int page, int size);
 
-    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND " +
-            "(m.meter_stage IN('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
-            "OR m.status IN ('Pending-deactivated', 'Pending-activated')) " +
-            "ORDER BY m.created_at DESC")
+//    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.org_id = #{orgId} AND " +
+//            "(m.meter_stage IN('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+//            "OR m.status IN ('Pending-deactivated', 'Pending-activated')) " +
+//            "ORDER BY m.created_at DESC ")
+    @Select("""
+        <script>
+            SELECT *
+            FROM meters_version m
+            LEFT JOIN customers c ON c.customer_id = m.customer_id
+            WHERE m.org_id = #{orgId}
+              AND (
+                    m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
+                                      'Pending-assigned', 'Pending-detached', 'Pending-migrated')
+                    OR m.status IN ('Pending-deactivated', 'Pending-activated')
+                  )
+            ORDER BY m.created_at DESC
+            
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -858,7 +949,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
 
     })
-    List<Meter> getMetersVersion(UUID orgId);
+    List<Meter> getMetersVersion(UUID orgId, int page, int size);
 
     @Select("SELECT * FROM region_bhub_service_centers WHERE node_Id = #{nodeId} ")
     @Results({
@@ -1230,7 +1321,7 @@ public interface MeterMapper {
             "    m.address, " +
             "    m.tariff_id " +
             "FROM vw_meter_summary m " +
-            "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
+            "WHERE m.org_id = #{orgId} AND (m.meter_cin = #{cin}) " +
             "GROUP BY " +
             "    m.meter_id, " +
             "    m.org_id, " +
@@ -1268,7 +1359,7 @@ public interface MeterMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
-    MeterView getMeterRecord(String meterNumber, UUID orgId);
+    MeterView getMeterRecord(String meterNumber, UUID orgId, String cin, String accountNumber);
 
 
     @Insert({

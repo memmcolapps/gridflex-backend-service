@@ -141,7 +141,7 @@ public class MeterServiceImpl implements MeterService {
 
         Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null, request.getSimNumber());
         if (existing != null) {
-            throw new GlobalExceptionHandler.NotFoundException("Meter Number ("+existing.getMeterNumber()+") "+status.getExistDesc());
+            throw new GlobalExceptionHandler.NotFoundException("Meter Number ("+existing.getMeterNumber()+" or Sim Number "+existing.getSimNumber()+") "+status.getExistDesc());
         }
 //        if (existing.getSimNumber().equalsIgnoreCase(request.getSimNumber())){
 //            throw new GlobalExceptionHandler.NotFoundException("Sim Number "+status.getExistDesc());
@@ -326,17 +326,17 @@ public class MeterServiceImpl implements MeterService {
             List<Meter> meters;
              // Fetch all users
             if (type.trim().equalsIgnoreCase("pending-state")) {
-                meters = meterMapper.getMetersVersion(um.getOrgId());
+                meters = meterMapper.getMetersVersion(um.getOrgId(), page, size);
             } else if (type.trim().equalsIgnoreCase("inventory")) {
-                meters = meterMapper.getInventoryMeters(um.getOrgId());
+                meters = meterMapper.getInventoryMeters(um.getOrgId(), page, size);
             } else if (type.trim().equalsIgnoreCase("allocated")) {
-                meters = meterMapper.getAllocatedMeters(um.getOrgId());
+                meters = meterMapper.getAllocatedMeters(um.getOrgId(), page, size);
             } else if (type.trim().equalsIgnoreCase("assigned")) {
-                meters = meterMapper.getAssignedMeters(um.getOrgId());
+                meters = meterMapper.getAssignedMeters(um.getOrgId(),  page, size);
             } else if (type.trim().equalsIgnoreCase("virtual")) {
-                meters = meterMapper.getAssignedVirtualMeters(um.getOrgId());
+                meters = meterMapper.getAssignedVirtualMeters(um.getOrgId(), page, size);
             } else {
-                meters = meterMapper.getMeters(um.getOrgId());
+                meters = meterMapper.getMeters(um.getOrgId(), page, size);
             }
 
 //            System.out.println(">>>>>>>>>>::: here: "+meters.get(0).getMeterNumber());
@@ -661,12 +661,16 @@ public class MeterServiceImpl implements MeterService {
                 request.setMeterId(mainMeter.getId());
                 request.setSimNumber(mainMeter.getSimNumber());
 //                request.setMeterModel(mainMeter.getMeterModel());
+            } else {
+                request.setType("VIRTUAL");
             }
 
-//            MeterView m = meterMapper.getMeterRecord(request.getMeterNumber(), user.getOrgId());
-//            if(m != null ) {
-//                return ResponseMap.response("001", "Existing meter attached to the cin provided fetch successfully", m);
-//            }
+            MeterView m = meterMapper.getMeterRecord(request.getMeterNumber(), user.getOrgId(), request.getCin(), request.getAccountNumber());
+            if(m != null ) {
+                return ResponseMap.response(
+                        "001",
+                        "Meter already assigned to the cin", m);
+            }
 
 //            request.getType().equalsIgnoreCase("")
             request.setNodeId(feederLine.getNodeId());
