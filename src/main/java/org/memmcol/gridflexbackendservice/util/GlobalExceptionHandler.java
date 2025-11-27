@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.util;
 
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -378,7 +379,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
 		ex.printStackTrace();
 
-		String msg = "Malformed JSON request [See logs for more details]";
+		String msg = "Incorrect payload request";//"Malformed JSON request [See logs for more details]";
 		errorMessage.put("responsecode", "128");
 		errorMessage.put("responsedesc", msg);
 		errorMessage.put("responsedata", "");
