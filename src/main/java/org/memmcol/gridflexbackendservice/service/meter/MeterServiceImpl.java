@@ -659,7 +659,6 @@ public class MeterServiceImpl implements MeterService {
                 request.setType("VIRTUAL");
             }
 
-//            MeterView m = meterMapper.getMeterRecord(request.getMeterNumber(), user.getOrgId(), request.getCin(), request.getAccountNumber());
             Meter m = meterMapper.getMeterDuplicateCin(user.getOrgId(), request.getAccountNumber(), request.getCin());
             if(m != null ) {
                 Map<String, Object> result = new HashMap<>();
@@ -670,7 +669,6 @@ public class MeterServiceImpl implements MeterService {
                 );
             }
 
-//            request.getType().equalsIgnoreCase("")
             request.setNodeId(feederLine.getNodeId());
             request.setDss(dss.getNodeId());
             request.setOrgId(user.getOrgId());
