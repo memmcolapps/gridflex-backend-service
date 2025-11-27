@@ -583,7 +583,9 @@ public interface MeterMapper {
             @Result(property = "feederInfo", column = "node_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "DssInfo", column = "dss",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "debitCreditAdjustInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
 
     })
     Meter getMeterDuplicateCin(UUID orgId, String accountNumber, String cin);
