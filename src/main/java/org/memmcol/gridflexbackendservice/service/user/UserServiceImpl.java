@@ -232,7 +232,7 @@ public class UserServiceImpl implements  UserService {
             List<UserModel> enrichedUsers = new ArrayList<>();
 
 //            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
-            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId());
+            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId(), page, size);
 
             for (UserModel user : users) {
                 /// Retrieve user data from database
@@ -302,13 +302,16 @@ public class UserServiceImpl implements  UserService {
             // Pagination logic
             int totalUsers = filteredUsers.size();
             List<UserModel> paginatedUsers;
-            if (size == 0) {
+            if (size <= 0) {
                 paginatedUsers = filteredUsers; // Return all users
+                page= 0;
             } else {
                 int fromIndex = Math.min(page * size, totalUsers);
                 int toIndex = Math.min(fromIndex + size, totalUsers);
                 paginatedUsers = filteredUsers.subList(fromIndex, toIndex);
             }
+
+            int totalUser = size == 0 ? 1 : (int) Math.ceil((double) totalUsers / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -316,7 +319,7 @@ public class UserServiceImpl implements  UserService {
             response.put("totalData", totalUsers);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedUsers.size() / size));
+            response.put("totalPages", totalUser);
 
 //            userCache.put(cacheKey, response);
 

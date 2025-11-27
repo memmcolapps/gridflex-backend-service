@@ -111,18 +111,40 @@ public interface TariffMapper {
     })
     List<Tariff> GetTariffs(UUID orgId);
 
-    @Select("SELECT * FROM tariffs WHERE org_id = #{orgId} ORDER BY created_at DESC")
+    @Select("""
+            <script>
+                SELECT * FROM tariffs 
+                WHERE org_id = #{orgId} 
+                ORDER BY created_at DESC
+                <if test="size > 0">
+                    LIMIT #{size} OFFSET #{page} * #{size}
+                </if>
+            </script>
+            """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "band", column = "band_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
     })
-    List<Tariff> GetAllTariffs(UUID orgId);
+    List<Tariff> GetAllTariffs(UUID orgId, int page, int size);
 
-    @Select("SELECT * FROM tariffs_version WHERE org_id = #{orgId} AND " +
-            "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
-            "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated') " +
-            "ORDER BY created_at DESC")
+    @Select("""
+                <script>
+                    SELECT * 
+                    FROM tariffs_version 
+                    WHERE org_id = #{orgId}
+                    AND (
+                        approve_status = 'Pending-created'
+                        OR approve_status = 'Pending-edited'
+                        OR approve_status = 'Pending-activated'
+                        OR approve_status = 'Pending-deactivated'
+                    )
+                    ORDER BY created_at DESC
+                    <if test="size > 0">
+                        LIMIT #{size} OFFSET #{page} * #{size}
+                    </if>
+                </script>
+            """)
     @Results({
             @Result(property = "t_id", column = "t_id"),
             @Result(property = "band", column = "band_id",
@@ -130,7 +152,7 @@ public interface TariffMapper {
             @Result(property = "oldTariffInfo", column = "t_id",
                 one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getTariffById"))
     })
-    List<Tariff> GetPendingTariffs(UUID orgId);
+    List<Tariff> GetPendingTariffs(UUID orgId, int page, int size);
 
     @Select("SELECT * FROM tariffs WHERE id = #{id}")
     @Results({

@@ -330,7 +330,16 @@ public interface AuthMapper {
     UserModel findAuthByUserId(UUID userId, UUID orgId);
 
 
-    @Select("SELECT * FROM users WHERE org_id = #{orgId} ORDER BY created_at DESC ")
+    @Select("""
+            <script>
+                SELECT * FROM users 
+                WHERE org_id = #{orgId} 
+                ORDER BY created_at DESC
+                <if test="size > 0">
+                    LIMIT #{size} OFFSET #{page}  * #{size}
+                </if> 
+            </script>
+            """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -350,5 +359,5 @@ public interface AuthMapper {
 //            @Result(property = "nodes", column = "node_id",
 //                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
     })
-    List<UserModel> findAllUsers(UUID orgId);
+    List<UserModel> findAllUsers(UUID orgId, int page, int size);
 }

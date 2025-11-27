@@ -210,17 +210,22 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             List<Customer> filteredCustomers = userStream.toList();
-
-            // Pagination logic
             int totalCustomers = filteredCustomers.size();
+
+            // Safe pagination
             List<Customer> paginatedCustomers;
-            if (size == 0) {
+            if (size <= 0) {
+                // size=0 means return all results
                 paginatedCustomers = filteredCustomers;
+                page = 0;
             } else {
-                int fromIndex = Math.min((page - 1) * size, totalCustomers);
+                int fromIndex = Math.min(page * size, totalCustomers);
                 int toIndex = Math.min(fromIndex + size, totalCustomers);
                 paginatedCustomers = filteredCustomers.subList(fromIndex, toIndex);
             }
+
+            // Pagination metadata
+            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalCustomers / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -228,7 +233,7 @@ public class CustomerServiceImpl implements CustomerService {
             response.put("totalData", totalCustomers);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedCustomers.size() / size));
+            response.put("totalPages", totalPages);
 
 //            customerCache.put(cacheKey, response);
 
