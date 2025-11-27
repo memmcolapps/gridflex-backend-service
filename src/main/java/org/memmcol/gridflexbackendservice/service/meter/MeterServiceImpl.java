@@ -667,9 +667,15 @@ public class MeterServiceImpl implements MeterService {
 
             MeterView m = meterMapper.getMeterRecord(request.getMeterNumber(), user.getOrgId(), request.getCin(), request.getAccountNumber());
             if(m != null ) {
-                return ResponseMap.response(
-                        "001",
-                        "Meter already assigned to the cin", m);
+                Map<String, Object> result = new HashMap<>();
+                result.put("meter", m);
+                throw new GlobalExceptionHandler.PartialFailureException(
+                        "Meter already assigned to cin",
+                        result
+                );
+//                return ResponseMap.response(
+//                        "001",
+//                        "Meter already assigned to the cin", m);
             }
 
 //            request.getType().equalsIgnoreCase("")
@@ -3091,7 +3097,7 @@ public class MeterServiceImpl implements MeterService {
 //    @Override
     public Map<String, Object> bulkAssignMeters(List<AssignMeterToCustomer> assign, UserModel user) {
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (assign == null || assign.isEmpty()) {
@@ -3164,23 +3170,49 @@ public class MeterServiceImpl implements MeterService {
                     .distinct()
                     .toList();
 
-            if (meterNumbers.isEmpty() || tariffNames.isEmpty() || customerIds.isEmpty() ||
-                    dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
-                subBatch.forEach(req -> failedRecords.add(
-                        String.format("%s [TariffName: %s, customerId: %s, dssAssetId: %s, feederAssetId: %s, cin: %s] (Invalid or missing data)",
-                                req.getMeterNumber(), req.getTariffName(), req.getCustomerId(), req.getDssAssetId(), req.getFeederAssetId(), req.getCin())
-                ));
+//            if (meterNumbers.isEmpty() || tariffNames.isEmpty() || customerIds.isEmpty() ||
+//                    dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
+//                subBatch.forEach(req -> failedRecords.add(
+//                        String.format("%s [TariffName: %s, customerId: %s, dssAssetId: %s, feederAssetId: %s, cin: %s] (Invalid or missing data)",
+//                                req.getMeterNumber(), req.getTariffName(), req.getCustomerId(), req.getDssAssetId(), req.getFeederAssetId(), req.getCin())
+//                ));
+//                continue;
+//            }
+
+            if (meterNumbers.isEmpty() || tariffNames.isEmpty() || customerIds.isEmpty()
+                    || dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
+                subBatch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing meter number, tariff name, customer id, dss asset id, feeder asset id or cin");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
-
 
             if (state.isEmpty() || city.isEmpty() || houseNo.isEmpty() || streetName.isEmpty()) {
-                subBatch.forEach(req -> failedRecords.add(
-                        String.format("%s [State: %s, city: %s, houseNo: %s, streetName: %s] (Invalid or missing data)",
-                                req.getMeterNumber(), req.getState(), req.getCity(), req.getHouseNo(), req.getStreetName())
-                ));
+                subBatch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing state, city, customer id, houseNo, or streetName");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
+
+//            if (state.isEmpty() || city.isEmpty() || houseNo.isEmpty() || streetName.isEmpty()) {
+//                subBatch.forEach(req -> failedRecords.add(
+//                        String.format("%s [State: %s, city: %s, houseNo: %s, streetName: %s] (Invalid or missing data)",
+//                                req.getMeterNumber(), req.getState(), req.getCity(), req.getHouseNo(), req.getStreetName())
+//                ));
+//                continue;
+//            }
 
             // Fetch from DB
             List<Meter> meters = meterMapper.getUnassignMetersByMeterNumbers(meterNumbers, user.getOrgId());
@@ -3222,34 +3254,70 @@ public class MeterServiceImpl implements MeterService {
                 UUID feederId = feederIdMap.get(req.getFeederAssetId());
 
                 if (meter == null) {
-                    failedRecords.add(String.format(
-                            "%s (Meter not found, deactivated or in a pending state)",
-                            req.getMeterNumber()
-                    ));
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Meter not found, deactivated or in a pending state");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format(
+//                            "%s (Meter not found, deactivated or in a pending state)",
+//                            req.getMeterNumber()
+//                    ));
                     continue;
                 }
 
                 if (cin != null) {
-                    failedRecords.add(String.format("%s (CIN already exist)", req.getCin()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("CIN already exist");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s (CIN already exist)", req.getCin()));
                     continue; }
 
                 if (tariffId == null) {
-                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found, deactivated or have a pending state)", req.getMeterNumber(), req.getTariffName()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("Tariff not found, deactivated or have a pending state");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found, deactivated or have a pending state)", req.getMeterNumber(), req.getTariffName()));
                     continue;
                 }
 
                 if (customerId == null) {
-                    failedRecords.add(String.format("%s [Customer: %s] (Customer not found or blocked)", req.getMeterNumber(), req.getCustomerId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("Customer not found or blocked");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [Customer: %s] (Customer not found or blocked)", req.getMeterNumber(), req.getCustomerId()));
                     continue;
                 }
 
                 if (dssId == null) {
-                    failedRecords.add(String.format("%s [DssAssetId: %s] (Dss not found)", req.getMeterNumber(), req.getDssAssetId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("Dss not found");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [DssAssetId: %s] (Dss not found)", req.getMeterNumber(), req.getDssAssetId()));
                     continue;
                 }
 
                 if (feederId == null) {
-                    failedRecords.add(String.format("%s [FeederAssetId: %s] (Feeder not found)", req.getMeterNumber(), req.getFeederAssetId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meter.getMeterId().toString());
+                    resp.setMessage("Feeder not found");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [FeederAssetId: %s] (Feeder not found)", req.getMeterNumber(), req.getFeederAssetId()));
                     continue;
                 }
 
@@ -3344,7 +3412,7 @@ public class MeterServiceImpl implements MeterService {
 
     public Map<String, Object> bulkAssignVirtualMeters(List<AssignMeterToCustomer> assign, UserModel user) {
         Map<String, Object> result = new HashMap<>();
-        List<String> failedRecords = new ArrayList<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
 
         if (assign == null || assign.isEmpty()) {
@@ -3417,23 +3485,50 @@ public class MeterServiceImpl implements MeterService {
                     .distinct()
                     .toList();
 
-            if (tariffNames.isEmpty() || customerIds.isEmpty() || meterClass.isEmpty() ||
-                    dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
-                subBatch.forEach(req -> failedRecords.add(
-                        String.format("[TariffName: %s, customerId: %s, dssAssetId: %s, feederAssetId: %s, cin: %s, meterClass: %s] (Invalid or missing data)",
-                                req.getTariffName(), req.getCustomerId(), req.getDssAssetId(), req.getFeederAssetId(), req.getCin(), req.getMeterClass())
-                ));
+            if (tariffNames.isEmpty() || customerIds.isEmpty()
+                    || dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
+                subBatch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing tariff name, customer id, dss asset id, feeder asset id or cin");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
-
 
             if (state.isEmpty() || city.isEmpty() || houseNo.isEmpty() || streetName.isEmpty()) {
-                subBatch.forEach(req -> failedRecords.add(
-                        String.format("[State: %s, city: %s, houseNo: %s, streetName: %s] (Invalid or missing data)",
-                                req.getState(), req.getCity(), req.getHouseNo(), req.getStreetName())
-                ));
+                subBatch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing state, city, customer id, houseNo, or streetName");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+                });
+
                 continue;
             }
+
+//            if (tariffNames.isEmpty() || customerIds.isEmpty() || meterClass.isEmpty() ||
+//                    dssIds.isEmpty() || feederIds.isEmpty() || cins.isEmpty()) {
+//                subBatch.forEach(req -> failedRecords.add(
+//                        String.format("[TariffName: %s, customerId: %s, dssAssetId: %s, feederAssetId: %s, cin: %s, meterClass: %s] (Invalid or missing data)",
+//                                req.getTariffName(), req.getCustomerId(), req.getDssAssetId(), req.getFeederAssetId(), req.getCin(), req.getMeterClass())
+//                ));
+//                continue;
+//            }
+//
+//
+//            if (state.isEmpty() || city.isEmpty() || houseNo.isEmpty() || streetName.isEmpty()) {
+//                subBatch.forEach(req -> failedRecords.add(
+//                        String.format("[State: %s, city: %s, houseNo: %s, streetName: %s] (Invalid or missing data)",
+//                                req.getState(), req.getCity(), req.getHouseNo(), req.getStreetName())
+//                ));
+//                continue;
+//            }
 
             // Fetch from DB
             List<Meter> meters = meterMapper.getMetersByCins(cins, user.getOrgId());
@@ -3470,29 +3565,61 @@ public class MeterServiceImpl implements MeterService {
                 UUID feederId = feederIdMap.get(req.getFeederAssetId());
 
                 if (ci != null) {
-                    failedRecords.add(String.format("%s (CIN already exist)", req.getCin()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("CIN already exist");
+                    resp.setData(req.getCin());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s (CIN already exist)", req.getCin()));
                     continue;
                 }
 
                 if (tariffId == null) {
-                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found, deactivated or have a pending state)", req.getCustomerId(), req.getTariffName()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Tariff not found, deactivated or have a pending state");
+                    resp.setData(req.getTariffName());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found, deactivated or have a pending state)", req.getCustomerId(), req.getTariffName()));
                     continue;
                 }
 
                 if (customerId == null) {
-                    failedRecords.add(String.format("%s (Customer not found or blocked)", req.getCustomerId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Customer not found or blocked");
+                    resp.setData(req.getTariffName());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s (Customer not found or blocked)", req.getCustomerId()));
                     continue;
                 }
 
                 if (dssId == null) {
-                    failedRecords.add(String.format("%s [DssAssetId: %s] (Dss not found)", req.getCustomerId(), req.getDssAssetId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Dss not found");
+                    resp.setData(req.getDssAssetId());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [DssAssetId: %s] (Dss not found)", req.getCustomerId(), req.getDssAssetId()));
                     continue;
                 }
 
                 if (feederId == null) {
-                    failedRecords.add(String.format("%s [FeederAssetId: %s] (Feeder not found)", req.getCustomerId(), req.getFeederAssetId()));
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Feeder not found");
+                    resp.setData(req.getFeederAssetId());
+
+                    failedRecords.add(resp);
+//                    failedRecords.add(String.format("%s [FeederAssetId: %s] (Feeder not found)", req.getCustomerId(), req.getFeederAssetId()));
                     continue;
                 }
+
+
 
                 // Auto-generate unique account number
                 String generatedAccountNumber = handleGetAccountNumber();
@@ -3645,7 +3772,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    public int assignSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords,  List<MeterAssignLocation> locations, List<PaymentMode> paymentModes) {
+    public int assignSubBatchTransactional(List<Meter> batch, UserModel user, List<GenericResp> failedRecords,  List<MeterAssignLocation> locations, List<PaymentMode> paymentModes) {
         try {
             int successCount = 0;
             int subBatchSize = 100;
@@ -3676,7 +3803,7 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
-    public int assignVirtualSubBatchTransactional(List<Meter> batch, UserModel user, List<String> failedRecords,  List<MeterAssignLocation> locations) {
+    public int assignVirtualSubBatchTransactional(List<Meter> batch, UserModel user, List<GenericResp> failedRecords,  List<MeterAssignLocation> locations) {
         try {
             int successCount = 0;
             int subBatchSize = 100;
@@ -3707,7 +3834,7 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
-    public int assignSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int assignSinglesFallbackAsync(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (Meter meter : batch) {
@@ -3719,7 +3846,7 @@ public class MeterServiceImpl implements MeterService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int assignVirtualSinglesFallbackAsync(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int assignVirtualSinglesFallbackAsync(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (Meter meter : batch) {
@@ -3731,7 +3858,7 @@ public class MeterServiceImpl implements MeterService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int assignSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int assignSinglesFallback(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Meter meter : batch) {
@@ -3741,12 +3868,18 @@ public class MeterServiceImpl implements MeterService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s [Region: %s] (Allocation failed: %s)",
-                        meter.getMeterNumber(),
-//                        meter.getNodeInfo().getRegionId(),
-                        reason
-                ));
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterId().toString());
+                resp.setMessage("Meter assign failed: "+reason);
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(String.format(
+//                        "%s [Region: %s] (Allocation failed: %s)",
+//                        meter.getMeterNumber(),
+////                        meter.getNodeInfo().getRegionId(),
+//                        reason
+//                ));
                 log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
             }
         }
@@ -3754,7 +3887,7 @@ public class MeterServiceImpl implements MeterService {
         return successCount;
     }
 
-    public int assignVirtualSinglesFallback(List<Meter> batch, UserModel user, List<String> failedRecords) {
+    public int assignVirtualSinglesFallback(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Meter meter : batch) {
@@ -3764,11 +3897,17 @@ public class MeterServiceImpl implements MeterService {
                 successCount++;
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
-                failedRecords.add(String.format(
-                        "%s Assigned failed: %s",
-                        meter.getCin(),
-                        reason
-                ));
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterId().toString());
+                resp.setMessage("Virtual meter assign failed: "+reason);
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(String.format(
+//                        "%s Assigned failed: %s",
+//                        meter.getCin(),
+//                        reason
+//                ));
                 log.warn("Meter {} failed individually: {}", meter.getCin(), reason);
             }
         }
@@ -3777,35 +3916,48 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Async
-    public CompletableFuture<Integer> assignSingleAsync(Meter meter, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> assignSingleAsync(Meter meter, UserModel user, List<GenericResp> failedRecords) {
         try {
             assignSingleTransactional(meter, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s [Cin: %s] (Assign failed: %s)",
-                    meter.getMeterNumber(),
-                    meter.getCin(),
-                    reason
-            ));
+
+            GenericResp resp = new GenericResp();
+            resp.setId(meter.getMeterId().toString());
+            resp.setMessage("Meter assign failed: "+reason);
+            resp.setData(meter.getMeterNumber());
+
+            failedRecords.add(resp);
+//            failedRecords.add(String.format(
+//                    "%s [Cin: %s] (Assign failed: %s)",
+//                    meter.getMeterNumber(),
+//                    meter.getCin(),
+//                    reason
+//            ));
             log.warn("Async assign failed for meter {}: {}", meter.getMeterNumber(), reason);
             return CompletableFuture.completedFuture(0);
         }
     }
 
     @Async
-    public CompletableFuture<Integer> assignVirtualSingleAsync(Meter meter, UserModel user, List<String> failedRecords) {
+    public CompletableFuture<Integer> assignVirtualSingleAsync(Meter meter, UserModel user, List<GenericResp> failedRecords) {
         try {
             assignVirtualSingleTransactional(meter, user);
             return CompletableFuture.completedFuture(1);
         } catch (Exception e) {
             String reason = extractErrorMessage(e);
-            failedRecords.add(String.format(
-                    "%s Cin assign failed (%s)",
-                    meter.getCin(),
-                    reason
-            ));
+            GenericResp resp = new GenericResp();
+            resp.setId(meter.getMeterId().toString());
+            resp.setMessage("Virtual meter assign failed: "+reason);
+            resp.setData(meter.getMeterNumber());
+
+            failedRecords.add(resp);
+//            failedRecords.add(String.format(
+//                    "%s Cin assign failed (%s)",
+//                    meter.getCin(),
+//                    reason
+//            ));
             log.warn("Async assign failed for meter {}: {}", meter.getMeterNumber(), reason);
             return CompletableFuture.completedFuture(0);
         }
