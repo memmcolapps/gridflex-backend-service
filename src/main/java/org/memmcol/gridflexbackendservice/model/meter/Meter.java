@@ -5,6 +5,8 @@ import jakarta.persistence.Id;
 import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
+import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
@@ -66,6 +68,7 @@ public class Meter implements Serializable {
     private SubStationTransformerFeederLine DssInfo;
     private Tariff tariffInfo;
     private FlatNode flatNode;
+    private DebitCreditAdjust debitCreditAdjustInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -444,5 +447,13 @@ public class Meter implements Serializable {
 
     public void setFlatNode(FlatNode flatNode) {
         this.flatNode = flatNode;
+    }
+
+    public DebitCreditAdjust getDebitCreditAdjustInfo() {
+        return debitCreditAdjustInfo;
+    }
+
+    public void setDebitCreditAdjustInfo(DebitCreditAdjust debitCreditAdjustInfo) {
+        this.debitCreditAdjustInfo = debitCreditAdjustInfo;
     }
 }

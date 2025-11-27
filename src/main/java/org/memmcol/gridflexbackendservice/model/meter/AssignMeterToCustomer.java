@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.model.meter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -60,6 +61,8 @@ public class AssignMeterToCustomer implements Serializable {
     private String description;
 
     private Boolean activateStatus;
+
+    private DebitCreditAdjust debitCreditAdjust;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -422,5 +425,13 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setActivateStatus(Boolean activateStatus) {
         this.activateStatus = activateStatus;
+    }
+
+    public DebitCreditAdjust getDebitCreditAdjust() {
+        return debitCreditAdjust;
+    }
+
+    public void setDebitCreditAdjust(DebitCreditAdjust debitCreditAdjust) {
+        this.debitCreditAdjust = debitCreditAdjust;
     }
 }
