@@ -723,13 +723,6 @@ public class MeterServiceImpl implements MeterService {
             if(customerAssignResult == 0 || customerAssignResult1 == 0)
                 throw new GlobalExceptionHandler.NotFoundException("Assigning meter to customer failed");
 
-            if(request.getDebitCreditAdjust().getMeterId() != null){
-                int res = meterMapper.updateDebitCreditAdj(request.getDebitCreditAdjust().getMeterId(), request.getMeterId());
-                if (res == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment update failed");
-                }
-            }
-
             // Handle prepaid meter assignment
             if ("prepaid".equalsIgnoreCase(request.getMeterCategory())) {
                 request.setDescription("Payment mode assigned");
@@ -749,15 +742,15 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterId(request.getId());
             customerAssignResult1 = meterMapper.assignedVirtualVersionMeterToCustomer(request);
 
-            if(request.getDebitCreditAdjust().getMeterId() != null){
-                int res = meterMapper.updateDebitCreditAdj(request.getDebitCreditAdjust().getMeterId(), request.getMeterId());
-                if (res == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment update failed");
-                }
-            }
-
             if(customerAssignResult == 0 || customerAssignResult1 == 0)
                 throw new GlobalExceptionHandler.NotFoundException("Assigning virtual meter to customer failed");
+        }
+
+        if(request.getDebitCreditAdjust().getMeterId() != null){
+            int res = meterMapper.updateDebitCreditAdj(request.getDebitCreditAdjust().getMeterId(), request.getMeterId());
+            if (res == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment update failed");
+            }
         }
 
         request.setMeterId(request.getMeterId());
