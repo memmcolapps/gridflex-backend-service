@@ -1690,7 +1690,6 @@ public class MeterServiceImpl implements MeterService {
                     resp.setData(meter.getMeterNumber());
 
                     failedRecords.add(resp);
-//                    failedRecords.add(String.format("%s [Region: %s] (Meter not found)", req.getMeterNumber(), req.getRegionId()));
                     continue;
                 }
 
