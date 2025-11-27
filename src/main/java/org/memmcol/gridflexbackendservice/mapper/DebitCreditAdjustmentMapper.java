@@ -107,7 +107,17 @@ public interface DebitCreditAdjustmentMapper {
     })
     List<LiabilityCause> getLiabilityCause(UUID orgId);
 
-    @Select("SELECT * FROM credit_debit_adjustment WHERE org_id = #{orgId} AND type = #{type}")
+    @Select("""
+            <script>
+                SELECT *
+                FROM credit_debit_adjustment
+                WHERE org_id = #{orgId}
+                AND type = #{type}
+                <if test="size > 0">
+                    LIMIT #{size} OFFSET (#{page} - 1) * #{size}
+                </if>
+            </script>
+            """)
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -123,7 +133,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "payment", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
-    List<DebitCreditAdjust> GetDebitCreditAdjustment(UUID orgId, String type);
+    List<DebitCreditAdjust> GetDebitCreditAdjustment(UUID orgId, String type, int page, int size);
 
     @Select("SELECT * FROM credit_debit_payment WHERE credit_debit_adj_id = #{debitCreditAdjustmentId}")
     @Results({
@@ -190,5 +200,5 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "meter", column = "meter_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter"))
     })
-    DebitCreditAdjust getDebitAdjustmentByMeterIdAndLiabilityCause(UUID meterId, UUID orgId,UUID liabilityCauseId, String type);
+    DebitCreditAdjust getDebitAdjustmentByMeterIdAndLiabilityCause(UUID meterId, UUID orgId, UUID liabilityCauseId, String type);
 }

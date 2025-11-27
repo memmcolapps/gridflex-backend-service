@@ -264,15 +264,15 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             String cacheKey = cacheKeyBuilder.toString();
 
             // Return from cache if available
-            Object cachedDebitCreditAdjustment = debitCreditCache.get(cacheKey);
-            if (cachedDebitCreditAdjustment != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached " + db + status.getDesc(), cachedDebitCreditAdjustment);
-            }
+//            Object cachedDebitCreditAdjustment = debitCreditCache.get(cacheKey);
+//            if (cachedDebitCreditAdjustment != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + db + status.getDesc(), cachedDebitCreditAdjustment);
+//            }
 
             List<DebitCreditAdjust> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
 
-            allDebitCreditAdjustment = mapper.GetDebitCreditAdjustment(um.getOrgId(), type);
+            allDebitCreditAdjustment = mapper.GetDebitCreditAdjustment(um.getOrgId(), type, page,size);
 
             List<DebitCreditAdjust> filteredDebitCreditAdjustment = allDebitCreditAdjustment.stream()
                     .filter(t -> customerId == null || customerId.isEmpty() ||
@@ -293,7 +293,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             if (size == 0) {
                 paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment; // Return all users
             } else {
-                int fromIndex = Math.min(page * size, totalDebitCreditAdjustment);
+                int fromIndex = Math.min((page - 1) * size, totalDebitCreditAdjustment);
                 int toIndex = Math.min(fromIndex + size, totalDebitCreditAdjustment);
                 paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment.subList(fromIndex, toIndex);
             }
@@ -306,7 +306,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedDebitCreditAdjustment.size() / size));
 
-            debitCreditCache.put(cacheKey, response);
+//            debitCreditCache.put(cacheKey, response);
             assert type != null;
             if(type.equalsIgnoreCase("credit")){
                 return ResponseMap.response(status.getSuccessCode(),  credit + " "+status.getDesc(), response);
