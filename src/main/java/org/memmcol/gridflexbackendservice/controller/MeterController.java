@@ -252,7 +252,7 @@ public class MeterController {
 
     @PostMapping("/assign")
     public ResponseEntity<Map<String, Object>> ContinueAssignMeter(
-            @RequestBody MeterView meterView) {
+            @RequestBody AssignMeterToCustomer meterView) {
         try {
             Map<String, Object> result = service.continueAssignMeter(meterView);
             return ResponseEntity.ok(result);

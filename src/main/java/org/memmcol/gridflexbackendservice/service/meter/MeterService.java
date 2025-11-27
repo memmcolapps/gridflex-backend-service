@@ -38,7 +38,7 @@ public interface MeterService {
 
     Map<String, Object> detachMeter(UUID meterNumber, String reason);
 
-    Map<String, Object> continueAssignMeter(MeterView meterView);
+    Map<String, Object> continueAssignMeter(AssignMeterToCustomer meterView);
 
     Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
 
