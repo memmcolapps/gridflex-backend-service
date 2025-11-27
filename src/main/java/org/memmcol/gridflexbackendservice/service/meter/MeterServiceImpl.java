@@ -488,7 +488,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
 
-            if(state && !meterById.getMeterStage().equalsIgnoreCase("Assigned")){
+            if(state && meterById.getMeterStage().equalsIgnoreCase("Assigned")){
                 Tariff tariff = tariffMapper.getApproveTariff(meterById.getTariff());
                 if(tariff == null){
                     throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
