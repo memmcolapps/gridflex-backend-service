@@ -302,7 +302,10 @@ public class TariffServiceImpl implements TariffService {
 
         UserModel user = handleUserValidation();
 
-        List<Tariff> allTariffs = tariffMapper.GetAllTariffs(user.getOrgId());
+        int page = 0;
+        int size = 0;
+
+        List<Tariff> allTariffs = tariffMapper.GetAllTariffs(user.getOrgId(), page, size);
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -388,9 +391,9 @@ public class TariffServiceImpl implements TariffService {
             List<Tariff> allTariffs;
             // Ideally, this should be a dynamic query in the mapper layer
             if (type.equalsIgnoreCase("pending-state")) {
-                allTariffs = tariffMapper.GetPendingTariffs(um.getOrgId());
+                allTariffs = tariffMapper.GetPendingTariffs(um.getOrgId(), page, size);
             } else {
-                allTariffs = tariffMapper.GetAllTariffs(um.getOrgId());
+                allTariffs = tariffMapper.GetAllTariffs(um.getOrgId(), page, size);
             }
             List<Tariff> filteredTariffs = allTariffs.stream()
                     .filter(t -> tariffName == null || tariffName.isEmpty() || t.getName().equalsIgnoreCase(tariffName))
@@ -404,13 +407,16 @@ public class TariffServiceImpl implements TariffService {
             // Pagination logic
             int totalTariffs = filteredTariffs.size();
             List<Tariff> paginatedTariffs;
-            if (size == 0) {
+            if (size <= 0) {
                 paginatedTariffs = filteredTariffs; // Return all users
+                page = 0;
             } else {
                 int fromIndex = Math.min(page * size, totalTariffs);
                 int toIndex = Math.min(fromIndex + size, totalTariffs);
                 paginatedTariffs = filteredTariffs.subList(fromIndex, toIndex);
             }
+
+            int totalTariff = size <= 0 ? 1 : (int) Math.ceil((double) totalTariffs / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -418,7 +424,7 @@ public class TariffServiceImpl implements TariffService {
             response.put("totalData", totalTariffs);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedTariffs.size() / size));
+            response.put("totalPages", totalTariff);
 
 //            tariffCache.put(cacheKey, response);
             return ResponseMap.response(status.getSuccessCode(), "Tariffs " + status.getDesc(), response);

@@ -114,7 +114,7 @@ public interface DebitCreditAdjustmentMapper {
                 WHERE org_id = #{orgId}
                 AND type = #{type}
                 <if test="size > 0">
-                    LIMIT #{size} OFFSET (#{page} - 1) * #{size}
+                    LIMIT #{size} OFFSET #{page}  * #{size}
                 </if>
             </script>
             """)

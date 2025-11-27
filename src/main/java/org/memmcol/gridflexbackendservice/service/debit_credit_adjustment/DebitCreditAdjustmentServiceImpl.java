@@ -290,13 +290,17 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             // Pagination logic
             int totalDebitCreditAdjustment = filteredDebitCreditAdjustment.size();
             List<DebitCreditAdjust> paginatedDebitCreditAdjustment;
-            if (size == 0) {
+
+            if (size <= 0) {
                 paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment; // Return all users
+                page = 0;
             } else {
-                int fromIndex = Math.min((page - 1) * size, totalDebitCreditAdjustment);
+                int fromIndex = Math.min(page * size, totalDebitCreditAdjustment);
                 int toIndex = Math.min(fromIndex + size, totalDebitCreditAdjustment);
                 paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment.subList(fromIndex, toIndex);
             }
+
+            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalDebitCreditAdjustment / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -304,7 +308,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             response.put("totalData", totalDebitCreditAdjustment);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedDebitCreditAdjustment.size() / size));
+            response.put("totalPages", totalPages);
 
 //            debitCreditCache.put(cacheKey, response);
             assert type != null;

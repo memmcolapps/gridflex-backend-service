@@ -384,13 +384,16 @@ public class MeterServiceImpl implements MeterService {
             // Pagination logic
             int totalMeters = filteredMeters.size();
             List<Meter> paginatedMeters;
-            if (size == 0) {
+            if (size <= 0) {
                 paginatedMeters = filteredMeters; // Return all users
+                page = 0;
             } else {
                 int fromIndex = Math.min(page * size, totalMeters);
                 int toIndex = Math.min(fromIndex + size, totalMeters);
                 paginatedMeters = filteredMeters.subList(fromIndex, toIndex);
             }
+
+            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalMeters / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -398,7 +401,7 @@ public class MeterServiceImpl implements MeterService {
             response.put("totalData", totalMeters);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedMeters.size() / size));
+            response.put("totalPages", totalPages);
 
 //            userCache.put(cacheKey, response);
 
