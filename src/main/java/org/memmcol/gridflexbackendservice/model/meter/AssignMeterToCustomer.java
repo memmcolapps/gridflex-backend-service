@@ -8,6 +8,7 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCre
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -62,7 +63,7 @@ public class AssignMeterToCustomer implements Serializable {
 
     private Boolean activateStatus;
 
-    private DebitCreditAdjust debitCreditAdjust;
+    private List<DebitCreditAdjust> debitCreditAdjust;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -427,11 +428,11 @@ public class AssignMeterToCustomer implements Serializable {
         this.activateStatus = activateStatus;
     }
 
-    public DebitCreditAdjust getDebitCreditAdjust() {
+    public List<DebitCreditAdjust> getDebitCreditAdjust() {
         return debitCreditAdjust;
     }
 
-    public void setDebitCreditAdjust(DebitCreditAdjust debitCreditAdjust) {
+    public void setDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjust) {
         this.debitCreditAdjust = debitCreditAdjust;
     }
 }

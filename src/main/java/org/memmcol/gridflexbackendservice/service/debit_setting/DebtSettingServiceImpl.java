@@ -613,7 +613,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause already deactivated");
             }
             if(liabilityCause.getApproveStatus().contains("Approved") && state){
-                throw new GlobalExceptionHandler.NotFoundException("Liability cause already activated");
+                throw new GlobalExceptionHandler.NotFoundException("Liability cause already active");
             }
             if(state){
                 DebitCreditAdjust resp = debitCreditAdjustmentMapper.getDebitAdjustmentByStatus(liabilityCause.getId(), um.getOrgId());
