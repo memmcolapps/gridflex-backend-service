@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustVersion;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
@@ -190,7 +191,7 @@ public interface MeterMapper {
             @Result(property = "payment", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
-    DebitCreditAdjust getDebitAdjustmentById(UUID id);
+    List<DebitCreditAdjust> getDebitAdjustmentById(UUID id);
 
     @Select("SELECT * FROM credit_debit_payment WHERE credit_debit_adj_id = #{debitCreditAdjustmentId}")
     @Results({
@@ -255,12 +256,24 @@ public interface MeterMapper {
             @Result(property = "paymentMode", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
             @Result(property = "smartMeterInfo", column = "meter_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion")),
+            @Result(property = "debitCreditAdjustInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentByIdVersion"))
 
 //            @Result(property = "manufacturer", column = "meter_manufacturer",
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
     Meter findByIdVersion(UUID meterId, UUID orgId);
+
+    @Select("SELECT * FROM credit_debit_adjustment_version WHERE meter_id = #{id} AND status = true")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "old_meter_id", property = "oldMeterId"),
+            @Result(column = "new_meter_id", property = "newMeterId"),
+            @Result(column = "created_at", property = "createdAt")
+    })
+    DebitCreditAdjustVersion getDebitAdjustmentByIdVersion(UUID id);
 
     @Select("SELECT * FROM meters_version WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
             "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
@@ -2629,8 +2642,18 @@ public interface MeterMapper {
     @Select("SELECT org_id FROM meters WHERE meter_number = #{meterNumber}")
     UUID findOrgIdByMeterId(@Param("meterNumber") String meterNumber);
 
-    @Update("UPDATE credit_debit_adjustment SET meter_id = #{meterId} WHERE meter_id = meter_id = #{id}")
-    int updateDebitCreditAdj(UUID meterId, UUID id);
+    @Update("UPDATE credit_debit_adjustment SET meter_id = #{meterId} WHERE meter_id = #{id} AND org_id = #{orgId}")
+    int updateDebitCreditAdj(UUID meterId, UUID id, UUID orgId);
+
+    @Insert("INSERT INTO credit_debit_adjustment_version " +
+            "(old_meter_id, new_meter_id, org_id, description, created_at, status) " +
+            "VALUES (#{oldMeterId}, #{newMeterId}, #{orgId}, 'Meter replacement', #{createdAt}, #{status})")
+    int insertDebitCreditAdjVersion(UUID oldMeterId, UUID newMeterId, UUID orgId, LocalDateTime createdAt, Boolean status);
+
+    @Update("UPDATE credit_debit_adjustment_version SET status = #{status} " +
+            "WHERE new_meter_id = #{newMeterId} AND old_meter_id = #{oldMeterId} " +
+            "AND org_id = #{orgId} AND status = true")
+    int updateDebitCreditAdjVersion(UUID oldMeterId, UUID newMeterId, boolean status, UUID orgId);
 
 //    void updateDetachBatchMeters(List<Meter> toUpdate);
 

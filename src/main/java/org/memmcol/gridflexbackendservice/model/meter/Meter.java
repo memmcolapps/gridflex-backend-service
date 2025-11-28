@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustVersion;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
@@ -15,6 +16,7 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -68,7 +70,8 @@ public class Meter implements Serializable {
     private SubStationTransformerFeederLine DssInfo;
     private Tariff tariffInfo;
     private FlatNode flatNode;
-    private DebitCreditAdjust debitCreditAdjustInfo;
+    private List<DebitCreditAdjust> debitCreditAdjustInfo;
+    private DebitCreditAdjustVersion debitCreditAdjustVersionInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -449,11 +452,19 @@ public class Meter implements Serializable {
         this.flatNode = flatNode;
     }
 
-    public DebitCreditAdjust getDebitCreditAdjustInfo() {
+    public List<DebitCreditAdjust> getDebitCreditAdjustInfo() {
         return debitCreditAdjustInfo;
     }
 
-    public void setDebitCreditAdjustInfo(DebitCreditAdjust debitCreditAdjustInfo) {
+    public void setDebitCreditAdjustInfo(List<DebitCreditAdjust> debitCreditAdjustInfo) {
         this.debitCreditAdjustInfo = debitCreditAdjustInfo;
+    }
+
+    public DebitCreditAdjustVersion getDebitCreditAdjustVersionInfo() {
+        return debitCreditAdjustVersionInfo;
+    }
+
+    public void setDebitCreditAdjustVersionInfo(DebitCreditAdjustVersion debitCreditAdjustVersionInfo) {
+        this.debitCreditAdjustVersionInfo = debitCreditAdjustVersionInfo;
     }
 }

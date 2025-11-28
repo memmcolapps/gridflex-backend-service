@@ -730,8 +730,8 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Assigning virtual meter to customer failed");
         }
 
-        if(request.getDebitCreditAdjust().getMeterId() != null){
-            int res = meterMapper.updateDebitCreditAdj(request.getDebitCreditAdjust().getMeterId(), request.getMeterId());
+        if(request.getDebitCreditAdjust() != null){
+            int res = meterMapper.insertDebitCreditAdjVersion(request.getDebitCreditAdjust().getMeterId(), request.getMeterId(), request.getOrgId(), request.getCreatedAt(), true);
             if (res == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment update failed");
             }
@@ -778,7 +778,7 @@ public class MeterServiceImpl implements MeterService {
             Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
             user.setPassword("");
 //            handleAddCache(newTariff);
-            AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter replacement");
+            AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter deactivated");
             auditRepository.save(auditLog);
 
             //Assign the new meter
@@ -810,9 +810,9 @@ public class MeterServiceImpl implements MeterService {
             request.setOrgId(user.getOrgId());
             request.setCreatedBy(user.getId());
 
-            if(meter.getDebitCreditAdjustInfo() != null){
-                request.getDebitCreditAdjust().setMeterId(meter.getMeterId());
-            }
+//            if(meter.getDebitCreditAdjustInfo() != null){
+//                request.getDebitCreditAdjust().setMeterId(meter.getMeterId());
+//            }
 
             if(request.getMeterClass() == null) {
 
@@ -865,7 +865,7 @@ public class MeterServiceImpl implements MeterService {
             Meter m = meterMapper.getVersionMeter(user.getOrgId(), null, request.getMeterNumber(), null);
             String description = "Meter assigned to customer " + request.getCustomerId();
 
-            AuditLog audit = buildAuditLog(user, description, meterName, m, metadata, "");
+            AuditLog audit = buildAuditLog(user, description, meterName, m, metadata, "Meter replacement");
             auditRepository.save(audit);
 
             return ResponseMap.response(status.getSuccessCode(), "Meter assigned successfully", "");
@@ -1281,6 +1281,21 @@ public class MeterServiceImpl implements MeterService {
             }
         }
 
+        if(meter.getDebitCreditAdjustVersionInfo() != null){
+            int res1 = meterMapper.updateDebitCreditAdj(
+                    meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
+                    meter.getDebitCreditAdjustVersionInfo().getNewMeterId(), user.getOrgId());
+
+            int res2 = meterMapper.updateDebitCreditAdjVersion(
+                    meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
+                    meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
+                    false, user.getOrgId());
+
+            if (res1 == 0 || res2 == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement failed");
+            }
+        }
+
 
     }
 
@@ -1446,6 +1461,16 @@ public class MeterServiceImpl implements MeterService {
             meter.setStatus(s);
             int u = meterMapper.updateMeter(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " update failed");
+        }
+
+        if(meter.getDebitCreditAdjustVersionInfo() != null){
+            int res = meterMapper.updateDebitCreditAdjVersion(
+                    meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
+                    meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
+                    false, user.getOrgId());
+            if (res == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement failed");
+            }
         }
     }
 
