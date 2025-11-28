@@ -731,7 +731,8 @@ public class MeterServiceImpl implements MeterService {
         }
 
         if(request.getDebitCreditAdjust() != null){
-            int res = meterMapper.insertDebitCreditAdjVersion(request.getDebitCreditAdjust().getMeterId(), request.getMeterId(), request.getOrgId(), request.getCreatedAt(), true);
+            System.out.println("debiii2: "+request.getDebitCreditAdjust().size());
+            int res = meterMapper.insertDebitCreditAdjVersion(request.getDebitCreditAdjust().get(0).getMeterId(), request.getMeterId(), request.getOrgId(), request.getCreatedAt(), true);
             if (res == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment update failed");
             }
@@ -760,6 +761,8 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
 
+            System.out.println("debiii==1: "+meterById.getDebitCreditAdjustInfo().size());
+
             if(meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter have a pending state that needs to be cleared");
             }
@@ -778,7 +781,7 @@ public class MeterServiceImpl implements MeterService {
             Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
             user.setPassword("");
 //            handleAddCache(newTariff);
-            AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter deactivated");
+            AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter deactivated by replacement");
             auditRepository.save(auditLog);
 
             //Assign the new meter
@@ -810,9 +813,10 @@ public class MeterServiceImpl implements MeterService {
             request.setOrgId(user.getOrgId());
             request.setCreatedBy(user.getId());
 
-//            if(meter.getDebitCreditAdjustInfo() != null){
-//                request.getDebitCreditAdjust().setMeterId(meter.getMeterId());
-//            }
+            if(meter.getDebitCreditAdjustInfo() != null){
+                System.out.println("debit==2: "+meterById.getDebitCreditAdjustInfo().size());
+                request.setDebitCreditAdjust(meter.getDebitCreditAdjustInfo());
+            }
 
             if(request.getMeterClass() == null) {
 
@@ -872,8 +876,8 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Migrating meter service failed");
-            genericHandler.logAndSaveException(exception, "migrating meter");
+            genericHandler.logIncidentReport("Assigning meter with an existing cin failed");
+            genericHandler.logAndSaveException(exception, "continue assign meter");
             throw exception;
         }
 
@@ -1062,6 +1066,8 @@ public class MeterServiceImpl implements MeterService {
             if (meter == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
+
+            System.out.println(">>>>>>>>>> deeb:: "+meter.getDebitCreditAdjustVersionInfo().getDescription());
 
             prepareMeterForApproval(meter, user, meterVersionId);
 
@@ -1265,13 +1271,6 @@ public class MeterServiceImpl implements MeterService {
             if(meterMapper.removePaymentMode(meter.getMeterId()) == 0){
                 throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
             }
-//
-//            if(meterMapper.updateMeterAssignedLocation(meter.getMeterStage(), meter.getMeterId(), user.getOrgId(), meter.getUpdatedAt(), meter.getApproveBy()) == 0){
-//                throw new GlobalExceptionHandler.NotFoundException("Update meter assigned location failed");
-//            }
-//            if(meterMapper.removePaymentModeInfo(meter.getMeterStage(), meter.getPaymentMode().getMeterId(), meter.getOrgId(), user.getId()) == 0){
-//                throw new GlobalExceptionHandler.NotFoundException("Update meter payment mode failed");
-//            }
 
             if(c == 1) {
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
@@ -1373,6 +1372,10 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleRejection(Meter meter, String approveStatus, UserModel user) {
+        if(meter.getDebitCreditAdjustVersionInfo() == null) {
+            throw new GlobalExceptionHandler.NotFoundException(meter.getDebitCreditAdjustVersionInfo().getDescription());
+        }
+
         String st = meter.getMeterStage();
         String status = meter.getStatus();
         String s = status.equalsIgnoreCase("Pending-deactivated") ? "Active" : status.equalsIgnoreCase("Active") ? "Active" : "Deactivated";
@@ -1469,9 +1472,20 @@ public class MeterServiceImpl implements MeterService {
                     meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
                     false, user.getOrgId());
             if (res == 0) {
-                throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement failed");
+                throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement rejection failed");
             }
         }
+
+//        if(meter.getDebitCreditAdjustVersionInfo() != null){
+//            int res = meterMapper.updateMeter(
+//                    "Assigned",
+//                    meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
+//                    meter.getUpdatedAt(),
+//                    "Active");
+//            if (res == 0) {
+//                throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement rejection failed");
+//            }
+//        }
     }
 
     void handleMeterInfoRejection(Meter meter, UserModel user) {
