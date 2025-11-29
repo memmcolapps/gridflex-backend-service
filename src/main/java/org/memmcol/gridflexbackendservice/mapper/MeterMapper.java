@@ -275,6 +275,16 @@ public interface MeterMapper {
     })
     DebitCreditAdjustVersion getDebitAdjustmentByIdVersion(UUID id);
 
+    @Select("SELECT * FROM credit_debit_adjustment_version WHERE old_meter_id = #{id} AND status = true")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "old_meter_id", property = "oldMeterId"),
+            @Result(column = "new_meter_id", property = "newMeterId"),
+            @Result(column = "created_at", property = "createdAt")
+    })
+    DebitCreditAdjustVersion getDebitAdjustmentByOldVersion(UUID id);
+
     @Select("SELECT * FROM meters_version WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
             "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
@@ -602,6 +612,59 @@ public interface MeterMapper {
 
     })
     Meter getMeterDuplicateCin(UUID orgId, String accountNumber, String cin);
+
+
+    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+            "WHERE m.org_id = #{orgId} AND (m.account_number = #{accountNumber} OR m.cin = #{cin}) " +
+            "AND m.meter_stage = 'Activated'")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "customer", column = "customer_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+            @Result(property = "meterAssignLocation", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
+            @Result(property = "mdMeterInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
+            @Result(property = "paymentMode", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
+            @Result(property = "manufacturer", column = "meter_manufacturer",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeterInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "feederInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "debitCreditAdjustInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
+
+    })
+    Meter getMeterCin(UUID orgId, String accountNumber, String cin);
 
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
@@ -1660,6 +1723,8 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
             @Result(property = "smartMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion")),
+            @Result(property = "debitCreditAdjustVersionInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentByIdVersion"))
     })
     List<Meter> getMetersByVersionMeterNumbers(@Param("meterNumbers") List<String> meterNumbers, @Param("orgId") UUID orgId);
 
@@ -2664,6 +2729,64 @@ public interface MeterMapper {
             "WHERE new_meter_id = #{newMeterId} AND old_meter_id = #{oldMeterId} " +
             "AND org_id = #{orgId} AND status = true")
     int updateDebitCreditAdjVersion(UUID oldMeterId, UUID newMeterId, boolean status, UUID orgId);
+
+//    @Update({
+//            "<script>",
+//            "UPDATE credit_debit_adjustment",
+//            "SET meter_id = newData.new_meter_id",
+//            "FROM (",
+//            "   VALUES",
+//            "   <foreach collection='list' item='item' separator=','>",
+//            "       (#{item.oldMeterId}, #{item.newMeterId}, #{item.orgId})",
+//            "   </foreach>",
+//            ") AS newData(old_meter_id, new_meter_id, org_id)",
+//            "WHERE credit_debit_adjustment.meter_id = newData.old_meter_id",
+//            "AND credit_debit_adjustment.org_id = newData.org_id",
+//            "</script>"
+//    })
+    @Update({
+            "<script>",
+            "<foreach collection='list' item='item' separator=';'>",
+            "UPDATE credit_debit_adjustment",
+            "SET meter_id = #{item.newMeterId}",
+            "WHERE meter_id = #{item.oldMeterId} AND org_id = #{item.orgId}",
+            "</foreach>",
+            "</script>"
+    })
+    void updateBatchDebitCreditAdj(@Param("list") List<DebitCreditAdjustVersion> list);
+
+
+//    @Update({
+//            "<script>",
+//            "UPDATE credit_debit_adjustment_version",
+//            "SET status = #{status}",
+//            "FROM (",
+//            "   VALUES",
+//            "   <foreach collection='list' item='item' separator=','>",
+//            "       (#{item.oldMeterId}, #{item.newMeterId}, #{item.orgId})",
+//            "   </foreach>",
+//            ") AS newData(old_meter_id, new_meter_id, org_id)",
+//            "WHERE credit_debit_adjustment_version.old_meter_id = newData.old_meter_id",
+//            "AND credit_debit_adjustment_version.new_meter_id = newData.new_meter_id",
+//            "AND credit_debit_adjustment_version.org_id = newData.org_id",
+//            "AND credit_debit_adjustment_version.status = TRUE",
+//            "</script>"
+//    })
+    @Update({
+            "<script>",
+            "<foreach collection='list' item='item' separator=';'>",
+            "UPDATE credit_debit_adjustment_version",
+            "SET status = #{item.status}",
+            "WHERE old_meter_id = #{item.oldMeterId}",
+            "AND new_meter_id = #{item.newMeterId}",
+            "AND org_id = #{item.orgId}",
+            "AND status = TRUE",
+            "</foreach>",
+            "</script>"
+    })
+    void updateBatchDebitCreditAdjVersion(
+            @Param("list") List<DebitCreditAdjustVersion> list);
+
 
 //    void updateDetachBatchMeters(List<Meter> toUpdate);
 

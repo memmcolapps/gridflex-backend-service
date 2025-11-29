@@ -499,7 +499,7 @@ public class UserServiceImpl implements  UserService {
                 userMapper.insertModule(module);  // ID will be set here
                 UUID moduleId = module.getId();   // Auto-generated ID
 
-                if(moduleWithSubs.getSubModules() != null || !moduleWithSubs.getSubModules().isEmpty()) {
+                if(moduleWithSubs.getSubModules() != null && !moduleWithSubs.getSubModules().isEmpty()) {
                     for (SubModuleWithPermissions smwp : moduleWithSubs.getSubModules()) {
                         SubModule subModule = new SubModule();
                         subModule.setName(smwp.getName());
@@ -514,7 +514,6 @@ public class UserServiceImpl implements  UserService {
                     if(moduleWithSubs.getName().equalsIgnoreCase("hes")
                             || moduleWithSubs.getName().equalsIgnoreCase("vending")
                             || moduleWithSubs.getName().equalsIgnoreCase("billing")
-                            || moduleWithSubs.getName().equalsIgnoreCase("data management")
                             || moduleWithSubs.getName().equalsIgnoreCase("user management")) {
                         SubModule subModule = new SubModule();
                         subModule.setName(moduleWithSubs.getName());

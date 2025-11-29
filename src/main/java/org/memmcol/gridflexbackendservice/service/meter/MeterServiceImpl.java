@@ -15,6 +15,7 @@ import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustVersion;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
@@ -481,9 +482,10 @@ public class MeterServiceImpl implements MeterService {
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-            UserModel um = handleUserValidation();
+            UserModel user = handleUserValidation();
 
-            Meter meterById = meterMapper.findById(meterId, um.getOrgId());
+            Meter meterById = meterMapper.findById(meterId, user.getOrgId());
+
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
@@ -491,7 +493,16 @@ public class MeterServiceImpl implements MeterService {
             if(state && meterById.getMeterStage().equalsIgnoreCase("Assigned")){
                 Tariff tariff = tariffMapper.getApproveTariff(meterById.getTariff());
                 if(tariff == null){
-                    throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
+                    throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
+                }
+            }
+
+            if(state){
+                Meter m = meterMapper.getMeterCin(user.getOrgId(), meterById.getAccountNumber(), meterById.getCin());
+                if(m != null){
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Activation failed because "+m.getMeterNumber()+
+                                    " meter is active with the same CIN or account number");
                 }
             }
 
@@ -506,12 +517,13 @@ public class MeterServiceImpl implements MeterService {
             }
 
             meterById.setStatus("Pending-"+(state ? "activated" : "deactivated"));
-            meterById.setCreatedBy(um.getId());
+            meterById.setCreatedBy(user.getId());
             meterById.setMeterId(meterById.getId());
             meterById.setReason(reason);
 
             String changeDescription = buildChangeStatusDescription(meterById, state);
             meterById.setDescription(state ? "Meter Activated" : "Meter Deactivated");
+
 
             result = meterMapper.insertMeterVersion(meterById);
             if(result == 0){
@@ -520,10 +532,10 @@ public class MeterServiceImpl implements MeterService {
 
             int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter" + (state ? " activated " : " deactivated ")+ "failed");
-            Meter meter = meterMapper.getMeter(um.getOrgId(), meterById.getMeterId(), null, null, null, "");
-            um.setPassword("");
+            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
+            user.setPassword("");
 //            handleAddCache(newTariff);
-            AuditLog auditLog = buildAuditLog(um, changeDescription, meterName, meter, metadata, reason);
+            AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, reason);
             auditRepository.save(auditLog);
             return ResponseMap.response(status.getSuccessCode(), meterName + (state ? " activated ": " deactivated ")+"successfully", "");
 
@@ -747,7 +759,14 @@ public class MeterServiceImpl implements MeterService {
         }
 
         if(request.getDebitCreditAdjust() != null){
-            System.out.println("debiii2: "+request.getDebitCreditAdjust().size());
+
+            DebitCreditAdjustVersion debitCreditAdjustVersion =
+                    meterMapper.getDebitAdjustmentByOldVersion(request.getDebitCreditAdjust().get(0).getMeterId());
+
+            if(debitCreditAdjustVersion != null){
+                throw new GlobalExceptionHandler.NotFoundException("Meter have a pending state that needs to be cleared");
+            }
+
             int res = meterMapper.insertDebitCreditAdjVersion(request.getDebitCreditAdjust().get(0).getMeterId(), request.getMeterId(), request.getOrgId(), request.getCreatedAt(), true);
             if (res == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment update failed");
@@ -776,8 +795,6 @@ public class MeterServiceImpl implements MeterService {
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
-
-            System.out.println("debiii==1: "+meterById.getDebitCreditAdjustInfo().size());
 
             if(meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter have a pending state that needs to be cleared");
@@ -830,7 +847,6 @@ public class MeterServiceImpl implements MeterService {
             request.setCreatedBy(user.getId());
 
             if(meter.getDebitCreditAdjustInfo() != null){
-                System.out.println("debit==2: "+meterById.getDebitCreditAdjustInfo().size());
                 request.setDebitCreditAdjust(meter.getDebitCreditAdjustInfo());
             }
 
@@ -1083,8 +1099,6 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
 
-            System.out.println(">>>>>>>>>> deeb:: "+meter.getDebitCreditAdjustVersionInfo().getDescription());
-
             prepareMeterForApproval(meter, user, meterVersionId);
 
             // --- Step 2: Handle approval / rejection ---
@@ -1104,7 +1118,7 @@ public class MeterServiceImpl implements MeterService {
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                    meter.getMeterNumber() + " " + meterName + " " + capitalizeFirstLetter(approveStatus) + " Successfully",
+                     meterName + "("+meter.getMeterNumber() +")" + capitalizeFirstLetter(approveStatus) + " Successfully",
                     ""
             );
 
@@ -2123,13 +2137,28 @@ public class MeterServiceImpl implements MeterService {
         if (batch.isEmpty()) return 0;
 
         try {
-//            List<Meter> approvedCreatedMeters = getMetersByStage(batch, "Pending-created", "Created", "Active");
-//            List<Meter> approvedAllocatedMeters = getMetersByStage(batch, "Pending-allocated", "Unassigned", "Active");
-//            List<Meter> approvedAssignedMeters = getMetersByStage(batch, "Pending-assigned", "Assigned", "Active");
-//            List<Meter> approvedMigratedMeters = getMetersByStage(batch, "Pending-migrated", "Assigned","Active");
-//            List<Meter> approvedDetachedMeters = getMetersByStage(batch, "Pending-detached", "Created", "Deactivated");
-//            List<Meter> approvedDeactivatedMetersStatus = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-//            List<Meter> approvedActiveMetersStatus = getMetersByStatus(batch, "Pending-activated", "Active");
+
+//            for (Meter meter : batch) {
+//                if (meter.getDebitCreditAdjustVersionInfo() != null) {
+//                    int res1 = meterMapper.updateBatchDebitCreditAdj(
+//                            meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
+//                            meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
+//                            user.getOrgId()
+//                    );
+//
+//                    int res2 = meterMapper.updateBatchDebitCreditAdjVersion(
+//                            meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
+//                            meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
+//                            false,
+//                            user.getOrgId()
+//                    );
+//
+//                    if (res1 == 0 || res2 == 0) {
+//                        throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement failed");
+//                    }
+//                }
+//            }
+
 
             List<Meter> approvedCreatedMeters = batch.stream()
                     .filter(m -> "Pending-created".equalsIgnoreCase(m.getMeterStage()))
@@ -2171,6 +2200,7 @@ public class MeterServiceImpl implements MeterService {
                     .peek(m -> m.setStatus("Active"))
                     .toList();
 
+
             // Handle "Pending-edited" dynamically
             List<Meter> approvedEditedMeters = batch.stream()
                     .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage()))
@@ -2185,6 +2215,7 @@ public class MeterServiceImpl implements MeterService {
                         m.setStatus("Active");
                     })
                     .toList();
+
             // Combine all for main update
             List<Meter> toUpdate = Stream.of(
                             approvedCreatedMeters,
@@ -2211,6 +2242,20 @@ public class MeterServiceImpl implements MeterService {
                 meterMapper.updateBatchVersionMeters(detach);
                 meterMapper.removeBulkAssignedLocations(detach);
                 meterMapper.removeBulkPaymentModes(detach);
+            }
+
+            List<DebitCreditAdjustVersion> adjustmentList = batch.stream()
+                    .filter(m -> m.getDebitCreditAdjustVersionInfo() != null)
+                    .map(m -> {
+                        var info = m.getDebitCreditAdjustVersionInfo();
+                        info.setStatus(false);              // New status
+                        return info;
+                    }).toList();
+
+
+            if (!adjustmentList.isEmpty()) {
+                meterMapper.updateBatchDebitCreditAdj(adjustmentList);
+                meterMapper.updateBatchDebitCreditAdjVersion(adjustmentList);
             }
 
             // --- Migration ---
