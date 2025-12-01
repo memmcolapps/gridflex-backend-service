@@ -40,8 +40,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/meter/reading/service/generate", "/meter/reading/service/update", "/meter/reading/service/all", "/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate",
                     "/vending/service/generate/kct", "/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
                     "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management", "/vending/service/generate/meter-kct",
+                    "/billing/service/meter/reading/create", "/billing/service/meter/reading/generate","/billing/service/meter/reading/update", "/billing/service/meter/reading/all", "/dashboard/service/billing",
+                    "/billing/service/meter/reading/download/template/csv", "/billing/service/meter/reading/download/template/excel", "/billing/service/meter/reading/bulk-upload",
                     "/vending/service/generate/token/print", "/dashboard/service/vending", "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
-                    "/hes/service/model", "/hes/service/communication/range/report", "/hes/service/meter-status/stream", "/hes/service/stream")),
+                    "/hes/service/model", "/hes/service/communication/range/report", "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule")),
 
             Map.entry("data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/user/service/update",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
@@ -149,13 +151,13 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/vending/service/generate/token/compensation",  "/vending/service/generate/meter-kct", "/vending/service/generate/token/all", "/vending/service/generate/token/print",
                     "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
-            Map.entry("billing", List.of( "/meter/reading/service/create", "/meter/reading/service/generate","/meter/reading/service/update",
-                    "/meter/reading/service/all", "/dashboard/service/billing-management", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/service/download/template/excel",
-                    "/billing/service/meter/reading/service/bulk-upload", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
+            Map.entry("billing", List.of( "/billing/service/meter/reading/create", "/billing/service/meter/reading/generate","/billing/service/meter/reading/update",
+                    "/billing/service/meter/reading/all", "/dashboard/service/billing", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/download/template/excel",
+                    "/billing/service/meter/reading/bulk-upload", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("hes", List.of("/dashboard/service/hes-management", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",
                     "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile", "/hes/service/model", "/hes/service/communication/range/report",
-                    "/hes/service/meter-status/stream", "/hes/service/stream"))
+                    "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule"))
 
     );
 

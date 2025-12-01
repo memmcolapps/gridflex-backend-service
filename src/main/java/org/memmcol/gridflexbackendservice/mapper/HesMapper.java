@@ -339,12 +339,6 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
-//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
-//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
-//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
-//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
-//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
-
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
@@ -479,12 +473,6 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
-//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
-//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
-//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
-//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
-//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
-
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
@@ -616,12 +604,6 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
-//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
-//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
-//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
-//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
-//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
-
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
@@ -706,12 +688,6 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
-
-//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
-//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
-//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
-//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
-//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
 
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
@@ -802,12 +778,6 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
 
-//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
-//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
-//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
-//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
-//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
-
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
             @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
@@ -824,58 +794,35 @@ public interface HesMapper {
     })
     List<MeterConnEvent> getCommunicationNonMDReport(int page, int size, UUID orgId, String type, String type2, String type3, String node);
 
-
-
-//    @Select("""
-//            SELECT mc.*, m.*, v.* FROM meters_connection_Event mc
-//            JOIN meters m ON mc.meter_no = m.meter_number
-//            JOIN vw_flatten_node_records v ON m.dss = dss_node_id
-//            <where>
-//              mc.updated_at BETWEEN #{startDate} AND #{endDate}
-//
-//                <if test="meterNumber != null and meterNumber.size() > 0">
-//                     AND mc.meter_no IN
-//                     <foreach item="mn" collection="meterNumber" open="(" separator="," close=")">
-//                         #{mn}
-//                     </foreach>
-//                 </if>
-//
-//                AND m.org_id = #{orgId}
-//             </where>
-//            ORDER BY updated_at DESC
-//                <if test="size != 0">
-//                    LIMIT #{size} OFFSET #{page} * #{size}
-//                </if>
-//    """)
-@Select("""
-    <script>
-        SELECT mc.*, m.*, v.*, sm.meter_model
-        FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
-        LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
-        <where>
-            mc.updated_at BETWEEN #{startDate} AND #{endDate}
-
-            <if test="meterNumber != null and meterNumber.size() > 0">
-                AND mc.meter_no IN
-                <foreach item="mn" collection="meterNumber" open="(" separator="," close=")">
-                    #{mn}
-                </foreach>
+    @Select("""
+        <script>
+            SELECT mc.*, m.*, v.*, sm.meter_model
+            FROM meters_connection_event mc
+            JOIN meters m ON mc.meter_no = m.meter_number
+            JOIN smart_meter_info sm ON m.id = sm.meter_id
+            LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
+            <where>
+                mc.updated_at BETWEEN #{startDate} AND #{endDate}
+    
+                <if test="meterNumber != null and meterNumber.size() > 0">
+                    AND mc.meter_no IN
+                    <foreach item="mn" collection="meterNumber" open="(" separator="," close=")">
+                        #{mn}
+                    </foreach>
+                </if>
+             
+                <if test='type != null and type != ""'>
+                    AND m.meter_class = #{type}
+                </if>
+    
+                AND m.org_id = #{orgId}
+            
+            </where>
+            ORDER BY mc.updated_at DESC
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
             </if>
-         
-            <if test='type != null and type != ""'>
-                AND m.meter_class = #{type}
-            </if>
-
-            AND m.org_id = #{orgId}
-        
-        </where>
-        ORDER BY mc.updated_at DESC
-        <if test="size != 0">
-            LIMIT #{size} OFFSET #{page} * #{size}
-        </if>
-    </script>
+        </script>
     """)
     @Results({
             @Result(property = "connectionType", column = "connection_type"),
@@ -928,12 +875,6 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
             @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
             @Result(property = "meter.flatNode.serviceName", column = "service_name"),
-
-//            @Result(property = "meter.flatNode.substationId", column = "substation_id"),
-//            @Result(property = "meter.flatNode.substationNodeId", column = "substation_node_id"),
-//            @Result(property = "meter.flatNode.substationParentId", column = "substation_parent_id"),
-//            @Result(property = "meter.flatNode.substationRegionId", column = "substation_asset_id"),
-//            @Result(property = "meter.flatNode.substationName", column = "substation_name"),
 
             @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
             @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
@@ -1054,4 +995,46 @@ public interface HesMapper {
             @Result(property = "eventType.obisCode", column = "obis_code"),
     })
     List<Event> getEventsReport(UUID orgId);
+
+    @Select("""
+                <script>
+                    SELECT s.*, e.* FROM scheduler_job_info s 
+                    LEFT JOIN event_type e ON s.obis_codes = e.obis_code
+                    LEFT JOIN event_log el ON el.event_type_id = e.id 
+                    LEFT JOIN meters m ON m.meter_number = el.meter_serial
+                    <where>
+                        AND m.org_id = #{orgId}
+                    </where>
+                    ORDER BY s.last_run_time DESC
+                    <if test="size != 0">
+                        LIMIT #{size} OFFSET #{page} * #{size}
+                    </if>
+                </script>
+            """)
+    @Results({
+            @Result(column = "cron_expression", property = "cronExpression"),
+            @Result(column = "cron_job", property = "cronJob"),
+            @Result(column = "description", property = "description"),
+            @Result(column = "interface_name", property = "interfaceName"),
+            @Result(column = "job_class", property = "jobClass"),
+            @Result(column = "job_group", property = "jobGroup"),
+            @Result(column = "job_name", property = "jobName"),
+
+            @Result(column = "job_status", property = "jobStatus"),
+            @Result(column = "repeat_time", property = "repeatTime"),
+            @Result(column = "repeat_minutes", property = "repeatMinutes"),
+            @Result(column = "repeat_hours", property = "repeatHours"),
+            @Result(column = "last_run_time", property = "lastRunTime"),
+            @Result(column = "obis_codes", property = "obisCode"),
+
+            @Result(property = "eventType.name", column = "name"),
+            @Result(property = "eventType.description", column = "description"),
+            @Result(property = "eventType.obisCode", column = "obis_code"),
+    })
+    List<Schedule> getScheduleData(int page, int size, UUID orgId);
+
+//    private String lastRunTime;
+//    private String obisCode;
+//    private EventType eventType;
+
 }

@@ -250,6 +250,7 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber,
                                        String profile, String model,int page, int size, String search, String node) {
@@ -421,6 +422,7 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber,String node) {
 
@@ -467,9 +469,54 @@ public class HesClientServiceImpl implements HesService {
 
     }
 
+    @Transactional
     @Override
-    public SseEmitter subscribe() {
-        return null;
+    public Map<String, Object> scheduleData(int page, int size, String search) {
+        try {
+            UserModel user = handleUserValidation();
+            List<Schedule> meterConnEvent = hesMapper.getScheduleData(page, size, user.getOrgId());
+
+            // Normalize search text
+            String searchLower = (search == null) ? "" : search.toLowerCase();
+
+            // SEARCH ON ANY FIELD
+            List<Schedule> filteredComm = meterConnEvent.stream()
+                    .filter(e -> searchLower.isEmpty() ||
+                            (e.getDescription() != null && e.getDescription().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getInterfaceName() != null && e.getInterfaceName().equalsIgnoreCase(searchLower)) ||
+                            (e.getJobGroup() != null && e.getJobGroup().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getJobName() != null && e.getJobName().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getLastRunTime() != null && e.getLastRunTime().toLowerCase().equalsIgnoreCase(searchLower)) ||
+                            (e.getEventType().getName() != null && e.getEventType().getName().toLowerCase().equalsIgnoreCase(searchLower))
+                    )
+                    .collect(Collectors.toList());
+
+            // Pagination logic
+            int totalComm = filteredComm.size();
+            List<Schedule> paginatedEvents;
+//            if (size == 0) {
+                paginatedEvents = filteredComm; // Return all users
+//            } else {
+//                int fromIndex = Math.min(page * size, totalComm);
+//                int toIndex = Math.min(fromIndex + size, totalComm);
+//                paginatedEvents = filteredComm.subList(fromIndex, toIndex);
+//            }
+
+            // Prepare response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedEvents);
+            response.put("totalData", totalComm);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
+            return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
+
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("data schedule service failed");
+            genericHandler.logAndSaveException(exception, "data schedule report");
+            throw exception;
+        }
+
     }
 
 }
