@@ -118,17 +118,17 @@ public class  SecurityConfig {
 						"/debt-setting/service/liability-cause/bulk-approve",
 						"/debt-setting/service/percentage-range/all", "/debt-setting/service/percentage-range/single", "/debt-setting/service/percentage-range/approve",
 						"/meter/service/create", "/meter/service/update", "/meter/service/all", "/meter/service/single", "/meter/service/change-state", "/meter/service/approve","/meter/service/bulk-approve",
-						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "meter/service/customer", "meter/service/bulk-upload",
-						"meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/service/create","/billing/service/meter/reading/service/generate", "/billing/service/meter/reading/service/update",
-						"/billing/service/meter/reading/service/all", "/billing/service/meter/reading/service/download/template/csv", "/billing/service/meter/reading/service/download/template/excel",
-						"/billing/service/meter/reading/service/bulk-upload", "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/download/assign/template/excel",
+						"/meter/service/migrate", "/meter/service/manufacturers", "/meter/service/assign", "/meter/service/cin/assign", "/meter/service/customer", "/meter/service/bulk-upload",
+						"/meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/create","/billing/service/meter/reading/generate", "/billing/service/meter/reading/update",
+						"/billing/service/meter/reading/all", "/billing/service/meter/reading/download/template/csv", "/billing/service/meter/reading/download/template/excel",
+						"/billing/service/meter/reading/bulk-upload", "/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/download/assign/template/excel",
 						"/meter/service/download/v-assign/template/excel", "/meter/service/download/v-assign/template/excel",
 						"/meter/service/download/assign/template/csv", "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/meter/service/virtual/export", "/meter/service/export",
 						"/vending/service/generate/token/credit", "/vending/service/generate/token/credit/calculate", "/vending/service/generate/kct", "/vending/service/generate/meter-kct",
 						"/vending/service/generate/token/kct-clear-tamper", "/vending/service/generate/token/clear-credit", "/vending/service/generate/token/clear-tamper",
 						"/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/vending/service/generate/token/print", "/dashboard/service/data-management",
-						"/dashboard/service/billing-management", "/dashboard/service/vending", "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
-						"/hes/service/model", "/hes/service/communication/range/report","/hes/service/meter-status/stream", "/hes/service/stream"
+						"/dashboard/service/billing", "/dashboard/service/vending", "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
+						"/hes/service/model", "/hes/service/communication/range/report","/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule"
 				)
 				.access((context, authSupplier) -> {
 					// Get the Authentication object from the Supplier"/customer/service/download/template/csv",

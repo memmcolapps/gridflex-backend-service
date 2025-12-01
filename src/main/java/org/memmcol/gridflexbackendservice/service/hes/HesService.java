@@ -20,7 +20,7 @@ public interface HesService {
 
     Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber, String node);
 
-    SseEmitter subscribe();
+    Map<String, Object> scheduleData(int page, int size, String search);
 
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

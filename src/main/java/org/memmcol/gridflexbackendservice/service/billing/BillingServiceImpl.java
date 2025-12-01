@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.billing;
 
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -17,6 +18,7 @@ import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +27,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @Service
 public class BillingServiceImpl implements BillingService {
-    private static final Logger log = LoggerFactory.getLogger(CustomerServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(BillingServiceImpl.class);
 
     @Autowired
     private ResponseProperties status;
@@ -94,30 +97,43 @@ public class BillingServiceImpl implements BillingService {
         UUID operatorOrgId = operatorAction.getOrgId();
         String desc = "Newly added reading";
         try {
+            log.info("Async running in thread: {}", Thread.currentThread().getName());
 
             Meter meterInfo = readingMetersMapper.getMeterByMeterNo(meterReadingSheet.getMeterNumber(), operatorOrgId);
             if (meterInfo == null) {
-                return ResponseMap.response(status.getFailCode(),
-                        "Meter reading unavailable: This meter is either not assigned to a customer or does not belong to a postpaid account.",
-                        "");
+//                return CompletableFuture.completedFuture(
+//                        ResponseMap.response(status.getFailCode(),
+//                                "Meter reading unavailable: This meter is either not assigned to a customer or does not belong to a postpaid account.",
+//                                "")
+//                );
+                    return ResponseMap.response(status.getFailCode(),
+                            "Meter reading unavailable: This meter is either not assigned to a customer or does not belong to a postpaid account.",
+                            "");
             }
 
             String meterClassDB = meterInfo.getMeterClass();
             if (meterClassDB != null && meterReadingSheet.getMeterClass() != null){
                 boolean valid =
                         ("MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && "MD".equalsIgnoreCase(meterClassDB)) ||
-                        ("Non-MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && (
-                                "Non-MD".equalsIgnoreCase(meterClassDB) ||
-                                "Single-Phase".equalsIgnoreCase(meterClassDB) ||
-                                "Three-Phase".equalsIgnoreCase(meterClassDB)
-                        ));
+                                ("Non-MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && (
+                                        "Non-MD".equalsIgnoreCase(meterClassDB) ||
+                                                "Single-Phase".equalsIgnoreCase(meterClassDB) ||
+                                                "Three-Phase".equalsIgnoreCase(meterClassDB)
+                                ));
 
                 if (!valid) {
-                    return ResponseMap.response(
-                            status.getFailCode(),
-                            "You can only create readings for your assigned meter class (" + meterReadingSheet.getMeterClass() + ").",
-                            ""
-                    );
+//                    return CompletableFuture.completedFuture(
+//                            ResponseMap.response(
+//                                    status.getFailCode(),
+//                                    "You can only create readings for your assigned meter class (" + meterReadingSheet.getMeterClass() + ").",
+//                                    ""
+//                            )
+//                    );
+                        return ResponseMap.response(
+                                status.getFailCode(),
+                                "You can only create readings for your assigned meter class (" + meterReadingSheet.getMeterClass() + ").",
+                                ""
+                        );
                 }
             }
 
@@ -134,27 +150,39 @@ public class BillingServiceImpl implements BillingService {
                 billMonth = Month.valueOf(month.toUpperCase()).getValue();
                 billYear = Integer.parseInt(year);
             } catch (IllegalArgumentException | NullPointerException e) {
-                return ResponseMap.response(status.getFailCode(),
-                        "Invalid bill month or year format", "");
+//                return CompletableFuture.completedFuture(
+//                        ResponseMap.response(status.getFailCode(),"Invalid bill month or year format","")
+//                );
+                    return ResponseMap.response(status.getFailCode(),
+                            "Invalid bill month or year format", "");
             }
 
             int currentMonth = LocalDate.now().getMonthValue();
             int currentYear = LocalDate.now().getYear();
 
             if (billYear < 2000 || billYear > currentYear + 1) {
-                return ResponseMap.response(status.getFailCode(),
-                        "Invalid bill year", "");
+//                return CompletableFuture.completedFuture(
+//                        ResponseMap.response(status.getFailCode(),"Invalid bill year","")
+//                );
+                    return ResponseMap.response(status.getFailCode(),
+                            "Invalid bill year", "");
             }
             if (billYear > currentYear || (billYear == currentYear && billMonth > currentMonth)) {
-                return ResponseMap.response(status.getFailCode(),
-                        "Future bill year or month not allowed", "");
+//                return CompletableFuture.completedFuture(
+//                        ResponseMap.response(status.getFailCode(),"Future bill year or month not allowed","")
+//                );
+                    return ResponseMap.response(status.getFailCode(),
+                            "Future bill year or month not allowed", "");
             }
 
             boolean alreadyRead = readingMetersMapper.checkIfMeterReadForMonth(meterId, month, year) > 0;
             if (alreadyRead) {
-                return ResponseMap.response(status.getFailCode(),
-                        "Meter already billed for this month",
-                        "");
+//                return CompletableFuture.completedFuture(
+//                        ResponseMap.response(status.getFailCode(),"Meter already billed for this month","")
+//                );
+                    return ResponseMap.response(status.getFailCode(),
+                            "Meter already billed for this month",
+                            "");
             }
 
             MeterReadingSheet lastReadingRecord = readingMetersMapper.getLastReadingByMeterId(meterId,operatorOrgId);
@@ -168,9 +196,6 @@ public class BillingServiceImpl implements BillingService {
             meterReadingSheet.setOrgId(orgId);
             meterReadingSheet.setNodeId(nodeId);
             meterReadingSheet.setTariffId(tariffId);
-//            meterReadingSheet.setCurrentReadingDate(new Date());
-//            meterReadingSheet.setCreatedAt(new Date());
-//            meterReadingSheet.setUpdatedAt(new Date());
 
             BigDecimal maxReading = new BigDecimal("999999");
             BigDecimal current = meterReadingSheet.getCurrentReading() != null
@@ -180,11 +205,16 @@ public class BillingServiceImpl implements BillingService {
                     : BigDecimal.ZERO;
 
             if (current.compareTo(maxReading) > 0) {
-                return ResponseMap.response(
-                        status.getFailCode(),
-                        "Invalid current reading. Value cannot exceed " + maxReading,
-                        ""
-                );
+//                return CompletableFuture.completedFuture(
+//                        ResponseMap.response(status.getFailCode(),
+//                                "Invalid current reading. Value cannot exceed " + maxReading,
+//                                "")
+//                );
+                    return ResponseMap.response(
+                            status.getFailCode(),
+                            "Invalid current reading. Value cannot exceed " + maxReading,
+                            ""
+                    );
             }
 
             if (current.compareTo(BigDecimal.ZERO) == 0) {
@@ -204,11 +234,15 @@ public class BillingServiceImpl implements BillingService {
             MeterReadingSheet newReading = readingMetersMapper.getLastReadingByMeterId(meterId,orgId);
             AuditLog auditLog = buildAuditLog(operatorAction, desc, reading, newReading, metadata);
             auditRepository.save(auditLog);
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Meter reading added successfully",
-                    ""
-            );
+
+//            return CompletableFuture.completedFuture(
+//                    ResponseMap.response(status.getSuccessCode(),"Meter reading added successfully","")
+//            );
+                return ResponseMap.response(
+                        status.getSuccessCode(),
+                        "Meter reading added successfully",
+                        ""
+                );
 
         } catch (Exception exception) {
             log.error("Error occurred while creating meter reading [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -217,6 +251,7 @@ public class BillingServiceImpl implements BillingService {
             throw exception;
         }
     }
+
 
     @Transactional
     @Override
@@ -238,7 +273,7 @@ public class BillingServiceImpl implements BillingService {
                 allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
             }
             else {
-               throw new GlobalExceptionHandler.NotFoundException("Meter class provided not found");
+                throw new GlobalExceptionHandler.NotFoundException("Meter class provided not found");
             }
 
             int totalCount = allReadings.size();
@@ -282,6 +317,8 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+
+
     @Transactional
     @Override
     public Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet) {
@@ -295,11 +332,11 @@ public class BillingServiceImpl implements BillingService {
             if (meterClassInDB != null && meterReadingSheet.getMeterClass() != null){
                 boolean valid =
                         ("MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && "MD".equalsIgnoreCase(meterClassInDB)) ||
-                        ("Non-MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && (
-                                "Non-MD".equalsIgnoreCase(meterClassInDB) ||
-                                "Single-Phase".equalsIgnoreCase(meterClassInDB) ||
-                                "Three-Phase".equalsIgnoreCase(meterClassInDB)
-                        ));
+                                ("Non-MD".equalsIgnoreCase(meterReadingSheet.getMeterClass()) && (
+                                        "Non-MD".equalsIgnoreCase(meterClassInDB) ||
+                                                "Single-Phase".equalsIgnoreCase(meterClassInDB) ||
+                                                "Three-Phase".equalsIgnoreCase(meterClassInDB)
+                                ));
                 if (!valid) {
                     return ResponseMap.response(
                             status.getFailCode(),

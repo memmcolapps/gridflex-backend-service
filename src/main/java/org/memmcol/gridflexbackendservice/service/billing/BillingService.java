@@ -4,6 +4,7 @@ import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public interface BillingService {
 
@@ -11,6 +12,4 @@ public interface BillingService {
     Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet);
     Map<String, Object> getAllMeterReading(MeterReadingDTO selectItem,int page, int size);
     Map<String, Object> updateMeterCurrentReading(MeterReadingSheet meterReadingSheet);
-
-
 }

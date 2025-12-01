@@ -637,7 +637,7 @@ public class MeterServiceImpl implements MeterService {
 
             Tariff tariff = tariffMapper.getApproveTariff(request.getTariffId());
             if(tariff == null){
-                throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
+                throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
             }
 
             Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
@@ -692,7 +692,7 @@ public class MeterServiceImpl implements MeterService {
                 Map<String, Object> result = new HashMap<>();
                 result.put("meter", m);
                 throw new GlobalExceptionHandler.PartialFailureException(
-                        "Meter already assigned to cin",
+                        "Meter already assigned to cin or account number",
                         result
                 );
             }

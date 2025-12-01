@@ -131,6 +131,20 @@ public class HesController {
         }
     }
 
+    @GetMapping("/data/schedule")
+    public ResponseEntity<?> report(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
+        try {
+            Map<String, Object> result = hesService.scheduleData(page, size, search);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @GetMapping("/meter-status/stream")
     public SseEmitter stream() {
         // In production, validate tenantId from JWT/session
