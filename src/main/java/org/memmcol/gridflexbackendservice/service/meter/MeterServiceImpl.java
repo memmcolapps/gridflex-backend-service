@@ -1118,7 +1118,7 @@ public class MeterServiceImpl implements MeterService {
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                     meterName + "("+meter.getMeterNumber() +")" + capitalizeFirstLetter(approveStatus) + " Successfully",
+                     meterName + " ("+meter.getMeterNumber() +") " + capitalizeFirstLetter(approveStatus) + " Successfully",
                     ""
             );
 
@@ -1402,9 +1402,9 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleRejection(Meter meter, String approveStatus, UserModel user) {
-        if(meter.getDebitCreditAdjustVersionInfo() == null) {
-            throw new GlobalExceptionHandler.NotFoundException(meter.getDebitCreditAdjustVersionInfo().getDescription());
-        }
+//        if(meter.getDebitCreditAdjustVersionInfo() != null) {
+//            throw new GlobalExceptionHandler.NotFoundException(meter.getDebitCreditAdjustVersionInfo().getDescription());
+//        }
 
         String st = meter.getMeterStage();
         String status = meter.getStatus();
