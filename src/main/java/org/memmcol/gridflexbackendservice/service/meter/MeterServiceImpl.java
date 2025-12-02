@@ -937,7 +937,7 @@ public class MeterServiceImpl implements MeterService {
 
             if (hasUnpaid) {
                 throw new GlobalExceptionHandler.NotFoundException(
-                        meterName + " (" + meterById.getMeterNumber() + ") have credit or debit adjustment"
+                        meterName + " (" + meterById.getMeterNumber() + ") have unpaid credit or debit adjustment"
                 );
             }
 
@@ -1121,18 +1121,18 @@ public class MeterServiceImpl implements MeterService {
             } else if (isReject(approveStatus)) {
                 handleRejection(meter, approveStatus, user);
             } else {
-                throw new MissingServletRequestParameterException("meterStage", "not found");
+                throw new MissingServletRequestParameterException("approveStatus", "not found");
             }
 
             // --- Step 3: Audit log ---
             Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId());
             user.setPassword(null); // hide password in logs
-            AuditLog auditLog = buildAuditLog(user, "Meter "+ approveStatus, meterName, updatedMeter, metadata, "");
+            AuditLog auditLog = buildAuditLog(user, "Meter "+ approveStatus+"ed", meterName, updatedMeter, metadata, "");
             auditRepository.save(auditLog);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                     meterName + " ("+meter.getMeterNumber() +") " + capitalizeFirstLetter(approveStatus) + " Successfully",
+                     meterName + " ("+meter.getMeterNumber() +") " + capitalizeFirstLetter(approveStatus) + "ed Successfully",
                     ""
             );
 
@@ -1444,7 +1444,6 @@ public class MeterServiceImpl implements MeterService {
             if(result == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assign payment mode failed");
         }
 
-        System.out.println("lllllllllllllllllllllllllllllll");
         if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")){
 
             //Delete meter record in meters table

@@ -1,10 +1,13 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.hes.Event;
+import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.vend.Transaction;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -119,4 +122,68 @@ public interface DashboardMapper {
             @Result(property = "updatedAt", column = "updated_at"),
     })
     List<Transaction> getVendingTransaction(UUID orgId);
+
+    @Select("SELECT COUNT(*) FROM smart_meter_info WHERE org_id = #{orgId}")
+    int countAll(UUID orgId);
+
+    @Select("SELECT COUNT(*) FROM meters_connection_event mc " +
+            "JOIN meters m ON m.meter_number = mc.meter_no " +
+            "AND mc.connection_type = #{online}")
+    int getActiveMeterCount(String online);
+
+    @Select("""
+        SELECT m 
+        FROM meters_connection_event m 
+        WHERE m.online_time = #{fromTime}
+        ORDER BY m.online_time ASC
+    """)
+    List<MeterConnEvent> findRecentEvents(@Param("fromTime") LocalDateTime fromTime);
+
+    //  JOIN smart_meter_info sm ON m.id = sm.meter_id
+    @Select("""
+    <script>
+        SELECT mc.*, sm.meter_model
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        WHERE m.org_id = #{orgId}
+        ORDER BY mc.updated_at DESC
+        LIMIT 5
+    </script>
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+//            @Result(property = "onlineTime", column = "online_time"),
+//            @Result(property = "offlineTime", column = "offline_time"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
+    })
+    List<MeterConnEvent> getCommReport(UUID orgId);
+
+
+    @Select("""
+        <script>
+            SELECT e.*, et.*
+            FROM event_log e 
+            JOIN event_type et ON e.event_type_id = et.id 
+            JOIN meters m ON e.meter_serial = m.meter_number
+            WHERE m.org_id = #{orgId}
+            ORDER BY event_time DESC LIMIT 5
+        </script>
+    """)
+    @Results({
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "event_name", property = "eventName"),
+            @Result(column = "event_time", property = "eventTime"),
+            @Result(column = "event_type_id", property = "eventTypeId"),
+            @Result(column = "currentThreshold", property = "current_threshold"),
+            @Result(column = "eventCode", property = "event_code"),
+
+            @Result(property = "eventType.name", column = "name"),
+            @Result(property = "eventType.description", column = "description"),
+            @Result(property = "eventType.obisCode", column = "obis_code"),
+    })
+    List<Event> getEventsReport(UUID orgId);
 }

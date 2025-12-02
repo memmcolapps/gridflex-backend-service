@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface HesService {
-    Map<String, Object> dashboard();
+//    Map<String, Object> dashboard();
 
     Map<String, Object> communicationReport(int page, int size, String type, String search, String node);
 

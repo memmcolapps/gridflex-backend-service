@@ -42,7 +42,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/vending/service/generate/token/compensation", "/vending/service/generate/token/all", "/dashboard/service/data-management", "/vending/service/generate/meter-kct",
                     "/billing/service/meter/reading/create", "/billing/service/meter/reading/generate","/billing/service/meter/reading/update", "/billing/service/meter/reading/all", "/dashboard/service/billing",
                     "/billing/service/meter/reading/download/template/csv", "/billing/service/meter/reading/download/template/excel", "/billing/service/meter/reading/bulk-upload",
-                    "/vending/service/generate/token/print", "/dashboard/service/vending", "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
+                    "/vending/service/generate/token/print", "/dashboard/service/vending", "/dashboard/service/hes", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
                     "/hes/service/model", "/hes/service/communication/range/report", "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule")),
 
             Map.entry("data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/user/service/update",
@@ -156,7 +156,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/billing/service/meter/reading/bulk-upload", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("hes", List.of("/dashboard/service/hes-management", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",
-                    "/hes/service/dashboard", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile", "/hes/service/model", "/hes/service/communication/range/report",
+                    "/dashboard/service/hes", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile", "/hes/service/model", "/hes/service/communication/range/report",
                     "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule"))
 
     );
