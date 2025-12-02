@@ -912,8 +912,22 @@ public class MeterServiceImpl implements MeterService {
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
+
+            boolean hasUnpaid = meterById.getDebitCreditAdjustInfo().stream()
+                    .anyMatch(m ->
+                            m.getStatus().equalsIgnoreCase("UNPAID") ||
+                                    m.getStatus().equalsIgnoreCase("PARTIALLY_PAID")
+                    );
+
+            if (hasUnpaid) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        meterName + " (" + meterById.getMeterNumber() + ") have credit or debit adjustment"
+                );
+            }
+
+
             if (meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
-                throw new GlobalExceptionHandler.NotFoundException("Meter has a pending record that needs to be cleared");
+                throw new GlobalExceptionHandler.NotFoundException("Meter have a pending record that needs to be cleared");
             }
 
             if(meterById.getMeterStage().equalsIgnoreCase("Deactivated")
@@ -980,7 +994,7 @@ public class MeterServiceImpl implements MeterService {
             }
             if (meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
                 throw new GlobalExceptionHandler.NotFoundException(
-                        "Meter has a pending record that needs cleared"
+                        "Meter have a pending record that needs cleared"
                 );
             }
 
@@ -1097,7 +1111,7 @@ public class MeterServiceImpl implements MeterService {
             // --- Step 3: Audit log ---
             Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId());
             user.setPassword(null); // hide password in logs
-            AuditLog auditLog = buildAuditLog(user, "Meter approve", meterName, updatedMeter, metadata, "");
+            AuditLog auditLog = buildAuditLog(user, "Meter "+ approveStatus, meterName, updatedMeter, metadata, "");
             auditRepository.save(auditLog);
 
             return ResponseMap.response(
@@ -1414,7 +1428,7 @@ public class MeterServiceImpl implements MeterService {
             if(result == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " assign payment mode failed");
         }
 
-
+        System.out.println("lllllllllllllllllllllllllllllll");
         if(meter.getMeterStage().trim().equalsIgnoreCase("Pending-created")){
 
             //Delete meter record in meters table
@@ -1467,8 +1481,7 @@ public class MeterServiceImpl implements MeterService {
             meter.setStatus("Active");
             handleMeterInfoRejection(meter, user);
         }  else if((meter.getMeterStage().trim().equalsIgnoreCase("Pending-detached")
-                || meter.getMeterStage().trim().equalsIgnoreCase("Pending-migrated"))
-                && meter.getCustomerId() != null && meter.getNodeId() != null) {
+                || meter.getMeterStage().trim().equalsIgnoreCase("Pending-migrated"))) {
             meter.setMeterStage("Assigned");
             meter.setStatus("Active");
             int u = meterMapper.updateMeter(meter.getMeterStage(), meter.getMeterId(), meter.getUpdatedAt(), meter.getStatus());
@@ -2235,7 +2248,6 @@ public class MeterServiceImpl implements MeterService {
                         info.setStatus(false);              // New status
                         return info;
                     }).toList();
-
 
             if (!adjustmentList.isEmpty()) {
                 meterMapper.updateBatchDebitCreditAdj(adjustmentList);
