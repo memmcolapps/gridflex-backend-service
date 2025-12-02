@@ -8,5 +8,8 @@ public interface DashboardService {
     Map<String, Object> vendingDashboard(String band, String year, String meterCategory);
 
     Map<String, Object> billingDashboard();
+
+    Map<String, Object> hesDashboard();
+
     ;
 }

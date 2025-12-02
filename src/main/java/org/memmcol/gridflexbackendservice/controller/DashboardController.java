@@ -57,6 +57,16 @@ public class DashboardController {
 
     }
 
+    @GetMapping("/hes")
+    public ResponseEntity<?> dashboard() {
+        try {
+            Map<String, Object> result = service.hesDashboard();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
