@@ -151,7 +151,7 @@ public class DashboardServiceImpl implements  DashboardService{
         // Optionally sort results by year then by month order
         installedOverMonths.sort(Comparator
                 .comparing((Map<String, Object> e) -> (Integer) e.get("year"))
-                .thenComparing(e -> Month.valueOf(e.get("month").toString())));
+                .thenComparing(e -> Month.valueOf(e.get("month").toString().toUpperCase())));
 
         Map<String, Object> resp = new HashMap<>();
         resp.put("inventory", String.format("%.2f", inventoryPercent));
