@@ -158,4 +158,34 @@ public interface NodeMapper {
             @Result(property = "contactPerson", column = "contact_person"),
     })
     List<SubStationTransformerFeederLine> getFeederDss(UUID orgId);
+
+    @Select("""
+            SELECT * FROM region_bhub_service_centers 
+            WHERE org_id = #{id} AND name = #{name}
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "regionId", column = "region_id"),
+//            @Result(property = "phoneNo", column = "phone_number"),
+//            @Result(property = "contactPerson", column = "contact_person"),
+    })
+    RegionBhubServiceCenter getBhubByOrgIdAndName(UUID id, String name);
+
+    @Select("""
+            SELECT * FROM substation_trans_feeder_lines 
+            WHERE org_id = #{id} AND name = #{name}
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "assetId", column = "asset_id"),
+//            @Result(property = "phoneNo", column = "phone_number"),
+//            @Result(property = "contactPerson", column = "contact_person"),
+    })
+    SubStationTransformerFeederLine getSubTransformerFeederLineByOrgIdAndName(UUID id, String name);
 }
