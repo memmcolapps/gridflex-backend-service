@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.apache.ibatis.annotations.Update;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
 import org.memmcol.gridflexbackendservice.service.hes.HesService;
 import org.memmcol.gridflexbackendservice.service.hes.HesServiceConsumer;
@@ -170,6 +171,20 @@ public class HesController {
         hesServiceConsumer.startParameterizedStream(req);
 
         return emitter;
+    }
+
+    @PutMapping("/set/schedule")
+    public ResponseEntity<?> setSchedule(
+            @RequestParam String profileType,
+            @RequestParam String timeInterval,
+            @RequestParam String unit
+    ) {
+        try {
+            Map<String, Object> result = hesService.setSchedule(profileType, timeInterval, unit);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
     }
 
 //    /**

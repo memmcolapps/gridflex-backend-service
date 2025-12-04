@@ -998,12 +998,10 @@ public interface HesMapper {
 
     @Select("""
                 <script>
-                    SELECT s.*, e.* FROM scheduler_job_info s 
-                    LEFT JOIN event_type e ON s.obis_codes = e.obis_code
-                    LEFT JOIN event_log el ON el.event_type_id = e.id 
-                    LEFT JOIN meters m ON m.meter_number = el.meter_serial
+                    SELECT s.*, o.* FROM scheduler_job_info s
+                    JOIN organizations o ON s.org_id = o.id
                     <where>
-                        AND m.org_id = #{orgId}
+                        AND s.org_id = #{orgId}
                     </where>
                     ORDER BY s.last_run_time DESC
                     <if test="size != 0">
@@ -1012,6 +1010,7 @@ public interface HesMapper {
                 </script>
             """)
     @Results({
+            @Result(column = "org_id", property = "orgId"),
             @Result(column = "cron_expression", property = "cronExpression"),
             @Result(column = "cron_job", property = "cronJob"),
             @Result(column = "description", property = "description"),
@@ -1026,10 +1025,11 @@ public interface HesMapper {
             @Result(column = "repeat_hours", property = "repeatHours"),
             @Result(column = "last_run_time", property = "lastRunTime"),
             @Result(column = "obis_codes", property = "obisCode"),
+            @Result(column = "updated_at", property = "updatedAt"),
 
-            @Result(property = "eventType.name", column = "name"),
-            @Result(property = "eventType.description", column = "description"),
-            @Result(property = "eventType.obisCode", column = "obis_code"),
+            @Result(property = "organization.businessName", column = "business_name"),
+            @Result(property = "organization.createdAt", column = "created_at"),
+            @Result(property = "organization.updatedAt", column = "updated_at"),
     })
     List<Schedule> getScheduleData(int page, int size, UUID orgId);
 
