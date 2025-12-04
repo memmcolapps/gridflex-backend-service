@@ -1,11 +1,17 @@
 package org.memmcol.gridflexbackendservice.model.hes;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.memmcol.gridflexbackendservice.model.user.Organization;
+
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.time.LocalDateTime;
 
 public class Schedule implements Serializable {
 
     private Number id;
+    private String name;
+    private String orgId;
     private String cronExpression;
     private Boolean cronJob;
     private String description;
@@ -20,7 +26,14 @@ public class Schedule implements Serializable {
     private String repeatHours;
     private String lastRunTime;
     private String obisCode;
-    private EventType eventType;
+    private Organization organization;
+//    private EventType eventType;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
+
+    public Schedule() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
     public Number getId() {
         return id;
@@ -28,6 +41,22 @@ public class Schedule implements Serializable {
 
     public void setId(Number id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public String getCronExpression() {
@@ -142,11 +171,19 @@ public class Schedule implements Serializable {
         this.obisCode = obisCode;
     }
 
-    public EventType getEventType() {
-        return eventType;
+    public Organization getOrganization() {
+        return organization;
     }
 
-    public void setEventType(EventType eventType) {
-        this.eventType = eventType;
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

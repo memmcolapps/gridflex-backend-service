@@ -14,15 +14,17 @@ import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.http.HttpStatus;
 
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
@@ -40,6 +42,8 @@ public class HesClientServiceImpl implements HesService {
 
 //    @Autowired
 //    private DashboardAsyncService asyncService;
+    @Autowired
+    private HesAuthServiceImpl auth;
 
     @Autowired
     private HesMapper hesMapper;
@@ -49,131 +53,6 @@ public class HesClientServiceImpl implements HesService {
     public HesClientServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
         this.hesTokenCache = hazelcastInstance.getMap("hesTokenCache");
     }
-
-//    @Transactional(readOnly = true)
-//    public Map<String, Object> dashboard() {
-//
-//        try {
-//
-//            // Run all tasks asynchronously in parallel
-//            CompletableFuture<DashboardSummaryResponse.MeterSummary> meterSummaryFuture = asyncService.getMeterSummaryAsync();
-//            CompletableFuture<List<DashboardSummaryResponse.CommunicationLogPoint>> communicationLogsFuture =
-//                    asyncService.getCommunicationLogsAsync();
-//            CompletableFuture<DashboardSummaryResponse.DataSchedulerRate> schedulerRateFuture = asyncService.getSchedulerRateAsync();
-//            CompletableFuture<List<DashboardSummaryResponse.CommunicationReportRow>> communicationReportFuture = asyncService.
-//                    getCommunicationReportAsync(0, 5, "lastSync", true);
-//
-//            // Wait for all to complete
-//            CompletableFuture.allOf(
-//                    meterSummaryFuture,
-//                    communicationLogsFuture,
-//                    schedulerRateFuture,
-//                    communicationReportFuture
-//            ).join();
-//            DashboardSummaryResponse resp;
-//            // Combine results
-//            resp = new DashboardSummaryResponse(
-//                    meterSummaryFuture.join(),
-//                    communicationLogsFuture.join(),
-//                    schedulerRateFuture.join(),
-//                    communicationReportFuture.join()
-//            );
-//
-//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-//
-//        } catch (Exception exception) {
-//            genericHandler.logIncidentReport("fetching hes dashboard service failed");
-//            genericHandler.logAndSaveException(exception, "fetching hes dashboard");
-//            throw exception;
-//        }
-//    }
-
-    ///-----------------------
-//    @Transactional(readOnly = true)
-//    public Map<String, Object> dashboard() {
-//
-//        try {
-//            UserModel user = handleUserValidation();
-//
-//            // METER SUMMARY
-//            int total = hesMapper.countAll(user.getOrgId());
-//            int online = hesMapper.getActiveMeterCount("ONLINE");
-//            int offline = Math.max(total - online, 0);
-////            int failedCommands = 0;
-//
-//            DashboardSummaryResponse.MeterSummary meterSummary =
-//                    new DashboardSummaryResponse.MeterSummary(total, online, offline);
-//
-//            // COMMUNICATION LOGS (last 24 hours)
-//            LocalDateTime now = LocalDateTime.now();
-//            LocalDateTime fromTime = now.minusHours(24);
-//
-//            List<MeterConnEvent> recentEvents = hesMapper.findRecentEvents(fromTime);
-//
-//            List<DashboardSummaryResponse.CommunicationLogPoint> communicationLogs = new ArrayList<>();
-//            for (int i = 4; i <= 24; i += 4) {
-//
-//                LocalDateTime start = now.minusHours(i);
-//                LocalDateTime end = now.minusHours(i - 4);
-//
-//                long count = recentEvents.stream()
-//                        .filter(e -> e.getOnlineTime() != null &&
-//                                (e.getOnlineTime().isAfter(start) && e.getOnlineTime().isBefore(end)))
-//                        .count();
-//
-//                communicationLogs.add(new DashboardSummaryResponse.CommunicationLogPoint(i + " hrs", (int) count));
-//            }
-//
-//            // COMMUNICATION REPORT
-//            List<MeterConnEvent> commReport = hesMapper.getCommReport(user.getOrgId());
-//
-//            List<DashboardSummaryResponse.CommunicationReportRow> communicationReport =
-//                    commReport.stream()
-//                            .map(e -> new DashboardSummaryResponse.CommunicationReportRow(
-//                                    e.getMeterNo(),
-//                                    e.getMeter().getSmartMeterInfo().getMeterModel(),
-//                                    e.getConnectionType(),
-//                                    e.getUpdatedAt()
-//                            ))
-//                            .toList();
-//
-//            // COMMUNICATION EVENTS
-//            List<Event> eventReport = hesMapper.getEventsReport(user.getOrgId());
-//
-//            List<DashboardSummaryResponse.EventLogs> eventsReport =
-//                    eventReport.stream()
-//                            .map(e -> new DashboardSummaryResponse.EventLogs(
-//                                    e.getMeterNumber(),
-//                                    e.getMeterModel(),
-//                                    e.getEventTypeId(),
-//                                    e.getEventCode(),
-//                                    e.getEventTime(),
-//                                    e.getCurrentThreshold(),
-//                                    e.getEventName(),
-//                                    e.getCreatedAt(),
-//                                    e.getEventType().getName(),
-//                                    e.getEventType().getObisCode(),
-//                                    e.getEventType().getDescription()
-//                            ))
-//                            .toList();
-//
-//
-//            // FINAL RESPONSE
-//            DashboardSummaryResponse resp = new DashboardSummaryResponse(
-//                    meterSummary,
-//                    communicationLogs,
-//                    eventsReport,
-//                    communicationReport
-//            );
-//
-//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-//
-//        } catch (Exception exception) {
-//            genericHandler.logIncidentReport("fetching hes dashboard service failed");
-//            genericHandler.logAndSaveException(exception, "fetching hes dashboard");
-//            throw exception;
-//        }
-//    }
 
     @Transactional(readOnly = true)
     @Override
@@ -488,7 +367,7 @@ public class HesClientServiceImpl implements HesService {
                             (e.getJobGroup() != null && e.getJobGroup().toLowerCase().equalsIgnoreCase(searchLower)) ||
                             (e.getJobName() != null && e.getJobName().toLowerCase().equalsIgnoreCase(searchLower)) ||
                             (e.getLastRunTime() != null && e.getLastRunTime().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventType().getName() != null && e.getEventType().getName().toLowerCase().equalsIgnoreCase(searchLower))
+                            (e.getName() != null && e.getName().toLowerCase().equalsIgnoreCase(searchLower))
                     )
                     .collect(Collectors.toList());
 
@@ -519,6 +398,70 @@ public class HesClientServiceImpl implements HesService {
         }
 
     }
+
+    @Override
+    public Map<String, Object> setSchedule(String profileType, String timeInterval, String unit) {
+        String token = auth.getAccessToken();
+
+        try {
+            Map<String, Object> resp = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/quartz/profiles/{jobName}/interval/{unit}")
+                            .queryParam(unit, timeInterval)
+                            .build(profileType, unit)
+                    )
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,    // <-- use lambda here
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set schedule service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("set schedule service failed");
+            genericHandler.logAndSaveException(e, "set schedule service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("set schedule service failed");
+            genericHandler.logAndSaveException(e, "set schedule");
+            throw e;
+        }
+    }
+
+//    @Override
+//    public Map<String, Object> setSchedule(String profileType, String timeInterval, String unit) {
+//        String token = auth.getAccessToken();
+//
+//        try {
+//            Map<String, Object> resp = webClient.get()
+//                    .uri("/api/quartz/profiles/:jobName/interval/"+unit+"/:timeInterval")
+//                    .headers(h -> h.setBearerAuth(token))
+//                    .retrieve()
+//                    .onStatus(HttpStatus::isError,
+//                            clientResponse -> clientResponse.bodyToMono(String.class)
+//                                    .map(body -> new RuntimeException("set schedule service error: " + body))
+//                    )
+//                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+//                    .block();
+//
+//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+//
+//        } catch (WebClientResponseException webClientResponseException) {
+//            genericHandler.logIncidentReport("set schedule service failed");
+//            genericHandler.logAndSaveException(webClientResponseException, "set schedule service");
+//            // handles HTTP errors
+//            throw webClientResponseException;
+//        } catch (Exception exception) {
+//            genericHandler.logIncidentReport("set schedule service failed");
+//            genericHandler.logAndSaveException(exception, "set schedule");
+//            throw exception;
+//        }
+//    }
 
 }
 
