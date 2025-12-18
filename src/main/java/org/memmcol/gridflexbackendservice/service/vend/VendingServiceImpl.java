@@ -54,6 +54,9 @@ public class VendingServiceImpl implements VendingService {
     @Autowired
     private VendMapper vendMapper;
 
+    @Autowired
+    private TokenGenClientService tokenGenClient;
+
     @Transactional
     @Override
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
@@ -73,6 +76,8 @@ public class VendingServiceImpl implements VendingService {
             }
 
             MeterView meter = meters.get(0);
+
+            System.out.println("newSgc:: "+meter.getNewSgc());
 
             // --- Balance Calculations ---
             BigDecimal totalDebit = calculateTotalByType(meters, "debit");
@@ -94,19 +99,36 @@ public class VendingServiceImpl implements VendingService {
                 tariffRate = BigDecimal.ZERO; // invalid rate should act as 0
             }
 
+            System.out.println("tariffRate:: "+tariffRate);
+
             BigDecimal units = BigDecimal.ZERO;
             BigDecimal costPerUnit = BigDecimal.ZERO;
 
             if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
                 // Normal calculation if tariffRate is valid
                 units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-
+                System.out.println("unit1:: "+units);
                 if (units.compareTo(BigDecimal.ZERO) > 0) {
                     costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
                 }
             }
 
             BigDecimal finalAmount = netBalance.subtract(vatAmount);
+            System.out.println("unit:: "+units);
+
+
+            TokenGenRequest request = new TokenGenRequest();
+            request.setAmount(units);
+            request.setMeterNo(meter.getMeterNumber());
+            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
+            request.setMeterType("STS6");
+
+//            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType());
+//
+//            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+//            }
 
             // --- Update Transaction ---
             Transaction transaction = new Transaction();
@@ -116,6 +138,7 @@ public class VendingServiceImpl implements VendingService {
             transaction.setMeterId(meter.getMeterId());
             transaction.setTariffId(meter.getTariffId());
             transaction.setToken(generateDummyToken());
+//            transaction.setToken(tokenResponse.getTokens().get(0));
             transaction.setStatus("Successful");
             transaction.setReceiptNo(generateReceiptNumber(creditToken.getMeterNumber()));
             transaction.setOrgId(user.getOrgId());
@@ -192,7 +215,7 @@ public class VendingServiceImpl implements VendingService {
             if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
                 // Normal calculation if tariffRate is valid
                 units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-
+                System.out.println("unit1:: "+units);
                 if (units.compareTo(BigDecimal.ZERO) > 0) {
                     costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
                 }
@@ -321,6 +344,22 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
 
+            TokenGenRequest request = new TokenGenRequest();
+            request.setMeterNo(meter.getMeterNumber());
+            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
+            request.setMeterType("STS6");
+            request.setAllow(false);
+            request.setAllowkrn(true);
+
+//            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/kcttokenGen", kctToken.getTokenType());
+//
+//            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+//            }
+
+//            kctToken.setKct1(tokenResponse.getTokens().get(0));
+//            kctToken.setKct2(tokenResponse.getTokens().get(1));
             kctToken.setKct1(generateDummyToken());
             kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
@@ -400,6 +439,22 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), user.getOrgId());
 
+
+
+            TokenGenRequest request = new TokenGenRequest();
+            request.setMeterNo(meter.getMeterNumber());
+            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
+            request.setSbc(5);
+            request.setMeterType("STS6");
+
+//            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearTamper.getTokenType());
+//
+//            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+//            }
+
+//            clearTamper.setToken(tokenResponse.getTokens().get(0));
             clearTamper.setToken(generateDummyToken());
             clearTamper.setMeterId(meter.getMeterId());
             clearTamper.setStatus("Successful");
@@ -443,6 +498,22 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(clearCredit.getMeterNumber(), clearCredit.getAccountNumber(), user.getOrgId());
 
+
+
+            TokenGenRequest request = new TokenGenRequest();
+            request.setMeterNo(meter.getMeterNumber());
+            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
+            request.setSbc(1);
+            request.setMeterType("STS6");
+
+//            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearCredit.getTokenType());
+//
+//            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+//            }
+
+//            clearCredit.setToken(tokenResponse.getTokens().get(0));
             clearCredit.setToken(generateDummyToken());
             clearCredit.setMeterId(meter.getMeterId());
             clearCredit.setStatus("Successful");
@@ -474,56 +545,57 @@ public class VendingServiceImpl implements VendingService {
         }
     }
 
-    @Override
-    public Map<String, Object> createKctClearTamperToken(kctAndClearTamper kctAndClearTamper) {
-        try {
-            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-            UserModel user = handleUserValidation();
-
-            if(!kctAndClearTamper.getTokenType().equalsIgnoreCase("kct-clear-tamper")) {
-                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
-            }
-
-            MeterView meter = vendMapper.getMeterRecord(kctAndClearTamper.getMeterNumber(), kctAndClearTamper.getAccountNumber(), user.getOrgId());
-
-            if(!kctAndClearTamper.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
-                throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
-            }
-
-            if(!kctAndClearTamper.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
-                throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
-            }
-
-            kctAndClearTamper.setToken(generateDummyToken());
-            kctAndClearTamper.setMeterId(meter.getMeterId());
-            kctAndClearTamper.setStatus("Successful");
-            kctAndClearTamper.setOrgId(user.getOrgId());
-            kctAndClearTamper.setCustomerId(meter.getCustomerId());
-            kctAndClearTamper.setUserId(user.getId());
-            kctAndClearTamper.setReceiptNumber(generateReceiptNumber(kctAndClearTamper.getMeterNumber()));
-            kctAndClearTamper.setTariffId(meter.getTariffId());
-            kctAndClearTamper.setKct1(generateDummyToken());
-            kctAndClearTamper.setKct2(generateDummyToken());
-
-            int clear = vendMapper.createKctAndClearTamper(kctAndClearTamper);
-            if(clear == 0) {
-                throw new GlobalExceptionHandler.NotFoundException("Generate kct and clear tamper token failed");
-            }
-
-            Transaction transaction = vendMapper.getCreditTokenTransaction(kctAndClearTamper.getId(), user.getOrgId());
-
-            // Audit (optional)
-            AuditLog auditLog = buildAuditLog(user, "Kct and clear tamper token generated", "vend", transaction, metadata, kctAndClearTamper.getReason());
-            auditRepository.save(auditLog);
-
-            return ResponseMap.response(status.getSuccessCode(), "Kct and clear tamper token generated successfully", transaction);
-
-        }catch (Exception ex) {
-            genericHandler.logIncidentReport("Creating kct and clear tamper token service failed");
-            genericHandler.logAndSaveException(ex, "creating kct and clear tamper token");
-            throw ex;
-        }
-    }
+    ///Remove createKctClearTamperToken not needed
+//    @Override
+//    public Map<String, Object> createKctClearTamperToken(kctAndClearTamper kctAndClearTamper) {
+//        try {
+//            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+//            UserModel user = handleUserValidation();
+//
+//            if(!kctAndClearTamper.getTokenType().equalsIgnoreCase("kct-clear-tamper")) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
+//            }
+//
+//            MeterView meter = vendMapper.getMeterRecord(kctAndClearTamper.getMeterNumber(), kctAndClearTamper.getAccountNumber(), user.getOrgId());
+//
+//            if(!kctAndClearTamper.getOldSgc().equalsIgnoreCase(meter.getOldSgc())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Old SGC not found");
+//            }
+//
+//            if(!kctAndClearTamper.getNewSgc().equalsIgnoreCase(meter.getNewSgc())) {
+//                throw new GlobalExceptionHandler.NotFoundException("New SGC not found");
+//            }
+//
+//            kctAndClearTamper.setToken(generateDummyToken());
+//            kctAndClearTamper.setMeterId(meter.getMeterId());
+//            kctAndClearTamper.setStatus("Successful");
+//            kctAndClearTamper.setOrgId(user.getOrgId());
+//            kctAndClearTamper.setCustomerId(meter.getCustomerId());
+//            kctAndClearTamper.setUserId(user.getId());
+//            kctAndClearTamper.setReceiptNumber(generateReceiptNumber(kctAndClearTamper.getMeterNumber()));
+//            kctAndClearTamper.setTariffId(meter.getTariffId());
+//            kctAndClearTamper.setKct1(generateDummyToken());
+//            kctAndClearTamper.setKct2(generateDummyToken());
+//
+//            int clear = vendMapper.createKctAndClearTamper(kctAndClearTamper);
+//            if(clear == 0) {
+//                throw new GlobalExceptionHandler.NotFoundException("Generate kct and clear tamper token failed");
+//            }
+//
+//            Transaction transaction = vendMapper.getCreditTokenTransaction(kctAndClearTamper.getId(), user.getOrgId());
+//
+//            // Audit (optional)
+//            AuditLog auditLog = buildAuditLog(user, "Kct and clear tamper token generated", "vend", transaction, metadata, kctAndClearTamper.getReason());
+//            auditRepository.save(auditLog);
+//
+//            return ResponseMap.response(status.getSuccessCode(), "Kct and clear tamper token generated successfully", transaction);
+//
+//        }catch (Exception ex) {
+//            genericHandler.logIncidentReport("Creating kct and clear tamper token service failed");
+//            genericHandler.logAndSaveException(ex, "creating kct and clear tamper token");
+//            throw ex;
+//        }
+//    }
 
     @Override
     public Map<String, Object> createCompensationToken(KctToken kctToken) {
@@ -537,6 +609,20 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
 
+            TokenGenRequest request = new TokenGenRequest();
+            request.setMeterNo(meter.getMeterNumber());
+            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
+            request.setMeterType("STS6");
+
+//            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", kctToken.getTokenType());
+//
+//            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+//            }
+
+
+//            kctToken.setToken(tokenResponse.getTokens().get(0));
             kctToken.setToken(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
             kctToken.setStatus("Successful");

@@ -83,15 +83,15 @@ public class VendingController {
         }
     }
 
-    @PostMapping("/kct-clear-tamper")
-    ResponseEntity<?> kctClearTamperToken(@RequestBody kctAndClearTamper kctAndClearTamper){
-        try {
-            Map<String, Object> result = vendingService.createKctClearTamperToken(kctAndClearTamper);
-            return ResponseEntity.ok(result);
-        } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @PostMapping("/kct-clear-tamper")
+//    ResponseEntity<?> kctClearTamperToken(@RequestBody kctAndClearTamper kctAndClearTamper){
+//        try {
+//            Map<String, Object> result = vendingService.createKctClearTamperToken(kctAndClearTamper);
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     @PostMapping("/compensation")
     ResponseEntity<?> compensationToken(@RequestBody KctToken kctToken){

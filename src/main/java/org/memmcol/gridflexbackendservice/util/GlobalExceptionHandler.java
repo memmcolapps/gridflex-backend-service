@@ -247,7 +247,8 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
-	@ExceptionHandler(javax.security.sasl.AuthenticationException.class)
+	//@ExceptionHandler(javax.security.sasl.AuthenticationException.class)
+	@ExceptionHandler(AuthenticationException.class)
 	public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
 		ex.printStackTrace();
 		String msg = "Authentication failed";
