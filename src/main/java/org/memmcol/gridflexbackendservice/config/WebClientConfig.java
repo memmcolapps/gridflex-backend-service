@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -10,10 +12,32 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
 
     @Bean
-    public WebClient webClient() {
+    @Qualifier("tokenGenWebClient")
+    public WebClient tokenGenWebClient(
+            @Value("${external.token-gen.base-url}") String baseUrl) {
+
         return WebClient.builder()
-                .baseUrl("http://localhost:9061/api/realtime")
+                .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
+
+    @Bean
+    @Qualifier("realtimeWebClient")
+    public WebClient realtimeWebClient(
+            @Value("${external.realtime.base-url}") String baseUrl) {
+
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+//    @Bean
+//    public WebClient webClient() {
+//        return WebClient.builder()
+//                .baseUrl("http://localhost:9061/api/realtime")
+//                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+//                .build();
+//    }
 }

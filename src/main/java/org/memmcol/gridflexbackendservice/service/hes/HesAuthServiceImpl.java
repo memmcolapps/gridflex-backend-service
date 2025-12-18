@@ -22,6 +22,7 @@ public class HesAuthServiceImpl {
     private String refreshToken;  // original refresh token from login
     private Instant expiryTime;
 
+    @Qualifier("realtimeWebClient")
     @Autowired
     private WebClient webClient;
 

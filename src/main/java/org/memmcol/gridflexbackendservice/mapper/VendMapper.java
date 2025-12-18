@@ -119,12 +119,12 @@ public interface VendMapper {
             "    m.meter_id, " +
             "    m.org_id, " +
             "    m.meter_number," +
-//            "    m.old_sgc,  " +
-//            "    m.new_sgc,  " +
-//            "    m.old_krn,  " +
-//            "    m.new_krn,  " +
-//            "    m.old_tariff_index, " +
-//            "    m.new_tariff_index," +
+            "    m.old_sgc,  " +
+            "    m.new_sgc,  " +
+            "    m.old_krn,  " +
+            "    m.new_krn,  " +
+            "    m.old_tariff_index, " +
+            "    m.new_tariff_index," +
             "    m.meter_account_number, " +
             "    m.tariff_rate, " +
             "    m.tariff_name," +
@@ -146,12 +146,12 @@ public interface VendMapper {
             "    m.org_id, " +
             "    m.meter_number," +
             "    m.meter_account_number, " +
-//            "    m.old_sgc, " +
-//            "    m.new_sgc, " +
-//            "    m.old_krn, " +
-//            "    m.new_krn, " +
-//            "    m.old_tariff_index, " +
-//            "    m.new_tariff_index," +
+            "    m.old_sgc, " +
+            "    m.new_sgc, " +
+            "    m.old_krn, " +
+            "    m.new_krn, " +
+            "    m.old_tariff_index, " +
+            "    m.new_tariff_index," +
             "    m.tariff_rate, " +
             "    m.tariff_name," +
             "    m.tariff_id, " +
@@ -171,12 +171,12 @@ public interface VendMapper {
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
             @Result(property = "tariffId", column = "tariff_id"),
             @Result(property = "tariffRate", column = "tariff_rate"),
-//            @Result(property = "oldSgc", column = "old_sgc"),
-//            @Result(property = "newSgc", column = "new_sgc"),
-//            @Result(property = "oldKrn", column = "old_krn"),
-//            @Result(property = "oldKrn", column = "old_krn"),
-//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
             @Result(property = "liabilityName", column = "liability_name"),
             @Result(property = "balanceAfterAdjustment", column = "balance"),
             @Result(property = "debitAmount", column = "total_debit"),

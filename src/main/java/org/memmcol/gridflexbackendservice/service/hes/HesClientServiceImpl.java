@@ -34,6 +34,7 @@ public class HesClientServiceImpl implements HesService {
     @Autowired
     private ResponseProperties status;
 
+    @Qualifier("realtimeWebClient")
     @Autowired
     private WebClient webClient;
 

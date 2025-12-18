@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,6 +22,7 @@ import static org.memmcol.gridflexbackendservice.components.handleValidUser.hand
 @Service
 public class HesServiceConsumer {
 
+    @Qualifier("realtimeWebClient")
     @Autowired
     private WebClient webClient;
 

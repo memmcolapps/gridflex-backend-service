@@ -15,7 +15,7 @@ public interface VendingService {
 
     Map<String, Object> createClearCreditToken(ClearCredit clearCredit);
 
-    Map<String, Object> createKctClearTamperToken(kctAndClearTamper kctAndClearTamper);
+//    Map<String, Object> createKctClearTamperToken(kctAndClearTamper kctAndClearTamper);
 
     Map<String, Object> createCompensationToken(KctToken kctToken);
 
