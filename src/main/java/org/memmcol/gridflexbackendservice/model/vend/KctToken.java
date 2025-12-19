@@ -35,6 +35,9 @@ public class KctToken implements Serializable {
     private String meterNumber;
     private UUID tariffId;
 
+    private Boolean allow;
+//    private Boolean allowKrn;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
@@ -45,8 +48,6 @@ public class KctToken implements Serializable {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
-
-
 
     public UUID getId() {
         return id;
@@ -240,4 +241,20 @@ public class KctToken implements Serializable {
     public void setUnit(BigDecimal unit) {
         this.unit = unit;
     }
+
+    public Boolean getAllow() {
+        return allow;
+    }
+
+    public void setAllow(Boolean allow) {
+        this.allow = allow;
+    }
+//
+//    public Boolean getAllowKrn() {
+//        return allowKrn;
+//    }
+//
+//    public void setAllowKrn(Boolean allowKrn) {
+//        this.allowKrn = allowKrn;
+//    }
 }
