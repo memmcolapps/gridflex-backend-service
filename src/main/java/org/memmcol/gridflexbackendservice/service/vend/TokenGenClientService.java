@@ -32,6 +32,7 @@ public class TokenGenClientService {
 
         request.setMeterNo("62124022443");
         request.setSgc(600849);
+        request.setTosgc(600849);
         // Print the payload
         try {
             String payload = objectMapper.writeValueAsString(request);
