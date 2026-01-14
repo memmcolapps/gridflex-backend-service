@@ -8,7 +8,7 @@ spring:
 external:
   token-gen:
     base-url: http://169.239.189.91:19071
-  realtime:
+  hes-realtime:
     base-url: http://localhost:9061/api/realtime
 
 #spring:

@@ -25,7 +25,7 @@ public class WebClientConfig {
     @Bean
     @Qualifier("realtimeWebClient")
     public WebClient realtimeWebClient(
-            @Value("${external.realtime.base-url}") String baseUrl) {
+            @Value("${external.hes-realtime.base-url}") String baseUrl) {
 
         return WebClient.builder()
                 .baseUrl(baseUrl)

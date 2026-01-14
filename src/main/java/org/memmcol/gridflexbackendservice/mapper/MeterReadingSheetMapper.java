@@ -2,7 +2,7 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
+import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 
 import java.math.BigDecimal;
@@ -21,32 +21,64 @@ public interface MeterReadingSheetMapper {
     void insertMeterReadingSheet(MeterReadingSheet meterReadingSheet);
 
     @Select("""
-                SELECT meter_id, current_reading, current_reading_date
+                SELECT meter_id, current_reading, current_reading_date, bill_month, bill_year
                 FROM meter_reading_sheet
                 WHERE meter_id = #{meterId} And org_id = #{orgId}
-                ORDER BY current_reading_date DESC
+                ORDER BY bill_year DESC,
+                     CASE bill_month
+                         WHEN 'January' THEN 1
+                         WHEN 'February' THEN 2
+                         WHEN 'March' THEN 3
+                         WHEN 'April' THEN 4
+                         WHEN 'May' THEN 5
+                         WHEN 'June' THEN 6
+                         WHEN 'July' THEN 7
+                         WHEN 'August' THEN 8
+                         WHEN 'September' THEN 9
+                         WHEN 'October' THEN 10
+                         WHEN 'November' THEN 11
+                         WHEN 'December' THEN 12
+                     END DESC
                 LIMIT 1
             """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "currentReading", column = "current_reading"),
-            @Result(property = "currentReadingDate", column = "current_reading_date")
+            @Result(property = "currentReadingDate", column = "current_reading_date"),
+            @Result(property = "billMonth", column = "bill_month"),
+            @Result(property = "billYear", column = "bill_year")
     })
     MeterReadingSheet getLastReadingByMeterId(UUID meterId, UUID orgId);
 
     @Select("""
-                SELECT meter_id, current_reading, current_reading_date
+                SELECT meter_id, current_reading, current_reading_date, bill_month, bill_year
                 FROM meter_reading_sheet
-                WHERE meter_id = #{meterId} And org_id = #{orgId} AND current_reading::numeric <> 0
-                ORDER BY current_reading_date DESC
+                WHERE meter_id = #{meterId} AND org_id = #{orgId} AND current_reading::numeric <> 0
+                ORDER BY current_reading_date DESC,
+                     CASE bill_month
+                         WHEN 'January' THEN 1
+                         WHEN 'February' THEN 2
+                         WHEN 'March' THEN 3
+                         WHEN 'April' THEN 4
+                         WHEN 'May' THEN 5
+                         WHEN 'June' THEN 6
+                         WHEN 'July' THEN 7
+                         WHEN 'August' THEN 8
+                         WHEN 'September' THEN 9
+                         WHEN 'October' THEN 10
+                         WHEN 'November' THEN 11
+                         WHEN 'December' THEN 12
+                     END DESC
                 LIMIT 1
             """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "currentReading", column = "current_reading"),
-            @Result(property = "currentReadingDate", column = "current_reading_date")
+            @Result(property = "currentReadingDate", column = "current_reading_date"),
+            @Result(property = "billMonth", column = "bill_month"),
+            @Result(property = "billYear", column = "bill_year")
     })
     MeterReadingSheet getNonZeroCurrentReadingByMeterId(UUID meterId, UUID orgId);
 
@@ -257,5 +289,32 @@ public interface MeterReadingSheetMapper {
             @Param("orgId") UUID orgId
     );
 
+//    @Select("""
+//        SELECT reading_value
+//        FROM meter_reading
+//        WHERE meter_id = #{meterId}
+//          AND reading_month = #{month}
+//    """)
+    @Select("""
+        SELECT current_reading, last_reading, reading_type FROM meter_reading_sheet
+        WHERE meter_id = #{meterId}
+        AND bill_month = #{month} AND bill_year = UNIQUE(#{year})
+    """)
+    MeterReadingSheet findReading(
+            @Param("meterId") UUID meterId,
+            @Param("month") String month,
+            @Param("year") int year);
+
+    @Select("""
+        SELECT AVG(consumption)
+        FROM monthly_consumption
+        WHERE meter_id = #{meterId}
+          AND month < #{month}
+        ORDER BY month DESC
+        LIMIT 5
+    """)
+    BigDecimal findFiveMonthAverage(
+            @Param("meterId") UUID meterId,
+            @Param("month") String month);
 
 }

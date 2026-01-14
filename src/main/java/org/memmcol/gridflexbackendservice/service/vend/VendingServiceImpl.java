@@ -262,7 +262,7 @@ public class VendingServiceImpl implements VendingService {
         BigDecimal safeCredit = totalCredit != null ? totalCredit : BigDecimal.ZERO;
         BigDecimal safeAmount = amount != null ? amount : BigDecimal.ZERO;
         BigDecimal safeDebit = totalDebit != null ? totalDebit : BigDecimal.ZERO;
-        System.out.println("safeAmount:: "+safeAmount);
+//        System.out.println("safeAmount:: "+safeAmount);
         return safeCredit
                 .add(safeAmount)
                 .subtract(safeDebit)

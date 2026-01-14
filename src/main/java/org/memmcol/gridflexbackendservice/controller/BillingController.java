@@ -1,37 +1,15 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.memmcol.gridflexbackendservice.components.GenericHandler;
-import org.memmcol.gridflexbackendservice.config.ResponseProperties;
-import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
-import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.meter.MeterReadingSheet;
+import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
-import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
-import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.billing.BillingService;
-import org.memmcol.gridflexbackendservice.service.customer.CustomerServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
-import org.memmcol.gridflexbackendservice.util.ResponseMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Month;
+import java.time.YearMonth;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
 
 @RestController
 @RequestMapping("/billing/service")
@@ -121,6 +99,27 @@ public class BillingController {
         Map<String, Object> response = readingMetersService.getAllMeterReading(search,page, size);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{meterId}")
+    public ResponseEntity<String> calculate(
+            @PathVariable UUID meterId,
+            @RequestParam String month
+    ) {
+        readingMetersService.calculateMonthlyConsumption(meterId, YearMonth.parse(month));
+        return ResponseEntity.ok("Billing calculated");
+    }
+
+//    @PostMapping("/create")
+//    public ResponseEntity<?> createBand(@RequestBody Band band) {
+//        try {
+//            Map<String, Object> result = readingMetersService.createBand(band);
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//
+//    }
+    ////-------------------------
 
 //    @GetMapping("/meter/reading/all")
 //    public CompletableFuture<ResponseEntity<Map<String, Object>>> getMeterReadings(

@@ -1,5 +1,8 @@
 package org.memmcol.gridflexbackendservice.components;
 
+import org.memmcol.gridflexbackendservice.mapper.BillingMapper;
+import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
+import org.memmcol.gridflexbackendservice.service.billing.BillingServiceImpl;
 import org.memmcol.gridflexbackendservice.service.service_alert.ReportQueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -7,13 +10,21 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
+import java.util.UUID;
 
-//@Component
-//public class UptimeScheduler {
-//
-//    @Autowired
-//    private ReportQueryService service;
-//
+@Component
+public class UptimeScheduler {
+
+    @Autowired
+    private ReportQueryService service;
+
+    @Autowired
+    private BillingServiceImpl billingService;
+
+    @Autowired
+    private BillingMapper billingMapper;
+
 //    @Scheduled(cron = "0 5 0 * * *") // every day at 00:05
 //    public void daily() {
 //        service.calculateDailyReport("GRIDFLEX-BACKEND-SERVICE", LocalDate.now().minusDays(1));
@@ -25,7 +36,18 @@ import java.time.YearMonth;
 //        service.calculateMonthlyReport("GRIDFLEX-BACKEND-SERVICE", YearMonth.now().minusMonths(1));
 //        service.calculateMonthlyReport("API-GATEWAY-SERVICE", YearMonth.now().minusMonths(1));
 //    }
-//}
+
+    @Scheduled(cron = "0 0 2 1 * ?")
+    public void run() {
+
+        YearMonth billingMonth = YearMonth.now().minusMonths(1);
+        List<UUID> meterIds = billingMapper.findAllMeterIds();
+
+        for (UUID meterId : meterIds) {
+            billingService.calculateMonthlyConsumption(meterId, billingMonth);
+        }
+    }
+}
 
 //@Component
 //public class UptimeScheduler {

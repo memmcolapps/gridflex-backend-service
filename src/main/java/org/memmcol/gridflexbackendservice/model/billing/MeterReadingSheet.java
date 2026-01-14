@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.model.meter;
+package org.memmcol.gridflexbackendservice.model.billing;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
@@ -7,7 +7,6 @@ import lombok.Data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @Data
@@ -24,6 +23,7 @@ public class MeterReadingSheet implements Serializable {
     private String readingType;
     private BigDecimal lastReading;
     private BigDecimal currentReading;
+    private BigDecimal cumulativeReading;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime currentReadingDate;
@@ -196,6 +196,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setMeterClass(String meterClass) {
         this.meterClass = meterClass;
+    }
+
+    public BigDecimal getCumulativeReading() {
+        return cumulativeReading;
+    }
+
+    public void setCumulativeReading(BigDecimal cumulativeReading) {
+        this.cumulativeReading = cumulativeReading;
     }
 }
 
