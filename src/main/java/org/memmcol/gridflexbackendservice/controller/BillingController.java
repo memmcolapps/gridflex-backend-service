@@ -5,8 +5,15 @@ import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.service.billing.BillingService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.time.Month;
+
 
 import java.time.YearMonth;
 import java.util.*;
@@ -100,14 +107,43 @@ public class BillingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{meterId}")
-    public ResponseEntity<String> calculate(
-            @PathVariable UUID meterId,
-            @RequestParam String month
+//    @PostMapping("/meter/consumption")
+//    public ResponseEntity<String> calculate(
+//            @RequestParam(required = false) UUID meterId,
+//            @RequestParam String month
+//    ) {
+//        readingMetersService.calculateMonthlyConsumption(meterId, YearMonth.parse(month));
+//        return ResponseEntity.ok("Billing calculated");
+//    }
+
+    @PostMapping("/meter/consumption")
+    public ResponseEntity<Void> calculateMonthlyConsumption(
+            @RequestParam UUID meterId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        readingMetersService.calculateMonthlyConsumption(meterId, YearMonth.parse(month));
-        return ResponseEntity.ok("Billing calculated");
+        readingMetersService.calculateMonthlyConsumption(meterId, date);
+        return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/meter/consumption/all")
+    public ResponseEntity<?> getMonthlyConsumption(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search,
+            @RequestParam(value = "month", required = false,  defaultValue = "") String month,
+            @RequestParam(value = "year", required = false,  defaultValue = "") Integer year
+    ) {
+        try {
+            Map<String, Object> result = readingMetersService.monthlyConsumption(page, size, search, month, year);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+
+    }
+
+
 
 //    @PostMapping("/create")
 //    public ResponseEntity<?> createBand(@RequestBody Band band) {

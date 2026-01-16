@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,13 +24,12 @@ public class MeterReadingSheet implements Serializable {
     private String readingType;
     private BigDecimal lastReading;
     private BigDecimal currentReading;
-    private BigDecimal cumulativeReading;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime currentReadingDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate currentReadingDate;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime lastReadingDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate lastReadingDate;
 
     private String billMonth;
     private String billYear;
@@ -44,9 +44,13 @@ public class MeterReadingSheet implements Serializable {
     private String name;
     private String meterClass;
 
+    private BigDecimal cumulativeReading;
+    private BigDecimal averageConsumption;
+    private BigDecimal consumption;
+
+
+
     public MeterReadingSheet() {
-        this.currentReadingDate = LocalDateTime.now();
-        this.lastReadingDate = LocalDateTime.now();
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -125,19 +129,19 @@ public class MeterReadingSheet implements Serializable {
         this.currentReading = currentReading;
     }
 
-    public LocalDateTime getCurrentReadingDate() {
+    public LocalDate getCurrentReadingDate() {
         return currentReadingDate;
     }
 
-    public void setCurrentReadingDate(LocalDateTime currentReadingDate) {
+    public void setCurrentReadingDate(LocalDate currentReadingDate) {
         this.currentReadingDate = currentReadingDate;
     }
 
-    public LocalDateTime getLastReadingDate() {
+    public LocalDate getLastReadingDate() {
         return lastReadingDate;
     }
 
-    public void setLastReadingDate(LocalDateTime lastReadingDate) {
+    public void setLastReadingDate(LocalDate lastReadingDate) {
         this.lastReadingDate = lastReadingDate;
     }
 
@@ -204,6 +208,22 @@ public class MeterReadingSheet implements Serializable {
 
     public void setCumulativeReading(BigDecimal cumulativeReading) {
         this.cumulativeReading = cumulativeReading;
+    }
+
+    public BigDecimal getAverageConsumption() {
+        return averageConsumption;
+    }
+
+    public void setAverageConsumption(BigDecimal averageConsumption) {
+        this.averageConsumption = averageConsumption;
+    }
+
+    public BigDecimal getConsumption() {
+        return consumption;
+    }
+
+    public void setConsumption(BigDecimal consumption) {
+        this.consumption = consumption;
     }
 }
 

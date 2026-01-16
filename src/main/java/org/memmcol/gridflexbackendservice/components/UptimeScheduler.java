@@ -37,16 +37,16 @@ public class UptimeScheduler {
 //        service.calculateMonthlyReport("API-GATEWAY-SERVICE", YearMonth.now().minusMonths(1));
 //    }
 
-    @Scheduled(cron = "0 0 2 1 * ?")
-    public void run() {
-
-        YearMonth billingMonth = YearMonth.now().minusMonths(1);
-        List<UUID> meterIds = billingMapper.findAllMeterIds();
-
-        for (UUID meterId : meterIds) {
-            billingService.calculateMonthlyConsumption(meterId, billingMonth);
-        }
-    }
+//    @Scheduled(cron = "0 0 2 1 * ?")
+//    public void run() {
+//
+//        YearMonth billingMonth = YearMonth.now().minusMonths(1);
+//        List<UUID> meterIds = billingMapper.findAllMeterIds();
+//
+//        for (UUID meterId : meterIds) {
+//            billingService.calculateMonthlyConsumption(meterId, billingMonth);
+//        }
+//    }
 }
 
 //@Component

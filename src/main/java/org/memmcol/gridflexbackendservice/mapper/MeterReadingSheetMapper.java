@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,7 @@ public interface MeterReadingSheetMapper {
 
     @Insert("""
             Insert Into meter_reading_sheet(meter_id, org_id, tariff_id, node_id, reading_type, last_reading, current_reading, current_reading_date, last_reading_date, bill_month, bill_year, created_at, updated_at)
-            VALUES (#{meterId},#{orgId},#{tariffId},#{nodeId},#{readingType},#{lastReading},#{currentReading},#{currentReadingDate},#{lastReadingDate},#{billMonth},#{billYear},#{createdAt},#{updatedAt})
+            VALUES (#{meterId},#{orgId},#{tariffId},#{nodeId},#{readingType},#{lastReading},#{currentReading},#{currentReadingDate},#{lastReadingDate},UPPER(#{billMonth}), #{billYear},#{createdAt},#{updatedAt})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertMeterReadingSheet(MeterReadingSheet meterReadingSheet);
@@ -55,7 +56,7 @@ public interface MeterReadingSheetMapper {
                 SELECT meter_id, current_reading, current_reading_date, bill_month, bill_year
                 FROM meter_reading_sheet
                 WHERE meter_id = #{meterId} AND org_id = #{orgId} AND current_reading::numeric <> 0
-                ORDER BY current_reading_date DESC,
+                ORDER BY bill_year DESC,
                      CASE bill_month
                          WHEN 'January' THEN 1
                          WHEN 'February' THEN 2
@@ -86,7 +87,7 @@ public interface MeterReadingSheetMapper {
                 SELECT COUNT(1) 
                 FROM meter_reading_sheet
                 WHERE meter_id = #{meterId}
-                  AND bill_month = #{billMonth}
+                  AND bill_month = UPPER(#{billMonth})
                   AND bill_year = #{billYear}
             """)
     int checkIfMeterReadForMonth(UUID meterId, String billMonth, String billYear);
@@ -147,7 +148,7 @@ public interface MeterReadingSheetMapper {
             <script>
                 SELECT m.meter_number, s.name, t.tariff_type,
                        mr.last_reading_date, mr.last_reading, mr.reading_type,
-                       mr.current_reading_date, mr.current_reading
+                       mr.current_reading_date, mr.current_reading, mr.bill_month, mr.bill_year
                 FROM meter_reading_sheet mr
                 JOIN substation_trans_feeder_lines s ON mr.node_id = s.node_id
                 JOIN meters m ON s.node_id = m.node_id And mr.meter_id = m.id
@@ -190,7 +191,9 @@ public interface MeterReadingSheetMapper {
             @Result(property = "lastReadingDate", column = "last_reading_date"),
             @Result(property = "currentReadingDate", column = "current_reading_date"),
             @Result(property = "currentReading", column = "current_reading"),
-            @Result(property = "meterClass", column = "meter_class")
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "billMonth", column = "bill_month"),
+            @Result(property = "billYear", column = "bill_year")
     })
     List<MeterReadingSheet> getMeterReadingSheet(
             @Param("criteria") MeterReadingDTO criteria,
@@ -296,25 +299,91 @@ public interface MeterReadingSheetMapper {
 //          AND reading_month = #{month}
 //    """)
     @Select("""
-        SELECT current_reading, last_reading, reading_type FROM meter_reading_sheet
+        SELECT * FROM meter_reading_sheet
         WHERE meter_id = #{meterId}
-        AND bill_month = #{month} AND bill_year = UNIQUE(#{year})
+        AND current_reading_date = #{date}
     """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "currentReadingDate", column = "current_reading_date"),
+            @Result(property = "lastReading", column = "last_reading"),
+            @Result(property = "lastReadingDate", column = "last_reading_date"),
+            @Result(property = "billMonth", column = "bill_month"),
+            @Result(property = "billYear", column = "bill_year")
+    })
     MeterReadingSheet findReading(
             @Param("meterId") UUID meterId,
-            @Param("month") String month,
-            @Param("year") int year);
+            @Param("date") LocalDate date);
+
+//    @Select("""
+//        SELECT AVG(consumption)
+//        FROM meter_consumption
+//        WHERE meter_id = #{meterId}
+//          AND month < #{month}
+//        ORDER BY month DESC
+//        LIMIT 5
+//    """)
+//    BigDecimal findFiveMonthAverage(
+//            @Param("meterId") UUID meterId,
+//            @Param("month") String month);
+
+
+//    @Select("""
+//        SELECT AVG(consumption)
+//        FROM (
+//            SELECT consumption
+//            FROM meter_consumption
+//            WHERE meter_id = #{meterId}
+//              AND month < #{month}
+//            ORDER BY month DESC
+//            LIMIT 5
+//        ) last_five
+//    """)
+
+//    @Select("""
+//        SELECT
+//               COALESCE(SUM(consumption), 0) / 5.0 AS avg_consumption
+//                   FROM meter_consumption
+//                   WHERE meter_id = #{meterId}
+//                   AND CASE LOWER(month)
+//                   WHEN 'JANUARY' THEN 1
+//                   WHEN 'FEBRUARY' THEN 2
+//                   WHEN 'MARCH' THEN 3
+//                   WHEN 'APRIL' THEN 4
+//                   WHEN 'MAY' THEN 5
+//                   WHEN 'JUNE' THEN 6
+//                   WHEN 'JULY' THEN 7
+//                   WHEN 'AUGUST' THEN 8
+//                   WHEN 'SEPTEMBER' THEN 9
+//                   WHEN 'OCTOBER' THEN 10
+//                   WHEN 'NOVEMBER' THEN 11
+//                   WHEN 'DECEMBER' THEN 12
+//                   END < currentMonth
+//    """)
 
     @Select("""
-        SELECT AVG(consumption)
-        FROM monthly_consumption
-        WHERE meter_id = #{meterId}
-          AND month < #{month}
-        ORDER BY month DESC
-        LIMIT 5
+    SELECT COALESCE(SUM(consumption), 0) / 5.0 AS avg_consumption
+    FROM meter_consumption
+    WHERE meter_id = #{meterId}
+      AND reading_date < #{billDate}
+      AND reading_date >= #{billDate} - INTERVAL '5 months'
     """)
     BigDecimal findFiveMonthAverage(
             @Param("meterId") UUID meterId,
-            @Param("month") String month);
+            @Param("billDate") LocalDate billDate);
+
+//    @Select("""
+//        SELECT COALESCE(SUM(consumption), 0) / 5.0 AS avg_consumption
+//        FROM meter_consumption
+//        WHERE meter_id = #{meterId}
+//          AND reading_date < DATE #{date}
+//          AND reading_date >= DATE #{date} - INTERVAL '5 months';
+//    """)
+//    BigDecimal findFiveMonthAverage(
+//            @Param("meterId") UUID meterId,
+//            @Param("date") LocalDate date);
+
 
 }

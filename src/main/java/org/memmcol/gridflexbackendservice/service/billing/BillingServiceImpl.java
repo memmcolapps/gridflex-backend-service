@@ -8,6 +8,7 @@ import org.memmcol.gridflexbackendservice.mapper.BillingMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.billing.ConsumptionType;
 import org.memmcol.gridflexbackendservice.model.billing.MeterConsumption;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
@@ -348,6 +349,7 @@ public class BillingServiceImpl implements BillingService {
             int billYear;
 
             try {
+
                 billMonth = Month.valueOf(meterReadingSheet.getBillMonth().toUpperCase()).getValue();
                 billYear = Integer.parseInt(meterReadingSheet.getBillYear());
             } catch (Exception e) {
@@ -358,8 +360,21 @@ public class BillingServiceImpl implements BillingService {
                 );
             }
 
-            YearMonth requestedPeriod = YearMonth.of(billYear, billMonth);
+            int currentMonth = LocalDate.now().getMonthValue();
+            int currentYear = LocalDate.now().getYear();
 
+            if (billYear < 2000 || billYear > currentYear + 1) {
+                    return ResponseMap.response(status.getFailCode(),
+                            "Invalid bill year", "");
+            }
+            if (billYear > currentYear || (billYear == currentYear && billMonth > currentMonth)) {
+                    return ResponseMap.response(status.getFailCode(),
+                            "Cannot generate meter reading for current or future months / year", "");
+            }
+
+            YearMonth requestedPeriod = YearMonth.of(billYear, billMonth);
+//            LocalDate requestedReadingDate = requestedPeriod.atDay(1).atStartOfDay();
+            LocalDate requestedReadingDate = requestedPeriod.atDay(1);
             /* ---------------- Duplicate Check (Requested Month) ---------------- */
             if (readingMetersMapper.checkIfMeterReadForMonth(
                     meterId,
@@ -368,7 +383,7 @@ public class BillingServiceImpl implements BillingService {
 
                 return ResponseMap.response(
                         status.getFailCode(),
-                        "Meter already billed for this month",
+                        "Meter reading already captured for this month",
                         ""
                 );
             }
@@ -385,8 +400,11 @@ public class BillingServiceImpl implements BillingService {
                             ? lastNonZeroReading.getCurrentReading()
                             : BigDecimal.ZERO;
 
-            LocalDateTime lastReadingDate =
-                    lastReading != null ? lastReading.getCurrentReadingDate() : null;
+//            LocalDateTime lastReadingDate =
+//                    lastReading != null ? lastReading.getCurrentReadingDate() : null;
+
+            LocalDate lastReadingDate =
+                    lastReading != null ? requestedReadingDate : null;
 
             /* ---------------- AUTO-INSERT SKIPPED MONTHS ---------------- */
             if (lastReading != null &&
@@ -401,7 +419,7 @@ public class BillingServiceImpl implements BillingService {
 
                 while (cursor.isBefore(requestedPeriod)) {
 
-                    // ✅ Skip if month already exists
+                    // Skip if month already exists
                     boolean exists = readingMetersMapper.checkIfMeterReadForMonth(
                             meterId,
                             cursor.getMonth().name(),
@@ -428,10 +446,13 @@ public class BillingServiceImpl implements BillingService {
                     skipped.setReadingType("NORMAL");
 
                     skipped.setLastReadingDate(lastReadingDate);
-                    skipped.setCurrentReadingDate(LocalDateTime.now());
+                    skipped.setCurrentReadingDate(requestedPeriod.atDay(1));
 
-                    skipped.setCreatedAt(LocalDateTime.now());
-                    skipped.setUpdatedAt(LocalDateTime.now());
+//                    skipped.setCurrentReadingDate(cursor.atDay(1).atStartOfDay());
+//                    skipped.setCurrentReadingDate(LocalDateTime.now());
+
+//                    skipped.setCreatedAt(LocalDateTime.now());
+//                    skipped.setUpdatedAt(LocalDateTime.now());
 
                     readingMetersMapper.insertMeterReadingSheet(skipped);
 
@@ -450,17 +471,34 @@ public class BillingServiceImpl implements BillingService {
                             ? meterReadingSheet.getCurrentReading()
                             : BigDecimal.ZERO;
 
-            if (current.compareTo(previousLastReading) < 0) {
-                meterReadingSheet.setReadingType("ROLLOVER");
-                meterReadingSheet.setLastReading(current);
-            } else {
+            if (current.compareTo(BigDecimal.ZERO) == 0) {
                 meterReadingSheet.setReadingType("NORMAL");
                 meterReadingSheet.setLastReading(previousLastReading);
+                meterReadingSheet.setLastReadingDate(lastReadingDate);
+
+            } else if (current.compareTo(previousLastReading) < 0) {
+                meterReadingSheet.setReadingType("ROLLOVER");
+                meterReadingSheet.setLastReading(current);
+//                meterReadingSheet.setLastReadingDate(lastReadingDate);
+
+            } else {
+                meterReadingSheet.setReadingType("NORMAL");
+                meterReadingSheet.setLastReading(current);
+//                meterReadingSheet.setLastReadingDate(lastReadingDate);
             }
 
+//            if (current.compareTo(previousLastReading) < 0) {
+//                meterReadingSheet.setReadingType("ROLLOVER");
+//                meterReadingSheet.setLastReading(current);
+//            } else {
+//                meterReadingSheet.setReadingType("NORMAL");
+//                meterReadingSheet.setLastReading(previousLastReading);
+//            }
+
             meterReadingSheet.setLastReadingDate(lastReadingDate);
-            meterReadingSheet.setCreatedAt(LocalDateTime.now());
-            meterReadingSheet.setUpdatedAt(LocalDateTime.now());
+            meterReadingSheet.setCurrentReadingDate(requestedReadingDate);
+//            meterReadingSheet.setCreatedAt(LocalDateTime.now());
+//            meterReadingSheet.setUpdatedAt(LocalDateTime.now());
 
             readingMetersMapper.insertMeterReadingSheet(meterReadingSheet);
 
@@ -761,99 +799,180 @@ public class BillingServiceImpl implements BillingService {
 
     @Transactional
     @Override
-    public void calculateMonthlyConsumption(UUID meterId, YearMonth month) {
+    public void calculateMonthlyConsumption(UUID meterId, LocalDate date) {
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+            UserModel um = handleUserValidation();
 
-        Meter meter = billingMapper.findById(meterId);
+//            Meter meter = billingMapper.findById(meterId);
+            Meter meter = meterMapper.findById(meterId, um.getOrgId());
 
-//        MeterReadingSheet oldReading = readingMetersMapper.findReading(meterId, String.valueOf(month.minusMonths(1)),  month.minusMonths(1).getYear());
-        MeterReadingSheet newReading = readingMetersMapper.findReading(meterId, String.valueOf(month),  month.minusMonths(1).getYear());
+            System.out.println("date: "+date);
+            System.out.println("meterId: "+meterId);
+//            int currentMonth = LocalDate.now().getMonthValue();
+            MeterReadingSheet oldReading = readingMetersMapper.findReading(meterId, date);
+            MeterReadingSheet newReading = readingMetersMapper.findReading(meterId, date);
+            System.out.println("newReading: "+newReading);
 
-        BigDecimal average = readingMetersMapper.findFiveMonthAverage(meterId, String.valueOf(month.minusMonths(1)));
-        if (average == null) {
-            average = BigDecimal.ZERO;
-        }
+            BigDecimal average = readingMetersMapper.findFiveMonthAverage(meterId, date);
+            if (average == null) {
+                average = BigDecimal.ZERO;
+            }
+            System.out.println("average: "+average);
 
-        // Get previous cumulative sum
-        BigDecimal previousCumulative = billingMapper.findLastCumulative(meterId, month.getYear());
+            // Get previous cumulative sum
+            MeterReadingSheet meterReadingSheet = billingMapper.findLastCumulative(meterId, date.getMonthValue(), date.getYear());
 
-        // If January or first record of year → fallback to previous years
-        if (previousCumulative == null) {
-            previousCumulative =
-                    billingMapper.findLastCumulativeBeforeYear(
-                            meterId,
-                            month.getYear()
-                    );
-        }
+//            // If January or first record of year → fallback to previous years
+//            if (previousCumulative == null) {
+//                previousCumulative =
+//                        billingMapper.findLastCumulativeBeforeYear(
+//                                meterId,
+//                                date
+//                        );
+//            }
 
-        if (previousCumulative == null) {
-            previousCumulative =  BigDecimal.ZERO;
-        }
+            if (meterReadingSheet == null) {
+                meterReadingSheet.setCumulativeReading(BigDecimal.ZERO);
+            }
 
-//        BigDecimal oldValue =
-//                oldReading != null ? oldReading.getLastReading() : null;
+        BigDecimal oldValue =
+                oldReading != null ? oldReading.getLastReading() : null;
 
-        BigDecimal newValue =
-                newReading != null ? newReading.getCurrentReading() : null;
+            BigDecimal newValue =
+                    newReading != null ? newReading.getCurrentReading() : null;
+            System.out.println("newValue: "+newValue);
 
-        MeterConsumption result = calculator.calculate(
-                meter,
-//                oldValue,
-                newValue,
-                average,
-                previousCumulative
-        );
-
+            MeterConsumption result = calculator.calculate(
+                    meter,
+                    oldValue,
+                    newValue,
+                    average,
+                    meterReadingSheet.getCumulativeReading(),
+                    meterReadingSheet.getConsumption()
+//                    newCumulative
+            );
+            System.out.println("result: "+result.getConsumption());
+            System.out.println("previousCumulative: "+result.getCumulativeReading());
 //        BigDecimal newCumulative = previousCumulative.add(result.getConsumption());
-        // CUMULATIVE ROLLOVER HANDLING
-        BigDecimal newCumulative =
-                normalizeCumulative(previousCumulative, result.getConsumption());
+//            System.out.println("newCumulative: "+newCumulative);
 
-        LocalDateTime createdAt = LocalDateTime.now();
-        billingMapper.insertMonthlyConsumption(
-                meterId,
-                month.toString(),
-                result.getConsumption(),
-                result.getType().name(),
-                newCumulative,
-                previousCumulative,
-                createdAt
-        );
+            // CUMULATIVE ROLLOVER HANDLING
+//            BigDecimal newCumulative =
+//                    normalizeCumulative(previousCumulative, result.getConsumption());
 
+            LocalDateTime createdAt = LocalDateTime.now();
 
-        billingMapper.insertAudit(
-                meterId,
-                month.toString(),
+            billingMapper.insertMonthlyConsumption(
+                    meterId,
+                   date,
 //                oldValue,
-                newValue,
-                average,
-                result.getConsumption(),
-                result.getType().name(),
-                newCumulative,
-                previousCumulative,
-                createdAt
-        );
-    }
+                    newValue,
+                    average,
+                    result.getConsumption(),
+                    result.getType().name(),
+                    result.getCumulativeReading(),
+                    createdAt,
+                    um.getOrgId()
+            );
+            System.out.println("Successfully created");
+//            AuditLog auditLog = buildAuditLog(um, desc, reading, newReading, metadata);
+//            auditRepository.save(auditLog);
 
-    private static final BigDecimal MAX_CUMULATIVE = BigDecimal.valueOf(999_999);
-    private static final BigDecimal CUMULATIVE_BASE = BigDecimal.valueOf(1_000_000);
-
-    private BigDecimal normalizeCumulative(
-            BigDecimal previous,
-            BigDecimal consumption) {
-
-        BigDecimal raw = previous.add(consumption);
-
-        // No rollover
-        if (raw.compareTo(MAX_CUMULATIVE) <= 0) {
-            return raw;
+        } catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Editing meter reading service failed");
+            genericHandler.logAndSaveException(exception, "editing meter reading");
+            throw exception;
         }
 
-        // Explicit rollover (same model as meter rollover)
-        // new = consumption - (BASE - previous)
-        return consumption.subtract(
-                CUMULATIVE_BASE.subtract(previous)
-        );
     }
+
+    @Override
+    public Map<String, Object> monthlyConsumption(int page, int size, String search, String month, Integer year) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumption(
+                    um.getOrgId(), page, size, month, year);
+
+            // Apply filtering by role and state
+            List<MeterReadingSheet> filteredConsumption = monthlyConsumption.stream()
+                    .filter(o -> {
+                        // Filter by name (case-insensitive)
+                        if (search != null && !search.isEmpty()) {
+                            String searchLower = search.toLowerCase();
+                            String meterNo = o.getMeterNumber() + " " + o.getMeterNumber();
+                            String feeder = o.getName();
+
+                            boolean matchesMeterNo = meterNo.contains(searchLower);
+                            boolean matchesFeeder = feeder.contains(searchLower);
+
+                            if (!matchesMeterNo && !matchesFeeder) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    })
+                    .toList();
+
+            int totalFilteredConsumptions = filteredConsumption.size();
+
+            if (size <= 0) {
+                size = totalFilteredConsumptions == 0 ? 1 : totalFilteredConsumptions;
+            }
+            if (page < 0) {
+                page = 0;
+            }
+
+            int totalPages = (int) Math.ceil((double) totalFilteredConsumptions / size);
+            int fromIndex = Math.min(page * size, totalFilteredConsumptions);
+            int toIndex = Math.min(fromIndex + size, totalFilteredConsumptions);
+
+            List<MeterReadingSheet> pagedConsumptions = filteredConsumption.subList(fromIndex, toIndex);
+
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalMeterConsumptions", totalFilteredConsumptions);
+            result.put("consumptions", pagedConsumptions); // return filtered list
+            result.put("currentPage", page);
+            result.put("totalPages", totalPages);
+            result.put("pageSize", size);
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Monthly consumption fetched successfully", result);
+
+        }  catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logAndSaveException(exception, "meter monthly consumption");
+            throw exception;
+        }
+
+    }
+//
+//    private static final BigDecimal MAX_CUMULATIVE = BigDecimal.valueOf(999_999);
+//    private static final BigDecimal CUMULATIVE_BASE = BigDecimal.valueOf(1_000_000);
+//
+//    private BigDecimal normalizeCumulative(
+//            BigDecimal previous,
+//            BigDecimal consumption) {
+//
+//        BigDecimal raw = previous.add(consumption);
+//
+//        // No rollover
+//        if (raw.compareTo(MAX_CUMULATIVE) <= 0) {
+//            return raw;
+//        }
+//
+//        // Explicit rollover (same model as meter rollover)
+//        // new = consumption - (BASE - previous)
+//        return consumption.subtract(
+//                CUMULATIVE_BASE.subtract(previous)
+//        );
+//    }
 
 
     //        return consumption.subtract(CUMULATIVE_LIMIT.subtract(previous));

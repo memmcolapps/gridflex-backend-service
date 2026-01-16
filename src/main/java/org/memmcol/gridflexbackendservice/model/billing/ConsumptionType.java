@@ -5,5 +5,6 @@ public enum ConsumptionType {
     ACTUAL_ROLLOVER,
     ESTIMATE,
     MINIMUM,
-    FIXED
+    FIXED,
+    UNKNOWN
 }
