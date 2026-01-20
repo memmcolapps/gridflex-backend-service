@@ -80,19 +80,23 @@ public interface BillingMapper {
 
     @Select("""
         <script>
-            SELECT mc.*, s.name, m.meter_number
+            SELECT mc.*, s.name AS feeder_name, st.name AS dss_name, m.meter_number, 
+            t.tariff_type, m.meter_class, m.type
             FROM meter_consumption mc
-                JOIN (
+                LEFT JOIN (
                 SELECT DISTINCT ON (meter_id)
-                    meter_id, node_id
+                    meter_id
                 FROM meter_reading_sheet
                 ORDER BY meter_id, current_reading_date DESC
             ) mr ON mr.meter_id = mc.meter_id
-                     JOIN substation_trans_feeder_lines s ON mr.node_id = s.node_id
-                     JOIN meters m ON mc.meter_id = m.id
+                     LEFT JOIN meters m ON mc.meter_id = m.id
+                     LEFT JOIN substation_trans_feeder_lines s ON m.node_id = s.node_id
+                     LEFT JOIN substation_trans_feeder_lines st ON m.dss = st.node_id
+                     LEFT JOIN tariffs t ON t.id = m.tariff
                <where>
-                     mc.org_id = #{orgId}
+                     mc.org_id = #{orgId} AND m.type = 'NON-VIRTUAL'
              
+                
                      <if test="month != null and month != ''">
                          AND EXTRACT(MONTH FROM mc.reading_date) =
                              EXTRACT(MONTH FROM TO_DATE(#{month}, 'Month'))
@@ -119,7 +123,10 @@ public interface BillingMapper {
             @Result(property = "averageConsumption", column = "average_consumption"),
             @Result(property = "consumption", column = "consumption"),
             @Result(property = "currentReadingDate", column = "reading_date"),
-            @Result(property = "name", column = "name")
+            @Result(property = "feederName", column = "feeder_name"),
+            @Result(property = "dssName", column = "dss_name"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "tariffType", column = "tariff_type")
 
     })
     List<MeterReadingSheet> getMonthlyConsumption(
@@ -128,30 +135,81 @@ public interface BillingMapper {
             @Param("size") int size,
             @Param("month") String month,
             @Param("year") Integer year);
+
+    @Select("""
+        <script>
+            SELECT
+                 vmc.meter_id,
+                 vmc.meter_number,
+                 vmc.org_id,
+                 vmc.meter_class,
+                 vmc.meter_category,
+                 vmc.type,
+                 vmc.tariff_type,
+                
+                 COALESCE(vmc.reading_date, NULL),
+                 COALESCE(vmc.current_reading, 0) AS current_reading,
+                  COALESCE(vmc.cumulative_reading, 0) AS cumulative_reading,
+                  COALESCE(vmc.average_consumption, 0) AS average_consumption,
+                  COALESCE(vmc.consumption, 0) AS consumption,
+                  COALESCE(vmc.consumption_type, '') AS consumption_type,
+               s.name AS feeder_name, st.name AS dss_name, 
+                t.tariff_type
+ 
+            FROM vw_meter_consumption vmc
+                LEFT JOIN (
+                SELECT DISTINCT ON (meter_id)
+                    meter_id
+                FROM meter_reading_sheet
+                ORDER BY meter_id, current_reading_date DESC
+            ) mr ON mr.meter_id = vmc.meter_id
+                     LEFT JOIN meters m ON vmc.meter_id = m.id
+                     LEFT JOIN substation_trans_feeder_lines s ON m.node_id = s.node_id
+                     LEFT JOIN substation_trans_feeder_lines st ON m.dss = st.node_id
+                     LEFT JOIN tariffs t ON t.id = m.tariff
+               <where>
+                     vmc.org_id = #{orgId}
+                     AND vmc.node_id = #{nodeId}
+                     AND vmc.type = 'VIRTUAL'
+                   
+                     <if test="month != null and month != ''">
+                         AND EXTRACT(MONTH FROM vmc.reading_date) =
+                             EXTRACT(MONTH FROM TO_DATE(#{month}, 'Month'))
+                     </if>
+             
+                     <if test="year != null">
+                         AND EXTRACT(YEAR FROM vmc.reading_date) = #{year}
+                     </if>
+               </where>
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+    </script>
+    """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "readingType", column = "consumption_type"),
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "cumulativeReading", column = "cumulative_reading"),
+            @Result(property = "averageConsumption", column = "average_consumption"),
+            @Result(property = "consumption", column = "consumption"),
+            @Result(property = "currentReadingDate", column = "reading_date"),
+            @Result(property = "feederName", column = "feeder_name"),
+            @Result(property = "dssName", column = "dss_name"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "tariffType", column = "tariff_type")
+    })
+    List<MeterReadingSheet> getMonthlyConsumptionByFeederLine(
+            @Param("orgId") UUID orgId,
+            @Param("page") int page,
+            @Param("size") int size,
+            @Param("month") String month,
+            @Param("year") Integer year,
+            @Param("nodeId") UUID nodeId);
+
+
 }
-
-//    @Select("""
-//        SELECT cumulative_reading
-//        FROM meter_consumption
-//        WHERE meter_id = #{meterId}
-//          AND SUBSTRING(month, 1, 4) < #{date}
-//        ORDER BY month DESC
-//        LIMIT 1
-//    """)
-//    BigDecimal findLastCumulativeBeforeYear(UUID meterId, LocalDate date);
-
-
-//@Select("""
-//    SELECT cumulative_reading
-//    FROM meter_consumption
-//    WHERE meter_id = #{meterId}
-//      AND reading_date >= #{startOfMonth}
-//      AND reading_date < #{startOfNextMonth}
-//    ORDER BY reading_date DESC
-//    LIMIT 1
-//""")
-//BigDecimal findLastCumulativeForMonth(
-//        @Param("meterId") UUID meterId,
-//        @Param("startOfMonth") LocalDate startOfMonth,
-//        @Param("startOfNextMonth") LocalDate startOfNextMonth
-//);

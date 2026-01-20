@@ -19,8 +19,6 @@ public class MeterReadingSheet implements Serializable {
     private UUID meterId;
     private String meterNumber;
     private UUID orgId;
-    private UUID tariffId;
-    private UUID nodeId;
     private String readingType;
     private BigDecimal lastReading;
     private BigDecimal currentReading;
@@ -41,22 +39,21 @@ public class MeterReadingSheet implements Serializable {
     private LocalDateTime updatedAt;
 
     private String tariffType;
-    private String name;
+    private String feederName;
+    private String dssName;
     private String meterClass;
+    private String type;
 
     private BigDecimal cumulativeReading;
     private BigDecimal averageConsumption;
     private BigDecimal consumption;
-
-
+    private LocalDate date;
 
     public MeterReadingSheet() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-
-    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -73,12 +70,12 @@ public class MeterReadingSheet implements Serializable {
         this.meterId = meterId;
     }
 
-    public void setMeterNumber(String meterNumber) {
-        this.meterNumber = meterNumber;
-    }
-
     public String getMeterNumber() {
         return meterNumber;
+    }
+
+    public void setMeterNumber(String meterNumber) {
+        this.meterNumber = meterNumber;
     }
 
     public UUID getOrgId() {
@@ -87,22 +84,6 @@ public class MeterReadingSheet implements Serializable {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
-    }
-
-    public UUID getTariffId() {
-        return tariffId;
-    }
-
-    public void setTariffId(UUID tariffId) {
-        this.tariffId = tariffId;
-    }
-
-    public UUID getNodeId() {
-        return nodeId;
-    }
-
-    public void setNodeId(UUID nodeId) {
-        this.nodeId = nodeId;
     }
 
     public String getReadingType() {
@@ -145,22 +126,6 @@ public class MeterReadingSheet implements Serializable {
         this.lastReadingDate = lastReadingDate;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public String getBillMonth() {
         return billMonth;
     }
@@ -177,6 +142,21 @@ public class MeterReadingSheet implements Serializable {
         this.billYear = billYear;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 
     public String getTariffType() {
         return tariffType;
@@ -186,12 +166,20 @@ public class MeterReadingSheet implements Serializable {
         this.tariffType = tariffType;
     }
 
-    public String getName() {
-        return name;
+    public String getFeederName() {
+        return feederName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setFeederName(String feederName) {
+        this.feederName = feederName;
+    }
+
+    public String getDssName() {
+        return dssName;
+    }
+
+    public void setDssName(String dssName) {
+        this.dssName = dssName;
     }
 
     public String getMeterClass() {
@@ -200,6 +188,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setMeterClass(String meterClass) {
         this.meterClass = meterClass;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public BigDecimal getCumulativeReading() {
@@ -224,6 +220,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setConsumption(BigDecimal consumption) {
         this.consumption = consumption;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 }
 

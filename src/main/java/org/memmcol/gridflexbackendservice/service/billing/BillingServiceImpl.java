@@ -317,6 +317,8 @@ public class BillingServiceImpl implements BillingService {
 //        }
 //    }
 
+    ///=============
+
     @Override
     @Transactional
     public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet) {
@@ -341,8 +343,8 @@ public class BillingServiceImpl implements BillingService {
 
             UUID meterId = meterInfo.getId();
             UUID orgId = meterInfo.getOrgId();
-            UUID nodeId = meterInfo.getNodeId();
-            UUID tariffId = meterInfo.getTariff();
+//            UUID nodeId = meterInfo.getNodeId();
+//            UUID tariffId = meterInfo.getTariff();
 
             /* ---------------- Parse Bill Month & Year ---------------- */
             int billMonth;
@@ -364,12 +366,12 @@ public class BillingServiceImpl implements BillingService {
             int currentYear = LocalDate.now().getYear();
 
             if (billYear < 2000 || billYear > currentYear + 1) {
-                    return ResponseMap.response(status.getFailCode(),
-                            "Invalid bill year", "");
+                return ResponseMap.response(status.getFailCode(),
+                        "Invalid bill year", "");
             }
             if (billYear > currentYear || (billYear == currentYear && billMonth > currentMonth)) {
-                    return ResponseMap.response(status.getFailCode(),
-                            "Cannot generate meter reading for current or future months / year", "");
+                return ResponseMap.response(status.getFailCode(),
+                        "Cannot generate meter reading for current or future months / year", "");
             }
 
             YearMonth requestedPeriod = YearMonth.of(billYear, billMonth);
@@ -379,7 +381,7 @@ public class BillingServiceImpl implements BillingService {
             if (readingMetersMapper.checkIfMeterReadForMonth(
                     meterId,
                     meterReadingSheet.getBillMonth(),
-                    meterReadingSheet.getBillYear()) > 0) {
+                    meterReadingSheet.getBillYear(), operatorOrgId) > 0) {
 
                 return ResponseMap.response(
                         status.getFailCode(),
@@ -400,11 +402,11 @@ public class BillingServiceImpl implements BillingService {
                             ? lastNonZeroReading.getCurrentReading()
                             : BigDecimal.ZERO;
 
-//            LocalDateTime lastReadingDate =
-//                    lastReading != null ? lastReading.getCurrentReadingDate() : null;
-
             LocalDate lastReadingDate =
-                    lastReading != null ? requestedReadingDate : null;
+                    lastReading != null ? lastReading.getCurrentReadingDate() : null;
+
+//            LocalDate lastReadingDate =
+//                    lastReading != null ? requestedReadingDate : null;
 
             /* ---------------- AUTO-INSERT SKIPPED MONTHS ---------------- */
             if (lastReading != null &&
@@ -423,7 +425,8 @@ public class BillingServiceImpl implements BillingService {
                     boolean exists = readingMetersMapper.checkIfMeterReadForMonth(
                             meterId,
                             cursor.getMonth().name(),
-                            String.valueOf(cursor.getYear())
+                            String.valueOf(cursor.getYear()),
+                            operatorOrgId
                     ) > 0;
 
                     if (exists) {
@@ -435,8 +438,8 @@ public class BillingServiceImpl implements BillingService {
 
                     skipped.setMeterId(meterId);
                     skipped.setOrgId(orgId);
-                    skipped.setNodeId(nodeId);
-                    skipped.setTariffId(tariffId);
+//                    skipped.setNodeId(nodeId);
+//                    skipped.setTariffId(tariffId);
 
                     skipped.setBillMonth(cursor.getMonth().name());
                     skipped.setBillYear(String.valueOf(cursor.getYear()));
@@ -446,7 +449,9 @@ public class BillingServiceImpl implements BillingService {
                     skipped.setReadingType("NORMAL");
 
                     skipped.setLastReadingDate(lastReadingDate);
-                    skipped.setCurrentReadingDate(requestedPeriod.atDay(1));
+                    skipped.setCurrentReadingDate(cursor.atDay(1));
+
+//                    skipped.setCurrentReadingDate(requestedPeriod.atDay(1));
 
 //                    skipped.setCurrentReadingDate(cursor.atDay(1).atStartOfDay());
 //                    skipped.setCurrentReadingDate(LocalDateTime.now());
@@ -463,8 +468,8 @@ public class BillingServiceImpl implements BillingService {
             /* ---------------- SAVE REQUESTED MONTH (NORMAL LOGIC) ---------------- */
             meterReadingSheet.setMeterId(meterId);
             meterReadingSheet.setOrgId(orgId);
-            meterReadingSheet.setNodeId(nodeId);
-            meterReadingSheet.setTariffId(tariffId);
+//            meterReadingSheet.setNodeId(nodeId);
+//            meterReadingSheet.setTariffId(tariffId);
 
             BigDecimal current =
                     meterReadingSheet.getCurrentReading() != null
@@ -523,11 +528,11 @@ public class BillingServiceImpl implements BillingService {
             throw exception;
         }
     }
-
+    ///==================
 
 //    @Transactional
 //    @Override
-//    public Map<String, Object> createMeterReading(MeterReadingSheet meterReadingSheet) {
+//    public Map<String, Object> createMeterReadin(MeterReadingSheet meterReadingSheet) {
 //        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 //        UserModel operatorAction = handleUserValidation();
 //        UUID operatorOrgId = operatorAction.getOrgId();
@@ -664,61 +669,105 @@ public class BillingServiceImpl implements BillingService {
 //            throw exception;
 //        }
 //    }
-//
+
 
     @Transactional
     @Override
-    public Map<String, Object> getAllMeterReading(MeterReadingDTO selectItem,int page, int size) {
-        UserModel operatorAction = handleUserValidation();
-        selectItem.setOrgId(operatorAction.getOrgId());
+    public Map<String, Object> getAllMeterReading(String search,int page, int size, String month, Integer year, String meterClass) {
+        UserModel um = handleUserValidation();
         try {
-
-            int offset = page * size;
-            List<MeterReadingSheet> allReadings = new ArrayList<>();
-            String meterClass = selectItem.getMeterClass();
-
+            List<MeterReadingSheet> allReadings;
+            MeterReadingDTO meterReadingDTO = new MeterReadingDTO();
             if ("MD".equalsIgnoreCase(meterClass)){
-                selectItem.setMeterClass("MD");
-                allReadings = readingMetersMapper.getMeterReadingSheet(selectItem, offset, size);
+                meterReadingDTO.setMeterClass("MD");
+                allReadings = readingMetersMapper.getMeterReadingSheet(page, size, month, year, meterReadingDTO, um.getOrgId());
             } else if("Non-MD".equalsIgnoreCase(meterClass)){
-                selectItem.setMeterClass("single-phase");
-                selectItem.setMeterClass2("three-phase");
-                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
+                meterReadingDTO.setMeterClass("single-phase");
+                meterReadingDTO.setMeterClass2("three-phase");
+                allReadings = readingMetersMapper.getMeterReadingSheet(page, size, month, year, meterReadingDTO, um.getOrgId());
             }
             else {
+//                allReadings.addAll(readingMetersMapper.getMeterReadingSheet(selectItem, offset, size));
                 throw new GlobalExceptionHandler.NotFoundException("Meter class provided not found");
             }
 
-            int totalCount = allReadings.size();
+            // Apply filtering by role and state
+            List<MeterReadingSheet> filteredAllReadings = allReadings.stream()
+                    .filter(o -> {
+                        // Filter by name (case-insensitive)
+                        if (search != null && !search.isEmpty()) {
+                            String searchLower = search.toLowerCase();
+                            String meterNo = o.getMeterNumber() + " " + o.getMeterNumber();
+                            String feeder = o.getFeederName();
+                            String tariffType = o.getTariffType();
+                            String LAR = o.getLastReadingDate() == null ? "" : o.getLastReadingDate().toString();
+                            String lastReading = o.getLastReading().toString();
+                            String currentReadingDate = o.getCurrentReadingDate().toString();
+                            String currentReading = o.getCurrentReading().toString();
 
-            List<MeterReadingSheet> paginatedReadings;
+                            boolean matchesMeterNo = meterNo.contains(searchLower);
+                            boolean matchesFeeder = feeder.contains(searchLower);
+                            boolean matchesTariffType = tariffType.contains(searchLower);
+                            boolean matchLAR = LAR.equalsIgnoreCase(searchLower);
+                            boolean prevReadingDate = lastReading.contains(searchLower);
+                            boolean newReadingDate = currentReadingDate.equalsIgnoreCase(searchLower);
+                            boolean newReading = currentReading.equalsIgnoreCase(searchLower);
 
-            if (size == 0) {
-                paginatedReadings = allReadings;
-            } else {
-                int fromIndex = Math.min(page * size, totalCount);
-                int toIndex = Math.min(fromIndex + size, totalCount);
+                            if (!matchesMeterNo && !matchesFeeder && !matchesTariffType && !matchLAR && !prevReadingDate && !newReadingDate && !newReading) {
+                                return false;
+                            }
+                        }
 
-                if (fromIndex > toIndex) {
-                    fromIndex = toIndex;
-                }
+                        return true;
+                    })
+                    .toList();
 
-                paginatedReadings = allReadings.subList(fromIndex, toIndex);
+            int totalCount = filteredAllReadings.size();
 
+            if (size <= 0) {
+                size = totalCount == 0 ? 1 : totalCount;
             }
+            if (page < 0) {
+                page = 0;
+            }
+
+            int totalPages = (int) Math.ceil((double) totalCount / size);
+            int fromIndex = Math.min(page * size, totalCount);
+            int toIndex = Math.min(fromIndex + size, totalCount);
+
+            List<MeterReadingSheet> paginatedReadings = filteredAllReadings.subList(fromIndex, toIndex);
+
+
+//            int totalCount = allReadings.size();
+//
+//            List<MeterReadingSheet> paginatedReadings;
+//
+//            if (size == 0) {
+//                paginatedReadings = allReadings;
+//            } else {
+//                int fromIndex = Math.min(page * size, totalCount);
+//                int toIndex = Math.min(fromIndex + size, totalCount);
+//
+//                if (fromIndex > toIndex) {
+//                    fromIndex = toIndex;
+//                }
+//
+//                paginatedReadings = allReadings.subList(fromIndex, toIndex);
+//
+//            }
 
             // Build response in the format you want
             Map<String, Object> responseData = new HashMap<>();
-            responseData.put("messages", paginatedReadings);
+            responseData.put("reading", paginatedReadings);
             responseData.put("totalCount", totalCount);
             responseData.put("page", page);
             responseData.put("size", size);
-            responseData.put("totalPages", size == 0 ? 1 : (int) Math.ceil((double) totalCount / size));
+            responseData.put("totalPages", totalPages);
 
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                    "Meter reading list",
+                    "Meter reading fetched successfully",
                     responseData
             );
 
@@ -812,7 +861,7 @@ public class BillingServiceImpl implements BillingService {
 //            int currentMonth = LocalDate.now().getMonthValue();
             MeterReadingSheet oldReading = readingMetersMapper.findReading(meterId, date);
             MeterReadingSheet newReading = readingMetersMapper.findReading(meterId, date);
-            System.out.println("newReading: "+newReading);
+            System.out.println("newReading: "+newReading.getCurrentReading());
 
             BigDecimal average = readingMetersMapper.findFiveMonthAverage(meterId, date);
             if (average == null) {
@@ -821,7 +870,8 @@ public class BillingServiceImpl implements BillingService {
             System.out.println("average: "+average);
 
             // Get previous cumulative sum
-            MeterReadingSheet meterReadingSheet = billingMapper.findLastCumulative(meterId, date.getMonthValue(), date.getYear());
+            MeterReadingSheet meterReadingSheet = billingMapper.findLastCumulative(
+                    meterId, date.getMonthValue(), date.getYear());
 
 //            // If January or first record of year → fallback to previous years
 //            if (previousCumulative == null) {
@@ -833,6 +883,7 @@ public class BillingServiceImpl implements BillingService {
 //            }
 
             if (meterReadingSheet == null) {
+                meterReadingSheet = new MeterReadingSheet();
                 meterReadingSheet.setCumulativeReading(BigDecimal.ZERO);
             }
 
@@ -840,7 +891,7 @@ public class BillingServiceImpl implements BillingService {
                 oldReading != null ? oldReading.getLastReading() : null;
 
             BigDecimal newValue =
-                    newReading != null ? newReading.getCurrentReading() : null;
+                    newReading.getCurrentReading();
             System.out.println("newValue: "+newValue);
 
             MeterConsumption result = calculator.calculate(
@@ -904,7 +955,7 @@ public class BillingServiceImpl implements BillingService {
                         if (search != null && !search.isEmpty()) {
                             String searchLower = search.toLowerCase();
                             String meterNo = o.getMeterNumber() + " " + o.getMeterNumber();
-                            String feeder = o.getName();
+                            String feeder = o.getFeederName();
 
                             boolean matchesMeterNo = meterNo.contains(searchLower);
                             boolean matchesFeeder = feeder.contains(searchLower);
@@ -952,27 +1003,477 @@ public class BillingServiceImpl implements BillingService {
         }
 
     }
+
+//    @Override
+//    @Transactional
+//    public Map<String, Object> energyImport(List<MeterReadingSheet> payloads) {
 //
-//    private static final BigDecimal MAX_CUMULATIVE = BigDecimal.valueOf(999_999);
-//    private static final BigDecimal CUMULATIVE_BASE = BigDecimal.valueOf(1_000_000);
-//
-//    private BigDecimal normalizeCumulative(
-//            BigDecimal previous,
-//            BigDecimal consumption) {
-//
-//        BigDecimal raw = previous.add(consumption);
-//
-//        // No rollover
-//        if (raw.compareTo(MAX_CUMULATIVE) <= 0) {
-//            return raw;
+//        if (payloads == null || payloads.isEmpty()) {
+//            return ResponseMap.response(
+//                    status.getFailCode(),
+//                    "Payload list cannot be empty",
+//                    ""
+//            );
 //        }
 //
-//        // Explicit rollover (same model as meter rollover)
-//        // new = consumption - (BASE - previous)
-//        return consumption.subtract(
-//                CUMULATIVE_BASE.subtract(previous)
-//        );
+//        Map<String, String> metadata =
+//                genericHandler.extractRequestMetadata(httpServletRequest);
+//
+//        UserModel operatorAction = handleUserValidation();
+//        UUID um = operatorAction.getOrgId();
+//
+//        List<String> successMeters = new ArrayList<>();
+//
+//        try {
+//
+//            Meter meter = meterMapper.findById(meterId, um.getOrgId());
+//
+//            System.out.println("date: "+date);
+//            System.out.println("meterId: "+meterId);
+////            int currentMonth = LocalDate.now().getMonthValue();
+//            MeterReadingSheet oldReading = readingMetersMapper.findReading(meterId, date);
+//            MeterReadingSheet newReading = readingMetersMapper.findReading(meterId, date);
+//            System.out.println("newReading: "+newReading.getCurrentReading());
+//
+//            BigDecimal average = readingMetersMapper.findFiveMonthAverage(meterId, date);
+//            if (average == null) {
+//                average = BigDecimal.ZERO;
+//            }
+//            System.out.println("average: "+average);
+//
+//            // Get previous cumulative sum
+//            MeterReadingSheet meterReadingSheet = billingMapper.findLastCumulative(meterId, date.getMonthValue(), date.getYear());
+//
+//            if (meterReadingSheet == null) {
+//                meterReadingSheet = new MeterReadingSheet();
+//                meterReadingSheet.setCumulativeReading(BigDecimal.ZERO);
+//            }
+//
+//            BigDecimal oldValue =
+//                    oldReading != null ? oldReading.getLastReading() : null;
+//
+//            BigDecimal newValue =
+//                    newReading.getCurrentReading();
+//            System.out.println("newValue: "+newValue);
+//
+//            MeterConsumption result = calculator.calculate(
+//                    meter,
+//                    oldValue,
+//                    newValue,
+//                    average,
+//                    meterReadingSheet.getCumulativeReading(),
+//                    meterReadingSheet.getConsumption()
+//            );
+//            System.out.println("result: "+result.getConsumption());
+//            System.out.println("previousCumulative: "+result.getCumulativeReading());
+//
+//            LocalDateTime createdAt = LocalDateTime.now();
+//
+//            billingMapper.insertMonthlyConsumption(
+//                    meterId,
+//                    date,
+//                    newValue,
+//                    average,
+//                    result.getConsumption(),
+//                    result.getType().name(),
+//                    result.getCumulativeReading(),
+//                    createdAt,
+//                    um.getOrgId()
+//            );
+//            System.out.println("Successfully created");
+////            AuditLog auditLog = buildAuditLog(um, desc, reading, newReading, metadata);
+////            auditRepository.save(auditLog);
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+//            genericHandler.logIncidentReport("Editing meter reading service failed");
+//            genericHandler.logAndSaveException(exception, "editing meter reading");
+//            throw exception;
+//        }
 //    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> energyImport(List<MeterReadingSheet> payloads) {
+
+        if (payloads == null || payloads.isEmpty()) {
+            return ResponseMap.response(
+                    status.getFailCode(),
+                    "Payload list cannot be empty",
+                    ""
+            );
+        }
+
+        Map<String, String> metadata =
+                genericHandler.extractRequestMetadata(httpServletRequest);
+
+        UserModel operatorAction = handleUserValidation();
+        UUID orgId = operatorAction.getOrgId();
+
+        List<String> successMeters = new ArrayList<>();
+
+        try {
+
+            for (MeterReadingSheet payload : payloads) {
+
+                /* ---------------- Meter Lookup ---------------- */
+                Meter meter = meterMapper.findById(payload.getMeterId(), orgId);
+
+                if (meter == null) {
+                    log.warn("Meter not found: {}", payload.getMeterNumber());
+                    continue;
+                }
+
+                UUID meterId = meter.getId();
+
+                /* ---------------- Bill Date ---------------- */
+//                int month = Month
+//                        .valueOf(payload.getBillMonth().toUpperCase())
+//                        .getValue();
+//
+//                int year = Integer.parseInt(payload.getBillYear());
+//
+//                LocalDate readingDate = YearMonth.of(year, month).atDay(1);
+
+                /* ---------------- Previous Reading ---------------- */
+//                MeterReadingSheet lastReading =
+//                        readingMetersMapper.getNonZeroCurrentReadingByMeterId(meterId, orgId);
+//
+//                BigDecimal oldValue =
+//                        lastReading != null
+//                                ? lastReading.getCurrentReading()
+//                                : BigDecimal.ZERO;
+
+                /* ---------------- New Reading (FROM PAYLOAD) ---------------- */
+                BigDecimal newValue =
+                        payload.getCurrentReading() != null
+                                ? payload.getCurrentReading()
+                                : BigDecimal.ZERO;
+
+                /* ---------------- Average (last 5 months) ---------------- */
+                BigDecimal average =
+                        readingMetersMapper.findFiveMonthAverage(meterId, payload.getDate());
+
+                if (average == null) {
+                    average = BigDecimal.ZERO;
+                }
+
+                /* ---------------- Cumulative ---------------- */
+                MeterReadingSheet lastCumulative =
+                        billingMapper.findLastCumulative(
+                                meterId,
+                                payload.getDate().getMonthValue(),
+                                payload.getDate().getYear()
+                        );
+
+                BigDecimal previousCumulative =
+                        lastCumulative != null && lastCumulative.getCumulativeReading() != null
+                                ? lastCumulative.getCumulativeReading()
+                                : BigDecimal.ZERO;
+
+                BigDecimal previousConsumption =
+                        lastCumulative != null && lastCumulative.getConsumption() != null
+                                ? lastCumulative.getConsumption()
+                                : BigDecimal.ZERO;
+
+                System.out.println("previousCumulative: "+previousCumulative);
+                System.out.println("previousConsumption: "+previousConsumption);
+
+                /* ---------------- Calculate ---------------- */
+                MeterConsumption result = calculator.virtualCalculate(
+                        meter,
+//                        oldValue,
+                        newValue,
+                        average,
+                        previousCumulative,
+                        previousConsumption
+                );
+
+                /* ---------------- Insert ---------------- */
+                billingMapper.insertMonthlyConsumption(
+                        meterId,
+                        payload.getDate(),
+                        newValue,
+                        average,
+                        result.getConsumption(),
+                        "ESTIMATE",        // as you stated
+                        result.getCumulativeReading(),
+                        LocalDateTime.now(),
+                        orgId
+                );
+
+                successMeters.add(meter.getMeterNumber());
+            }
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    "Meter consumption imported successfully",""
+//                    successMeters
+            );
+
+        } catch (Exception exception) {
+            log.error("Error occurred while importing meter consumption", exception);
+            genericHandler.logIncidentReport("Energy import failed");
+            genericHandler.logAndSaveException(exception, "energy import");
+            throw exception;
+        }
+    }
+
+
+//    @Override
+//    @Transactional
+//    public Map<String, Object> energyImport(List<MeterReadingSheet> payloads) {
+//
+//        if (payloads == null || payloads.isEmpty()) {
+//            return ResponseMap.response(
+//                    status.getFailCode(),
+//                    "Payload list cannot be empty",
+//                    ""
+//            );
+//        }
+//
+//        Map<String, String> metadata =
+//                genericHandler.extractRequestMetadata(httpServletRequest);
+//
+//        UserModel operatorAction = handleUserValidation();
+//        UUID operatorOrgId = operatorAction.getOrgId();
+//
+//        List<String> successMeters = new ArrayList<>();
+//
+//        try {
+//            for (MeterReadingSheet meterReadingSheet : payloads) {
+//
+//                /* ---------------- Meter Validation ---------------- */
+//                Meter meterInfo = readingMetersMapper.getVirtualMeterByMeterNo(
+//                        meterReadingSheet.getMeterNumber(), operatorOrgId);
+//
+//                if (meterInfo == null) {
+//                    throw new RuntimeException(
+//                            "Meter not found: " + meterReadingSheet.getMeterNumber());
+//                }
+//
+//                UUID meterId = meterInfo.getId();
+//                UUID orgId = meterInfo.getOrgId();
+//
+//                /* ---------------- Parse Bill Month & Year ---------------- */
+//                int billMonth;
+//                int billYear;
+//
+//                try {
+//                    billMonth = Month
+//                            .valueOf(meterReadingSheet.getBillMonth().toUpperCase())
+//                            .getValue();
+//                    billYear = Integer.parseInt(meterReadingSheet.getBillYear());
+//                } catch (Exception e) {
+//                    throw new RuntimeException(
+//                            "Invalid bill month/year for meter: "
+//                                    + meterReadingSheet.getMeterNumber());
+//                }
+//
+//                int currentMonth = LocalDate.now().getMonthValue();
+//                int currentYear = LocalDate.now().getYear();
+//
+//                if (billYear < 2000 || billYear > currentYear + 1) {
+//                    throw new RuntimeException("Invalid bill year");
+//                }
+//
+//                if (billYear > currentYear ||
+//                        (billYear == currentYear && billMonth > currentMonth)) {
+//                    throw new RuntimeException(
+//                            "Cannot generate estimate for future month/year");
+//                }
+//
+//                YearMonth requestedPeriod = YearMonth.of(billYear, billMonth);
+//                LocalDate requestedReadingDate = requestedPeriod.atDay(1);
+//
+//                /* ---------------- Duplicate Check ---------------- */
+//                if (readingMetersMapper.checkIfMeterReadForMonth(
+//                        meterId,
+//                        meterReadingSheet.getBillMonth(),
+//                        meterReadingSheet.getBillYear(),
+//                        operatorOrgId) > 0) {
+//
+//                    throw new RuntimeException(
+//                            "Estimate already exists for meter: "
+//                                    + meterReadingSheet.getMeterNumber());
+//                }
+//
+//                /* ---------------- Fetch Last Readings ---------------- */
+//                MeterReadingSheet lastReading =
+//                        readingMetersMapper.getLastReadingByMeterId(
+//                                meterId, operatorOrgId);
+//
+//                MeterReadingSheet lastNonZeroReading =
+//                        readingMetersMapper.getNonZeroCurrentReadingByMeterId(
+//                                meterId, operatorOrgId);
+//
+//                BigDecimal previousLastReading =
+//                        lastNonZeroReading != null &&
+//                                lastNonZeroReading.getCurrentReading() != null
+//                                ? lastNonZeroReading.getCurrentReading()
+//                                : BigDecimal.ZERO;
+//
+//                LocalDate lastReadingDate =
+//                        lastReading != null
+//                                ? lastReading.getCurrentReadingDate()
+//                                : null;
+//
+//                /* ---------------- AUTO-INSERT SKIPPED MONTHS ---------------- */
+//                if (lastReading != null &&
+//                        lastReading.getBillMonth() != null &&
+//                        lastReading.getBillYear() != null) {
+//
+//                    int lastMonth =
+//                            Month.valueOf(lastReading.getBillMonth().toUpperCase())
+//                                    .getValue();
+//                    int lastYear =
+//                            Integer.parseInt(lastReading.getBillYear());
+//
+//                    YearMonth cursor =
+//                            YearMonth.of(lastYear, lastMonth).plusMonths(1);
+//
+//                    while (cursor.isBefore(requestedPeriod)) {
+//
+//                        boolean exists =
+//                                readingMetersMapper.checkIfMeterReadForMonth(
+//                                        meterId,
+//                                        cursor.getMonth().name(),
+//                                        String.valueOf(cursor.getYear()),
+//                                        operatorOrgId) > 0;
+//
+//                        if (!exists) {
+//                            MeterReadingSheet skipped = new MeterReadingSheet();
+//
+//                            skipped.setMeterId(meterId);
+//                            skipped.setOrgId(orgId);
+//                            skipped.setBillMonth(cursor.getMonth().name());
+//                            skipped.setBillYear(String.valueOf(cursor.getYear()));
+//                            skipped.setCurrentReading(BigDecimal.ZERO);
+//                            skipped.setLastReading(previousLastReading);
+//                            skipped.setReadingType("ESTIMATE");
+//                            skipped.setLastReadingDate(lastReadingDate);
+//                            skipped.setCurrentReadingDate(cursor.atDay(1));
+//
+//                            readingMetersMapper.insertMeterReadingSheet(skipped);
+//                        }
+//
+//                        cursor = cursor.plusMonths(1);
+//                    }
+//                }
+//
+//                /* ---------------- SAVE REQUESTED MONTH ---------------- */
+//                meterReadingSheet.setMeterId(meterId);
+//                meterReadingSheet.setOrgId(orgId);
+//                meterReadingSheet.setReadingType("ESTIMATE");
+//                meterReadingSheet.setLastReading(previousLastReading);
+//                meterReadingSheet.setLastReadingDate(lastReadingDate);
+//                meterReadingSheet.setCurrentReadingDate(requestedReadingDate);
+//
+//                if (meterReadingSheet.getCurrentReading() == null) {
+//                    meterReadingSheet.setCurrentReading(BigDecimal.ZERO);
+//                }
+//
+//                readingMetersMapper.insertMeterReadingSheet(meterReadingSheet);
+//
+//                /* ---------------- Audit ---------------- */
+//                MeterReadingSheet newReading =
+//                        readingMetersMapper.getLastReadingByMeterId(
+//                                meterId, operatorOrgId);
+//
+////                AuditLog auditLog =
+////                        buildAuditLog(
+////                                operatorAction,
+////                                "Estimated meter reading added",
+////                                lastReading,
+////                                newReading,
+////                                metadata);
+////
+////                auditRepository.save(auditLog);
+//
+//                successMeters.add(meterReadingSheet.getMeterNumber());
+//            }
+//
+//            return ResponseMap.response(
+//                    status.getSuccessCode(),
+//                    "Energy estimate import completed successfully",
+//                    Map.of(
+//                            "count", successMeters.size(),
+//                            "meters", successMeters
+//                    )
+//            );
+//
+//        } catch (Exception ex) {
+//            log.error("Energy estimate import failed", ex);
+//            throw ex; // rollback entire batch
+//        }
+//    }
+
+    @Override
+    public Map<String, Object> monthlyConsumptionByFeeder(
+            int page, int size, String search, String month, Integer year, UUID nodeId) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumptionByFeederLine(
+                    um.getOrgId(), page, size, month, year, nodeId);
+
+            // Apply filtering by role and state
+            List<MeterReadingSheet> filteredConsumption = monthlyConsumption.stream()
+                    .filter(o -> {
+                        // Filter by name (case-insensitive)
+                        if (search != null && !search.isEmpty()) {
+                            String searchLower = search.toLowerCase();
+                            String meterNo = o.getMeterNumber() + " " + o.getMeterNumber();
+                            String feeder = o.getFeederName();
+                            String dss = o.getDssName();
+
+                            boolean matchesMeterNo = meterNo.contains(searchLower);
+                            boolean matchesFeeder = feeder.contains(searchLower);
+                            boolean matchesDss = dss.contains(searchLower);
+
+                            if (!matchesMeterNo && !matchesFeeder && !matchesDss) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    })
+                    .toList();
+
+            int totalFilteredConsumptions = filteredConsumption.size();
+
+            if (size <= 0) {
+                size = totalFilteredConsumptions == 0 ? 1 : totalFilteredConsumptions;
+            }
+            if (page < 0) {
+                page = 0;
+            }
+
+            int totalPages = (int) Math.ceil((double) totalFilteredConsumptions / size);
+            int fromIndex = Math.min(page * size, totalFilteredConsumptions);
+            int toIndex = Math.min(fromIndex + size, totalFilteredConsumptions);
+
+            List<MeterReadingSheet> pagedConsumptions = filteredConsumption.subList(fromIndex, toIndex);
+
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalMeterConsumptions", totalFilteredConsumptions);
+            result.put("consumptions", pagedConsumptions); // return filtered list
+            result.put("currentPage", page);
+            result.put("totalPages", totalPages);
+            result.put("pageSize", size);
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Monthly consumption fetched successfully", result);
+
+        }  catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logAndSaveException(exception, "meter monthly consumption");
+            throw exception;
+        }
+    }
 
 
     //        return consumption.subtract(CUMULATIVE_LIMIT.subtract(previous));

@@ -84,26 +84,23 @@ public class BillingController {
 
     @GetMapping("/meter/reading/all")
     public ResponseEntity<Map<String, Object>> getMeterReadings(
-            @RequestParam(required = false) String meterNumber,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String tariffType,
-            @RequestParam(required = false) String readingType,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) String month,
-            @RequestParam(required = false) String year,
+            @RequestParam(required = false) Integer year,
             @RequestParam String meterClass,
             @RequestParam(value = "page",required = false, defaultValue = "0") int page,
             @RequestParam(value = "size",required = false, defaultValue = "0") int size
     ) {
 
-        MeterReadingDTO search  = new MeterReadingDTO();
-        search.setMeterNumber(meterNumber);
-        search.setName(name);
-        search.setTariffType(tariffType);
-        search.setReadingType(readingType);
-        search.setMonth(month);
-        search.setYear(year);
-        search.setMeterClass(meterClass);
-        Map<String, Object> response = readingMetersService.getAllMeterReading(search,page, size);
+//        MeterReadingDTO search  = new MeterReadingDTO();
+//        search.setMeterNumber(meterNumber);
+//        search.setName(name);
+//        search.setTariffType(tariffType);
+//        search.setReadingType(readingType);
+//        search.setMonth(month);
+//        search.setYear(year);
+//        search.setMeterClass(meterClass);
+        Map<String, Object> response = readingMetersService.getAllMeterReading(search, page, size, month, year, meterClass);
         return ResponseEntity.ok(response);
     }
 
@@ -134,7 +131,8 @@ public class BillingController {
             @RequestParam(value = "year", required = false,  defaultValue = "") Integer year
     ) {
         try {
-            Map<String, Object> result = readingMetersService.monthlyConsumption(page, size, search, month, year);
+            Map<String, Object> result = readingMetersService.monthlyConsumption(
+                    page, size, search, month, year);
             return ResponseEntity.ok(result);
         } catch (
                 GlobalExceptionHandler.SQLServerException e) {
@@ -143,6 +141,44 @@ public class BillingController {
 
     }
 
+    @PostMapping("/virtual/meter/energy/import")
+    public ResponseEntity<Map<String, Object>> virtualMeterReading(
+            @RequestBody List<MeterReadingSheet> meterReadingSheet) {
+        try {
+
+            Map<String, Object> result = readingMetersService.energyImport(meterReadingSheet);
+            return ResponseEntity.ok(result);
+        }catch (GlobalExceptionHandler.SQLServerException e){
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/virtual/meter/energy/import/assetId/all")
+    public ResponseEntity<?> getMonthlyConsumption(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search,
+            @RequestParam(value = "month", required = false,  defaultValue = "") String month,
+            @RequestParam(value = "year", required = false,  defaultValue = "") Integer year,
+            @RequestParam UUID nodeId
+    ) {
+        try {
+            Map<String, Object> result = readingMetersService.monthlyConsumptionByFeeder(
+                    page, size, search, month, year, nodeId);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+
+    }
+
+
+
+    private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
+        return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
+    }
+}
 
 
 //    @PostMapping("/create")
@@ -155,7 +191,7 @@ public class BillingController {
 //        }
 //
 //    }
-    ////-------------------------
+////-------------------------
 
 //    @GetMapping("/meter/reading/all")
 //    public CompletableFuture<ResponseEntity<Map<String, Object>>> getMeterReadings(
@@ -191,8 +227,3 @@ public class BillingController {
 //                });
 ////        return ResponseEntity.ok(response);
 //    }
-
-    private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
-        return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
-    }
-}
