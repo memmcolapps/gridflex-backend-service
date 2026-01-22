@@ -461,6 +461,39 @@ public class NodeServiceImpl implements NodeService {
 
     @Transactional(readOnly = true)
     @Override
+    public Map<String, Object> getAllFeeder(){
+        try {
+            UserModel um = handleUserValidation();
+            List<SubStationTransformerFeederLine> result = nodeMapper.getAllFeeder(um.getOrgId());
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+        }catch (Exception exception) {
+            log.error("Error fetching feeders: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching feeders service failed");
+            genericHandler.logAndSaveException(exception, "fetching feeders");
+            throw exception;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Map<String, Object> getAllDss(String assetId){
+        try {
+            UserModel um = handleUserValidation();
+            UUID nodeId = nodeMapper.getFeederNodeId(um.getOrgId(),assetId);
+            List<SubStationTransformerFeederLine> result = nodeMapper.getAllDssByNodeId(um.getOrgId(), nodeId);
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+        }catch (Exception exception) {
+            log.error("Error fetching dss: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching dss service failed");
+            genericHandler.logAndSaveException(exception, "fetching dss");
+            throw exception;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public Map<String, Object> getFeederAndDssNode() {
         try{
 

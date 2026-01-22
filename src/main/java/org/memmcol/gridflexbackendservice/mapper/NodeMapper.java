@@ -160,6 +160,33 @@ public interface NodeMapper {
     List<SubStationTransformerFeederLine> getFeederDss(UUID orgId);
 
     @Select("""
+            SELECT name, asset_id FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "assetId", column = "asset_id"),
+    })
+    List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId);
+
+    @Select("""
+            SELECT name, asset_id FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND parent_id = #{nodeId} AND UPPER(type) = UPPER('dss')
+            """)
+    @Results({
+            @Result(property = "assetId", column = "asset_id"),
+    })
+    List<SubStationTransformerFeederLine> getAllDssByNodeId(UUID orgId, UUID nodeId);
+
+
+    @Select("""
+            SELECT node_id FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND asset_id = #{assetId}
+            """)
+    UUID getFeederNodeId(UUID orgId, String assetId);
+
+    @Select("""
             SELECT * FROM region_bhub_service_centers 
             WHERE org_id = #{id} AND name = #{name}
             """)
