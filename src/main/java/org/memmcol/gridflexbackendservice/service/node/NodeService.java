@@ -22,4 +22,8 @@ public interface NodeService {
     Map<String, Object> getBusinessHubByOrgId();
 
     Map<String, Object> getFeederAndDssNode();
+
+    Map<String, Object> getAllFeeder();
+
+    Map<String, Object> getAllDss(String assetId);
 }

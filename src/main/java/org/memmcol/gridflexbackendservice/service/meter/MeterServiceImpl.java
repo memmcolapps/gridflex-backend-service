@@ -617,6 +617,8 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
+            boolean meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
+            if(meterStatus) throw new GlobalExceptionHandler.NotFoundException("Meter ("+ request.getMeterNumber() +") already assigned to a customer");
 
             // Validate DSS
             SubStationTransformerFeederLine dss = meterMapper.verifyDssFeeder(request.getDssAssetId(), user.getOrgId());
