@@ -185,7 +185,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> vendingDashboard(String band, String year, String meterCategory) {
+    public Map<String, Object> vendingDashboard(String band, String year, String meterClass) {
         try {
             UserModel um = handleUserValidation();
             List<Transaction> transactions = dashboardMapper.getVendingTransaction(um.getOrgId());
@@ -193,8 +193,8 @@ public class DashboardServiceImpl implements  DashboardService{
             // === Filter transactions ===
             List<Transaction> filteredTransaction = transactions.stream()
                     .filter(t -> band == null || band.isEmpty() || t.getBandName().equalsIgnoreCase(band))
-                    .filter(t -> meterCategory == null || meterCategory.isEmpty() ||
-                            t.getMeterCategory().equalsIgnoreCase(meterCategory))
+                    .filter(t -> meterClass == null || meterClass.isEmpty() ||
+                            t.getMeterCategory().equalsIgnoreCase(meterClass))
                     .filter(t -> {
                         if (year == null || year.isEmpty() || t.getCreatedAt() == null)
                             return true;

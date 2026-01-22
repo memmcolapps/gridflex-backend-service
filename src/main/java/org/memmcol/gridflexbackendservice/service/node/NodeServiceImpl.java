@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
@@ -250,10 +251,11 @@ public class NodeServiceImpl implements NodeService {
 
             nodeMapper.updateNode(node);
 
-            UUID nodeId = node.getId();
+//            UUID nodeId = node.getId();
 
-            request.setNodeId(nodeId);
-            request.setOrgId(um.getOrgId());
+//            request.setNodeId(nodeId);
+//            request.setOrgId(um.getOrgId());
+            request.setUpdatedAt(LocalDateTime.now());
 
             if(request.getType().equalsIgnoreCase("region") ||
                     request.getType().equalsIgnoreCase("business hub") ||
@@ -314,16 +316,15 @@ public class NodeServiceImpl implements NodeService {
 
             nodeMapper.updateNode(node);
 
-            UUID nodeId = node.getId();
-
-            request.setNodeId(nodeId);
+//            UUID nodeId = node.getId();
+//            request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
+            request.setUpdatedAt(LocalDateTime.now());
 
             if(request.getType().equalsIgnoreCase("dss") ||
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.updateSubStationTransformerFeederLine(request);
-
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(request.getNodeId());
                 desc = subStationTransformerFeederLine.getName()  + "edited";
             } else {
