@@ -617,7 +617,6 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
-
             // Validate DSS
             SubStationTransformerFeederLine dss = meterMapper.verifyDssFeeder(request.getDssAssetId(), user.getOrgId());
             if (dss == null) {

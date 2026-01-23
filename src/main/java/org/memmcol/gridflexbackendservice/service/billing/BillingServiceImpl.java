@@ -9,9 +9,11 @@ import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.billing.ConsumptionType;
+import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterConsumption;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -343,8 +345,6 @@ public class BillingServiceImpl implements BillingService {
 
             UUID meterId = meterInfo.getId();
             UUID orgId = meterInfo.getOrgId();
-//            UUID nodeId = meterInfo.getNodeId();
-//            UUID tariffId = meterInfo.getTariff();
 
             /* ---------------- Parse Bill Month & Year ---------------- */
             int billMonth;
@@ -397,6 +397,11 @@ public class BillingServiceImpl implements BillingService {
             MeterReadingSheet lastNonZeroReading =
                     readingMetersMapper.getNonZeroCurrentReadingByMeterId(meterId, operatorOrgId);
 
+            BigDecimal immediatePrevious =
+                    lastReading != null && lastReading.getCurrentReading() != null
+                            ? lastReading.getCurrentReading()
+                            : BigDecimal.ZERO;
+
             BigDecimal previousLastReading =
                     lastNonZeroReading != null && lastNonZeroReading.getCurrentReading() != null
                             ? lastNonZeroReading.getCurrentReading()
@@ -404,9 +409,6 @@ public class BillingServiceImpl implements BillingService {
 
             LocalDate lastReadingDate =
                     lastReading != null ? lastReading.getCurrentReadingDate() : null;
-
-//            LocalDate lastReadingDate =
-//                    lastReading != null ? requestedReadingDate : null;
 
             /* ---------------- AUTO-INSERT SKIPPED MONTHS ---------------- */
             if (lastReading != null &&
@@ -438,26 +440,17 @@ public class BillingServiceImpl implements BillingService {
 
                     skipped.setMeterId(meterId);
                     skipped.setOrgId(orgId);
-//                    skipped.setNodeId(nodeId);
-//                    skipped.setTariffId(tariffId);
 
                     skipped.setBillMonth(cursor.getMonth().name());
                     skipped.setBillYear(String.valueOf(cursor.getYear()));
 
+                    skipped.setPreviousReading(immediatePrevious);
                     skipped.setCurrentReading(BigDecimal.ZERO);
                     skipped.setLastReading(previousLastReading);
                     skipped.setReadingType("NORMAL");
 
                     skipped.setLastReadingDate(lastReadingDate);
                     skipped.setCurrentReadingDate(cursor.atDay(1));
-
-//                    skipped.setCurrentReadingDate(requestedPeriod.atDay(1));
-
-//                    skipped.setCurrentReadingDate(cursor.atDay(1).atStartOfDay());
-//                    skipped.setCurrentReadingDate(LocalDateTime.now());
-
-//                    skipped.setCreatedAt(LocalDateTime.now());
-//                    skipped.setUpdatedAt(LocalDateTime.now());
 
                     readingMetersMapper.insertMeterReadingSheet(skipped);
 
@@ -468,8 +461,6 @@ public class BillingServiceImpl implements BillingService {
             /* ---------------- SAVE REQUESTED MONTH (NORMAL LOGIC) ---------------- */
             meterReadingSheet.setMeterId(meterId);
             meterReadingSheet.setOrgId(orgId);
-//            meterReadingSheet.setNodeId(nodeId);
-//            meterReadingSheet.setTariffId(tariffId);
 
             BigDecimal current =
                     meterReadingSheet.getCurrentReading() != null
@@ -479,26 +470,21 @@ public class BillingServiceImpl implements BillingService {
             if (current.compareTo(BigDecimal.ZERO) == 0) {
                 meterReadingSheet.setReadingType("NORMAL");
                 meterReadingSheet.setLastReading(previousLastReading);
+                meterReadingSheet.setPreviousReading(immediatePrevious);
                 meterReadingSheet.setLastReadingDate(lastReadingDate);
 
             } else if (current.compareTo(previousLastReading) < 0) {
                 meterReadingSheet.setReadingType("ROLLOVER");
                 meterReadingSheet.setLastReading(current);
+                meterReadingSheet.setPreviousReading(immediatePrevious);
 //                meterReadingSheet.setLastReadingDate(lastReadingDate);
 
             } else {
                 meterReadingSheet.setReadingType("NORMAL");
                 meterReadingSheet.setLastReading(current);
+                meterReadingSheet.setPreviousReading(immediatePrevious);
 //                meterReadingSheet.setLastReadingDate(lastReadingDate);
             }
-
-//            if (current.compareTo(previousLastReading) < 0) {
-//                meterReadingSheet.setReadingType("ROLLOVER");
-//                meterReadingSheet.setLastReading(current);
-//            } else {
-//                meterReadingSheet.setReadingType("NORMAL");
-//                meterReadingSheet.setLastReading(previousLastReading);
-//            }
 
             meterReadingSheet.setLastReadingDate(lastReadingDate);
             meterReadingSheet.setCurrentReadingDate(requestedReadingDate);
@@ -853,15 +839,12 @@ public class BillingServiceImpl implements BillingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
-//            Meter meter = billingMapper.findById(meterId);
             Meter meter = meterMapper.findById(meterId, um.getOrgId());
 
             System.out.println("date: "+date);
             System.out.println("meterId: "+meterId);
-//            int currentMonth = LocalDate.now().getMonthValue();
-            MeterReadingSheet oldReading = readingMetersMapper.findReading(meterId, date);
-            MeterReadingSheet newReading = readingMetersMapper.findReading(meterId, date);
-            System.out.println("newReading: "+newReading.getCurrentReading());
+            MeterReadingSheet reading = readingMetersMapper.findReading(meterId, date);
+            System.out.println("newReading: "+reading.getCurrentReading());
 
             BigDecimal average = readingMetersMapper.findFiveMonthAverage(meterId, date);
             if (average == null) {
@@ -888,10 +871,10 @@ public class BillingServiceImpl implements BillingService {
             }
 
         BigDecimal oldValue =
-                oldReading != null ? oldReading.getLastReading() : null;
+                reading != null ? reading.getLastReading() : null;
 
             BigDecimal newValue =
-                    newReading.getCurrentReading();
+                    reading.getCurrentReading();
             System.out.println("newValue: "+newValue);
 
             MeterConsumption result = calculator.calculate(
@@ -916,15 +899,16 @@ public class BillingServiceImpl implements BillingService {
 
             billingMapper.insertMonthlyConsumption(
                     meterId,
-                   date,
-//                oldValue,
+                    date,
+                    oldValue,
                     newValue,
                     average,
                     result.getConsumption(),
                     result.getType().name(),
                     result.getCumulativeReading(),
                     createdAt,
-                    um.getOrgId()
+                    um.getOrgId(),
+                    meterReadingSheet.getConsumption() != null ? meterReadingSheet.getConsumption() : BigDecimal.ZERO
             );
             System.out.println("Successfully created");
 //            AuditLog auditLog = buildAuditLog(um, desc, reading, newReading, metadata);
@@ -948,16 +932,25 @@ public class BillingServiceImpl implements BillingService {
             List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumption(
                     um.getOrgId(), page, size, month, year);
 
+//            if ("MD".equalsIgnoreCase(meterClass)){
+//                meterReadingDTO.setMeterClass("MD");
+//                allReadings = readingMetersMapper.getMeterReadingSheet(page, size, month, year, meterReadingDTO, um.getOrgId());
+//            } else if("Non-MD".equalsIgnoreCase(meterClass)){
+//                meterReadingDTO.setMeterClass("single-phase");
+//                meterReadingDTO.setMeterClass2("three-phase");
+//                allReadings = readingMetersMapper.getMeterReadingSheet(page, size, month, year, meterReadingDTO, um.getOrgId());
+//            }
+
             // Apply filtering by role and state
             List<MeterReadingSheet> filteredConsumption = monthlyConsumption.stream()
                     .filter(o -> {
                         // Filter by name (case-insensitive)
                         if (search != null && !search.isEmpty()) {
                             String searchLower = search.toLowerCase();
-                            String meterNo = o.getMeterNumber() + " " + o.getMeterNumber();
+                            String meterNo = o.getMeterNumber();
                             String feeder = o.getFeederName();
 
-                            boolean matchesMeterNo = meterNo.contains(searchLower);
+                            boolean matchesMeterNo = meterNo.equalsIgnoreCase(searchLower);
                             boolean matchesFeeder = feeder.contains(searchLower);
 
                             if (!matchesMeterNo && !matchesFeeder) {
@@ -1124,6 +1117,8 @@ public class BillingServiceImpl implements BillingService {
                     continue;
                 }
 
+//                MeterReadingSheet reading = billingMapper.findReading(payload.getMeterId(), payload.getDate());
+
                 UUID meterId = meter.getId();
 
                 /* ---------------- Bill Date ---------------- */
@@ -1150,12 +1145,23 @@ public class BillingServiceImpl implements BillingService {
                                 ? payload.getCurrentReading()
                                 : BigDecimal.ZERO;
 
+//                BigDecimal oldValue =
+//                        reading != null ? reading.getLastReading() : BigDecimal.ZERO;
+
                 /* ---------------- Average (last 5 months) ---------------- */
                 BigDecimal average =
                         readingMetersMapper.findFiveMonthAverage(meterId, payload.getDate());
 
                 if (average == null) {
                     average = BigDecimal.ZERO;
+                }
+
+                MeterReadingSheet meterReadingSheet = billingMapper.findLastCumulative(
+                        payload.getMeterId(), payload.getDate().getMonthValue(), payload.getDate().getYear());
+
+                if (meterReadingSheet == null) {
+                    meterReadingSheet = new MeterReadingSheet();
+                    meterReadingSheet.setConsumption(BigDecimal.ZERO);
                 }
 
                 /* ---------------- Cumulative ---------------- */
@@ -1193,13 +1199,15 @@ public class BillingServiceImpl implements BillingService {
                 billingMapper.insertMonthlyConsumption(
                         meterId,
                         payload.getDate(),
+                        meterReadingSheet.getConsumption(),
                         newValue,
                         average,
                         result.getConsumption(),
-                        "ESTIMATE",        // as you stated
+                        "ESTIMATE",
                         result.getCumulativeReading(),
                         LocalDateTime.now(),
-                        orgId
+                        orgId,
+                        meterReadingSheet.getConsumption()
                 );
 
                 successMeters.add(meter.getMeterNumber());
@@ -1424,11 +1432,14 @@ public class BillingServiceImpl implements BillingService {
                         // Filter by name (case-insensitive)
                         if (search != null && !search.isEmpty()) {
                             String searchLower = search.toLowerCase();
-                            String meterNo = o.getMeterNumber() + " " + o.getMeterNumber();
+                            String meterNo = o.getMeterNumber();
                             String feeder = o.getFeederName();
                             String dss = o.getDssName();
 
-                            boolean matchesMeterNo = meterNo.contains(searchLower);
+                            System.out.println("meter number: "+meterNo);
+                            System.out.println("meter number>>>: "+searchLower);
+
+                            boolean matchesMeterNo = meterNo.equalsIgnoreCase(searchLower);
                             boolean matchesFeeder = feeder.contains(searchLower);
                             boolean matchesDss = dss.contains(searchLower);
 
@@ -1466,6 +1477,40 @@ public class BillingServiceImpl implements BillingService {
 
             return ResponseMap.response(status.getSuccessCode(),
                     "Monthly consumption fetched successfully", result);
+
+        }  catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logAndSaveException(exception, "meter monthly consumption");
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> generateMonthlyFeederReading(FeederReadingSheet feederReadingSheet) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            SubStationTransformerFeederLine node = billingMapper.verifyNode(feederReadingSheet.getAssetId(), um.getOrgId());
+
+            if(node == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder not found");
+            }
+
+            FeederReadingSheet feeder = billingMapper.verifyFeederConsumption(node.getNodeId(), um.getOrgId());
+            if(feeder == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder already exist");
+            }
+
+            int createdReading = billingMapper.addMonthlyFeederReading(feederReadingSheet);
+
+            if(createdReading == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder reading creating unsuccessful");
+            }
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Feeder monthly consumption added successfully", "");
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
