@@ -75,7 +75,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             RegionBhubServiceCenter rgBhubService = nodeMapper.getBhubByOrgIdAndName(um.getOrgId(), request.getName());
-            if (rgBhubService.getName().equalsIgnoreCase(request.getName())){
+            if (rgBhubService != null){
                 String type = request.getType().toLowerCase();
 
                 switch (type){
@@ -154,7 +154,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             SubStationTransformerFeederLine subTransFeeder = nodeMapper.getSubTransformerFeederLineByOrgIdAndName(um.getOrgId(), request.getName());
-            if (subTransFeeder.getName().equalsIgnoreCase(request.getName())){
+            if (subTransFeeder != null){
 
                 String type = request.getType().toLowerCase();
                 switch (type){
@@ -254,12 +254,13 @@ public class NodeServiceImpl implements NodeService {
 //            UUID nodeId = node.getId();
 
 //            request.setNodeId(nodeId);
-//            request.setOrgId(um.getOrgId());
+            request.setOrgId(um.getOrgId());
             request.setUpdatedAt(LocalDateTime.now());
 
             if(request.getType().equalsIgnoreCase("region") ||
                     request.getType().equalsIgnoreCase("business hub") ||
-                    request.getType().equalsIgnoreCase("service center")) {
+                    request.getType().equalsIgnoreCase("service center") ||
+                            request.getType().equalsIgnoreCase("root")) {
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(request.getNodeId());
                 desc = regionBhubServiceCenter.getName()  + "edited";

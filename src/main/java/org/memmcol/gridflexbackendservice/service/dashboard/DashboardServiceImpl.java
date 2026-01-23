@@ -194,7 +194,7 @@ public class DashboardServiceImpl implements  DashboardService{
             List<Transaction> filteredTransaction = transactions.stream()
                     .filter(t -> band == null || band.isEmpty() || t.getBandName().equalsIgnoreCase(band))
                     .filter(t -> meterClass == null || meterClass.isEmpty() ||
-                            t.getMeterCategory().equalsIgnoreCase(meterClass))
+                            t.getMeterClass().equalsIgnoreCase(meterClass))
                     .filter(t -> {
                         if (year == null || year.isEmpty() || t.getCreatedAt() == null)
                             return true;
