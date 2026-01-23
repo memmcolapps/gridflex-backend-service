@@ -1,8 +1,10 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterConsumption;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
+import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,23 +38,24 @@ public interface BillingMapper {
 
     @Insert("""
         INSERT INTO meter_consumption
-        (meter_id, reading_date, current_reading, average_consumption, 
-     consumption, consumption_type, created_at, cumulative_reading, org_id)
+        (meter_id, reading_date, current_reading, average_consumption, previous_reading,
+     consumption, consumption_type, created_at, cumulative_reading, org_id, prev_consumption)
         VALUES
-        (#{meterId}, #{reading_date}, #{newReading}, #{average}, #{consumption}, #{type}, 
-        #{createdAt}, #{cumulative}, #{orgId})
+        (#{meterId}, #{reading_date}, #{newReading}, #{average},  #{oldReading}, #{consumption}, #{type}, 
+        #{createdAt}, #{cumulative}, #{orgId}, #{prevConsumption})
     """)
     void insertMonthlyConsumption(
             UUID meterId,
             LocalDate reading_date,
+            BigDecimal oldReading,
             BigDecimal newReading,
             BigDecimal average,
             BigDecimal consumption,
             String type,
             BigDecimal cumulative,
             LocalDateTime createdAt,
-            UUID orgId
-    );
+            UUID orgId,
+            BigDecimal prevConsumption);
 
 //    @Select("""
 //        SELECT cumulative_reading
@@ -94,9 +97,8 @@ public interface BillingMapper {
                      LEFT JOIN substation_trans_feeder_lines st ON m.dss = st.node_id
                      LEFT JOIN tariffs t ON t.id = m.tariff
                <where>
-                     mc.org_id = #{orgId} AND m.type = 'NON-VIRTUAL'
-             
-                
+                     mc.org_id = #{orgId} AND (m.type = 'NON-VIRTUAL' OR fixed_energy IS NOT NULL)
+        
                      <if test="month != null and month != ''">
                          AND EXTRACT(MONTH FROM mc.reading_date) =
                              EXTRACT(MONTH FROM TO_DATE(#{month}, 'Month'))
@@ -118,6 +120,7 @@ public interface BillingMapper {
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "readingType", column = "consumption_type"),
+            @Result(property = "previousReading", column = "previous_reading"),
             @Result(property = "currentReading", column = "current_reading"),
             @Result(property = "cumulativeReading", column = "cumulative_reading"),
             @Result(property = "averageConsumption", column = "average_consumption"),
@@ -152,6 +155,7 @@ public interface BillingMapper {
                   COALESCE(vmc.cumulative_reading, 0) AS cumulative_reading,
                   COALESCE(vmc.average_consumption, 0) AS average_consumption,
                   COALESCE(vmc.consumption, 0) AS consumption,
+                  COALESCE(vmc.prev_consumption, 0) AS prev_consumption,
                   COALESCE(vmc.consumption_type, '') AS consumption_type,
                s.name AS feeder_name, st.name AS dss_name, 
                 t.tariff_type
@@ -197,6 +201,7 @@ public interface BillingMapper {
             @Result(property = "cumulativeReading", column = "cumulative_reading"),
             @Result(property = "averageConsumption", column = "average_consumption"),
             @Result(property = "consumption", column = "consumption"),
+            @Result(property = "preConsumption", column = "prev_consumption"),
             @Result(property = "currentReadingDate", column = "reading_date"),
             @Result(property = "feederName", column = "feeder_name"),
             @Result(property = "dssName", column = "dss_name"),
@@ -211,5 +216,52 @@ public interface BillingMapper {
             @Param("year") Integer year,
             @Param("nodeId") UUID nodeId);
 
+    @Select("""
+        SELECT * FROM meter_consumption
+        WHERE meter_id = #{meterId}
+        AND reading_date = #{date}
+    """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "readingType", column = "consumption_type"),
+            @Result(property = "currentReading", column = "current_reading"),
+            @Result(property = "cumulativeReading", column = "cumulative_reading"),
+            @Result(property = "averageConsumption", column = "average_consumption"),
+            @Result(property = "consumption", column = "consumption"),
+            @Result(property = "currentReadingDate", column = "reading_date"),
+            @Result(property = "feederName", column = "feeder_name"),
+            @Result(property = "dssName", column = "dss_name"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "tariffType", column = "tariff_type")
+    })
+    MeterReadingSheet findReading(
+            @Param("meterId") UUID meterId,
+            @Param("date") LocalDate date);
 
+    @Select("SELECT FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id")
+    })
+    SubStationTransformerFeederLine verifyNode(String assetId, UUID orgId);
+
+    @Insert("INSERT INTO feeder_consumption " +
+            "(node_id, org_id, technical_loss, commercial_loss, feeder_consumption, billing_date, created_at, _updated_at) " +
+            "VALUES(#{orgId}, #{technicalLoss}, #{commercialLoss}, #{feederLoss}, #{billingDate}, #{createdAt}, #{updatedAt})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int addMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
+
+
+    @Select("SELECT FROM feeder_consumption WHERE node_id = #{nodeId} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id")
+    })
+    FeederReadingSheet verifyFeederConsumption(UUID nodeId, UUID orgId);
 }

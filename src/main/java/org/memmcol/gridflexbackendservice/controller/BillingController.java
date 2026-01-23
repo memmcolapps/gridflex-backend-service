@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.service.billing.BillingService;
@@ -165,6 +166,18 @@ public class BillingController {
         try {
             Map<String, Object> result = readingMetersService.monthlyConsumptionByFeeder(
                     page, size, search, month, year, nodeId);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+
+    }
+
+    @PostMapping("/feeder/reading/create")
+    public ResponseEntity<?> generateFeederReading(@RequestBody FeederReadingSheet feederReadingSheet) {
+        try {
+            Map<String, Object> result = readingMetersService.generateMonthlyFeederReading(feederReadingSheet);
             return ResponseEntity.ok(result);
         } catch (
                 GlobalExceptionHandler.SQLServerException e) {

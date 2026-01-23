@@ -6,6 +6,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.BigDecimal;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -22,6 +24,7 @@ public class MeterReadingSheet implements Serializable {
     private String readingType;
     private BigDecimal lastReading;
     private BigDecimal currentReading;
+    private BigDecimal previousReading;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate currentReadingDate;
@@ -47,6 +50,7 @@ public class MeterReadingSheet implements Serializable {
     private BigDecimal cumulativeReading;
     private BigDecimal averageConsumption;
     private BigDecimal consumption;
+    private BigDecimal preConsumption;
     private LocalDate date;
 
     public MeterReadingSheet() {
@@ -112,6 +116,14 @@ public class MeterReadingSheet implements Serializable {
 
     public LocalDate getCurrentReadingDate() {
         return currentReadingDate;
+    }
+
+    public java.math.BigDecimal getPreviousReading() {
+        return previousReading;
+    }
+
+    public void setPreviousReading(java.math.BigDecimal previousReading) {
+        this.previousReading = previousReading;
     }
 
     public void setCurrentReadingDate(LocalDate currentReadingDate) {
@@ -220,6 +232,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setConsumption(BigDecimal consumption) {
         this.consumption = consumption;
+    }
+
+    public BigDecimal getPreConsumption() {
+        return preConsumption;
+    }
+
+    public void setPreConsumption(BigDecimal preConsumption) {
+        this.preConsumption = preConsumption;
     }
 
     public LocalDate getDate() {
