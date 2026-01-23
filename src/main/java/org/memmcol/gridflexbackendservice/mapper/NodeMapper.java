@@ -93,8 +93,10 @@ public interface NodeMapper {
     })
     List<Node> getAllNode(UUID orgId);
 
-    @Update("UPDATE region_bhub_service_centers SET name = #{name}, phone_number = #{phoneNo}, email = #{email}, region_id = #{regionId}, " +
-            "contact_person = #{contactPerson}, address = #{address}, updated_at = #{updatedAt} WHERE node_id = #{nodeId} AND org_id = #{orgId}")
+    @Update("""
+                UPDATE region_bhub_service_centers SET name = #{name}, phone_number = #{phoneNo}, email = #{email}, region_id = #{regionId},
+                contact_person = #{contactPerson}, address = #{address}, updated_at = #{updatedAt} WHERE node_id = #{nodeId} AND org_id = #{orgId}
+            """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateRegionBhubServiceCenter(RegionBhubServiceCenter request);
 
@@ -102,9 +104,11 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateNode(Node node);
 
-    @Update("UPDATE substation_trans_feeder_lines SET name = #{name}, asset_id = #{assetId}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, " +
-            "contact_person = #{contactPerson}, address = #{address}, status = #{status}, voltage = #{voltage}, latitude =  #{latitude}, " +
-            "longitude = #{longitude}, description = #{description}, updated_at = #{updatedAt} WHERE node_id = #{nodeId} AND org_id = #{orgId}")
+    @Update("""
+            UPDATE substation_trans_feeder_lines SET name = #{name}, asset_id = #{assetId}, serial_no = #{serialNo}, phone_number = #{phoneNo}, email = #{email}, 
+            contact_person = #{contactPerson}, address = #{address}, status = #{status}, voltage = #{voltage}, latitude =  #{latitude}, 
+            longitude = #{longitude}, description = #{description}, updated_at = #{updatedAt} WHERE node_id = #{nodeId} AND org_id = #{orgId}
+            """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
@@ -127,7 +131,7 @@ public interface NodeMapper {
             @Result(property = "parentId", column = "parent_id"),
             @Result(property = "orgId", column = "org_id")
     })
-    SubStationTransformerFeederLine verifySubNode(String regionId, UUID orgId);
+    SubStationTransformerFeederLine verifySubNode(String assetId, UUID orgId);
 
     @Select("""
             SELECT * FROM region_bhub_service_centers 
@@ -158,6 +162,33 @@ public interface NodeMapper {
             @Result(property = "contactPerson", column = "contact_person"),
     })
     List<SubStationTransformerFeederLine> getFeederDss(UUID orgId);
+
+    @Select("""
+            SELECT name, asset_id FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "assetId", column = "asset_id"),
+    })
+    List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId);
+
+    @Select("""
+            SELECT name, asset_id FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND parent_id = #{nodeId} AND UPPER(type) = UPPER('dss')
+            """)
+    @Results({
+            @Result(property = "assetId", column = "asset_id"),
+    })
+    List<SubStationTransformerFeederLine> getAllDssByNodeId(UUID orgId, UUID nodeId);
+
+
+    @Select("""
+            SELECT node_id FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND asset_id = #{assetId}
+            """)
+    UUID getFeederNodeId(UUID orgId, String assetId);
 
     @Select("""
             SELECT * FROM region_bhub_service_centers 

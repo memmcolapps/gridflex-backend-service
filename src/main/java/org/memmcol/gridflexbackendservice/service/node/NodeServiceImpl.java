@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
@@ -74,7 +75,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             RegionBhubServiceCenter rgBhubService = nodeMapper.getBhubByOrgIdAndName(um.getOrgId(), request.getName());
-            if (rgBhubService.getName().equalsIgnoreCase(request.getName())){
+            if (rgBhubService != null){
                 String type = request.getType().toLowerCase();
 
                 switch (type){
@@ -153,7 +154,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             SubStationTransformerFeederLine subTransFeeder = nodeMapper.getSubTransformerFeederLineByOrgIdAndName(um.getOrgId(), request.getName());
-            if (subTransFeeder.getName().equalsIgnoreCase(request.getName())){
+            if (subTransFeeder != null){
 
                 String type = request.getType().toLowerCase();
                 switch (type){
@@ -250,14 +251,16 @@ public class NodeServiceImpl implements NodeService {
 
             nodeMapper.updateNode(node);
 
-            UUID nodeId = node.getId();
+//            UUID nodeId = node.getId();
 
-            request.setNodeId(nodeId);
+//            request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
+            request.setUpdatedAt(LocalDateTime.now());
 
             if(request.getType().equalsIgnoreCase("region") ||
                     request.getType().equalsIgnoreCase("business hub") ||
-                    request.getType().equalsIgnoreCase("service center")) {
+                    request.getType().equalsIgnoreCase("service center") ||
+                            request.getType().equalsIgnoreCase("root")) {
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(request.getNodeId());
                 desc = regionBhubServiceCenter.getName()  + "edited";
@@ -314,16 +317,15 @@ public class NodeServiceImpl implements NodeService {
 
             nodeMapper.updateNode(node);
 
-            UUID nodeId = node.getId();
-
-            request.setNodeId(nodeId);
+//            UUID nodeId = node.getId();
+//            request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
+            request.setUpdatedAt(LocalDateTime.now());
 
             if(request.getType().equalsIgnoreCase("dss") ||
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
                 nodeMapper.updateSubStationTransformerFeederLine(request);
-
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(request.getNodeId());
                 desc = subStationTransformerFeederLine.getName()  + "edited";
             } else {
@@ -455,6 +457,39 @@ public class NodeServiceImpl implements NodeService {
             log.error("Error occurred while fetching business hub [ACTION]: {}", exception.getMessage().trim(), exception);
             genericHandler.logIncidentReport("Fetching all business hub service failed");
             genericHandler.logAndSaveException(exception, "fetching all business hub");
+            throw exception;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Map<String, Object> getAllFeeder(){
+        try {
+            UserModel um = handleUserValidation();
+            List<SubStationTransformerFeederLine> result = nodeMapper.getAllFeeder(um.getOrgId());
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+        }catch (Exception exception) {
+            log.error("Error fetching feeders: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching feeders service failed");
+            genericHandler.logAndSaveException(exception, "fetching feeders");
+            throw exception;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Map<String, Object> getAllDss(String assetId){
+        try {
+            UserModel um = handleUserValidation();
+            UUID nodeId = nodeMapper.getFeederNodeId(um.getOrgId(),assetId);
+            List<SubStationTransformerFeederLine> result = nodeMapper.getAllDssByNodeId(um.getOrgId(), nodeId);
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+        }catch (Exception exception) {
+            log.error("Error fetching dss: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching dss service failed");
+            genericHandler.logAndSaveException(exception, "fetching dss");
             throw exception;
         }
     }

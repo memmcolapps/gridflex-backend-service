@@ -103,6 +103,26 @@ public class NodeController {
         }
     }
 
+    @GetMapping("/feeder")
+    public ResponseEntity<Map<String, Object>> getAllFeeder(){
+        try {
+            Map<String, Object> result =  nodeService.getAllFeeder();
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/dss")
+    public ResponseEntity<Map<String, Object>> getAllDss(@RequestParam String assetId){
+        try {
+            Map<String, Object> result =  nodeService.getAllDss(assetId);
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @GetMapping("/feeder-dss-node")
     ResponseEntity<?> getFeederAndDss(){
         try {

@@ -94,7 +94,7 @@ public interface DashboardMapper {
             @Result(property = "id", column = "transaction_id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
             @Result(property = "userFullname", column = "user_Fullname"),
             @Result(property = "customerFullname", column = "customer_Fullname"),
