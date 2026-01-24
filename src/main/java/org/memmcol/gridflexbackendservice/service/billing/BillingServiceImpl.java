@@ -8,11 +8,8 @@ import org.memmcol.gridflexbackendservice.mapper.BillingMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterReadingSheetMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.billing.ConsumptionType;
-import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
-import org.memmcol.gridflexbackendservice.model.billing.MeterConsumption;
+import org.memmcol.gridflexbackendservice.model.billing.*;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -1665,6 +1662,70 @@ public class BillingServiceImpl implements BillingService {
 
             return ResponseMap.response(status.getSuccessCode(),
                     "Feeder monthly consumption updated successfully", "");
+
+        }  catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logAndSaveException(exception, "meter monthly consumption");
+            throw exception;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getOverallConsumption(int page, int size, String search, String month, Integer year) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            List<OverallEnergyImport> monthlyConsumption = billingMapper.getOverallConsumption(
+                    um.getOrgId(), page, size, month, year);
+
+            // Apply filtering by role and state
+            List<OverallEnergyImport> filteredConsumption = monthlyConsumption.stream()
+                    .filter(o -> {
+                        // Filter by name (case-insensitive)
+                        if (search != null && !search.isEmpty()) {
+                            String searchLower = search.toLowerCase();
+                            String assetId = o.getAssetId();
+                            String feeder = o.getFeederName();
+
+                            boolean matchesAssetId = assetId.equalsIgnoreCase(searchLower);
+                            boolean matchesFeeder = feeder.contains(searchLower);
+
+                            if (!matchesAssetId && !matchesFeeder) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    })
+                    .toList();
+
+            int totalFilteredConsumptions = filteredConsumption.size();
+
+            if (size <= 0) {
+                size = totalFilteredConsumptions == 0 ? 1 : totalFilteredConsumptions;
+            }
+            if (page < 0) {
+                page = 0;
+            }
+
+            int totalPages = (int) Math.ceil((double) totalFilteredConsumptions / size);
+            int fromIndex = Math.min(page * size, totalFilteredConsumptions);
+            int toIndex = Math.min(fromIndex + size, totalFilteredConsumptions);
+
+            List<OverallEnergyImport> pagedConsumptions = filteredConsumption.subList(fromIndex, toIndex);
+
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalMeterConsumptions", totalFilteredConsumptions);
+            result.put("consumptions", pagedConsumptions); // return filtered list
+            result.put("currentPage", page);
+            result.put("totalPages", totalPages);
+            result.put("pageSize", size);
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Monthly consumption fetched successfully", result);
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);

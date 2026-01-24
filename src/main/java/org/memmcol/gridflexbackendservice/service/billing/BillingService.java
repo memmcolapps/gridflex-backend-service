@@ -28,4 +28,6 @@ public interface BillingService {
     Map<String, Object> generateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
 
     Map<String, Object> updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
+
+    Map<String, Object> getOverallConsumption(int page, int size, String search, String month, Integer year);
 }

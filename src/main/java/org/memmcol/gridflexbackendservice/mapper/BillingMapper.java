@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterConsumption;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
+import org.memmcol.gridflexbackendservice.model.billing.OverallEnergyImport;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 
 import java.math.BigDecimal;
@@ -279,4 +280,27 @@ public interface BillingMapper {
             "billing_date = #{billingDate}, updated_at = #{updatedAt} WHERE org_id = #{orgId} AND billing_date = #{billingDate}")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
+
+    @Select("""
+        <script>
+            SELECT *
+            FROM vw_overall_feeder_consumption vmc
+                WHERE org_id = #{orgId}
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+    </script>
+    """)
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "feederName", column = "feeder_name"),
+            @Result(property = "totalFeederConsumption", column = "total_feeder_consumption"),
+            @Result(property = "totalPrepaidConsumption", column = "totalPrepaidConsumption"),
+            @Result(property = "totalPostpaidConsumption", column = "totalPostpaidConsumption"),
+            @Result(property = "totalMDVirtualConsumption", column = "total_md_virtual_consumption"),
+            @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
+    })
+    List<OverallEnergyImport> getOverallConsumption(UUID orgId, int page, int size, String month, Integer year);
 }

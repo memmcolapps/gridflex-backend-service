@@ -43,7 +43,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/billing/service/meter/reading/create", "/billing/service/meter/reading/generate","/billing/service/meter/reading/update", "/billing/service/meter/reading/all", "/dashboard/service/billing",
                     "/billing/service/meter/reading/download/template/csv", "/billing/service/meter/reading/download/template/excel", "/billing/service/meter/reading/bulk-upload", "/billing/service/meter/consumption",
                     "/billing/service/meter/consumption/all", "/billing/service/virtual/meter/energy/import", "/billing/service/virtual/meter/energy/import/assetId/all", "/billing/service/feeder/reading/create",
-                    "/billing/service/feeder/reading/update",
+                    "/billing/service/feeder/reading/update", "/billing/service/feeder/overall/consumption",
                     "/vending/service/generate/token/print", "/dashboard/service/vending", "/dashboard/service/hes", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
                     "/hes/service/model", "/hes/service/communication/range/report", "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule")),
 
@@ -156,7 +156,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             Map.entry("billing", List.of( "/billing/service/meter/reading/create", "/billing/service/meter/reading/generate","/billing/service/meter/reading/update",
                     "/billing/service/meter/reading/all", "/dashboard/service/billing", "/billing/service/meter/reading/service/download/template/csv",  "/billing/service/virtual/meter/energy/import",
                     "/billing/service/virtual/meter/energy/import/assetId/all", "/billing/service/feeder/reading/create", "/billing/service/feeder/reading/update",
-                    "/billing/service/meter/reading/download/template/excel", "/billing/service/meter/consumption", "/billing/service/meter/consumption/all",
+                    "/billing/service/meter/reading/download/template/excel", "/billing/service/meter/consumption", "/billing/service/meter/consumption/all", "/billing/service/feeder/overall/consumption",
                     "/billing/service/meter/reading/bulk-upload", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get")),
 
             Map.entry("hes", List.of("/dashboard/service/hes-management", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",

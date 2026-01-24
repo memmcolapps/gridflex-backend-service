@@ -196,6 +196,23 @@ public class BillingController {
         }
     }
 
+    @GetMapping("/feeder/overall/consumption")
+    public ResponseEntity<?> getFeederOverallConsumption(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search,
+            @RequestParam(value = "month", required = false,  defaultValue = "") String month,
+            @RequestParam(value = "year", required = false,  defaultValue = "") Integer year
+    ) {
+        try {
+            Map<String, Object> result = readingMetersService.getOverallConsumption(page, size, search, month, year);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
