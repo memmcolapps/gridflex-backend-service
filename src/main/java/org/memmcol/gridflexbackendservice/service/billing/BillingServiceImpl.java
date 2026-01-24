@@ -1581,6 +1581,99 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Override
+    public Map<String, Object> updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            SubStationTransformerFeederLine node = billingMapper.verifyNode(feederReadingSheet.getAssetId(), um.getOrgId());
+
+            if(node == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder not found");
+            }
+
+            /* -------- BUILD BILLING DATE -------- */
+            int month;
+            int year;
+
+            try {
+                month = Month
+                        .valueOf(feederReadingSheet.getMonth().toUpperCase())
+                        .getValue();
+
+                year = Integer.parseInt(feederReadingSheet.getYear());
+
+            } catch (Exception e) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Invalid billing month or year");
+            }
+
+            /* -------- BUILD BILLING PERIOD -------- */
+            YearMonth billingPeriod = YearMonth.of(year, month);
+            LocalDate billingDate = billingPeriod.atDay(1);
+
+//            LocalDate lastBillingDate =
+//                    billingMapper.findLastBillingDate(node.getNodeId(), um.getOrgId());
+
+//            if (lastBillingDate != null) {
+//                YearMonth lastBilledMonth = YearMonth.from(lastBillingDate);
+//                YearMonth expectedNextMonth = lastBilledMonth.plusMonths(1);
+//
+//                if (!billingPeriod.equals(expectedNextMonth)) {
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Feeder reading month skipped. Expected: "
+//                                    + expectedNextMonth.getMonth() + " " + expectedNextMonth.getYear()
+//                    );
+//                }
+//            }
+
+
+            FeederReadingSheet feeder = billingMapper.verifyFeederConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+            if(feeder == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder consumption does not exist");
+            }
+
+
+            /* -------- OPTIONAL SAFETY CHECK -------- */
+            YearMonth current = YearMonth.now();
+            if (billingPeriod.isAfter(current)) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Feeder consumption record cannot be in the future");
+            }
+
+
+            /* -------- POSTPAID SAFETY CHECK -------- */
+            LocalDate billingMonthEnd = billingPeriod.atEndOfMonth();
+            LocalDate today = LocalDate.now();
+
+            if (!billingMonthEnd.isBefore(today)) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Feeder consumption can only be generated after the month has ended"
+                );
+            }
+
+            feederReadingSheet.setBillingDate(billingDate);
+            feederReadingSheet.setOrgId(um.getOrgId());
+            feederReadingSheet.setNodeId(node.getNodeId());
+
+            int createdReading = billingMapper.updateMonthlyFeederReading(feederReadingSheet);
+
+            if(createdReading == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder reading creating unsuccessful");
+            }
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Feeder monthly consumption updated successfully", "");
+
+        }  catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logAndSaveException(exception, "meter monthly consumption");
+            throw exception;
+        }
+    }
+
 
     //        return consumption.subtract(CUMULATIVE_LIMIT.subtract(previous));
 //        newReading.add(MAX_READING.subtract(previousCumulative)),

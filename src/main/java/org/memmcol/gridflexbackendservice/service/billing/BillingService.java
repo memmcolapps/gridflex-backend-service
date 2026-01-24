@@ -26,4 +26,6 @@ public interface BillingService {
     Map<String, Object> monthlyConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId);
 
     Map<String, Object> generateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
+
+    Map<String, Object> updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
 }

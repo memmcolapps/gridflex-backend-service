@@ -122,7 +122,7 @@ public class  SecurityConfig {
 						"/meter/service/allocate", "meter/service/detach","/billing/service/meter/reading/create","/billing/service/meter/reading/generate", "/billing/service/meter/reading/update",
 						"/billing/service/meter/reading/all", "/billing/service/meter/reading/download/template/csv", "/billing/service/meter/reading/download/template/excel","/billing/service/meter/consumption",
 						"/billing/service/meter/consumption/all", "/billing/service/virtual/meter/energy/import", "/billing/service/virtual/meter/energy/import/assetId/all",
-						"/billing/service/meter/reading/bulk-upload", "/billing/service/feeder/reading/create",
+						"/billing/service/meter/reading/bulk-upload", "/billing/service/feeder/reading/create", "/billing/service/feeder/reading/update",
 						"/meter/service/download/allocate/template/excel", "/meter/service/download/allocate/template/csv", "/meter/service/download/assign/template/excel",
 						"/meter/service/download/v-assign/template/excel", "/meter/service/download/v-assign/template/excel",
 						"/meter/service/download/assign/template/csv", "/meter/service/download/template/excel", "/meter/service/download/template/csv", "/meter/service/virtual/export", "/meter/service/export",
