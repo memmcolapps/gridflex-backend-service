@@ -183,7 +183,17 @@ public class BillingController {
                 GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
+    }
 
+    @PutMapping("/feeder/reading/update")
+    public ResponseEntity<?> updateFeederReading(@RequestBody FeederReadingSheet feederReadingSheet) {
+        try {
+            Map<String, Object> result = readingMetersService.updateMonthlyFeederReading(feederReadingSheet);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
     }
 
 

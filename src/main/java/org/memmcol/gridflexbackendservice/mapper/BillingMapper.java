@@ -242,7 +242,7 @@ public interface BillingMapper {
             @Param("meterId") UUID meterId,
             @Param("date") LocalDate date);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} AND type = 'feeder line'")
     @Results({
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
@@ -273,4 +273,10 @@ public interface BillingMapper {
           AND org_id = #{orgId};
     """)
     LocalDate findLastBillingDate(UUID nodeId, UUID orgId);
+
+    @Insert("UPDATE feeder_consumption SET node_id = #{nodeId}, technical_loss = #{technicalLoss}, " +
+            "commercial_loss = #{commercialLoss}, feeder_consumption = #{feederConsumption}, " +
+            "billing_date = #{billingDate}, updated_at = #{updatedAt} WHERE org_id = #{orgId} AND billing_date = #{billingDate}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
 }
