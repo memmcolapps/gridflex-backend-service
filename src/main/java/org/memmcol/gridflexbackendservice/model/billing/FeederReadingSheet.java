@@ -1,16 +1,21 @@
 package org.memmcol.gridflexbackendservice.model.billing;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class FeederReadingSheet {
 
     private String id;
+    private UUID orgId;
     private String assetId;
-    private String nodeId;
-    private String technicalLoss;
-    private String commercialLoss;
-    private String feederConsumption;
+    private UUID nodeId;
+    private BigDecimal technicalLoss;
+    private BigDecimal commercialLoss;
+    private BigDecimal feederConsumption;
+    private String month;
+    private String year;
     private LocalDate billingDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -28,12 +33,12 @@ public class FeederReadingSheet {
         this.id = id;
     }
 
-    public String getNodeId() {
-        return nodeId;
+    public UUID getOrgId() {
+        return orgId;
     }
 
-    public void setNodeId(String nodeId) {
-        this.nodeId = nodeId;
+    public void setOrgId(UUID orgId) {
+        this.orgId = orgId;
     }
 
     public String getAssetId() {
@@ -44,28 +49,52 @@ public class FeederReadingSheet {
         this.assetId = assetId;
     }
 
-    public String getTechnicalLoss() {
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public BigDecimal getTechnicalLoss() {
         return technicalLoss;
     }
 
-    public void setTechnicalLoss(String technicalLoss) {
+    public void setTechnicalLoss(BigDecimal technicalLoss) {
         this.technicalLoss = technicalLoss;
     }
 
-    public String getCommercialLoss() {
+    public BigDecimal getCommercialLoss() {
         return commercialLoss;
     }
 
-    public void setCommercialLoss(String commercialLoss) {
+    public void setCommercialLoss(BigDecimal commercialLoss) {
         this.commercialLoss = commercialLoss;
     }
 
-    public String getFeederConsumption() {
+    public BigDecimal getFeederConsumption() {
         return feederConsumption;
     }
 
-    public void setFeederConsumption(String feederConsumption) {
+    public void setFeederConsumption(BigDecimal feederConsumption) {
         this.feederConsumption = feederConsumption;
+    }
+
+    public String getMonth() {
+        return month;
+    }
+
+    public void setMonth(String month) {
+        this.month = month;
+    }
+
+    public String getYear() {
+        return year;
+    }
+
+    public void setYear(String year) {
+        this.year = year;
     }
 
     public LocalDate getBillingDate() {
