@@ -841,8 +841,6 @@ public class BillingServiceImpl implements BillingService {
 
             Meter meter = meterMapper.findById(meterId, um.getOrgId());
 
-            System.out.println("date: "+date);
-            System.out.println("meterId: "+meterId);
             MeterReadingSheet reading = readingMetersMapper.findReading(meterId, date);
             System.out.println("newReading: "+reading.getCurrentReading());
 
@@ -923,6 +921,7 @@ public class BillingServiceImpl implements BillingService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> monthlyConsumption(int page, int size, String search, String month, Integer year) {
         try{
@@ -931,15 +930,6 @@ public class BillingServiceImpl implements BillingService {
 
             List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumption(
                     um.getOrgId(), page, size, month, year);
-
-//            if ("MD".equalsIgnoreCase(meterClass)){
-//                meterReadingDTO.setMeterClass("MD");
-//                allReadings = readingMetersMapper.getMeterReadingSheet(page, size, month, year, meterReadingDTO, um.getOrgId());
-//            } else if("Non-MD".equalsIgnoreCase(meterClass)){
-//                meterReadingDTO.setMeterClass("single-phase");
-//                meterReadingDTO.setMeterClass2("three-phase");
-//                allReadings = readingMetersMapper.getMeterReadingSheet(page, size, month, year, meterReadingDTO, um.getOrgId());
-//            }
 
             // Apply filtering by role and state
             List<MeterReadingSheet> filteredConsumption = monthlyConsumption.stream()
@@ -1416,6 +1406,7 @@ public class BillingServiceImpl implements BillingService {
 //        }
 //    }
 
+    @Transactional
     @Override
     public Map<String, Object> monthlyConsumptionByFeeder(
             int page, int size, String search, String month, Integer year, UUID nodeId) {
@@ -1498,10 +1489,80 @@ public class BillingServiceImpl implements BillingService {
                 throw new GlobalExceptionHandler.NotFoundException("Feeder not found");
             }
 
-            FeederReadingSheet feeder = billingMapper.verifyFeederConsumption(node.getNodeId(), um.getOrgId());
-            if(feeder == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Feeder already exist");
+            /* -------- BUILD BILLING DATE -------- */
+            int month;
+            int year;
+
+            try {
+                month = Month
+                        .valueOf(feederReadingSheet.getMonth().toUpperCase())
+                        .getValue();
+
+                year = Integer.parseInt(feederReadingSheet.getYear());
+
+            } catch (Exception e) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Invalid billing month or year");
             }
+
+            /* -------- BUILD BILLING PERIOD -------- */
+            YearMonth billingPeriod = YearMonth.of(year, month);
+            LocalDate billingDate = billingPeriod.atDay(1);
+
+//            /* -------- POSTPAID STRICT RULE -------- */
+//            YearMonth lastCompletedMonth = YearMonth.now().minusMonths(1);
+
+//            if (!billingPeriod.equals(lastCompletedMonth)) {
+//                throw new GlobalExceptionHandler.NotFoundException(
+//                        "Feeder consumption can only be generated for the previous month: "
+//                                + lastCompletedMonth.getMonth() + " " + lastCompletedMonth.getYear()
+//                );
+//            }
+
+            /* -------- FETCH LAST BILLING FROM DB -------- */
+            LocalDate lastBillingDate =
+                    billingMapper.findLastBillingDate(node.getNodeId(), um.getOrgId());
+
+            if (lastBillingDate != null) {
+                YearMonth lastBilledMonth = YearMonth.from(lastBillingDate);
+                YearMonth expectedNextMonth = lastBilledMonth.plusMonths(1);
+
+                if (!billingPeriod.equals(expectedNextMonth)) {
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Feeder reading month skipped. Expected: "
+                                    + expectedNextMonth.getMonth() + " " + expectedNextMonth.getYear()
+                    );
+                }
+            }
+
+
+            FeederReadingSheet feeder = billingMapper.verifyFeederConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+            if(feeder != null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder consumption have already been captured for that period");
+            }
+
+
+            /* -------- OPTIONAL SAFETY CHECK -------- */
+            YearMonth current = YearMonth.now();
+            if (billingPeriod.isAfter(current)) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Feeder consumption record cannot be in the future");
+            }
+
+
+            /* -------- POSTPAID SAFETY CHECK -------- */
+            LocalDate billingMonthEnd = billingPeriod.atEndOfMonth();
+            LocalDate today = LocalDate.now();
+
+            if (!billingMonthEnd.isBefore(today)) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Feeder consumption can only be generated after the month has ended"
+                );
+            }
+
+            feederReadingSheet.setBillingDate(billingDate);
+            feederReadingSheet.setOrgId(um.getOrgId());
+            feederReadingSheet.setNodeId(node.getNodeId());
 
             int createdReading = billingMapper.addMonthlyFeederReading(feederReadingSheet);
 

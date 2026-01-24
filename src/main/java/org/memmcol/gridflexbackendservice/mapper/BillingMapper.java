@@ -242,7 +242,7 @@ public interface BillingMapper {
             @Param("meterId") UUID meterId,
             @Param("date") LocalDate date);
 
-    @Select("SELECT FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId}")
     @Results({
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
@@ -251,17 +251,26 @@ public interface BillingMapper {
     SubStationTransformerFeederLine verifyNode(String assetId, UUID orgId);
 
     @Insert("INSERT INTO feeder_consumption " +
-            "(node_id, org_id, technical_loss, commercial_loss, feeder_consumption, billing_date, created_at, _updated_at) " +
-            "VALUES(#{orgId}, #{technicalLoss}, #{commercialLoss}, #{feederLoss}, #{billingDate}, #{createdAt}, #{updatedAt})")
+            "(node_id, org_id, technical_loss, commercial_loss, feeder_consumption, billing_date, created_at, updated_at) " +
+            "VALUES(#{nodeId}, #{orgId}, #{technicalLoss}, #{commercialLoss}, #{feederConsumption}, #{billingDate}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int addMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
 
 
-    @Select("SELECT FROM feeder_consumption WHERE node_id = #{nodeId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM feeder_consumption " +
+            "WHERE node_id = #{nodeId} AND org_id = #{orgId} AND billing_date = #{billingDate}")
     @Results({
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id")
     })
-    FeederReadingSheet verifyFeederConsumption(UUID nodeId, UUID orgId);
+    FeederReadingSheet verifyFeederConsumption(UUID nodeId, UUID orgId, LocalDate billingDate);
+
+    @Select("""
+        SELECT MAX(billing_date)
+        FROM feeder_consumption
+        WHERE node_id = #{nodeId}
+          AND org_id = #{orgId};
+    """)
+    LocalDate findLastBillingDate(UUID nodeId, UUID orgId);
 }
