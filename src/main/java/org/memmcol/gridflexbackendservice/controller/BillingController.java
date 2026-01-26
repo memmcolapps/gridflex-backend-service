@@ -142,7 +142,7 @@ public class BillingController {
 
     }
 
-    @PostMapping("/virtual/meter/energy/import")
+    @PostMapping("/virtual/md-meter/energy/import")
     public ResponseEntity<Map<String, Object>> virtualMeterReading(
             @RequestBody List<MeterReadingSheet> meterReadingSheet) {
         try {
@@ -154,7 +154,7 @@ public class BillingController {
         }
     }
 
-    @GetMapping("/virtual/meter/energy/import/assetId/all")
+    @GetMapping("/virtual/md-meter/energy/import/assetId/all")
     public ResponseEntity<?> getMonthlyConsumption(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
@@ -171,7 +171,25 @@ public class BillingController {
                 GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
+    }
 
+    @GetMapping("/virtual/non-meter/energy/import/assetId/all")
+    public ResponseEntity<?> getMonthlyNonMDConsumption(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search,
+            @RequestParam(value = "month", required = false,  defaultValue = "") String month,
+            @RequestParam(value = "year", required = false,  defaultValue = "") Integer year,
+            @RequestParam UUID nodeId
+    ) {
+        try {
+            Map<String, Object> result = readingMetersService.monthlyNonMDConsumptionByFeeder(
+                    page, size, search, month, year, nodeId);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
     }
 
     @PostMapping("/feeder/reading/create")
@@ -189,6 +207,17 @@ public class BillingController {
     public ResponseEntity<?> updateFeederReading(@RequestBody FeederReadingSheet feederReadingSheet) {
         try {
             Map<String, Object> result = readingMetersService.updateMonthlyFeederReading(feederReadingSheet);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/virtual/non-md-meter/energy/import")
+    public ResponseEntity<?> virtualNonMeterReading(@RequestBody FeederReadingSheet feederReadingSheet) {
+        try {
+            Map<String, Object> result = readingMetersService.virtualNonMeterReading(feederReadingSheet);
             return ResponseEntity.ok(result);
         } catch (
                 GlobalExceptionHandler.SQLServerException e) {

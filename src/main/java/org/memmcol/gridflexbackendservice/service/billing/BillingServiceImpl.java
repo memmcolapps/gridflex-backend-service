@@ -1735,6 +1735,80 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Override
+    public Map<String, Object> virtualNonMeterReading(FeederReadingSheet feederReadingSheet) {
+        return Map.of();
+    }
+
+    @Override
+    public Map<String, Object> monthlyNonMDConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumptionByFeederLine(
+                    um.getOrgId(), page, size, month, year, nodeId);
+
+            // Apply filtering by role and state
+            List<MeterReadingSheet> filteredConsumption = monthlyConsumption.stream()
+                    .filter(o -> {
+                        // Filter by name (case-insensitive)
+                        if (search != null && !search.isEmpty()) {
+                            String searchLower = search.toLowerCase();
+                            String meterNo = o.getMeterNumber();
+                            String feeder = o.getFeederName();
+                            String dss = o.getDssName();
+
+                            System.out.println("meter number: "+meterNo);
+                            System.out.println("meter number>>>: "+searchLower);
+
+                            boolean matchesMeterNo = meterNo.equalsIgnoreCase(searchLower);
+                            boolean matchesFeeder = feeder.contains(searchLower);
+                            boolean matchesDss = dss.contains(searchLower);
+
+                            if (!matchesMeterNo && !matchesFeeder && !matchesDss) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    })
+                    .toList();
+
+            int totalFilteredConsumptions = filteredConsumption.size();
+
+            if (size <= 0) {
+                size = totalFilteredConsumptions == 0 ? 1 : totalFilteredConsumptions;
+            }
+            if (page < 0) {
+                page = 0;
+            }
+
+            int totalPages = (int) Math.ceil((double) totalFilteredConsumptions / size);
+            int fromIndex = Math.min(page * size, totalFilteredConsumptions);
+            int toIndex = Math.min(fromIndex + size, totalFilteredConsumptions);
+
+            List<MeterReadingSheet> pagedConsumptions = filteredConsumption.subList(fromIndex, toIndex);
+
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalMeterConsumptions", totalFilteredConsumptions);
+            result.put("consumptions", pagedConsumptions); // return filtered list
+            result.put("currentPage", page);
+            result.put("totalPages", totalPages);
+            result.put("pageSize", size);
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Monthly consumption fetched successfully", result);
+
+        }  catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logAndSaveException(exception, "meter monthly consumption");
+            throw exception;
+        }
+    }
+
 
     //        return consumption.subtract(CUMULATIVE_LIMIT.subtract(previous));
 //        newReading.add(MAX_READING.subtract(previousCumulative)),
