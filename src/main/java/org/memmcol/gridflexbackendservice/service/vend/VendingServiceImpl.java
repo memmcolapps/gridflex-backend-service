@@ -16,6 +16,7 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -63,6 +64,22 @@ public class VendingServiceImpl implements VendingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            Meter meterResult = vendMapper.getMeter(user.getOrgId(), creditToken.getMeterNumber(), creditToken.getAccountNumber());
+
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
+
+            boolean isValidForVending =
+                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
+                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
+                            && "Active".equalsIgnoreCase(meterResult.getStatus());
+
+            if (!isValidForVending) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending is only allowed for active, assigned prepaid meters."
+                );
+            }
 
             if(!creditToken.getTokenType().equalsIgnoreCase("credit-token")) {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
@@ -280,6 +297,22 @@ public class VendingServiceImpl implements VendingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
+            Meter meterResult = vendMapper.getMeter(user.getOrgId(), kctToken.getMeterNumber(), kctToken.getAccountNumber());
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
+
+            boolean isValidForVending =
+                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
+                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
+                            && "Active".equalsIgnoreCase(meterResult.getStatus());
+
+            if (!isValidForVending) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending is only allowed for active, assigned prepaid meters."
+                );
+            }
+
             if(!kctToken.getTokenType().equalsIgnoreCase("kct")) {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
@@ -378,6 +411,22 @@ public class VendingServiceImpl implements VendingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
+            Meter meterResult = vendMapper.getMeter(user.getOrgId(), clearTamper.getMeterNumber(), clearTamper.getAccountNumber());
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
+
+            boolean isValidForVending =
+                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
+                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
+                            && "Active".equalsIgnoreCase(meterResult.getStatus());
+
+            if (!isValidForVending) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending is only allowed for active, assigned prepaid meters."
+                );
+            }
+
             if(!clearTamper.getTokenType().equalsIgnoreCase("clear-tamper")) {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
@@ -434,6 +483,21 @@ public class VendingServiceImpl implements VendingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
+            Meter meterResult = vendMapper.getMeter(user.getOrgId(), clearCredit.getMeterNumber(), clearCredit.getAccountNumber());
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
+
+            boolean isValidForVending =
+                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
+                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
+                            && "Active".equalsIgnoreCase(meterResult.getStatus());
+
+            if (!isValidForVending) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending is only allowed for active, assigned prepaid meters."
+                );
+            }
 
             if(!clearCredit.getTokenType().equalsIgnoreCase("clear-credit")) {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
@@ -493,6 +557,22 @@ public class VendingServiceImpl implements VendingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+
+            Meter meterResult = vendMapper.getMeter(user.getOrgId(), kctToken.getMeterNumber(), kctToken.getAccountNumber());
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
+            
+            boolean isValidForVending =
+                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
+                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
+                            && "Active".equalsIgnoreCase(meterResult.getStatus());
+
+            if (!isValidForVending) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending is only allowed for active, assigned prepaid meters."
+                );
+            }
 
             if(!kctToken.getTokenType().equalsIgnoreCase("compensation")) {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
