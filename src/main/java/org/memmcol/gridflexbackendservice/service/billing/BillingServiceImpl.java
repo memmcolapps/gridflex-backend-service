@@ -340,6 +340,15 @@ public class BillingServiceImpl implements BillingService {
                 );
             }
 
+            if (meterInfo.getMeterClass().equalsIgnoreCase(meterReadingSheet.getMeterClass())) {
+                return ResponseMap.response(
+                        status.getFailCode(),
+                        meterInfo.getMeterNumber() +
+                                "is not a "+meterReadingSheet.getMeterClass()+" meter",
+                        ""
+                );
+            }
+
             UUID meterId = meterInfo.getId();
             UUID orgId = meterInfo.getOrgId();
 
