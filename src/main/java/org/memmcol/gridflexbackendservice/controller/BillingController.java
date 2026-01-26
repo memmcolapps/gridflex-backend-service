@@ -173,7 +173,7 @@ public class BillingController {
         }
     }
 
-    @GetMapping("/virtual/non-meter/energy/import/assetId/all")
+    @GetMapping("/virtual/non-md-meter/energy/import/assetId/all")
     public ResponseEntity<?> getMonthlyNonMDConsumption(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
@@ -215,7 +215,7 @@ public class BillingController {
     }
 
     @PostMapping("/virtual/non-md-meter/energy/import")
-    public ResponseEntity<?> virtualNonMeterReading(@RequestBody FeederReadingSheet feederReadingSheet) {
+    public ResponseEntity<?> virtualNonMeterReading(@RequestBody List<FeederReadingSheet> feederReadingSheet) {
         try {
             Map<String, Object> result = readingMetersService.virtualNonMeterReading(feederReadingSheet);
             return ResponseEntity.ok(result);

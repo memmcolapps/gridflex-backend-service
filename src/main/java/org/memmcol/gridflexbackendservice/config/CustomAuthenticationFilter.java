@@ -204,6 +204,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	    // Set the response status to indicate authentication failure
 	    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
+		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+
 	    // Write the error message to the response body
 	    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 	    new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
