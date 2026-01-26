@@ -30,7 +30,7 @@ public class ConsumptionCalculator {
         if (meter.getMeterType().equalsIgnoreCase("VIRTUAL")) {
             previousCumulative = previousCumulative.add(energyConsumption);
             return new MeterConsumption(
-                    BigDecimal.valueOf(Double.parseDouble(meter.getFixedEnergy())),
+                    meter.getFixedEnergy() == null ? BigDecimal.ZERO : BigDecimal.valueOf(Double.parseDouble(meter.getFixedEnergy())),
                     ConsumptionType.FIXED,
                     previousCumulative);
         }
