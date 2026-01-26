@@ -285,7 +285,8 @@ public interface MeterReadingSheetMapper {
             SELECT id, org_id, node_id, meter_number, tariff,meter_class
             FROM meters 
             WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' And status = 'Active'
-            And org_id = #{orgId} And meter_category = 'Postpaid' AND type = 'NON-VIRTUAL'
+            And org_id = #{orgId} And meter_category = 'Postpaid' AND type = 'NON-VIRTUAL' 
+            OR (type = 'VIRTUAL' AND fixed_energy IS NOT NULL)
             """)
     @Results({
             @Result(property = "id", column = "id"),
