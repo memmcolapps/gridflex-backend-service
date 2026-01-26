@@ -41,6 +41,7 @@ public class MeterReadingSheet implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
+    private String tariffId;
     private String tariffType;
     private String feederName;
     private String dssName;
@@ -52,6 +53,9 @@ public class MeterReadingSheet implements Serializable {
     private BigDecimal consumption;
     private BigDecimal preConsumption;
     private LocalDate date;
+
+    private BigDecimal consumptionPerMeter;
+    private BigDecimal meterCount;
 
     public MeterReadingSheet() {
         this.createdAt = LocalDateTime.now();
@@ -170,6 +174,14 @@ public class MeterReadingSheet implements Serializable {
         this.updatedAt = updatedAt;
     }
 
+    public String getTariffId() {
+        return tariffId;
+    }
+
+    public void setTariffId(String tariffId) {
+        this.tariffId = tariffId;
+    }
+
     public String getTariffType() {
         return tariffType;
     }
@@ -248,6 +260,22 @@ public class MeterReadingSheet implements Serializable {
 
     public void setDate(LocalDate date) {
         this.date = date;
+    }
+
+    public BigDecimal getConsumptionPerMeter() {
+        return consumptionPerMeter;
+    }
+
+    public void setConsumptionPerMeter(BigDecimal consumptionPerMeter) {
+        this.consumptionPerMeter = consumptionPerMeter;
+    }
+
+    public BigDecimal getMeterCount() {
+        return meterCount;
+    }
+
+    public void setMeterCount(BigDecimal meterCount) {
+        this.meterCount = meterCount;
     }
 }
 

@@ -303,4 +303,65 @@ public interface BillingMapper {
             @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
     })
     List<OverallEnergyImport> getOverallConsumption(UUID orgId, int page, int size, String month, Integer year);
+
+
+    @Select("""
+        <script>
+            SELECT
+                 vmc.tariff_id,
+                 vmc.feeder_name,
+                 vmc.tariff_type,
+                 vmc.meter_count,
+                 vmc.node_id,
+                 vmc.reading_date,
+                 vmc.previous_consumption,
+                 vmc.total_consumption,
+                 vmc.consumption_per_meter,
+                 vmc.created_at
+            FROM vw_meter_non_md_consumption vmc
+                <where>
+                     vmc.org_id = #{orgId}
+                     AND vmc.node_id = #{nodeId}
+                   
+                     <if test="month != null and month != ''">
+                         AND EXTRACT(MONTH FROM vmc.reading_date) =
+                             EXTRACT(MONTH FROM TO_DATE(#{month}, 'Month'))
+                     </if>
+             
+                     <if test="year != null">
+                         AND EXTRACT(YEAR FROM vmc.reading_date) = #{year}
+                     </if>
+               </where>
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+    </script>
+    """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "tariffId", column = "tariff_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "meterCount", column = "meter_count"),
+            @Result(property = "consumptionPerMeter", column = "consumption_per_meter"),
+            @Result(property = "consumption", column = "total_consumption"),
+            @Result(property = "preConsumption", column = "previous_consumption"),
+            @Result(property = "currentReadingDate", column = "reading_date"),
+            @Result(property = "feederName", column = "feeder_name"),
+            @Result(property = "tariffType", column = "tariff_type"),
+            @Result(property = "currentReadingDate", column = "reading_date")
+    })
+    List<MeterReadingSheet> getMonthlyNonMDConsumptionByFeederLine(
+            UUID orgId, int page, int size, String month, Integer year, UUID nodeId);
+
+    @Insert("INSERT INTO meter_non_md_consumption ()")
+    FeederReadingSheet createNonMDReading(FeederReadingSheet feederReadingSheet);
+
+    @Select("""
+        SELECT MAX(billing_date)
+        FROM feeder_consumption
+        WHERE node_id = #{nodeId}
+          AND org_id = #{orgId};
+    """)
+    LocalDate findLastNonBillingDate(UUID nodeId, UUID orgId);
 }
