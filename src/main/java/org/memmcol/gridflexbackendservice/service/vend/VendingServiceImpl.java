@@ -191,6 +191,23 @@ public class VendingServiceImpl implements VendingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
+            Meter meterResult = vendMapper.getMeter(user.getOrgId(), creditToken.getMeterNumber(), creditToken.getAccountNumber());
+
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
+
+            boolean isValidForVending =
+                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
+                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
+                            && "Active".equalsIgnoreCase(meterResult.getStatus());
+
+            if (!isValidForVending) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending is only allowed for active, assigned prepaid meters."
+                );
+            }
+
             // --- Fetch meter info ---
             List<MeterView> meters = vendMapper.getMeterInfo(
                     creditToken.getMeterNumber(),
@@ -200,6 +217,7 @@ public class VendingServiceImpl implements VendingService {
             if (meters.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found for provided details.");
             }
+
 
             MeterView meter = meters.get(0);
 
