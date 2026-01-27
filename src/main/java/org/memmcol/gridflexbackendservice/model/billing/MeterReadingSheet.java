@@ -19,6 +19,7 @@ public class MeterReadingSheet implements Serializable {
     private UUID id;
 
     private UUID meterId;
+    private UUID nodeId;
     private String meterNumber;
     private UUID orgId;
     private String readingType;
@@ -76,6 +77,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setMeterId(UUID meterId) {
         this.meterId = meterId;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
     }
 
     public String getMeterNumber() {

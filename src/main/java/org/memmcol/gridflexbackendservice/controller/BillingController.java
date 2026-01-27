@@ -215,7 +215,7 @@ public class BillingController {
     }
 
     @PostMapping("/virtual/non-md-meter/energy/import")
-    public ResponseEntity<?> virtualNonMeterReading(@RequestBody List<FeederReadingSheet> feederReadingSheet) {
+    public ResponseEntity<?> virtualNonMeterReading(@RequestBody List<MeterReadingSheet> feederReadingSheet) {
         try {
             Map<String, Object> result = readingMetersService.virtualNonMeterReading(feederReadingSheet);
             return ResponseEntity.ok(result);

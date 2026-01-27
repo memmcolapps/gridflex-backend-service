@@ -251,6 +251,14 @@ public interface BillingMapper {
     })
     SubStationTransformerFeederLine verifyNode(String assetId, UUID orgId);
 
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE node_id = #{nodeId} AND org_id = #{orgId} AND type = 'feeder line'")
+    @Results({
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id")
+    })
+    SubStationTransformerFeederLine verifyNodeId(UUID nodeId, UUID orgId);
+
     @Insert("INSERT INTO feeder_consumption " +
             "(node_id, org_id, technical_loss, commercial_loss, feeder_consumption, billing_date, created_at, updated_at) " +
             "VALUES(#{nodeId}, #{orgId}, #{technicalLoss}, #{commercialLoss}, #{feederConsumption}, #{billingDate}, #{createdAt}, #{updatedAt})")
@@ -297,8 +305,8 @@ public interface BillingMapper {
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "feederName", column = "feeder_name"),
             @Result(property = "totalFeederConsumption", column = "total_feeder_consumption"),
-            @Result(property = "totalPrepaidConsumption", column = "totalPrepaidConsumption"),
-            @Result(property = "totalPostpaidConsumption", column = "totalPostpaidConsumption"),
+            @Result(property = "totalPrepaidConsumption", column = "total_prepaid_consumption"),
+            @Result(property = "totalPostpaidConsumption", column = "total_postpaid_consumption"),
             @Result(property = "totalMDVirtualConsumption", column = "total_md_virtual_consumption"),
             @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
     })
@@ -306,16 +314,33 @@ public interface BillingMapper {
 
 
     @Select("""
+            SELECT *
+            FROM vw_overall_feeder_consumption vmc
+                WHERE org_id = #{orgId} AND node_id = #{nodeId}
+    """)
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "feederName", column = "feeder_name"),
+            @Result(property = "totalFeederConsumption", column = "total_feeder_consumption"),
+            @Result(property = "totalPrepaidConsumption", column = "total_prepaid_consumption"),
+            @Result(property = "totalPostpaidConsumption", column = "total_postpaid_consumption"),
+            @Result(property = "totalMDVirtualConsumption", column = "total_md_virtual_consumption"),
+            @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
+    })
+    OverallEnergyImport getOverallConsumptionByNodeId(UUID orgId, UUID nodeId);
+
+
+    @Select("""
         <script>
             SELECT
                  vmc.tariff_id,
-                 vmc.feeder_name,
                  vmc.tariff_type,
                  vmc.meter_count,
                  vmc.node_id,
                  vmc.reading_date,
                  vmc.previous_consumption,
-                 vmc.total_consumption,
                  vmc.consumption_per_meter,
                  vmc.created_at
             FROM vw_meter_non_md_consumption vmc
@@ -339,15 +364,15 @@ public interface BillingMapper {
     """)
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "tariffId", column = "tariff_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "meterCount", column = "meter_count"),
             @Result(property = "consumptionPerMeter", column = "consumption_per_meter"),
-            @Result(property = "consumption", column = "total_consumption"),
             @Result(property = "preConsumption", column = "previous_consumption"),
             @Result(property = "currentReadingDate", column = "reading_date"),
-            @Result(property = "feederName", column = "feeder_name"),
+//            @Result(property = "feederName", column = "feeder_name"),
             @Result(property = "tariffType", column = "tariff_type"),
             @Result(property = "currentReadingDate", column = "reading_date")
     })
@@ -364,4 +389,40 @@ public interface BillingMapper {
           AND org_id = #{orgId};
     """)
     LocalDate findLastNonBillingDate(UUID nodeId, UUID orgId);
+
+    @Select("""
+        SELECT previous_consumption
+        FROM meter_non_md_consumption
+        WHERE node_id = #{nodeId}
+           AND EXTRACT(YEAR FROM reading_date) = #{year}
+           AND EXTRACT(MONTH FROM reading_date) < #{month}
+            ORDER BY reading_date DESC
+            LIMIT 1
+    """)
+    @Results({
+//            @Result(property = "cumulativeReading", column = "cumulative_reading"),
+            @Result(property = "consumption", column = "previous_consumption")
+    })
+    MeterReadingSheet findLastConsumption(UUID nodeId, int month, int year);
+
+    @Insert("""
+        INSERT INTO meter_non_md_consumption
+        (node_id, reading_date, previous_consumption, consumption_per_meter, created_at, org_id)
+        VALUES
+        (#{nodeId}, #{reading_date}, #{consumption}, #{consumptionPerMeter},  #{createdAt}, #{orgId})
+    """)
+    void insertNonMDMonthlyConsumption(
+            UUID nodeId,
+            LocalDate reading_date,
+            BigDecimal consumption,
+            BigDecimal consumptionPerMeter,
+            LocalDateTime createdAt,
+            UUID orgId);
+
+    @Select("SELECT meter_count FROM vw_meter_non_md_consumption " +
+            "WHERE node_id = #{nodeId} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "meterCount", column = "meter_count")
+    })
+    BigDecimal getMeterCount(UUID nodeId, UUID orgId);
 }

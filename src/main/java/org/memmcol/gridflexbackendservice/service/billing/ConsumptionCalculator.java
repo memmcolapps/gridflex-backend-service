@@ -92,10 +92,10 @@ public class ConsumptionCalculator {
 
 
     public MeterConsumption virtualCalculate(
-            Meter meter,
+//            Meter meter,
 //            BigDecimal oldReading,
             BigDecimal newReading,
-            BigDecimal average,
+//            BigDecimal average,
             BigDecimal previousCumulative,
             BigDecimal energyConsumption
 //            BigDecimal newCumulative
@@ -115,7 +115,7 @@ public class ConsumptionCalculator {
 
         // ESTIMATE (Agent failed → current reading = 0)
         if (newReading != null) {
-            BigDecimal consumption = average;
+//            BigDecimal consumption = average;
             previousCumulative = previousCumulative.add(energyConsumption);
             return new MeterConsumption(
                     newReading,
