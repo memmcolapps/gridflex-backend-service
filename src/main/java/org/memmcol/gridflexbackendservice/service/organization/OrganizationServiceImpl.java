@@ -22,7 +22,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.*;
 
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 
 @Service

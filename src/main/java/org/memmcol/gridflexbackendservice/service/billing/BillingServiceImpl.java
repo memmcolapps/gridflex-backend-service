@@ -31,7 +31,7 @@ import java.time.Month;
 import java.time.YearMonth;
 import java.util.*;
 
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
 public class BillingServiceImpl implements BillingService {

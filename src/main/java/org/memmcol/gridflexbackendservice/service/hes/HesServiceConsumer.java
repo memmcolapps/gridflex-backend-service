@@ -17,7 +17,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.UUID;
 
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
 public class HesServiceConsumer {
@@ -33,7 +33,7 @@ public class HesServiceConsumer {
     private TenantMeterEmitterService emitterService;
     private UserMapper userMapper;
 //    @Autowired
-//    private org.memmcol.gridflexbackendservice.components.handleValidUser handleValidUser;
+//    private org.memmcol.gridflexbackendservice.components.HandleValidUser handleValidUser;
 
 
 //    public HesServiceConsumer(TenantMeterEmitterService emitterService,
@@ -43,7 +43,7 @@ public class HesServiceConsumer {
 //        this.meterMapper = meterMapper;
 //    }
 
-    @PostConstruct
+//    @PostConstruct
     public void startDefaultStream() {
         System.out.println("### Starting consumption of external SSE stream...");
         Flux<MeterStreamEvent> flux = webClient.get()

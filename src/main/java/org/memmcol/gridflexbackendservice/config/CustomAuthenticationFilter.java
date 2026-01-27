@@ -20,6 +20,7 @@ import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -54,6 +55,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	private ObjectMapper objectMapper;
 
+    private ResponseProperties responseProperties;
+
 //	private IMap<String, Boolean> authCache;
 
 	// Define the required headers
@@ -67,13 +70,15 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			AuthenticationManager authenticationManager,
 			AuthMapper authMapper, AuditRepository auditRepository,
 			HazelcastInstance hazelcastInstance, GenericHandler genericHandler,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper,
+            ResponseProperties responseProperties) {
 		this.authenticationManager = authenticationManager;
 		this.authMapper = authMapper;
 		this.auditRepository = auditRepository;
 		this.auditCache = hazelcastInstance.getMap("auditCache");
 		this.genericHandler = genericHandler;
 		this.objectMapper = objectMapper;
+        this.responseProperties = responseProperties;
 //		this.authCache = hazelcastInstance.getMap("auth-Cache");
 	}
 
@@ -189,8 +194,34 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		return log;
 	}
 
-	@Override
-	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+    @Override
+    protected void unsuccessfulAuthentication(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            AuthenticationException failed
+    ) throws IOException {
+
+        try {
+            genericHandler.logIncidentReport("Login service failed");
+        } catch (Exception ex) {
+            log.error("Incident logging failed", ex);
+            // DO NOT rethrow
+        }
+
+        Map<String, Object> errorMessage = new HashMap<>();
+        errorMessage.put("responsecode", responseProperties.getFailCode());
+        errorMessage.put("responsedesc", resolveAuthMessage(failed));
+        errorMessage.put("responsedata", null);
+
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        objectMapper.writeValue(response.getOutputStream(), errorMessage);
+    }
+
+
+    //	@Override
+	protected void unsuccessfulAuthenticationBackUp(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException failed) throws IOException, ServletException {
 
 		genericHandler.logIncidentReport("Login service failed");
@@ -208,5 +239,19 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 	    new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
 	}
+
+    private String resolveAuthMessage(AuthenticationException ex) {
+
+        if (ex instanceof BadCredentialsException) {
+            return "Invalid username or password";
+        }
+
+        if (ex instanceof org.springframework.security.core.userdetails.UsernameNotFoundException) {
+            return "Invalid username or password";
+        }
+
+        return "Authentication failed";
+    }
+
 
 }

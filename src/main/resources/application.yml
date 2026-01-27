@@ -1,6 +1,9 @@
 server:
   port: 9080
 
+app:
+  base-path: /grid-flex/v1/api
+
 spring:
   jackson:
     default-property-inclusion: non_null

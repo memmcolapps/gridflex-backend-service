@@ -49,6 +49,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 		String path = request.getServletPath();
 
+
 		// Define exempt paths where authorization is not required
 		Set<String> exemptPaths = Set.of(
 				"/service/alerts",
@@ -62,79 +63,95 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 //				"/meter/service/export"
 		);
 
-		// If the path is exempt, skip the authorization filter
-		if (exemptPaths.contains(path)) {
-			System.out.println("Requested path: " + path);
-			filterChain.doFilter(request, response);
-			return;
-		}
+        // Check if the path ends with any exempt pattern
+        boolean isExempt = exemptPaths.stream()
+                .anyMatch(path::endsWith);
 
-		// Enforce custom header validation for paths like logout and forget-password
-		if (path.startsWith("/auth/service/generate-otp") || path.startsWith("/auth/service/forget-password")) {
-			String apiKey = request.getHeader(ADMIN_HEADER_KEY);  // Get custom header
-			System.out.println(apiKey);
-			// Validate the custom API Key header
-			if (apiKey == null || (!apiKey.equals(ADMIN_HEADER_VALUE) && !apiKey.equals(USER_HEADER_VALUE))) {
-				// Instead of throwing an exception, handle the response
-				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Set HTTP 401 status
-				response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        // If the path is exempt, skip the authorization filter
+        if (isExempt) {
+            System.out.println("Requested path (exempt): " + path);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-				// Send a custom error message
-				Map<String, String> errorMessage = new HashMap<>();
-				errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
-				errorMessage.put("responsedesc", "Missing or invalid authentication header "+ADMIN_HEADER_KEY);
-				errorMessage.put("responsedata", "");
+//		// If the path is exempt, skip the authorization filter
+//		if (exemptPaths.contains(path)) {
+//			System.out.println("Requested path: " + path);
+//			filterChain.doFilter(request, response);
+//			return;
+//		}
 
-				// Write the error message to the response output stream
-				new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
-				return;  // Exit the filter chain after sending the response
-			}
-			filterChain.doFilter(request, response);  // Proceed if valid API Key
-		} else {
-			// Token-based authorization for other paths
-			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        // Enforce custom header validation for paths like logout and forget-password
+        if (path.endsWith("/auth/service/generate-otp") || path.endsWith("/auth/service/forget-password")) {
+            String apiKey = request.getHeader(ADMIN_HEADER_KEY);
+            System.out.println(apiKey);
 
-			if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-				try {
-					String token = authorizationHeader.substring("Bearer ".length());
-					// Check if token is blacklisted
-					if (Boolean.TRUE.equals(authCache.get(token))) {
-						handleException(response, new Exception("Token is blacklisted"),
-								"Token is blacklisted", HttpServletResponse.SC_UNAUTHORIZED);
-						return;
-					}
-					Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
-					JWTVerifier verifier = JWT.require(algorithm).build();
-					DecodedJWT decodedJWT = verifier.verify(token);
+            if (apiKey == null || (!apiKey.equals(ADMIN_HEADER_VALUE) && !apiKey.equals(USER_HEADER_VALUE))) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-					String username = decodedJWT.getSubject();
+                Map<String, String> errorMessage = new HashMap<>();
+                errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
+                errorMessage.put("responsedesc", "Missing or invalid authentication header "+ADMIN_HEADER_KEY);
+                errorMessage.put("responsedata", "");
 
-					// Decode roles correctly
-					String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
-					Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
-							.map(SimpleGrantedAuthority::new)
-							.collect(Collectors.toList());
+                new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
+                return;
+            }
+            filterChain.doFilter(request, response);
+        } else {
+            // Token-based authorization for other paths
+            String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-					// Optionally: Parse permission_tree JSON (if needed)
-					String permissionTreeJson = decodedJWT.getClaim("permission_tree").toString();
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                try {
+                    String token = authorizationHeader.substring("Bearer ".length());
 
-					CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
-					UsernamePasswordAuthenticationToken authToken =
-							new UsernamePasswordAuthenticationToken(principal, null, authorities);
-					SecurityContextHolder.getContext().setAuthentication(authToken);
+                    if (Boolean.TRUE.equals(authCache.get(token))) {
+                        handleException(response, new Exception("Token is blacklisted"),
+                                "Token is blacklisted", HttpServletResponse.SC_UNAUTHORIZED);
+                        return;
+                    }
 
-					// Continue filter chain
-					filterChain.doFilter(request, response);
+                    Algorithm algorithm = Algorithm.HMAC256("secret".getBytes());
+                    JWTVerifier verifier = JWT.require(algorithm).build();
+                    DecodedJWT decodedJWT = verifier.verify(token);
 
-				} catch (JWTVerificationException exception) {
-					handleException(response, exception, "Authorization Token Expired", HttpServletResponse.SC_FORBIDDEN);
-				} catch (Exception exception) {
-					handleException(response, exception, "Internal Server Error", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				}
-			} else {
-				handleException(response, new Exception("Authorization Token Not Found"), "Authorization Token Not Found", HttpServletResponse.SC_UNAUTHORIZED);
-			}
-		}
+                    String username = decodedJWT.getSubject();
+
+                    String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+                    Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+
+                    String permissionTreeJson = decodedJWT.getClaim("permission_tree").toString();
+
+                    CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    filterChain.doFilter(request, response);
+
+                } catch (JWTVerificationException exception) {
+                    String errorMessage;
+                    if (exception.getMessage().contains("expired")) {
+                        errorMessage = "Authorization Token Expired";
+                    } else if (exception.getMessage().contains("signature")) {
+                        errorMessage = "Invalid Token Signature";
+                    } else {
+                        errorMessage = "Invalid Authorization Token";
+                    }
+
+                    handleException(response, exception, errorMessage, HttpServletResponse.SC_FORBIDDEN);
+                } catch (Exception exception) {
+                    handleException(response, exception, "Internal Server Error", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                }
+            } else {
+                handleException(response, new Exception("Authorization Token Not Found"),
+                        "Authorization Token Not Found", HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        }
 	}
 
 	// Helper method to handle exceptions and send a custom error message

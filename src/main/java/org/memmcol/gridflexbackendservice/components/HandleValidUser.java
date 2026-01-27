@@ -12,13 +12,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 @Component
-public class handleValidUser {
+public class HandleValidUser {
 
     private static AuthMapper staticOperatorMapper;
 
     @Autowired
     public void setOperatorMapper(AuthMapper operatorMapper) {
-        handleValidUser.staticOperatorMapper = operatorMapper;
+        HandleValidUser.staticOperatorMapper = operatorMapper;
     }
 
     public static UserModel handleUserValidation() {
