@@ -22,7 +22,7 @@ public class Transaction implements Serializable {
     private UUID meterId;
     private String meterAccountNumber;
     private String meterNumber;
-    private String meterCategory;
+    private String meterClass;
     private BigDecimal InitialAmount;
     private BigDecimal FinalAmount;
     private BigDecimal vatAmount;
@@ -140,12 +140,12 @@ public class Transaction implements Serializable {
         this.meterNumber = meterNumber;
     }
 
-    public String getMeterCategory() {
-        return meterCategory;
+    public String getMeterClass() {
+        return meterClass;
     }
 
-    public void setMeterCategory(String meterCategory) {
-        this.meterCategory = meterCategory;
+    public void setMeterClass(String meterClass) {
+        this.meterClass = meterClass;
     }
 
     public BigDecimal getInitialAmount() {

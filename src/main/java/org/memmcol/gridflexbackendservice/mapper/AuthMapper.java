@@ -213,7 +213,7 @@ public interface AuthMapper {
     })
     List<Node> getNodeWithChildren(@Param("nodeId") UUID nodeId, @Param("orgId") UUID orgId);
 
-    @Select("SELECT * FROM users WHERE email = #{email}")
+    @Select("SELECT * FROM users WHERE email = LOWER(#{email})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -224,7 +224,7 @@ public interface AuthMapper {
             @Result(property = "status", column = "status"),
             @Result(property = "active", column = "active"),
             @Result(property = "phoneNumber", column = "phone_number"),
-            @Result(property = "password", column = "password"),
+//            @Result(property = "password", column = "password"),
             @Result(property = "lastActive", column = "last_active"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),

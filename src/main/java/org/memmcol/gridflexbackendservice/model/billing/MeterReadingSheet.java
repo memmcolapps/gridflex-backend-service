@@ -6,6 +6,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.BigDecimal;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -22,6 +24,7 @@ public class MeterReadingSheet implements Serializable {
     private String readingType;
     private BigDecimal lastReading;
     private BigDecimal currentReading;
+    private BigDecimal previousReading;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate currentReadingDate;
@@ -38,6 +41,7 @@ public class MeterReadingSheet implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
+    private String tariffId;
     private String tariffType;
     private String feederName;
     private String dssName;
@@ -47,7 +51,11 @@ public class MeterReadingSheet implements Serializable {
     private BigDecimal cumulativeReading;
     private BigDecimal averageConsumption;
     private BigDecimal consumption;
+    private BigDecimal preConsumption;
     private LocalDate date;
+
+    private BigDecimal consumptionPerMeter;
+    private BigDecimal meterCount;
 
     public MeterReadingSheet() {
         this.createdAt = LocalDateTime.now();
@@ -114,6 +122,14 @@ public class MeterReadingSheet implements Serializable {
         return currentReadingDate;
     }
 
+    public java.math.BigDecimal getPreviousReading() {
+        return previousReading;
+    }
+
+    public void setPreviousReading(java.math.BigDecimal previousReading) {
+        this.previousReading = previousReading;
+    }
+
     public void setCurrentReadingDate(LocalDate currentReadingDate) {
         this.currentReadingDate = currentReadingDate;
     }
@@ -156,6 +172,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getTariffId() {
+        return tariffId;
+    }
+
+    public void setTariffId(String tariffId) {
+        this.tariffId = tariffId;
     }
 
     public String getTariffType() {
@@ -222,12 +246,36 @@ public class MeterReadingSheet implements Serializable {
         this.consumption = consumption;
     }
 
+    public BigDecimal getPreConsumption() {
+        return preConsumption;
+    }
+
+    public void setPreConsumption(BigDecimal preConsumption) {
+        this.preConsumption = preConsumption;
+    }
+
     public LocalDate getDate() {
         return date;
     }
 
     public void setDate(LocalDate date) {
         this.date = date;
+    }
+
+    public BigDecimal getConsumptionPerMeter() {
+        return consumptionPerMeter;
+    }
+
+    public void setConsumptionPerMeter(BigDecimal consumptionPerMeter) {
+        this.consumptionPerMeter = consumptionPerMeter;
+    }
+
+    public BigDecimal getMeterCount() {
+        return meterCount;
+    }
+
+    public void setMeterCount(BigDecimal meterCount) {
+        this.meterCount = meterCount;
     }
 }
 

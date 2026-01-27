@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.service.billing.BillingService;
@@ -141,7 +142,7 @@ public class BillingController {
 
     }
 
-    @PostMapping("/virtual/meter/energy/import")
+    @PostMapping("/virtual/md-meter/energy/import")
     public ResponseEntity<Map<String, Object>> virtualMeterReading(
             @RequestBody List<MeterReadingSheet> meterReadingSheet) {
         try {
@@ -153,7 +154,7 @@ public class BillingController {
         }
     }
 
-    @GetMapping("/virtual/meter/energy/import/assetId/all")
+    @GetMapping("/virtual/md-meter/energy/import/assetId/all")
     public ResponseEntity<?> getMonthlyConsumption(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
@@ -170,7 +171,75 @@ public class BillingController {
                 GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
+    }
 
+    @GetMapping("/virtual/non-md-meter/energy/import/assetId/all")
+    public ResponseEntity<?> getMonthlyNonMDConsumption(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search,
+            @RequestParam(value = "month", required = false,  defaultValue = "") String month,
+            @RequestParam(value = "year", required = false,  defaultValue = "") Integer year,
+            @RequestParam UUID nodeId
+    ) {
+        try {
+            Map<String, Object> result = readingMetersService.monthlyNonMDConsumptionByFeeder(
+                    page, size, search, month, year, nodeId);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/feeder/reading/create")
+    public ResponseEntity<?> generateFeederReading(@RequestBody FeederReadingSheet feederReadingSheet) {
+        try {
+            Map<String, Object> result = readingMetersService.generateMonthlyFeederReading(feederReadingSheet);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PutMapping("/feeder/reading/update")
+    public ResponseEntity<?> updateFeederReading(@RequestBody FeederReadingSheet feederReadingSheet) {
+        try {
+            Map<String, Object> result = readingMetersService.updateMonthlyFeederReading(feederReadingSheet);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/virtual/non-md-meter/energy/import")
+    public ResponseEntity<?> virtualNonMeterReading(@RequestBody List<FeederReadingSheet> feederReadingSheet) {
+        try {
+            Map<String, Object> result = readingMetersService.virtualNonMeterReading(feederReadingSheet);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/feeder/overall/consumption")
+    public ResponseEntity<?> getFeederOverallConsumption(
+            @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false,  defaultValue = "") String search,
+            @RequestParam(value = "month", required = false,  defaultValue = "") String month,
+            @RequestParam(value = "year", required = false,  defaultValue = "") Integer year
+    ) {
+        try {
+            Map<String, Object> result = readingMetersService.getOverallConsumption(page, size, search, month, year);
+            return ResponseEntity.ok(result);
+        } catch (
+                GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
     }
 
 

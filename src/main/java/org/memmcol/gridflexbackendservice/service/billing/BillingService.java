@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.billing;
 
+import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 
@@ -23,4 +24,14 @@ public interface BillingService {
     Map<String, Object> energyImport(List<MeterReadingSheet> meterReadingSheet);
 
     Map<String, Object> monthlyConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId);
+
+    Map<String, Object> generateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
+
+    Map<String, Object> updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet);
+
+    Map<String, Object> getOverallConsumption(int page, int size, String search, String month, Integer year);
+
+    Map<String, Object> virtualNonMeterReading(List<FeederReadingSheet> feederReadingSheet);
+
+    Map<String, Object> monthlyNonMDConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId);
 }

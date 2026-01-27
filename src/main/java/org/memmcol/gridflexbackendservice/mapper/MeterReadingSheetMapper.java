@@ -15,8 +15,8 @@ import java.util.UUID;
 public interface MeterReadingSheetMapper {
 
     @Insert("""
-            Insert Into meter_reading_sheet(meter_id, org_id, reading_type, last_reading, current_reading, current_reading_date, last_reading_date, bill_month, bill_year, created_at, updated_at)
-            VALUES (#{meterId},#{orgId}, #{readingType},#{lastReading},#{currentReading},#{currentReadingDate},#{lastReadingDate},UPPER(#{billMonth}), #{billYear},#{createdAt},#{updatedAt})
+            Insert Into meter_reading_sheet(meter_id, org_id, reading_type, previous_reading, last_reading, current_reading, current_reading_date, last_reading_date, bill_month, bill_year, created_at, updated_at)
+            VALUES (#{meterId},#{orgId}, #{readingType},#{lastReading}, #{previousReading}, #{currentReading},#{currentReadingDate},#{lastReadingDate},UPPER(#{billMonth}), #{billYear},#{createdAt},#{updatedAt})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertMeterReadingSheet(MeterReadingSheet meterReadingSheet);
@@ -285,7 +285,8 @@ public interface MeterReadingSheetMapper {
             SELECT id, org_id, node_id, meter_number, tariff,meter_class
             FROM meters 
             WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' And status = 'Active'
-            And org_id = #{orgId} And meter_category = 'Postpaid' AND type = 'NON-VIRTUAL'
+            And org_id = #{orgId} And meter_category = 'Postpaid' AND type = 'NON-VIRTUAL' 
+            OR (type = 'VIRTUAL' AND fixed_energy IS NOT NULL)
             """)
     @Results({
             @Result(property = "id", column = "id"),
@@ -352,6 +353,7 @@ public interface MeterReadingSheetMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "previousReading", column = "previous_reading"),
             @Result(property = "currentReading", column = "current_reading"),
             @Result(property = "currentReadingDate", column = "current_reading_date"),
             @Result(property = "lastReading", column = "last_reading"),
