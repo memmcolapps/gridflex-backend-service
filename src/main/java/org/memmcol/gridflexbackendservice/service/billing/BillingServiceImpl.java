@@ -799,10 +799,6 @@ public class BillingServiceImpl implements BillingService {
                             String meterNo = o.getMeterNumber();
                             String feeder = o.getFeederName();
                             String dss = o.getDssName();
-
-                            System.out.println("meter number: "+meterNo);
-                            System.out.println("meter number>>>: "+searchLower);
-
                             boolean matchesMeterNo = meterNo.equalsIgnoreCase(searchLower);
                             boolean matchesFeeder = feeder.contains(searchLower);
                             boolean matchesDss = dss.contains(searchLower);
@@ -834,6 +830,7 @@ public class BillingServiceImpl implements BillingService {
 
             Map<String, Object> result = new HashMap<>();
             result.put("totalMeterConsumptions", totalFilteredConsumptions);
+//            result.put("totalConsumption", totalConsumption);
             result.put("consumptions", pagedConsumptions); // return filtered list
             result.put("currentPage", page);
             result.put("totalPages", totalPages);

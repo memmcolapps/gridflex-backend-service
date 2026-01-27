@@ -52,6 +52,7 @@ public class MeterReadingSheet implements Serializable {
     private BigDecimal cumulativeReading;
     private BigDecimal averageConsumption;
     private BigDecimal consumption;
+    private BigDecimal totalConsumption;
     private BigDecimal preConsumption;
     private LocalDate date;
 
@@ -257,6 +258,14 @@ public class MeterReadingSheet implements Serializable {
 
     public BigDecimal getPreConsumption() {
         return preConsumption;
+    }
+
+    public BigDecimal getTotalConsumption() {
+        return totalConsumption;
+    }
+
+    public void setTotalConsumption(BigDecimal totalConsumption) {
+        this.totalConsumption = totalConsumption;
     }
 
     public void setPreConsumption(BigDecimal preConsumption) {

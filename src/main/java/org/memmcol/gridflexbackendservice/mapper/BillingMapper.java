@@ -176,6 +176,8 @@ public interface BillingMapper {
                      vmc.org_id = #{orgId}
                      AND vmc.node_id = #{nodeId}
                      AND vmc.type = 'VIRTUAL'
+                     AND vmc.meter_class = 'MD'
+                     AND vmc.fixed_energy IS NULL
                    
                      <if test="month != null and month != ''">
                          AND EXTRACT(MONTH FROM vmc.reading_date) =
@@ -202,6 +204,7 @@ public interface BillingMapper {
             @Result(property = "cumulativeReading", column = "cumulative_reading"),
             @Result(property = "averageConsumption", column = "average_consumption"),
             @Result(property = "consumption", column = "consumption"),
+            @Result(property = "totalConsumption", column = "total_consumption"),
             @Result(property = "preConsumption", column = "prev_consumption"),
             @Result(property = "currentReadingDate", column = "reading_date"),
             @Result(property = "feederName", column = "feeder_name"),
@@ -216,6 +219,18 @@ public interface BillingMapper {
             @Param("month") String month,
             @Param("year") Integer year,
             @Param("nodeId") UUID nodeId);
+
+//    COALESCE(
+//            SUM(
+//            CASE
+//            WHEN vmc.meter_class = 'MD'
+//            AND vmc.type = 'VIRTUAL'
+//            THEN vmc.consumption
+//            ELSE 0
+//            END
+//    ) OVER (PARTITION BY vmc.node_id),
+//            0
+//            ) AS total_consumption,
 
     @Select("""
         SELECT * FROM meter_consumption
