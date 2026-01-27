@@ -36,7 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
 public class VendingServiceImpl implements VendingService {

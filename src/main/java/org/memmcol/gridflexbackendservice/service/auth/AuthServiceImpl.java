@@ -28,7 +28,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
 public class AuthServiceImpl implements AuthService {

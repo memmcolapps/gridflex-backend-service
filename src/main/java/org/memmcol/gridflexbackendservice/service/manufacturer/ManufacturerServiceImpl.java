@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
-import static org.memmcol.gridflexbackendservice.components.handleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
 public class ManufacturerServiceImpl implements ManufacturerService {
