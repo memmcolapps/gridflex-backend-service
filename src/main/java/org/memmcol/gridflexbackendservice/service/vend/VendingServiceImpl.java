@@ -102,9 +102,12 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
 
             // --- VAT and Unit Calculations ---
-            BigDecimal vatRate = new BigDecimal("0.075");
-            BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
-            BigDecimal totalWithVat = netBalance.add(vatAmount);
+            BigDecimal vatRate = meter.getVat().equalsIgnoreCase("Paying")
+                    ? new BigDecimal("1.075") : BigDecimal.ONE;
+
+//            BigDecimal vatRate = new BigDecimal("0.075");
+//            BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
+//            BigDecimal totalWithVat = netBalance.add(vatAmount);
 
             // --- Tariff Rate (safe parse) ---
             BigDecimal tariffRate;
@@ -114,21 +117,36 @@ public class VendingServiceImpl implements VendingService {
                 tariffRate = BigDecimal.ZERO; // invalid rate should act as 0
             }
 
-            BigDecimal units = BigDecimal.ZERO;
-            BigDecimal costPerUnit = BigDecimal.ZERO;
+            BigDecimal units;
+            BigDecimal costPerUnit;
 
             if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
+                costPerUnit = netBalance.divide(vatRate,  2, RoundingMode.HALF_UP);
                 // Normal calculation if tariffRate is valid
-                units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-
-                if (units.compareTo(BigDecimal.ZERO) > 0) {
-                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
-                }
+                units = costPerUnit.divide(tariffRate, 2, RoundingMode.HALF_UP);
+                System.out.println("unit1:: "+units);
+//                if (units.compareTo(BigDecimal.ZERO) > 0) {
+//                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+//                }
+            } else {
+                costPerUnit = netBalance.divide(vatRate,  2, RoundingMode.HALF_UP);
+                units = costPerUnit.divide(tariffRate.equals(BigDecimal.ZERO) ? BigDecimal.ONE : tariffRate, 2, RoundingMode.HALF_UP);
             }
 
-            BigDecimal finalAmount = netBalance.subtract(vatAmount);
-            System.out.println("unit:: "+units);
+//            if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
+//                // Normal calculation if tariffRate is valid
+//                units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
+//
+//                if (units.compareTo(BigDecimal.ZERO) > 0) {
+//                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+//                }
+//            }
 
+//            BigDecimal finalAmount = netBalance.subtract(vatAmount);
+//            System.out.println("unit:: "+units);
+
+            BigDecimal vatAmount = creditToken.getInitialAmount().subtract(costPerUnit);
+            vatRate = vatRate.equals(BigDecimal.ONE) ? BigDecimal.ZERO : vatRate;
 
             TokenGenRequest request = new TokenGenRequest();
             request.setAmount(units);
@@ -158,7 +176,7 @@ public class VendingServiceImpl implements VendingService {
             transaction.setUserId(user.getId());
             transaction.setCustomerId(meter.getCustomerId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
-            transaction.setFinalAmount(finalAmount);
+            transaction.setFinalAmount(netBalance.subtract(vatRate));
             transaction.setTokenType(creditToken.getTokenType());
             transaction.setKct1(generateDummyToken());
             transaction.setKct2(generateDummyToken());
@@ -228,9 +246,10 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
 
             // --- VAT and Unit Calculations ---
-            BigDecimal vatRate = new BigDecimal("0.075");
-            BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
-            BigDecimal totalWithVat = netBalance.add(vatAmount);
+            BigDecimal vatRate = meter.getVat().equalsIgnoreCase("Paying")
+                    ? new BigDecimal("1.075") : BigDecimal.ONE;
+//            BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
+//            BigDecimal totalWithVat = netBalance.add(vatAmount);
 
             // --- Tariff Rate (safe parse) ---
             BigDecimal tariffRate;
@@ -244,22 +263,27 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal costPerUnit = BigDecimal.ZERO;
 
             if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
+                costPerUnit = netBalance.divide(vatRate,  2, RoundingMode.HALF_UP);
                 // Normal calculation if tariffRate is valid
-                units = netBalance.divide(tariffRate, 2, RoundingMode.HALF_UP);
-                System.out.println("unit1:: "+units);
-                if (units.compareTo(BigDecimal.ZERO) > 0) {
-                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
-                }
+                units = costPerUnit.divide(tariffRate, 2, RoundingMode.HALF_UP);
+//                if (units.compareTo(BigDecimal.ZERO) > 0) {
+//                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
+//                }
+            } else {
+                costPerUnit = netBalance.divide(vatRate,  2, RoundingMode.HALF_UP);
+                units = costPerUnit.divide(tariffRate.equals(BigDecimal.ZERO) ? BigDecimal.ONE : tariffRate, 2, RoundingMode.HALF_UP);
             }
 
-            BigDecimal finalAmount = netBalance.subtract(vatAmount);
+            BigDecimal vatAmount = creditToken.getInitialAmount().subtract(costPerUnit);
+            //            BigDecimal finalAmount = netBalance.subtract(vatAmount);
 
+            vatRate = vatRate.equals(BigDecimal.ONE) ? BigDecimal.ZERO : vatRate;
             // --- Build Response Data ---
             creditToken.setVat(vatRate);
             creditToken.setCostOfUnit(costPerUnit);
             creditToken.setUnit(units);
             creditToken.setVatAmount(vatAmount);
-            creditToken.setFinalAmount(finalAmount);
+            creditToken.setFinalAmount(netBalance.subtract(vatRate));
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("data", creditToken);
@@ -304,9 +328,10 @@ public class VendingServiceImpl implements VendingService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal calculateVatAmount(BigDecimal netBalance, BigDecimal vatRate) {
-        return netBalance.multiply(vatRate).setScale(2, RoundingMode.HALF_UP);
-    }
+
+//    private BigDecimal calculateVatAmount(BigDecimal netBalance, BigDecimal vatRate) {
+//        return netBalance.multiply(vatRate).setScale(2, RoundingMode.HALF_UP);
+//    }
 
     @Transactional
     @Override

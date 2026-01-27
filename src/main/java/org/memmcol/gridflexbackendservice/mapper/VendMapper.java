@@ -123,6 +123,7 @@ public interface VendMapper {
             "    m.new_sgc,  " +
             "    m.old_krn,  " +
             "    m.new_krn,  " +
+            "    m.vat,  " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
             "    m.meter_account_number, " +
@@ -150,6 +151,7 @@ public interface VendMapper {
             "    m.new_sgc, " +
             "    m.old_krn, " +
             "    m.new_krn, " +
+            "    m.vat, " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
             "    m.tariff_rate, " +

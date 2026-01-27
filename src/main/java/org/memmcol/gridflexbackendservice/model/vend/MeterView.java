@@ -29,6 +29,7 @@ public class MeterView implements Serializable {
     private String status;
     private Boolean smartStatus;
     private String unit;
+    private String vat;
 
     // --- Tariff and Band Info ---
     private UUID tariffId;
@@ -459,5 +460,13 @@ public class MeterView implements Serializable {
 
     public void setUnit(String unit) {
         this.unit = unit;
+    }
+
+    public String getVat() {
+        return vat;
+    }
+
+    public void setVat(String vat) {
+        this.vat = vat;
     }
 }
