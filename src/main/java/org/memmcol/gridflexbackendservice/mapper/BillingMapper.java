@@ -5,7 +5,9 @@ import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterConsumption;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.OverallEnergyImport;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -258,13 +260,37 @@ public interface BillingMapper {
             @Param("meterId") UUID meterId,
             @Param("date") LocalDate date);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} AND type = 'feeder line'")
-    @Results({
-            @Result(property = "assetId", column = "asset_id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "nodeId", column = "node_id")
-    })
-    SubStationTransformerFeederLine verifyNode(String assetId, UUID orgId);
+//    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} AND type = 'feeder line'")
+//    @Results({
+//            @Result(property = "assetId", column = "asset_id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeId", column = "node_id")
+//    })
+//    SubStationTransformerFeederLine verifyNode(String assetId, UUID orgId);
+
+        @Select("""
+            SELECT m.*
+            FROM meters m
+            JOIN substation_trans_feeder_lines s 
+                ON s.node_id = m.node_id
+            WHERE s.asset_id = #{assetId}
+              AND s.org_id = #{orgId}
+              AND s.type = 'feeder line'
+        """)
+        @Results({
+                @Result(property = "orgId", column = "org_id"),
+                @Result(property = "nodeId", column = "node_id")
+        })
+        Meter verifyMeterNode(String assetId, UUID orgId);
+
+//    @Select("SELECT * FROM meters m " +
+//            "LEFT JOIN substation_trans_feeder_lines s ON s.node_id = m.node_id" +
+//            "WHERE s.asset_id = #{assetId} AND s.org_id = #{orgId} AND type = 'feeder line'")
+//    @Results({
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeId", column = "node_id")
+//    })
+//    Meter verifyMeterNode(String assetId, UUID orgId);
 
     @Select("SELECT * FROM substation_trans_feeder_lines WHERE node_id = #{nodeId} AND org_id = #{orgId} AND type = 'feeder line'")
     @Results({
@@ -323,14 +349,22 @@ public interface BillingMapper {
             @Result(property = "totalPrepaidConsumption", column = "total_prepaid_consumption"),
             @Result(property = "totalPostpaidConsumption", column = "total_postpaid_consumption"),
             @Result(property = "totalMDVirtualConsumption", column = "total_md_virtual_consumption"),
-            @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
+            @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption"),
+            @Result(property = "technicalLoss", column = "technical_loss"),
+            @Result(property = "commercialLoss", column = "commercial_loss"),
+            @Result(property = "billingDate", column = "billing_date"),
+            @Result(property = "efficiencyScore", column = "efficiency_score"),
+            @Result(property = "totalPrepaidMeters", column = "prepaid_meter_count"),
+            @Result(property = "totalPostpaidMDMeters", column = "postpaid_meter_count"),
+            @Result(property = "totalPostpaidMDMeters", column = "postpaid_meter_count"),
+            @Result(property = "totalEnergyBalanceLeft", column = "total_energy_left")
     })
     List<OverallEnergyImport> getOverallConsumption(UUID orgId, int page, int size, String month, Integer year);
 
 
     @Select("""
             SELECT *
-            FROM vw_overall_feeder_consumption vmc
+            FROM vw_overall_feeder_consumption vmc LEFT JOIN meters ON 
                 WHERE org_id = #{orgId} AND node_id = #{nodeId}
     """)
     @Results({

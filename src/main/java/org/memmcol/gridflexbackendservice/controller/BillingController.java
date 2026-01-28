@@ -242,6 +242,19 @@ public class BillingController {
         }
     }
 
+//    @GetMapping("/feeder/overall/consumption/view-details")
+//    public ResponseEntity<?> getFeederOverallConsumption(
+//            @RequestParam UUID nodeId
+//    ) {
+//        try {
+//            Map<String, Object> result = readingMetersService.getFeederDetails(nodeId);
+//            return ResponseEntity.ok(result);
+//        } catch (
+//                GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
+
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {

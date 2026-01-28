@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.model.billing;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public class OverallEnergyImport {
@@ -14,6 +15,18 @@ public class OverallEnergyImport {
     private BigDecimal totalPostpaidConsumption;
     private BigDecimal totalMDVirtualConsumption;
     private BigDecimal totalNonMDVirtualConsumption;
+
+    private BigDecimal technicalLoss;
+    private BigDecimal commercialLoss;
+
+    private BigDecimal totalPrepaidMeters;
+    private BigDecimal totalPostpaidMDMeters;
+    private BigDecimal totalPostpaidNonMDMeters;
+
+    private BigDecimal totalEnergyBalanceLeft;
+    private BigDecimal efficiencyScore;
+
+    private LocalDate billingDate;
 
     public UUID getNodeId() {
         return nodeId;
@@ -85,5 +98,69 @@ public class OverallEnergyImport {
 
     public void setTotalNonMDVirtualConsumption(BigDecimal totalNonMDVirtualConsumption) {
         this.totalNonMDVirtualConsumption = totalNonMDVirtualConsumption;
+    }
+
+    public BigDecimal getTechnicalLoss() {
+        return technicalLoss;
+    }
+
+    public void setTechnicalLoss(BigDecimal technicalLoss) {
+        this.technicalLoss = technicalLoss;
+    }
+
+    public BigDecimal getCommercialLoss() {
+        return commercialLoss;
+    }
+
+    public void setCommercialLoss(BigDecimal commercialLoss) {
+        this.commercialLoss = commercialLoss;
+    }
+
+    public BigDecimal getTotalPrepaidMeters() {
+        return totalPrepaidMeters;
+    }
+
+    public void setTotalPrepaidMeters(BigDecimal totalPrepaidMeters) {
+        this.totalPrepaidMeters = totalPrepaidMeters;
+    }
+
+    public BigDecimal getTotalPostpaidMDMeters() {
+        return totalPostpaidMDMeters;
+    }
+
+    public void setTotalPostpaidMDMeters(BigDecimal totalPostpaidMDMeters) {
+        this.totalPostpaidMDMeters = totalPostpaidMDMeters;
+    }
+
+    public BigDecimal getTotalPostpaidNonMDMeters() {
+        return totalPostpaidNonMDMeters;
+    }
+
+    public void setTotalPostpaidNonMDMeters(BigDecimal totalPostpaidNonMDMeters) {
+        this.totalPostpaidNonMDMeters = totalPostpaidNonMDMeters;
+    }
+
+    public BigDecimal getTotalEnergyBalanceLeft() {
+        return totalEnergyBalanceLeft;
+    }
+
+    public void setTotalEnergyBalanceLeft(BigDecimal totalEnergyBalanceLeft) {
+        this.totalEnergyBalanceLeft = totalEnergyBalanceLeft;
+    }
+
+    public BigDecimal getEfficiencyScore() {
+        return efficiencyScore;
+    }
+
+    public void setEfficiencyScore(BigDecimal efficiencyScore) {
+        this.efficiencyScore = efficiencyScore;
+    }
+
+    public LocalDate getBillingDate() {
+        return billingDate;
+    }
+
+    public void setBillingDate(LocalDate billingDate) {
+        this.billingDate = billingDate;
     }
 }

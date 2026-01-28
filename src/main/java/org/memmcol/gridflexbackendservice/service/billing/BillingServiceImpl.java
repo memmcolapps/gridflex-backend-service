@@ -847,16 +847,24 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> generateMonthlyFeederReading(FeederReadingSheet feederReadingSheet) {
         try{
+            BigDecimal hundred = BigDecimal.valueOf(100);
+            if(feederReadingSheet.getCommercialLoss().compareTo(hundred) > 0
+                    || feederReadingSheet.getTechnicalLoss().compareTo(hundred) > 0) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Commercial or Technical loss payload is incorrect. Percentage must be between 0 and 100."
+                );
+            }
 
             UserModel um = handleUserValidation();
 
-            SubStationTransformerFeederLine node = billingMapper.verifyNode(feederReadingSheet.getAssetId(), um.getOrgId());
+            Meter node = billingMapper.verifyMeterNode(feederReadingSheet.getAssetId(), um.getOrgId());
 
             if(node == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Feeder not found");
+                throw new GlobalExceptionHandler.NotFoundException("No meter assigned to this feeder");
             }
 
             /* -------- BUILD BILLING DATE -------- */
@@ -930,9 +938,42 @@ public class BillingServiceImpl implements BillingService {
                 );
             }
 
+            // ---------------- FETCH FEEDER CONSUMPTIONS ----------------
+//            BigDecimal totalFeederConsumption = billingMapper.getTotalFeederConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+//            BigDecimal totalPrepaidConsumption = billingMapper.getTotalPrepaidConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+//            BigDecimal totalPostpaidConsumption = billingMapper.getTotalPostpaidConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+//            BigDecimal totalMDVirtualConsumption = billingMapper.getTotalMDVirtualConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+//            BigDecimal totalNonMDVirtualConsumption = billingMapper.getTotalNonMDVirtualConsumption(node.getNodeId(), um.getOrgId(), billingDate);
+
+//            if (totalFeederConsumption == null) totalFeederConsumption = BigDecimal.ZERO;
+//            if (totalPrepaidConsumption == null) totalPrepaidConsumption = BigDecimal.ZERO;
+//            if (totalPostpaidConsumption == null) totalPostpaidConsumption = BigDecimal.ZERO;
+//            if (totalMDVirtualConsumption == null) totalMDVirtualConsumption = BigDecimal.ZERO;
+//            if (totalNonMDVirtualConsumption == null) totalNonMDVirtualConsumption = BigDecimal.ZERO;
+
+            // ---------------- CALCULATE NET FEEDER CONSUMPTION ----------------
+
+            // Convert % → fraction
+            BigDecimal technicalLossFactor = BigDecimal.ONE.subtract(
+                    feederReadingSheet.getTechnicalLoss()
+                            .divide(hundred, 6, RoundingMode.HALF_UP)
+            );
+
+            BigDecimal commercialLossFactor = BigDecimal.ONE.subtract(
+                    feederReadingSheet.getCommercialLoss()
+                            .divide(hundred, 6, RoundingMode.HALF_UP)
+            );
+
+            BigDecimal netFeederConsumption = feederReadingSheet.getFeederConsumption()
+                    .multiply(technicalLossFactor)
+                    .multiply(commercialLossFactor);
+
             feederReadingSheet.setBillingDate(billingDate);
             feederReadingSheet.setOrgId(um.getOrgId());
             feederReadingSheet.setNodeId(node.getNodeId());
+            feederReadingSheet.setFeederConsumption(netFeederConsumption);
+
+
 
             int createdReading = billingMapper.addMonthlyFeederReading(feederReadingSheet);
 
@@ -951,16 +992,17 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet) {
         try{
 
             UserModel um = handleUserValidation();
 
-            SubStationTransformerFeederLine node = billingMapper.verifyNode(feederReadingSheet.getAssetId(), um.getOrgId());
+            Meter node = billingMapper.verifyMeterNode(feederReadingSheet.getAssetId(), um.getOrgId());
 
             if(node == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Feeder not found");
+                throw new GlobalExceptionHandler.NotFoundException("No meter assigned to this feeder");
             }
 
             /* -------- BUILD BILLING DATE -------- */
@@ -1044,6 +1086,7 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> getOverallConsumption(int page, int size, String search, String month, Integer year) {
         try{
@@ -1091,11 +1134,15 @@ public class BillingServiceImpl implements BillingService {
 
 
             Map<String, Object> result = new HashMap<>();
+            Map<String, Object> moreDetail = new HashMap<>();
+
             result.put("totalMeterConsumptions", totalFilteredConsumptions);
-            result.put("consumptions", pagedConsumptions); // return filtered list
+            result.put("consumption", pagedConsumptions);
             result.put("currentPage", page);
             result.put("totalPages", totalPages);
             result.put("pageSize", size);
+
+
 
             return ResponseMap.response(status.getSuccessCode(),
                     "Monthly consumption fetched successfully", result);
@@ -1108,6 +1155,7 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> virtualNonMeterReading(List<MeterReadingSheet> payloads) {
 
@@ -1179,6 +1227,7 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> monthlyNonMDConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId) {
         try{
