@@ -34,4 +34,6 @@ public interface BillingService {
     Map<String, Object> virtualNonMeterReading(List<MeterReadingSheet> feederReadingSheet);
 
     Map<String, Object> monthlyNonMDConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId);
+
+//    Map<String, Object> getFeederDetails(UUID nodeId);
 }
