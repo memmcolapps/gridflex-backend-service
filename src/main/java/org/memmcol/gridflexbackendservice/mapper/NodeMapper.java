@@ -112,7 +112,7 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
-    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId} AND org_id = #{orgId} And type= 'region'")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "regionId", column = "region_id"),
@@ -122,8 +122,18 @@ public interface NodeMapper {
     })
     RegionBhubServiceCenter verifyNode(String regionId, UUID orgId);
 
+    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId} AND org_id = #{orgId} And type= #{type}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id")
+    })
+    RegionBhubServiceCenter findByRegionAndType(String regionId, UUID orgId,String type);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId}")
+
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} LIMIT 1")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "assetId", column = "asset_id"),
@@ -132,6 +142,28 @@ public interface NodeMapper {
             @Result(property = "orgId", column = "org_id")
     })
     SubStationTransformerFeederLine verifySubNode(String assetId, UUID orgId);
+
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE serial_no = #{serialNo} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "serialNo", column = "serial_no")
+    })
+    SubStationTransformerFeederLine verifySerialNo(String serialNo, UUID orgId);
+
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE email = #{email} AND org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "serialNo", column = "serial_no")
+    })
+    SubStationTransformerFeederLine verifyEmail(String email, UUID orgId);
 
     @Select("""
             SELECT * FROM region_bhub_service_centers 

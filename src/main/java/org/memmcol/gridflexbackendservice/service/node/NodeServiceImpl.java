@@ -66,18 +66,26 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            String type = request.getType().toLowerCase();
 
             RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
-            if(n != null){
-                if (n.getRegionId().equalsIgnoreCase(request.getRegionId())){
-                    throw new GlobalExceptionHandler.NotFoundException("Region ID ("+ request.getRegionId()+") " + status.getExistDesc());
+            if (type.equals("region")) {
+                if (n != null) {
+                    throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getExistDesc());
                 }
+            }else {
+                if (n == null) {
+                    throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getNotFoundDesc());
+                }
+            }
+
+            RegionBhubServiceCenter duplicate = nodeMapper.findByRegionAndType(request.getRegionId(), um.getOrgId(),request.getType().toLowerCase());
+            if (duplicate != null) {
+                throw new GlobalExceptionHandler.NotFoundException(request.getType() + " already exists for Region ID (" + request.getRegionId() + ")");
             }
 
             RegionBhubServiceCenter rgBhubService = nodeMapper.getBhubByOrgIdAndName(um.getOrgId(), request.getName());
             if (rgBhubService != null){
-                String type = request.getType().toLowerCase();
-
                 switch (type){
                     case "region":
                         throw new GlobalExceptionHandler.NotFoundException("Region Name (" + request.getName()+") " + status.getExistDesc() +" for a "+rgBhubService.getType());
@@ -145,18 +153,33 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            String type = request.getType().toLowerCase();
+
+            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getAssetId(), um.getOrgId());
+            if (n == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Asset ID (" + request.getAssetId() + ") " + status.getNotFoundDesc());
+            }
 
             SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
-            if(sub != null){
+            if(sub != null && sub.getType().equalsIgnoreCase(request.getType())){
                 if (sub.getAssetId().equalsIgnoreCase(request.getAssetId())){
-                    throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc());
+                    throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc() +" for a "+ request.getType());
                 }
+            }
+
+            SubStationTransformerFeederLine email = nodeMapper.verifyEmail(request.getEmail(), um.getOrgId());
+            if (email != null) {
+                throw new GlobalExceptionHandler.NotFoundException("Email ("+ request.getEmail()+")" + " already been used");
+            }
+
+            SubStationTransformerFeederLine serial = nodeMapper.verifySerialNo(request.getSerialNo(), um.getOrgId());
+            if (serial != null) {
+                throw new GlobalExceptionHandler.NotFoundException("Serial No ("+ request.getSerialNo()+") " + status.getExistDesc());
             }
 
             SubStationTransformerFeederLine subTransFeeder = nodeMapper.getSubTransformerFeederLineByOrgIdAndName(um.getOrgId(), request.getName());
             if (subTransFeeder != null){
 
-                String type = request.getType().toLowerCase();
                 switch (type){
                     case "dss":
                         throw new GlobalExceptionHandler.NotFoundException("DSS Name ("+ request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
