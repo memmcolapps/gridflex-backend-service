@@ -152,17 +152,24 @@ public interface BillingMapper {
                  vmc.meter_category,
                  vmc.type,
                  vmc.tariff_type,
-                
-                 COALESCE(vmc.reading_date, NULL),
-                 COALESCE(vmc.current_reading, 0) AS current_reading,
-                  COALESCE(vmc.cumulative_reading, 0) AS cumulative_reading,
-                  COALESCE(vmc.average_consumption, 0) AS average_consumption,
-                  COALESCE(vmc.consumption, 0) AS consumption,
-                  COALESCE(vmc.prev_consumption, 0) AS prev_consumption,
-                  COALESCE(vmc.consumption_type, '') AS consumption_type,
-               s.name AS feeder_name, st.name AS dss_name, 
-                t.tariff_type
- 
+                 vmc.name AS tariff_name,
+                 vmc.reading_date,
+                 vmc.current_reading,
+                 vmc.cumulative_reading,
+                 vmc.average_consumption,
+                 vmc.consumption,
+                 vmc.prev_consumption,
+                 vmc.consumption_type,
+                 vmc.prev_consumption,
+                 vmc.account_number,
+                 vmc.customer_name,
+                 vmc.meter_address,
+                 s.name AS feeder_name, 
+                 st.name AS dss_name,
+                COALESCE(
+                       SUM(vmc.consumption) OVER (PARTITION BY vmc.node_id),
+                       0
+                   ) AS total_consumption
             FROM vw_meter_consumption vmc
                 LEFT JOIN (
                 SELECT DISTINCT ON (meter_id)
@@ -177,9 +184,10 @@ public interface BillingMapper {
                <where>
                      vmc.org_id = #{orgId}
                      AND vmc.node_id = #{nodeId}
-                     AND vmc.type = 'VIRTUAL'
-                     AND vmc.meter_class = 'MD'
-                     AND vmc.fixed_energy IS NULL
+                     AND LOWER(vmc.type) = 'virtual'
+                     AND LOWER(vmc.meter_class) = 'md'
+                     AND LOWER(vmc.meter_category) = 'postpaid'
+                     AND (vmc.fixed_energy = '' OR vmc.fixed_energy = NULL)
                    
                      <if test="month != null and month != ''">
                          AND EXTRACT(MONTH FROM vmc.reading_date) =
@@ -212,7 +220,12 @@ public interface BillingMapper {
             @Result(property = "feederName", column = "feeder_name"),
             @Result(property = "dssName", column = "dss_name"),
             @Result(property = "meterClass", column = "meter_class"),
-            @Result(property = "tariffType", column = "tariff_type")
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "tariffType", column = "tariff_type"),
+            @Result(property = "tariffName", column = "tariff_name"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "customerName", column = "customer_name"),
+            @Result(property = "meterAddress", column = "meter_address")
     })
     List<MeterReadingSheet> getMonthlyConsumptionByFeederLine(
             @Param("orgId") UUID orgId,
@@ -362,23 +375,23 @@ public interface BillingMapper {
     List<OverallEnergyImport> getOverallConsumption(UUID orgId, int page, int size, String month, Integer year);
 
 
-    @Select("""
-            SELECT *
-            FROM vw_overall_feeder_consumption vmc LEFT JOIN meters ON 
-                WHERE org_id = #{orgId} AND node_id = #{nodeId}
-    """)
-    @Results({
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "assetId", column = "asset_id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "feederName", column = "feeder_name"),
-            @Result(property = "totalFeederConsumption", column = "total_feeder_consumption"),
-            @Result(property = "totalPrepaidConsumption", column = "total_prepaid_consumption"),
-            @Result(property = "totalPostpaidConsumption", column = "total_postpaid_consumption"),
-            @Result(property = "totalMDVirtualConsumption", column = "total_md_virtual_consumption"),
-            @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
-    })
-    OverallEnergyImport getOverallConsumptionByNodeId(UUID orgId, UUID nodeId);
+//    @Select("""
+//            SELECT *
+//            FROM vw_overall_feeder_consumption vmc LEFT JOIN meters ON
+//                WHERE org_id = #{orgId} AND node_id = #{nodeId}
+//    """)
+//    @Results({
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "assetId", column = "asset_id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "feederName", column = "feeder_name"),
+//            @Result(property = "totalFeederConsumption", column = "total_feeder_consumption"),
+//            @Result(property = "totalPrepaidConsumption", column = "total_prepaid_consumption"),
+//            @Result(property = "totalPostpaidConsumption", column = "total_postpaid_consumption"),
+//            @Result(property = "totalMDVirtualConsumption", column = "total_md_virtual_consumption"),
+//            @Result(property = "totalNonMDVirtualConsumption", column = "total_non_md_virtual_consumption")
+//    })
+//    OverallEnergyImport getOverallConsumptionByNodeId(UUID orgId, UUID nodeId);
 
 
     @Select("""
@@ -396,7 +409,7 @@ public interface BillingMapper {
                 <where>
                      vmc.org_id = #{orgId}
                      AND vmc.node_id = #{nodeId}
-                   
+                
                      <if test="month != null and month != ''">
                          AND EXTRACT(MONTH FROM vmc.reading_date) =
                              EXTRACT(MONTH FROM TO_DATE(#{month}, 'Month'))

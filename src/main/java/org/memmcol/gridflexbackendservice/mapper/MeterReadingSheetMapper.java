@@ -284,9 +284,9 @@ public interface MeterReadingSheetMapper {
     @Select("""
             SELECT id, org_id, node_id, meter_number, tariff,meter_class
             FROM meters 
-            WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' And status = 'Active'
-            And org_id = #{orgId} And meter_category = 'Postpaid' AND type = 'NON-VIRTUAL' 
-            OR (type = 'VIRTUAL' AND fixed_energy IS NOT NULL)
+            WHERE meter_number = #{meterNo} AND LOWER(meter_stage) = 'assigned' AND LOWER(status) = 'active'
+            And org_id = #{orgId} AND LOWER(meter_category) = 'postpaid' AND LOWER(type) = 'non-virtual' 
+            OR (LOWER(type) = 'virtual' AND (fixed_energy != '' OR fixed_energy IS NOT NULL))
             """)
     @Results({
             @Result(property = "id", column = "id"),
@@ -301,8 +301,8 @@ public interface MeterReadingSheetMapper {
     @Select("""
             SELECT id, org_id, node_id, meter_number, tariff,meter_class
             FROM meters 
-            WHERE meter_number = #{meterNo} And meter_stage = 'Assigned' And status = 'Active'
-            And org_id = #{orgId} And meter_category = 'Postpaid' AND type = 'VIRTUAL'
+            WHERE meter_number = #{meterNo} LOWER(meter_stage) = 'assigned' AND LOWER(status) = 'active'
+            And org_id = #{orgId} AND LOWER(meter_category) = 'postpaid' AND LOWER(type) = 'virtual'
             """)
     @Results({
             @Result(property = "id", column = "id"),

@@ -44,9 +44,11 @@ public class MeterReadingSheet implements Serializable {
 
     private String tariffId;
     private String tariffType;
+    private String tariffName;
     private String feederName;
     private String dssName;
     private String meterClass;
+    private String meterCategory;
     private String type;
 
     private BigDecimal cumulativeReading;
@@ -58,6 +60,10 @@ public class MeterReadingSheet implements Serializable {
 
     private BigDecimal consumptionPerMeter;
     private BigDecimal meterCount;
+
+    private String accountNumber;
+    private String customerName;
+    private String meterAddress;
 
     public MeterReadingSheet() {
         this.createdAt = LocalDateTime.now();
@@ -128,16 +134,16 @@ public class MeterReadingSheet implements Serializable {
         this.currentReading = currentReading;
     }
 
-    public LocalDate getCurrentReadingDate() {
-        return currentReadingDate;
-    }
-
-    public java.math.BigDecimal getPreviousReading() {
+    public BigDecimal getPreviousReading() {
         return previousReading;
     }
 
-    public void setPreviousReading(java.math.BigDecimal previousReading) {
+    public void setPreviousReading(BigDecimal previousReading) {
         this.previousReading = previousReading;
+    }
+
+    public LocalDate getCurrentReadingDate() {
+        return currentReadingDate;
     }
 
     public void setCurrentReadingDate(LocalDate currentReadingDate) {
@@ -200,6 +206,14 @@ public class MeterReadingSheet implements Serializable {
         this.tariffType = tariffType;
     }
 
+    public String getTariffName() {
+        return tariffName;
+    }
+
+    public void setTariffName(String tariffName) {
+        this.tariffName = tariffName;
+    }
+
     public String getFeederName() {
         return feederName;
     }
@@ -222,6 +236,14 @@ public class MeterReadingSheet implements Serializable {
 
     public void setMeterClass(String meterClass) {
         this.meterClass = meterClass;
+    }
+
+    public String getMeterCategory() {
+        return meterCategory;
+    }
+
+    public void setMeterCategory(String meterCategory) {
+        this.meterCategory = meterCategory;
     }
 
     public String getType() {
@@ -256,16 +278,16 @@ public class MeterReadingSheet implements Serializable {
         this.consumption = consumption;
     }
 
-    public BigDecimal getPreConsumption() {
-        return preConsumption;
-    }
-
     public BigDecimal getTotalConsumption() {
         return totalConsumption;
     }
 
     public void setTotalConsumption(BigDecimal totalConsumption) {
         this.totalConsumption = totalConsumption;
+    }
+
+    public BigDecimal getPreConsumption() {
+        return preConsumption;
     }
 
     public void setPreConsumption(BigDecimal preConsumption) {
@@ -294,6 +316,30 @@ public class MeterReadingSheet implements Serializable {
 
     public void setMeterCount(BigDecimal meterCount) {
         this.meterCount = meterCount;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getMeterAddress() {
+        return meterAddress;
+    }
+
+    public void setMeterAddress(String meterAddress) {
+        this.meterAddress = meterAddress;
     }
 }
 
