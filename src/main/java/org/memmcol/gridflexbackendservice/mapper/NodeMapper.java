@@ -143,7 +143,7 @@ public interface NodeMapper {
     })
     SubStationTransformerFeederLine verifySubNode(String assetId, UUID orgId);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE serial_no = #{serialNo} AND org_id = #{orgId}")
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE org_id = #{orgId} AND (serial_no = #{serialNo} OR email = #{email})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "assetId", column = "asset_id"),
@@ -152,18 +152,18 @@ public interface NodeMapper {
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "serialNo", column = "serial_no")
     })
-    SubStationTransformerFeederLine verifySerialNo(String serialNo, UUID orgId);
+    SubStationTransformerFeederLine verifySerialNo(String serialNo, UUID orgId, String email);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE email = #{email} AND org_id = #{orgId}")
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "assetId", column = "asset_id"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "parentId", column = "parent_id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "serialNo", column = "serial_no")
-    })
-    SubStationTransformerFeederLine verifyEmail(String email, UUID orgId);
+//    @Select("SELECT * FROM substation_trans_feeder_lines WHERE email = #{email} AND org_id = #{orgId}")
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "assetId", column = "asset_id"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "serialNo", column = "serial_no")
+//    })
+//    SubStationTransformerFeederLine verifyEmail(String email, UUID orgId);
 
     @Select("""
             SELECT * FROM region_bhub_service_centers 

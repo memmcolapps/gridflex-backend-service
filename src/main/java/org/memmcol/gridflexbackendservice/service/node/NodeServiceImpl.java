@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.node;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
@@ -68,6 +69,17 @@ public class NodeServiceImpl implements NodeService {
             UserModel um = handleUserValidation();
             String type = request.getType().toLowerCase();
 
+            Node node = new Node();
+            node.setName(request.getName());
+            node.setOrgId(um.getOrgId());
+            node.setParentId(request.getParentId());
+
+            Node nd = nodeMapper.isNodeExist(request.getParentId());
+
+            if(nd == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
+            }
+
             RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
             if (type.equals("region")) {
                 if (n != null) {
@@ -99,17 +111,6 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-
-            Node node = new Node();
-            node.setName(request.getName());
-            node.setOrgId(um.getOrgId());
-            node.setParentId(request.getParentId());
-
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
-
-            if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
-            }
             nodeMapper.createNode(node);
 
             UUID nodeId = node.getId();
@@ -155,9 +156,20 @@ public class NodeServiceImpl implements NodeService {
             UserModel um = handleUserValidation();
             String type = request.getType().toLowerCase();
 
-            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getAssetId(), um.getOrgId());
-            if (n == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Asset ID (" + request.getAssetId() + ") " + status.getNotFoundDesc());
+//            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getAssetId(), um.getOrgId());
+//            if (n == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Asset ID (" + request.getAssetId() + ") " + status.getNotFoundDesc());
+//            }
+
+            Node node = new Node();
+            node.setName(request.getName());
+            node.setOrgId(um.getOrgId());
+            node.setParentId(request.getParentId());
+
+            Node nd = nodeMapper.isNodeExist(request.getParentId());
+
+            if(nd == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
 
             SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
@@ -167,14 +179,18 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-            SubStationTransformerFeederLine email = nodeMapper.verifyEmail(request.getEmail(), um.getOrgId());
-            if (email != null) {
-                throw new GlobalExceptionHandler.NotFoundException("Email ("+ request.getEmail()+")" + " already been used");
-            }
+//            SubStationTransformerFeederLine email = nodeMapper.verifyEmail(request.getEmail(), um.getOrgId());
+//            if (email != null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Email ("+ request.getEmail()+")" + " already been used");
+//            }
 
-            SubStationTransformerFeederLine serial = nodeMapper.verifySerialNo(request.getSerialNo(), um.getOrgId());
+            SubStationTransformerFeederLine serial = nodeMapper.verifySerialNo(request.getSerialNo(), um.getOrgId(), request.getEmail());
             if (serial != null) {
-                throw new GlobalExceptionHandler.NotFoundException("Serial No ("+ request.getSerialNo()+") " + status.getExistDesc());
+                if (serial.getSerialNo().equalsIgnoreCase(request.getSerialNo())){
+                    throw new GlobalExceptionHandler.NotFoundException("Serial No ("+ request.getSerialNo()+") " + status.getExistDesc());
+                } else if (serial.getEmail().equalsIgnoreCase(request.getEmail())) {
+                    throw new GlobalExceptionHandler.NotFoundException("Email ("+ request.getEmail()+")" + " already been used");
+                }
             }
 
             SubStationTransformerFeederLine subTransFeeder = nodeMapper.getSubTransformerFeederLineByOrgIdAndName(um.getOrgId(), request.getName());
@@ -194,16 +210,7 @@ public class NodeServiceImpl implements NodeService {
 
             }
 
-            Node node = new Node();
-            node.setName(request.getName());
-            node.setOrgId(um.getOrgId());
-            node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
-
-            if(nd == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
-            }
             nodeMapper.createNode(node);
 
             UUID nodeId = node.getId();
@@ -216,6 +223,10 @@ public class NodeServiceImpl implements NodeService {
             if(request.getType().toLowerCase().equals("dss") ||
                     request.getType().toLowerCase().equals("feeder line") ||
                     request.getType().toLowerCase().equals("substation")){
+//                request.getEmail().equalsIgnoreCase("") ? request.setEmail(NULL) : request.getEmail();
+                request.setEmail(
+                        StringUtils.isBlank(request.getEmail()) ? null : request.getEmail()
+                );
                 nodeMapper.createSubStationTransformerFeederLine(request);
                 id = request.getNodeId();
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(id);
