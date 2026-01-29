@@ -830,7 +830,7 @@ public class BillingServiceImpl implements BillingService {
 
             Map<String, Object> result = new HashMap<>();
             result.put("totalMeterConsumptions", totalFilteredConsumptions);
-            result.put("totalConsumption", pagedConsumptions.getFirst().getTotalConsumption());
+            result.put("totalConsumption", pagedConsumptions.get(0).getTotalConsumption());
             result.put("consumptions", pagedConsumptions); // return filtered list
             result.put("currentPage", page);
             result.put("totalPages", totalPages);
