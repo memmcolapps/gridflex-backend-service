@@ -830,7 +830,7 @@ public class BillingServiceImpl implements BillingService {
 
             Map<String, Object> result = new HashMap<>();
             result.put("totalMeterConsumptions", totalFilteredConsumptions);
-//            result.put("totalConsumption", totalConsumption);
+            result.put("totalConsumption", pagedConsumptions.getFirst().getTotalConsumption());
             result.put("consumptions", pagedConsumptions); // return filtered list
             result.put("currentPage", page);
             result.put("totalPages", totalPages);
@@ -937,21 +937,6 @@ public class BillingServiceImpl implements BillingService {
                         "Feeder consumption can only be generated after the month has ended"
                 );
             }
-
-            // ---------------- FETCH FEEDER CONSUMPTIONS ----------------
-//            BigDecimal totalFeederConsumption = billingMapper.getTotalFeederConsumption(node.getNodeId(), um.getOrgId(), billingDate);
-//            BigDecimal totalPrepaidConsumption = billingMapper.getTotalPrepaidConsumption(node.getNodeId(), um.getOrgId(), billingDate);
-//            BigDecimal totalPostpaidConsumption = billingMapper.getTotalPostpaidConsumption(node.getNodeId(), um.getOrgId(), billingDate);
-//            BigDecimal totalMDVirtualConsumption = billingMapper.getTotalMDVirtualConsumption(node.getNodeId(), um.getOrgId(), billingDate);
-//            BigDecimal totalNonMDVirtualConsumption = billingMapper.getTotalNonMDVirtualConsumption(node.getNodeId(), um.getOrgId(), billingDate);
-
-//            if (totalFeederConsumption == null) totalFeederConsumption = BigDecimal.ZERO;
-//            if (totalPrepaidConsumption == null) totalPrepaidConsumption = BigDecimal.ZERO;
-//            if (totalPostpaidConsumption == null) totalPostpaidConsumption = BigDecimal.ZERO;
-//            if (totalMDVirtualConsumption == null) totalMDVirtualConsumption = BigDecimal.ZERO;
-//            if (totalNonMDVirtualConsumption == null) totalNonMDVirtualConsumption = BigDecimal.ZERO;
-
-            // ---------------- CALCULATE NET FEEDER CONSUMPTION ----------------
 
             // Convert % → fraction
             BigDecimal technicalLossFactor = BigDecimal.ONE.subtract(
@@ -1237,31 +1222,6 @@ public class BillingServiceImpl implements BillingService {
             List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyNonMDConsumptionByFeederLine(
                     um.getOrgId(), page, size, month, year, nodeId);
 
-            OverallEnergyImport overallEnergyImport = billingMapper.getOverallConsumptionByNodeId(
-                    um.getOrgId(), nodeId);
-
-            BigDecimal prepaidConsumption = overallEnergyImport.getTotalPrepaidConsumption();
-            BigDecimal postpaidConsumption = overallEnergyImport.getTotalPostpaidConsumption();
-            BigDecimal mdVirtualConsumption = overallEnergyImport.getTotalMDVirtualConsumption();
-            BigDecimal nonMDConsumption = overallEnergyImport.getTotalNonMDVirtualConsumption();
-
-            BigDecimal feederConsumption = overallEnergyImport.getTotalFeederConsumption().equals(BigDecimal.ZERO)
-                    ? BigDecimal.ONE : overallEnergyImport.getTotalFeederConsumption();
-
-            BigDecimal totalConsumption =
-                    prepaidConsumption
-                            .add(postpaidConsumption)
-                            .add(mdVirtualConsumption)
-                            .add(nonMDConsumption);
-
-
-            // efficiency percentage = (total / feeder) * 100
-            BigDecimal efficientScore =
-                    totalConsumption
-                            .divide(feederConsumption, 6, RoundingMode.HALF_UP)
-                            .multiply(BigDecimal.valueOf(100));
-
-            // Apply filtering by role and state
             List<MeterReadingSheet> filteredConsumption = monthlyConsumption.stream()
                     .filter(o -> {
                         // Filter by name (case-insensitive)
@@ -1302,7 +1262,7 @@ public class BillingServiceImpl implements BillingService {
 
             Map<String, Object> result = new HashMap<>();
             result.put("totalMeterConsumptions", totalFilteredConsumptions);
-            result.put("efficientScore", efficientScore);
+//            result.put("efficientScore", efficientScore);
             result.put("consumptions", pagedConsumptions); // return filtered list
             result.put("currentPage", page);
             result.put("totalPages", totalPages);
@@ -1319,9 +1279,6 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
-
-    //        return consumption.subtract(CUMULATIVE_LIMIT.subtract(previous));
-//        newReading.add(MAX_READING.subtract(previousCumulative)),
     private AuditLog buildAuditLog(UserModel creator, String description, String type, MeterReadingSheet createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();
         log.setCreator(creator);
