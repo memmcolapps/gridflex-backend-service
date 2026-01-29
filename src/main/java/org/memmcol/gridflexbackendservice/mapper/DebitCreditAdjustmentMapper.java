@@ -186,7 +186,7 @@ public interface DebitCreditAdjustmentMapper {
     Meter getAccountNumber(UUID orgId, String accountNumber);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} AND org_id = #{orgId} AND liability_cause_id = #{liabilityCauseId}" +
-            " AND type = #{type}")
+            " AND type = #{type} AND status IN( 'UNPAID','PARTIALLY_PAID')")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -201,4 +201,9 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter"))
     })
     DebitCreditAdjust getDebitAdjustmentByMeterIdAndLiabilityCause(UUID meterId, UUID orgId, UUID liabilityCauseId, String type);
+
+    @Update("UPDATE credit_debit_adjustment SET balance = balance + #{newBalance}, debit = debit + #{debit}, updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
+    int addCreditDebitAdjustment(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
+                                 @Param("newBalance") BigDecimal newBalance,
+                                 @Param("debit") BigDecimal debit);
 }
