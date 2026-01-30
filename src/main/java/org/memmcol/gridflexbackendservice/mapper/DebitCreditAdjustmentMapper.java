@@ -186,7 +186,7 @@ public interface DebitCreditAdjustmentMapper {
     Meter getAccountNumber(UUID orgId, String accountNumber);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} AND org_id = #{orgId} AND liability_cause_id = #{liabilityCauseId}" +
-            " AND type = #{type} AND status IN( 'UNPAID','PARTIALLY_PAID')")
+            " AND type = #{type} AND (status = 'UNPAID' OR status = 'PARTIALLY_PAID')")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),

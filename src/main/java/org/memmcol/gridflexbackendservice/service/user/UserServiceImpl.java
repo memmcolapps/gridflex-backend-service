@@ -631,7 +631,7 @@ public class UserServiceImpl implements  UserService {
             String desc = capitalizeFirstLetter(request.getGroupTitle() + " updated");
             AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
             auditRepository.save(auditLog);
-            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getUpdateDesc(), "");
         } catch (Exception exception) {
             genericHandler.logIncidentReport("Updating group permission service failed");
             genericHandler.logAndSaveException(exception, "update group permission failed");

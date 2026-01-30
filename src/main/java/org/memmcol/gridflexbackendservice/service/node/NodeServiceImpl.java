@@ -80,20 +80,29 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
 
-            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
-            if (type.equals("region")) {
-                if (n != null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getExistDesc());
-                }
-            }else {
-                if (n == null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getNotFoundDesc());
-                }
+//            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
+//            if (n != null && request.getType().equalsIgnoreCase(n.getType())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getExistDesc() +" for a "+ request.getType());
+//            }
+//            else {
+//                if (n == null) {
+//                    throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getNotFoundDesc());
+//                }
+//            }
+
+            RegionBhubServiceCenter duplicate = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
+            if (duplicate != null && request.getType().equalsIgnoreCase(duplicate.getType())) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        request.getType().substring(0, 1).toUpperCase()
+                                + request.getType().substring(1).toLowerCase()
+                                + " already exists for Region ID (" + request.getRegionId() + ")"
+                );
             }
 
-            RegionBhubServiceCenter duplicate = nodeMapper.findByRegionAndType(request.getRegionId(), um.getOrgId(),request.getType().toLowerCase());
-            if (duplicate != null) {
-                throw new GlobalExceptionHandler.NotFoundException(request.getType() + " already exists for Region ID (" + request.getRegionId() + ")");
+            if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmail(request.getEmail(), um.getOrgId()))) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Email (" + request.getEmail() + ") already been used"
+                );
             }
 
             RegionBhubServiceCenter rgBhubService = nodeMapper.getBhubByOrgIdAndName(um.getOrgId(), request.getName());
@@ -174,23 +183,19 @@ public class NodeServiceImpl implements NodeService {
 
             SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
             if(sub != null && sub.getType().equalsIgnoreCase(request.getType())){
-                if (sub.getAssetId().equalsIgnoreCase(request.getAssetId())){
-                    throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc() +" for a "+ request.getType());
-                }
+                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc() +" for a "+ request.getType());
             }
 
-//            SubStationTransformerFeederLine email = nodeMapper.verifyEmail(request.getEmail(), um.getOrgId());
-//            if (email != null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Email ("+ request.getEmail()+")" + " already been used");
-//            }
+            if (Boolean.TRUE.equals(nodeMapper.existsBySerial(request.getSerialNo(), um.getOrgId(), request.getType().toLowerCase()))) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Serial No (" + request.getSerialNo() + ") " + status.getExistDesc()
+                                +" for a "+ request.getType());
+            }
 
-            SubStationTransformerFeederLine serial = nodeMapper.verifySerialNo(request.getSerialNo(), um.getOrgId(), request.getEmail());
-            if (serial != null) {
-                if (serial.getSerialNo().equalsIgnoreCase(request.getSerialNo())){
-                    throw new GlobalExceptionHandler.NotFoundException("Serial No ("+ request.getSerialNo()+") " + status.getExistDesc());
-                } else if (serial.getEmail().equalsIgnoreCase(request.getEmail())) {
-                    throw new GlobalExceptionHandler.NotFoundException("Email ("+ request.getEmail()+")" + " already been used");
-                }
+            if (Boolean.TRUE.equals(nodeMapper.existsByEmail(request.getEmail(), um.getOrgId()))) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Email (" + request.getEmail() + ") already been used"
+                );
             }
 
             SubStationTransformerFeederLine subTransFeeder = nodeMapper.getSubTransformerFeederLineByOrgIdAndName(um.getOrgId(), request.getName());
