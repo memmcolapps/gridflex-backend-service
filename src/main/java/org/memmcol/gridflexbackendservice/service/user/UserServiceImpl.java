@@ -634,6 +634,7 @@ public class UserServiceImpl implements  UserService {
 
             String desc = capitalizeFirstLetter(request.getGroupTitle() + " updated");
             AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
+
             safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {

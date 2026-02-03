@@ -81,6 +81,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             UserModel um = handleUserValidation();
 
+            if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0){
+                throw new GlobalExceptionHandler.NotFoundException("Amount must be greater than zero");
+            }
+
             if (request.getType() == null ||
                     (!request.getType().trim().equalsIgnoreCase("credit")
                             && !request.getType().trim().equalsIgnoreCase("debit"))) {
@@ -104,15 +108,19 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             DebitCreditAdjust liabilityResult = mapper.getDebitAdjustmentByMeterIdAndLiabilityCause(request.getMeterId(),um.getOrgId(),
                     request.getLiabilityCauseId(),request.getType());
             if (liabilityResult != null) {
-                throw new GlobalExceptionHandler.NotFoundException("This meter already has an adjustment for the selected liability cause");
-            }
 
-            request.setOrgId(um.getOrgId());
-            request.setStatus("UNPAID");
-            result = mapper.createDebitAdjustment(request);
+                int rows = mapper.addCreditDebitAdjustment(liabilityResult.getId(), request.getAmount(), request.getAmount());
+                if (rows == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(request.getType()+" adjustment failed");
+                }
+            }else {
+                request.setOrgId(um.getOrgId());
+                request.setStatus("UNPAID");
+                result = mapper.createDebitAdjustment(request);
 
-            if(result == 0){
-                throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getNotFoundDesc());
+                if(result == 0){
+                    throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getNotFoundDesc());
+                }
             }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
@@ -237,6 +245,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             throw exception;
         }
     }
+
 
     @Transactional(readOnly = true)
     @Override

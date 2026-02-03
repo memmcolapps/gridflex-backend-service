@@ -112,7 +112,7 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
-    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId} AND org_id = #{orgId} LIMIT 1")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "regionId", column = "region_id"),
@@ -122,8 +122,7 @@ public interface NodeMapper {
     })
     RegionBhubServiceCenter verifyNode(String regionId, UUID orgId);
 
-
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} LIMIT 1")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "assetId", column = "asset_id"),
@@ -132,6 +131,33 @@ public interface NodeMapper {
             @Result(property = "orgId", column = "org_id")
     })
     SubStationTransformerFeederLine verifySubNode(String assetId, UUID orgId);
+
+    @Select("""
+    SELECT 1
+    FROM substation_trans_feeder_lines
+    WHERE org_id = #{orgId}
+      AND serial_no = #{serialNo} AND type= #{type}
+    LIMIT 1
+    """)
+    Boolean existsBySerial(@Param("serialNo") String serialNo, @Param("orgId") UUID orgId, @Param("type") String type);
+
+    @Select("""
+    SELECT 1
+    FROM substation_trans_feeder_lines
+    WHERE org_id = #{orgId}
+      AND email = #{email}
+    LIMIT 1
+    """)
+    Boolean existsByEmail(@Param("email") String email, @Param("orgId") UUID orgId);
+
+    @Select("""
+    SELECT 1
+    FROM region_bhub_service_centers
+    WHERE org_id = #{orgId}
+      AND email = #{email}
+    LIMIT 1
+    """)
+    Boolean existsByRegionEmail(@Param("email") String email, @Param("orgId") UUID orgId);
 
     @Select("""
             SELECT * FROM region_bhub_service_centers 
@@ -219,4 +245,94 @@ public interface NodeMapper {
 //            @Result(property = "contactPerson", column = "contact_person"),
     })
     SubStationTransformerFeederLine getSubTransformerFeederLineByOrgIdAndName(UUID id, String name);
+
+    @Select("""
+    SELECT 1
+    FROM substation_trans_feeder_lines
+    WHERE org_id = #{orgId}
+      AND serial_no = #{serialNo}
+      AND type = #{type}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsBySerialForSameTypeExcludingCurrent(@Param("serialNo") String serialNo,
+                                                      @Param("orgId") UUID orgId,
+                                                      @Param("type") String type,
+                                                      @Param("nodeId") UUID nodeId);
+
+    @Select("""
+    SELECT 1
+    FROM substation_trans_feeder_lines
+    WHERE org_id = #{orgId}
+      AND email = #{email}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByEmailForDifferentNode(@Param("email") String email,
+                                          @Param("orgId") UUID orgId,
+                                          @Param("nodeId") UUID nodeId);
+
+    @Select("""
+    SELECT 1
+    FROM substation_trans_feeder_lines
+    WHERE org_id = #{orgId}
+      AND asset_id = #{assetId}
+      AND type = #{type}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByAssetIdForSameTypeExcludingCurrent(@Param("assetId") String assetId,
+                                                       @Param("orgId") UUID orgId,
+                                                       @Param("type") String type,
+                                                       @Param("nodeId") UUID nodeId);
+
+    @Select("""
+    SELECT 1
+    FROM region_bhub_service_centers
+    WHERE org_id = #{orgId}
+      AND region_id = #{regionId}
+      AND type = #{type}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByRegionIdAndTypeExcludingCurrent(@Param("regionId") String regionId,
+                                                    @Param("orgId") UUID orgId,
+                                                    @Param("type") String type,
+                                                    @Param("nodeId") UUID nodeId);
+
+    @Select("""
+    SELECT 1
+    FROM region_bhub_service_centers
+    WHERE org_id = #{orgId}
+      AND email = #{email}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByRegionEmailExcludingCurrent(@Param("email") String email,
+                                                @Param("orgId") UUID orgId,
+                                                @Param("nodeId") UUID nodeId);
+
+    @Select("""
+    SELECT 1
+    FROM region_bhub_service_centers
+    WHERE org_id = #{orgId}
+      AND name = #{name}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByNameExcludingCurrent(@Param("name") String name,
+                                         @Param("orgId") UUID orgId,
+                                         @Param("nodeId") UUID nodeId);
+
+    @Select("""
+    SELECT 1
+    FROM region_bhub_service_centers
+    WHERE org_id = #{orgId}
+      AND phone_number = #{phoneNo}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByPhoneNumberExcludingCurrent(@Param("phoneNo") String phoneNo,
+                                                @Param("orgId") UUID orgId,
+                                                @Param("nodeId") UUID nodeId);
 }
