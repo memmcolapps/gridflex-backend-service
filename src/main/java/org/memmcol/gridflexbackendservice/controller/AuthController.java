@@ -96,6 +96,15 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/test")
+    public ResponseEntity<?> test() {
+        try {
+            return ResponseEntity.ok("Hello World! Welcome to GridFlex");
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     private ResponseEntity<Map<String, Object>> handleException(SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }

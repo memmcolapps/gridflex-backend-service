@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.components.CustomAccessDeniedHandler;
 import org.memmcol.gridflexbackendservice.components.CustomAuthorizationFilter;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.perm_evaluator.PermissionEvaluator;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,6 @@ public class  SecurityConfig {
     @Autowired
     private AuthMapper operatorMapper;
 
-	@Autowired
 	private AuditRepository auditRepository;
 
     @Qualifier("hazelcastInstance")
@@ -63,6 +63,9 @@ public class  SecurityConfig {
 
 	@Autowired
 	private ExceptionAuditRepository exceptionAuditRepository;
+
+	@Autowired
+	private SafeAuditService safeAuditService;
 
 	@Autowired
 	private CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -268,7 +271,7 @@ public class  SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		CustomAuthenticationFilter adminAuthFilter = new CustomAuthenticationFilter(
-				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, auditRepository, hazelcastInstance, genericHandler, objectMapper, responseProperties);
+				authenticationManager(userDetailsService, bCryptPasswordEncoder), operatorMapper, safeAuditService, hazelcastInstance, genericHandler, objectMapper, responseProperties);
 		adminAuthFilter.setFilterProcessesUrl("/auth/service/admin/login");
 
 		// disable csrf
@@ -283,6 +286,7 @@ public class  SecurityConfig {
 		// Authorization
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(
+						basePath + "/auth/service/test",
 						basePath + "/auth/service/admin/login/**",
 						basePath + "/auth/service/logout/**",
 						basePath + "/auth/service/generate-otp/**",

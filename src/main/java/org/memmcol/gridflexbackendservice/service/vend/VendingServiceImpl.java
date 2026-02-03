@@ -20,6 +20,7 @@ import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -49,8 +50,11 @@ public class VendingServiceImpl implements VendingService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private VendMapper vendMapper;
@@ -191,7 +195,7 @@ public class VendingServiceImpl implements VendingService {
 
             // Audit (optional)
              AuditLog auditLog = buildAuditLog(user, "Credit token created", "Vend", savedTransaction, metadata, null);
-             auditRepository.save(auditLog);
+             safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Credit token generated successfully", savedTransaction);
 
@@ -402,7 +406,7 @@ public class VendingServiceImpl implements VendingService {
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "kct token generated", "vend", transaction, metadata, kctToken.getReason());
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Kct token generated successfully", transaction);
         } catch (Exception ex) {
@@ -510,7 +514,7 @@ public class VendingServiceImpl implements VendingService {
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "clear token generated", "vend", transaction, metadata, clearTamper.getReason());
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Clear tamper token generated successfully", transaction);
         } catch (Exception ex) {
@@ -584,7 +588,7 @@ public class VendingServiceImpl implements VendingService {
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "clear credit token generated", "vend", transaction, metadata, clearCredit.getReason());
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Clear credit token generated successfully", transaction);
 
@@ -657,7 +661,7 @@ public class VendingServiceImpl implements VendingService {
 
             // Audit (optional)
             AuditLog auditLog = buildAuditLog(user, "Compensation token generated", "vend", transaction, metadata, kctToken.getReason());
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Compensation token generated successfully", transaction);
 

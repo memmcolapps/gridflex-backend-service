@@ -14,6 +14,7 @@ import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -46,8 +47,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private ExceptionAuditRepository exceptionAuditRepository;
@@ -123,7 +127,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             um.setPassword("");
 //            handleAddCache(debitAdjustment);
             AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 //            auditNotificationDTO.setCreator(um);
 //            auditNotificationDTO.setDescription(desc);
 //            auditNotificationDTO.setType("debit-credit");
@@ -193,7 +197,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             um.setPassword("");
 //            handleAddCache(debitAdjustment);
             AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
 
         } catch (Exception exception) {

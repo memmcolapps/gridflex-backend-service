@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -36,8 +37,11 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private ManufacturerMapper manufacturerMapper;
@@ -75,7 +79,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
 //            handleAddCache(user);
             AuditLog auditLog = buildAuditLog(um, desc, manufacturerName, manufacturer, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
@@ -114,7 +118,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
 //            handleAddCache(user);
             AuditLog auditLog = buildAuditLog(um, desc, manufacturerName, manufacturer, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 //            auditNotificationDTO.setCreator(um);
 //            auditNotificationDTO.setDescription(desc);
 //            auditNotificationDTO.setUserAgent(userAgent);

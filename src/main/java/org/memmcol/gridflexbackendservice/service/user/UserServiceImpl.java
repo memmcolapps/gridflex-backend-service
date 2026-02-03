@@ -13,6 +13,7 @@ import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -45,8 +46,11 @@ public class UserServiceImpl implements  UserService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private AuthMapper operatorMapper;
@@ -105,7 +109,7 @@ public class UserServiceImpl implements  UserService {
 //            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User created", userName, user, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
@@ -151,7 +155,7 @@ public class UserServiceImpl implements  UserService {
 //            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User edited", userName, user, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
@@ -192,7 +196,7 @@ public class UserServiceImpl implements  UserService {
 //            handleAddCache(user);
 
             AuditLog auditLog = buildAuditLog(um, "User edited", userName, user, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
@@ -352,7 +356,7 @@ public class UserServiceImpl implements  UserService {
             String desc = state ? "Group activated" : "Group deactivated";
 
             AuditLog auditLog = buildAuditLog(user, desc, "Group", null, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), desc + " successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
@@ -440,7 +444,7 @@ public class UserServiceImpl implements  UserService {
             user.setPassword("");
 //            handleAddCache(user);
             AuditLog auditLog = buildAuditLog(user, desc, userName, user, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), state ? " User activated successfully" : "User deactivated successfully", "");
         } catch (Exception exception) {
@@ -536,7 +540,7 @@ public class UserServiceImpl implements  UserService {
 
             String desc = capitalizeFirstLetter(request.getGroupTitle() + " created");
             AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(),  "Group "+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             genericHandler.logIncidentReport("Creating group permission service failed");
@@ -630,8 +634,9 @@ public class UserServiceImpl implements  UserService {
 
             String desc = capitalizeFirstLetter(request.getGroupTitle() + " updated");
             AuditLog auditLog = buildAuditLog(um, desc, "Group", null, metadata);
-            auditRepository.save(auditLog);
-            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getUpdateDesc(), "");
+
+            safeAuditService.saveAudit(auditLog);
+            return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
             genericHandler.logIncidentReport("Updating group permission service failed");
             genericHandler.logAndSaveException(exception, "update group permission failed");
