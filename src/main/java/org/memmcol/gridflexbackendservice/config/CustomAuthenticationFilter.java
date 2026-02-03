@@ -18,6 +18,7 @@ import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,10 +45,13 @@ import java.util.stream.Collectors;
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 	 private static final Logger log = LoggerFactory.getLogger(CustomAuthenticationFilter.class);
 	 private AuthenticationManager authenticationManager;
+
 //	@Autowired
 	private AuthMapper authMapper;
 
-	private AuditRepository auditRepository;
+//	private AuditRepository auditRepository;
+
+	private SafeAuditService safeAuditService;
 
 	private IMap<String, Boolean> auditCache;
 
@@ -68,13 +72,13 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	public CustomAuthenticationFilter(
 			AuthenticationManager authenticationManager,
-			AuthMapper authMapper, AuditRepository auditRepository,
+			AuthMapper authMapper, SafeAuditService safeAuditService,
 			HazelcastInstance hazelcastInstance, GenericHandler genericHandler,
 			ObjectMapper objectMapper,
             ResponseProperties responseProperties) {
 		this.authenticationManager = authenticationManager;
 		this.authMapper = authMapper;
-		this.auditRepository = auditRepository;
+		this.safeAuditService = safeAuditService;
 		this.auditCache = hazelcastInstance.getMap("auditCache");
 		this.genericHandler = genericHandler;
 		this.objectMapper = objectMapper;
@@ -157,7 +161,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		}
 		user.setNodes(root);
 		AuditLog auditLog = buildAuditLog(user, "Logged in", "auth", null, metadata);
-		auditRepository.save(auditLog);
+		safeAuditService.saveAudit(auditLog);
 		for (String key : auditCache.keySet()) {
 			if (key.startsWith("grid_flex_audit_log_page_")) {
 				auditCache.remove(key);

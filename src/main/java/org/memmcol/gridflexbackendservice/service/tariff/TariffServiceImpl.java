@@ -17,6 +17,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -56,8 +57,11 @@ public class TariffServiceImpl implements TariffService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private HttpServletRequest httpServletRequest;
@@ -120,7 +124,7 @@ public class TariffServiceImpl implements TariffService {
             um.setPassword("");
 //            handleAddCache(tariffByName);
             AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -211,7 +215,7 @@ public class TariffServiceImpl implements TariffService {
 //            handleAddCache(tariff);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, tariffName, newTariff, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), tariff.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
 
@@ -286,7 +290,7 @@ public class TariffServiceImpl implements TariffService {
             um.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(um, changeDescription, tariffName, newTariff, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), tariffName + (state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -483,7 +487,7 @@ public class TariffServiceImpl implements TariffService {
             um.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(um, changeDescription, tariffName, newTariff, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -802,7 +806,7 @@ public class TariffServiceImpl implements TariffService {
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Tariff approved", bandName, t, metadata);
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
     }
 
@@ -843,7 +847,7 @@ public class TariffServiceImpl implements TariffService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Tariff m : batch) {
             AuditLog auditLog = buildAuditLog(user, desc, tariffName, m, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 

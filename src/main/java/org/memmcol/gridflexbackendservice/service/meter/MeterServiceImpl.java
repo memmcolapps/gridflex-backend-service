@@ -24,6 +24,7 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.customer.CustomerServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -62,8 +63,11 @@ public class MeterServiceImpl implements MeterService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private NodeMapper nodeMapper;
@@ -122,7 +126,7 @@ public class MeterServiceImpl implements MeterService {
             // --- Step 3: Fetch created meter & Audit ---
             Meter newMeter = meterMapper.findByIdVersion(request.getId(), request.getOrgId());
             AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getRegDesc(), "");
 
@@ -282,7 +286,7 @@ public class MeterServiceImpl implements MeterService {
             // Fetch updated meter and log audit
             Meter updatedMeter = meterMapper.findByIdVersion(request.getId(), user.getOrgId());
             AuditLog auditLog = buildAuditLog(user, desc, meterName, updatedMeter, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getUpdateDesc(), "");
         } catch (Exception ex) {
@@ -536,7 +540,7 @@ public class MeterServiceImpl implements MeterService {
             user.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, reason);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), meterName + (state ? " activated ": " deactivated ")+"successfully", "");
 
         } catch (Exception exception) {
@@ -710,7 +714,7 @@ public class MeterServiceImpl implements MeterService {
             String description = "Meter assigned to customer " + request.getCustomerId();
 
             AuditLog auditLog = buildAuditLog(user, description, meterName, meter, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Meter assigned successfully", "");
 
@@ -817,7 +821,7 @@ public class MeterServiceImpl implements MeterService {
             user.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter deactivated by replacement");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             //Assign the new meter
             // Validate DSS
@@ -904,7 +908,7 @@ public class MeterServiceImpl implements MeterService {
             String description = "Meter assigned to customer " + request.getCustomerId();
 
             AuditLog audit = buildAuditLog(user, description, meterName, m, metadata, "Meter replacement");
-            auditRepository.save(audit);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Meter assigned successfully", "");
 
@@ -984,7 +988,7 @@ public class MeterServiceImpl implements MeterService {
             Meter meter =  meterMapper.findById(meterId, um.getOrgId());
 
             AuditLog auditLog = buildAuditLog(um, "Meter detached", meterName, meter, metadata, reason);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Meter detached successfully", "");
         } catch (Exception exception) {
@@ -1087,7 +1091,7 @@ public class MeterServiceImpl implements MeterService {
 
 //            handleAddCache(meter);
             AuditLog auditLog = buildAuditLog(um, desc, meterName, meter, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Meter migrated successfully", "");
 
@@ -1130,7 +1134,7 @@ public class MeterServiceImpl implements MeterService {
             Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId());
             user.setPassword(null); // hide password in logs
             AuditLog auditLog = buildAuditLog(user, "Meter "+ approveStatus+"ed", meterName, updatedMeter, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
@@ -1599,7 +1603,7 @@ public class MeterServiceImpl implements MeterService {
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
             //save to audit (mongodb)
             AuditLog auditLog = buildAuditLog(um, desc, meterName, meter, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), meterName + " allocated successfully" , "");
 
@@ -1974,7 +1978,7 @@ public class MeterServiceImpl implements MeterService {
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Allocated", meterName, m, metadata, "");
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
     }
 
@@ -2584,7 +2588,7 @@ public class MeterServiceImpl implements MeterService {
         Meter m = meterMapper.findById(meter.getMeterId(), user.getOrgId());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Meter approved", meterName, m, metadata, "");
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
     }
 
@@ -2639,7 +2643,7 @@ public class MeterServiceImpl implements MeterService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Meter m : batch) {
             AuditLog auditLog = buildAuditLog(user, desc, "Bulk Meter", m, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 
@@ -2647,7 +2651,7 @@ public class MeterServiceImpl implements MeterService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Meter m : batch) {
             AuditLog auditLog = buildAuditLog(user, "Meter reject", "Bulk Meter", m, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 
@@ -2919,7 +2923,7 @@ public class MeterServiceImpl implements MeterService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Meter m : batch) {
             AuditLog auditLog = buildAuditLog(user, desc, "Meter", m, metadata, "");
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 
@@ -2954,7 +2958,7 @@ public class MeterServiceImpl implements MeterService {
         // --- Step 4: Audit logging ---
         Meter newMeter = meterMapper.findByIdVersion(meter.getId(), user.getOrgId());
         AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
 //        } catch (Exception e) {
 //            log.error("Failed to insert meter {}: {}", meter.getMeterNumber(), e.getMessage(), e);
@@ -4135,7 +4139,7 @@ public class MeterServiceImpl implements MeterService {
 
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Assigned", meterName, m, metadata, "");
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
     }
 
 
@@ -4154,7 +4158,7 @@ public class MeterServiceImpl implements MeterService {
 
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Assigned", meterName, m, metadata, "");
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
     }
 
     private List<AssignMeterToCustomer> processAssignExcel(InputStream inputStream) throws IOException {

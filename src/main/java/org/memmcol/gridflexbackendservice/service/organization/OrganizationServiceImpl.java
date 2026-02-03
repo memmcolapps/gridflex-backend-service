@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -40,8 +41,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private GenericHandler genericHandler;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private HttpServletRequest httpServletRequest;
@@ -111,7 +115,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             addChangeIfDifferent("city", originalData.getCity(), updatedData.getCity(), changes);
 
             AuditLog auditLog = buildAuditLog(um, "Editing organization", "organization", organization, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), "Organization updated Successfully", "");
 
         } catch (Exception exception) {
