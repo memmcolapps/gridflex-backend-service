@@ -27,6 +27,7 @@ public class PaymentMode implements Serializable {
     private LocalDateTime updatedAt;
     private UUID createdBy;
     private UUID approveBy;
+    private Boolean activated;
 
     public PaymentMode() {
         this.createdAt = LocalDateTime.now();
@@ -159,5 +160,13 @@ public class PaymentMode implements Serializable {
 
     public void setApproveBy(UUID approveBy) {
         this.approveBy = approveBy;
+    }
+
+    public Boolean getActivated() {
+        return activated;
+    }
+
+    public void setActivated(Boolean activated) {
+        this.activated = activated;
     }
 }

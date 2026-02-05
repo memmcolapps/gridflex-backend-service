@@ -19,6 +19,8 @@ public class DebitCreditPayment implements Serializable {
     private UUID creditDebitAdjId;
     private BigDecimal credit;
     private String paymentMethod;
+    private UUID transId;
+    private String paymentMode;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -73,6 +75,22 @@ public class DebitCreditPayment implements Serializable {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public UUID getTransId() {
+        return transId;
+    }
+
+    public void setTransId(UUID transId) {
+        this.transId = transId;
+    }
+
+    public String getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(String paymentMode) {
+        this.paymentMode = paymentMode;
     }
 }
 

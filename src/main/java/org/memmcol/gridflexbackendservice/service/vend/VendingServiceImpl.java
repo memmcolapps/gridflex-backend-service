@@ -16,10 +16,12 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.AdjustmentComputationResult;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
+import org.memmcol.gridflexbackendservice.service.debit_credit_adjustment.CreditDebitAdjustmentSettlementService;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
@@ -62,9 +64,106 @@ public class VendingServiceImpl implements VendingService {
     @Autowired
     private TokenGenClientService tokenGenClient;
 
+    @Autowired
+    private CreditDebitAdjustmentSettlementService adjustmentSettlementService;
+
     @Transactional
-    @Override
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
+        UserModel user = handleUserValidation();
+
+        try {
+            // --- Meter Validation ---
+            MeterView meter = vendMapper.getMeterInfo(
+                            creditToken.getMeterNumber(),
+                            creditToken.getAccountNumber(),
+                            user.getOrgId()
+                    ).stream().findFirst()
+                    .orElseThrow(() -> new GlobalExceptionHandler.NotFoundException("Meter not found"));
+
+            if (!"Prepaid".equalsIgnoreCase(meter.getMeterCategory())
+                    || !"Assigned".equalsIgnoreCase(meter.getMeterStage())
+                    || !"Active".equalsIgnoreCase(meter.getStatus())) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending allowed only for active, assigned prepaid meters"
+                );
+            }
+
+            // --- Adjustment Computation ---
+            AdjustmentComputationResult adjResult = adjustmentSettlementService.computeAdjustmentImpact(
+                    user.getOrgId(),
+                    meter.getMeterId(),
+                    creditToken.getInitialAmount()
+            );
+
+            BigDecimal effectiveAmount = adjResult.getEffectiveTendered();
+
+            if (effectiveAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Vending amount is insufficient after applying adjustments"
+                );
+            }
+
+            // --- Compute netBalance (existing VAT, Tariff, units, etc) ---
+            BigDecimal totalDebit = vendMapper.calculateTotalByType(meter, "debit");
+            BigDecimal totalCredit = vendMapper.calculateTotalByType(meter, "credit");
+            BigDecimal netBalance = totalCredit.add(effectiveAmount).subtract(totalDebit);
+
+            // --- Token Generation ---
+            TokenGenRequest request = new TokenGenRequest();
+            request.setAmount(netBalance); // vending effective amount
+            request.setMeterNo(meter.getMeterNumber());
+            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
+            request.setMeterType("STS6");
+
+            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType());
+
+            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+            }
+
+            // --- Persist Transaction ---
+            UUID transactionId = UUID.randomUUID();
+            Transaction transaction = new Transaction();
+            transaction.setId(transactionId);
+            transaction.setMeterId(meter.getMeterId());
+            transaction.setInitialAmount(creditToken.getInitialAmount());
+            transaction.setFinalAmount(netBalance);
+            transaction.setToken(tokenResponse.getTokens().get(0));
+            transaction.setUnit(netBalance.divide(new BigDecimal(meter.getTariffRate()), 2, BigDecimal.ROUND_HALF_UP));
+            transaction.setUnitCost(netBalance);
+            transaction.setTokenType(creditToken.getTokenType());
+            transaction.setStatus("Successful");
+            transaction.setReceiptNo(generateReceiptNumber(creditToken.getMeterNumber()));
+            transaction.setOrgId(user.getOrgId());
+            transaction.setUserId(user.getId());
+            transaction.setCustomerId(meter.getCustomerId());
+
+            int created = vendMapper.createCreditToken(transaction);
+            if (created == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Credit token creation failed");
+            }
+
+            // --- Adjustments Settlement AFTER token generation success ---
+            adjustmentSettlementService.settleAdjustments(
+                    user.getOrgId(),
+                    transactionId,
+                    adjResult.getAllocations()
+            );
+
+            return ResponseMap.response(status.getSuccessCode(),
+                    "Credit token generated successfully",
+                    transaction
+            );
+
+        } catch (Exception ex) {
+            genericHandler.logAndSaveException(ex, "creating credit token");
+            throw ex;
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> createCreditTokenBackup(CreditToken creditToken) {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
@@ -196,6 +295,8 @@ public class VendingServiceImpl implements VendingService {
             // Audit (optional)
              AuditLog auditLog = buildAuditLog(user, "Credit token created", "Vend", savedTransaction, metadata, null);
              safeAuditService.saveAudit(auditLog);
+
+
 
             return ResponseMap.response(status.getSuccessCode(), "Credit token generated successfully", savedTransaction);
 
