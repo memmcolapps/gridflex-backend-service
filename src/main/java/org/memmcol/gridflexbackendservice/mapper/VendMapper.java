@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -414,4 +415,17 @@ public interface VendMapper {
             @Param("offset") int offset
     );
 
+    @Select("""
+        SELECT COALESCE(SUM(balance), 0)
+        FROM credit_debit_adjustment
+        WHERE meter_id = #{meterId}
+          AND org_id = #{orgId}
+          AND type = #{type}
+          AND status IN ('UNPAID', 'PARTIAL')
+        """)
+    BigDecimal calculateTotalByType(
+            @Param("meterId") UUID meterId,
+            @Param("orgId") UUID orgId,
+            @Param("type") String type
+    );
 }

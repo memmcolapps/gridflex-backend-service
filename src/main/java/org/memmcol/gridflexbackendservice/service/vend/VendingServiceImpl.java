@@ -104,8 +104,8 @@ public class VendingServiceImpl implements VendingService {
             }
 
             // --- Compute netBalance (existing VAT, Tariff, units, etc) ---
-            BigDecimal totalDebit = vendMapper.calculateTotalByType(meter, "debit");
-            BigDecimal totalCredit = vendMapper.calculateTotalByType(meter, "credit");
+            BigDecimal totalDebit = vendMapper.calculateTotalByType(meter.getMeterId(), user.getOrgId(),"debit");
+            BigDecimal totalCredit = vendMapper.calculateTotalByType(meter.getMeterId(), user.getOrgId(), "credit");
             BigDecimal netBalance = totalCredit.add(effectiveAmount).subtract(totalDebit);
 
             // --- Token Generation ---
