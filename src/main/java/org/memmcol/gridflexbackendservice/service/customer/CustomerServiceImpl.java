@@ -18,6 +18,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -58,6 +59,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Autowired
     private AuditRepository auditRepository;
+
+    @Autowired
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private GenericHandler genericHandler;
@@ -109,7 +113,7 @@ public class CustomerServiceImpl implements CustomerService {
             Customer customer = customerMapper.findById(id, um.getOrgId());
 //            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, desc, "", customerName, customer, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getRegDesc(), "");
 
@@ -142,7 +146,7 @@ public class CustomerServiceImpl implements CustomerService {
 
 //            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, "Edited customer", "", customerName, customer, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
@@ -304,7 +308,7 @@ public class CustomerServiceImpl implements CustomerService {
 
 //            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, desc, reason, customerName, customer, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), "Customer " + state + " successfully", "");
             

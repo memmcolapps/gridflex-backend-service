@@ -13,6 +13,7 @@ import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
@@ -47,8 +48,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private HttpServletRequest httpServletRequest;
@@ -106,7 +110,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
 //            handleAddCache(liabilityCause);
             AuditLog auditLog = buildAuditLog(um, desc, lc, liabilityCause, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -156,7 +160,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
 //            handleAddCache(liabilityCause);
             AuditLog auditLog = buildAuditLog(um, changeDescription, lc, liabilityCause, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -315,7 +319,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 //            handleAddCache(liabilityCause);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, lc, newLc, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), liabilityCause.getName() + " " + (capitalizeFirstLetter(approveStatus) +" Successfully"), "");
 
@@ -374,7 +378,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
 //            handleAddPercentageCache(percentageRange);
             AuditLog auditLog = buildAuditLog(um, desc, pr, percentageRange, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -429,7 +433,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 //            handleAddPercentageCache(percentageRange);
 
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
@@ -583,7 +587,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 //            handleAddPercentageCache(percentage);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, pr, newPercentageRange, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), capitalizeFirstLetter(approveStatus) +" successfully", "");
 
@@ -643,7 +647,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 //            handleAddCache(lca);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, lca, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + (state ? " activated ": " deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             genericHandler.logIncidentReport("changing liability cause status service failed");
@@ -705,7 +709,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             um.setPassword("");
 //            handleAddPercentageCache(percentageRange);
             AuditLog auditLog = buildAuditLog(um, changeDescription, pr, percentageRange, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), pr +(state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -997,7 +1001,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Liability cause approved", lc, lbt, metadata);
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
     }
 
@@ -1017,7 +1021,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (LiabilityCause m : batch) {
             AuditLog auditLog = buildAuditLog(user, desc, lc, m, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 
@@ -1329,7 +1333,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Percentage range approved", lc, percentageRange, metadata);
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
     }
 
@@ -1349,7 +1353,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (PercentageRange m : batch) {
             AuditLog auditLog = buildAuditLog(user, desc, lc, m, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 

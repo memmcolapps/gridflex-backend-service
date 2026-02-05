@@ -16,6 +16,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
@@ -53,8 +54,11 @@ public class BandServiceImpl implements BandService {
     @Autowired
     private ResponseProperties status;
 
+//    @Autowired
+//    private AuditRepository auditRepository;
+
     @Autowired
-    private AuditRepository auditRepository;
+    private SafeAuditService safeAuditService;
 
     @Autowired
     private GenericHandler genericHandler;
@@ -119,7 +123,7 @@ public class BandServiceImpl implements BandService {
             um.setPassword("");
 
             AuditLog auditLog = buildAuditLog(um, desc, bandName, bandByName, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 //            handleAddCache(bandByName);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
@@ -174,7 +178,7 @@ public class BandServiceImpl implements BandService {
 
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, changeDescription, bandName, bandById, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 ////			authCache.remove("dashboard");
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
@@ -263,7 +267,7 @@ public class BandServiceImpl implements BandService {
 //            handleAddCache(band);
             um.setPassword("");
             AuditLog auditLog = buildAuditLog(um, desc, bandName, newBand, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(), band.getName() + " " +
                     (capitalizeFirstLetter(approveStatus) + " Successfully"), "");
@@ -410,7 +414,7 @@ public class BandServiceImpl implements BandService {
             um.setPassword("");
 //			authCache.remove("dashboard");
             AuditLog auditLog = buildAuditLog(um, changeDescription, bandName, bandById, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activated " : " Deactivated ")+ "Successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -727,7 +731,7 @@ public class BandServiceImpl implements BandService {
 //            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Band approved", bandName, m, metadata);
-        auditRepository.save(auditLog);
+        safeAuditService.saveAudit(auditLog);
 
     }
 
@@ -738,7 +742,7 @@ public class BandServiceImpl implements BandService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         for (Band m : batch) {
             AuditLog auditLog = buildAuditLog(user, desc, bandName, m, metadata);
-            auditRepository.save(auditLog);
+            safeAuditService.saveAudit(auditLog);
         }
     }
 

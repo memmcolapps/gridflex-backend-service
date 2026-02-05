@@ -3,6 +3,7 @@ name: Deploy Spring Boot to Server
 on:
   push:
     branches:
+      - staging
       - main
 
 jobs:
@@ -10,27 +11,124 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # =====================
+      # Checkout source code
+      # =====================
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # =====================
+      # Setup Java
+      # =====================
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # =====================
+      # Build application
+      # =====================
       - name: Build with Maven
         run: |
           chmod +x ./mvnw
           ./mvnw clean package -DskipTests
 
-      - name: Set up SSH agent
+      # =====================================================
+      # STAGING DEPLOYMENT (branch: staging)
+      # =====================================================
+      - name: Setup SSH Agent (Staging)
+        if: github.ref == 'refs/heads/staging'
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+
+      - name: Deploy to Staging Server
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} << EOF
+              sudo mkdir -p /opt/java-webservices
+              sudo chown -R \$USER:\$USER /opt/java-webservices
+              pkill -f 'gridflex-backend-service.jar' || true
+          EOF
+
+          scp -o StrictHostKeyChecking=no target/*.jar \
+            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
+
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} << EOF
+              nohup java -jar \
+                -Dspring.profiles.active=staging \
+                /opt/java-webservices/gridflex-backend-service.jar \
+                > /opt/java-webservices/gridflex-staging.log 2>&1 &
+          EOF
+
+      # =====================================================
+      # PRODUCTION DEPLOYMENT (branch: main)
+      # =====================================================
+      - name: Setup SSH Agent (Production)
+        if: github.ref == 'refs/heads/main'
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Copy JAR to server
+      - name: Deploy to Production Server
+        if: github.ref == 'refs/heads/main'
         run: |
-          scp -o StrictHostKeyChecking=no target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
-
-      - name: Run app on server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            pkill -f 'gridflex-backend-service.jar' || true
-            nohup java -jar /opt/java-webservices/gridflex-backend-service.jar > /opt/java-webservices/gridflex.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << EOF
+              sudo mkdir -p /opt/java-webservices
+              sudo chown -R \$USER:\$USER /opt/java-webservices
+              pkill -f 'gridflex-backend-service.jar' || true
           EOF
 
+          scp -o StrictHostKeyChecking=no target/*.jar \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
+
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << EOF
+              nohup java -jar \
+                -Dspring.profiles.active=prod \
+                /opt/java-webservices/gridflex-backend-service.jar \
+                > /opt/java-webservices/gridflex-prod.log 2>&1 &
+          EOF
+
+
+
+#name: Deploy Spring Boot to Server
+#
+#on:
+#  push:
+#    branches:
+#      - main
+#
+#jobs:
+#  deploy:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v3
+#
+#      - name: Build with Maven
+#        run: |
+#          chmod +x ./mvnw
+#          ./mvnw clean package -DskipTests
+#
+#      - name: Set up SSH agent
+#        uses: webfactory/ssh-agent@v0.9.0
+#        with:
+#          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#
+#      - name: Copy JAR to server
+#        run: |
+#          scp -o StrictHostKeyChecking=no target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
+#
+#      - name: Run app on server
+#        run: |
+#          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+#            pkill -f 'gridflex-backend-service.jar' || true
+#            nohup java -jar /opt/java-webservices/gridflex-backend-service.jar > /opt/java-webservices/gridflex.log 2>&1 &
+#          EOF
+#
