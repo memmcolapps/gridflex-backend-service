@@ -68,17 +68,17 @@ public class NodeController {
         }
     }
 
-    @GetMapping("/single")
-    public ResponseEntity<Map<String, Object>> singleNode(@RequestParam UUID nodeId) {
-
-        try {
-            Map<String, Object> result =  nodeService.singleNode(nodeId);
-
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @GetMapping("/single")
+//    public ResponseEntity<Map<String, Object>> singleNode(@RequestParam UUID nodeId) {
+//
+//        try {
+//            Map<String, Object> result =  nodeService.singleNode(nodeId);
+//
+//            return ResponseEntity.ok(result);
+//        } catch (SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
 
     @GetMapping("/all")

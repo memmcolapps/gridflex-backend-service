@@ -74,7 +74,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getAssetId() {
-        return assetId;
+        return assetId == null ? assetId : assetId.trim();
     }
 
     public void setAssetId(String assetId) {
@@ -82,7 +82,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getName() {
-        return name;
+        return name == null ? name : name.trim();
     }
 
     public void setName(String name) {
@@ -90,7 +90,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getSerialNo() {
-        return serialNo;
+        return serialNo.trim();
     }
 
     public void setSerialNo(String serialNo) {
@@ -98,7 +98,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getPhoneNo() {
-        return phoneNo;
+        return phoneNo == null ? phoneNo : phoneNo.trim();
     }
 
     public void setPhoneNo(String phoneNo) {
@@ -106,7 +106,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getEmail() {
-        return email;
+        return email == null ? email : email.toLowerCase().trim();
     }
 
     public void setEmail(String email) {
@@ -114,7 +114,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getContactPerson() {
-        return contactPerson;
+        return contactPerson == null ? contactPerson : contactPerson.trim();
     }
 
     public void setContactPerson(String contactPerson) {
@@ -122,7 +122,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getAddress() {
-        return address;
+        return address == null ? address : address.trim();
     }
 
     public void setAddress(String address) {
@@ -138,7 +138,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getVoltage() {
-        return voltage;
+        return voltage.trim();
     }
 
     public void setVoltage(String voltage) {
@@ -146,7 +146,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getLatitude() {
-        return latitude;
+        return latitude.trim();
     }
 
     public void setLatitude(String latitude) {
@@ -154,7 +154,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getLongitude() {
-        return longitude;
+        return longitude.trim();
     }
 
     public void setLongitude(String longitude) {
@@ -162,7 +162,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getDescription() {
-        return description;
+        return description == null ? description : description.trim();
     }
 
     public void setDescription(String description) {
@@ -186,7 +186,7 @@ public class SubStationTransformerFeederLine implements Serializable {
     }
 
     public String getType() {
-        return type;
+        return type == null ? type : type.trim();
     }
 
     public void setType(String type) {

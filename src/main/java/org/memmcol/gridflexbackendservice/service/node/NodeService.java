@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface NodeService {
 
-    Map<String, Object> singleNode(UUID nodeId);
+//    Map<String, Object> singleNode(UUID nodeId);
 
     Map<String, Object> getAllNodes();
 

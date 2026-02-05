@@ -68,6 +68,9 @@ public class NodeServiceImpl implements NodeService {
         RegionBhubServiceCenter regionBhubServiceCenter;
         UUID id;
         try {
+
+            handleRegionPayloadCheck(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
@@ -84,22 +87,14 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
 
-//            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
-//            if (n != null && request.getType().equalsIgnoreCase(n.getType())) {
-//                throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getExistDesc() +" for a "+ request.getType());
-//            }
-//            else {
-//                if (n == null) {
-//                    throw new GlobalExceptionHandler.NotFoundException("Region ID (" + request.getRegionId() + ") " + status.getNotFoundDesc());
-//                }
-//            }
+            RegionBhubServiceCenter duplicate = nodeMapper.verifyNodes(request.getRegionId(), um.getOrgId(), request.getType());
 
-            RegionBhubServiceCenter duplicate = nodeMapper.verifyNode(request.getRegionId(), um.getOrgId());
-            if (duplicate != null && request.getType().equalsIgnoreCase(duplicate.getType())) {
+            if (duplicate != null && request.getType().equalsIgnoreCase(duplicate.getType())
+                    && duplicate.getRegionId().equalsIgnoreCase(request.getRegionId())) {
                 throw new GlobalExceptionHandler.NotFoundException(
                         request.getType().substring(0, 1).toUpperCase()
                                 + request.getType().substring(1).toLowerCase()
-                                + " already exists for Region ID (" + request.getRegionId() + ")"
+                                + " already exists for region ID (" + request.getRegionId() + ")"
                 );
             }
 
@@ -137,18 +132,21 @@ public class NodeServiceImpl implements NodeService {
             if(request.getType().toLowerCase().equals("region") ||
                     request.getType().toLowerCase().equals("business hub") ||
                     request.getType().toLowerCase().equals("service center")){
+                request.setEmail(
+                        StringUtils.isBlank(request.getEmail()) ? null : request.getEmail()
+                );
                 nodeMapper.createRegionBhubServiceCenter(request);
                 id = request.getNodeId();
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
                 desc = regionBhubServiceCenter.getName() + "newly created";
             } else {
-                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+" )"+ " not found");
+                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+")"+ " not found");
             }
 //            handleClearCache(node);
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub", regionBhubServiceCenter, metadata);
             safeAuditService.saveAudit(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node "+ status.getRegDesc(), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -164,15 +162,13 @@ public class NodeServiceImpl implements NodeService {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
         try {
+
+            handlePayloadCheck(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
             String type = request.getType().toLowerCase();
-
-//            RegionBhubServiceCenter n = nodeMapper.verifyNode(request.getAssetId(), um.getOrgId());
-//            if (n == null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Asset ID (" + request.getAssetId() + ") " + status.getNotFoundDesc());
-//            }
 
             Node node = new Node();
             node.setName(request.getName());
@@ -185,15 +181,19 @@ public class NodeServiceImpl implements NodeService {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
 
-            SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
-            if(sub != null && sub.getType().equalsIgnoreCase(request.getType())){
-                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc() +" for a "+ request.getType());
+            SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId(), request.getType());
+            if(sub != null && sub.getType().equalsIgnoreCase(request.getType())
+                    && sub.getAssetId().equalsIgnoreCase(request.getAssetId())){
+                throw new GlobalExceptionHandler.NotFoundException(
+                        request.getType().substring(0, 1).toUpperCase()
+                                + request.getType().substring(1).toLowerCase()
+                                + " already exists for asset ID (" + request.getAssetId() + ")");
+//                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc() +" for a "+ request.getType());
             }
 
             if (Boolean.TRUE.equals(nodeMapper.existsBySerial(request.getSerialNo(), um.getOrgId(), request.getType().toLowerCase()))) {
                 throw new GlobalExceptionHandler.NotFoundException(
-                        "Serial No (" + request.getSerialNo() + ") " + status.getExistDesc()
-                                +" for a "+ request.getType());
+                        "Serial No (" + request.getSerialNo() + ") " + status.getExistDesc());
             }
 
             if (Boolean.TRUE.equals(nodeMapper.existsByEmail(request.getEmail(), um.getOrgId()))) {
@@ -212,13 +212,10 @@ public class NodeServiceImpl implements NodeService {
                         throw new GlobalExceptionHandler.NotFoundException("Feeder line Name ("+ request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
                     case "substation":
                         throw new GlobalExceptionHandler.NotFoundException("Substation Name (" + request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
-
                     default:
                         throw new GlobalExceptionHandler.NotFoundException("Node Name (" + request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
                 }
-
             }
-
 
             nodeMapper.createNode(node);
 
@@ -264,8 +261,10 @@ public class NodeServiceImpl implements NodeService {
     @Override
     public Map<String, Object> updateRegionBhubServiceCenterNode(RegionBhubServiceCenter request) {
         RegionBhubServiceCenter regionBhubServiceCenter;
-        UUID id;
         try {
+
+            handleRegionPayloadCheck(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
@@ -289,8 +288,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             // Validate Region ID + Type combination (only if regionId changed)
-            if (request.getRegionId() != null && !request.getRegionId().isEmpty() &&
-                    !request.getRegionId().equals(existingRecord.getRegionId())) {
+            if (!request.getRegionId().equals(existingRecord.getRegionId())) {
 
                 if (Boolean.TRUE.equals(nodeMapper.existsByRegionIdAndTypeExcludingCurrent(
                         request.getRegionId(), um.getOrgId(), request.getType(), request.getNodeId()))) {
@@ -303,20 +301,18 @@ public class NodeServiceImpl implements NodeService {
             }
 
             // Validate Email (only if email changed)
-            if (request.getEmail() != null && !request.getEmail().isEmpty() &&
-                    !request.getEmail().equals(existingRecord.getEmail())) {
-
-                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
-                        request.getEmail(), um.getOrgId(), request.getNodeId()))) {
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Email (" + request.getEmail() + ") already been used"
-                    );
-                }
-            }
+//            if (!request.getEmail().equalsIgnoreCase(existingRecord.getEmail())) {
+//
+//                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
+//                        request.getEmail(), um.getOrgId(), request.getNodeId()))) {
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Email (" + request.getEmail() + ") already been used"
+//                    );
+//                }
+//            }
 
             // Validate Name (only if name changed)
-            if (request.getName() != null && !request.getName().isEmpty() &&
-                    !request.getName().equals(existingRecord.getName())) {
+            if (!request.getName().equalsIgnoreCase(existingRecord.getName())) {
 
                 if (Boolean.TRUE.equals(nodeMapper.existsByNameExcludingCurrent(
                         request.getName(), um.getOrgId(), request.getNodeId()))) {
@@ -326,23 +322,20 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-            // Validate Phone Number (only if phone number changed)
-            if (request.getPhoneNo() != null && !request.getPhoneNo().isEmpty() &&
-                    !request.getPhoneNo().equals(existingRecord.getPhoneNo())) {
-
-                if (Boolean.TRUE.equals(nodeMapper.existsByPhoneNumberExcludingCurrent(
-                        request.getPhoneNo(), um.getOrgId(), request.getNodeId()))) {
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Phone Number (" + request.getPhoneNo() + ") already been used"
-                    );
-                }
-            }
+//            // Validate Phone Number (only if phone number changed)
+//            if (request.getPhoneNo() != null && !request.getPhoneNo().isEmpty() &&
+//                    !request.getPhoneNo().equals(existingRecord.getPhoneNo())) {
+//
+//                if (Boolean.TRUE.equals(nodeMapper.existsByPhoneNumberExcludingCurrent(
+//                        request.getPhoneNo(), um.getOrgId(), request.getNodeId()))) {
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Phone Number (" + request.getPhoneNo() + ") already been used"
+//                    );
+//                }
+//            }
 
             nodeMapper.updateNode(node);
 
-//            UUID nodeId = node.getId();
-
-//            request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
             request.setUpdatedAt(LocalDateTime.now());
 
@@ -350,6 +343,9 @@ public class NodeServiceImpl implements NodeService {
                     request.getType().equalsIgnoreCase("business hub") ||
                     request.getType().equalsIgnoreCase("service center") ||
                             request.getType().equalsIgnoreCase("root")) {
+                request.setEmail(
+                        StringUtils.isBlank(request.getEmail()) ? null : request.getEmail()
+                );
                 nodeMapper.updateRegionBhubServiceCenter(request);
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(request.getNodeId());
                 desc = regionBhubServiceCenter.getName()  + "edited";
@@ -362,7 +358,7 @@ public class NodeServiceImpl implements NodeService {
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "Region" : request.getType().equals("service center") ? "Service center" : "Business hub", regionBhubServiceCenter, metadata);
             safeAuditService.saveAudit(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ regionBhubServiceCenter.getName() +"' "+ status.getUpdateDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node "+ status.getUpdateDesc(), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -376,8 +372,10 @@ public class NodeServiceImpl implements NodeService {
     @Override
     public Map<String, Object> updateSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request) {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
-        UUID id;
         try {
+
+            handlePayloadCheck(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
@@ -401,8 +399,7 @@ public class NodeServiceImpl implements NodeService {
             }
 
             // Serial Number Validation - only check if value changed
-            if (request.getSerialNo() != null && !request.getSerialNo().isEmpty() &&
-                    !request.getSerialNo().equals(existingRecord.getSerialNo())) {
+            if (!request.getSerialNo().equals(existingRecord.getSerialNo())) {
 
                 // Check if another record of same type has this serial (excluding current)
                 if (Boolean.TRUE.equals(nodeMapper.existsBySerialForSameTypeExcludingCurrent(
@@ -413,22 +410,20 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-            // Email Validation - only check if value changed
-            if (request.getEmail() != null && !request.getEmail().isEmpty() &&
-                    !request.getEmail().equals(existingRecord.getEmail())) {
-
-                // Check if email exists for any other node in org
-                if (Boolean.TRUE.equals(nodeMapper.existsByEmailForDifferentNode(
-                        request.getEmail(), um.getOrgId(), request.getNodeId()))) {
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Email (" + request.getEmail() + ") already been used"
-                    );
-                }
-            }
+//            // Email Validation - only check if value changed
+//            if (!request.getEmail().equals(existingRecord.getEmail())) {
+//
+//                // Check if email exists for any other node in org
+//                if (Boolean.TRUE.equals(nodeMapper.existsByEmailForDifferentNode(
+//                        request.getEmail(), um.getOrgId(), request.getNodeId()))) {
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Email (" + request.getEmail() + ") already been used"
+//                    );
+//                }
+//            }
 
             // Asset ID Validation - only check if value changed
-            if (request.getAssetId() != null && !request.getAssetId().isEmpty() &&
-                    !request.getAssetId().equals(existingRecord.getAssetId())) {
+            if (!request.getAssetId().equalsIgnoreCase(existingRecord.getAssetId())) {
 
                 // Check if another record of same type has this assetId (excluding current)
                 if (Boolean.TRUE.equals(nodeMapper.existsByAssetIdForSameTypeExcludingCurrent(
@@ -436,6 +431,16 @@ public class NodeServiceImpl implements NodeService {
                     throw new GlobalExceptionHandler.NotFoundException(
                             "Asset ID (" + request.getAssetId() + ") " + status.getExistDesc()
                                     + " for a " + request.getType());
+                }
+            }
+
+            if (!request.getName().equalsIgnoreCase(existingRecord.getName())) {
+
+                if (Boolean.TRUE.equals(nodeMapper.existsByNameExcludingCurrentName(
+                        request.getName(), um.getOrgId(), request.getNodeId()))) {
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Node Name (" + request.getName() + ") " + status.getExistDesc()
+                    );
                 }
             }
 
@@ -451,14 +456,15 @@ public class NodeServiceImpl implements NodeService {
 
             nodeMapper.updateNode(node);
 
-//            UUID nodeId = node.getId();
-//            request.setNodeId(nodeId);
             request.setOrgId(um.getOrgId());
             request.setUpdatedAt(LocalDateTime.now());
 
             if(request.getType().equalsIgnoreCase("dss") ||
                     request.getType().equalsIgnoreCase("feeder line") ||
                     request.getType().equalsIgnoreCase("substation")){
+                request.setEmail(
+                        StringUtils.isBlank(request.getEmail()) ? null : request.getEmail()
+                );
                 nodeMapper.updateSubStationTransformerFeederLine(request);
                 subStationTransformerFeederLine = nodeMapper.getSubStationTransformerFeederLine(request.getNodeId());
                 desc = subStationTransformerFeederLine.getName()  + "edited";
@@ -471,7 +477,7 @@ public class NodeServiceImpl implements NodeService {
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equalsIgnoreCase("transformer") ? "Transformer" : request.getType().equalsIgnoreCase("feeder line") ? "Feeder line" : "Substation", subStationTransformerFeederLine, metadata);
             safeAuditService.saveAudit(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName()+"' "+ status.getUpdateDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node "+ status.getUpdateDesc(), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -481,52 +487,80 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public Map<String, Object> singleNode(UUID nodeId) {
-        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
-        try {
-            UserModel um = handleUserValidation();
-//
-            Object cachedUser = nodeCache.get(nodeId.toString() + "_" + um.getOrgId());
-            if (cachedUser != null) {
-                return ResponseMap.response(status.getSuccessCode(), "Cached Node " + status.getDesc(), cachedUser);
-            }
+    private void handlePayloadCheck(SubStationTransformerFeederLine request) {
 
-            List<Node> flatList = nodeMapper.getNodeWithChildren(nodeId, um.getOrgId());
-            if (flatList == null || flatList.isEmpty()) {
-                return ResponseMap.response(status.getSuccessCode(), "No nodes found", "");
-            }
-
-            Map<UUID, Node> nodeMap = new HashMap<>();
-            Node root = null;
-
-            for (Node node : flatList) {
-                node.setNodesTree(new ArrayList<>());
-                nodeMap.put(node.getId(), node);
-            }
-
-            for (Node node : flatList) {
-                if (node.getId().equals(nodeId)) {
-                    root = node; // this is the node we're querying for
-                }
-                if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
-                    Node parent = nodeMap.get(node.getParentId());
-                    parent.getNodesTree().add(node);
-                }
-            }
-
-            assert root != null;
-//            handleAddCache(root);
-            return ResponseMap.response(status.getSuccessCode(), "Node " + status.getDesc(), root);
-
-        } catch (Exception exception) {
-            log.error("Error occurred while fetching node [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching node service failed");
-            genericHandler.logAndSaveException(exception, "fetching single node");
-            throw exception;
+        if(request.getName() == null || request.getName().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Name is required");
+        }
+        if (request.getSerialNo() == null || request.getSerialNo().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Serial number is required");
+        }
+        if (request.getAssetId() == null || request.getAssetId().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Asset Id is required");
+        }
+        if (request.getStatus() == null) {
+            throw new GlobalExceptionHandler.NotFoundException("Status is required");
+        }
+        if (request.getVoltage() == null || request.getVoltage().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Voltage is required");
         }
     }
+
+    private void handleRegionPayloadCheck(RegionBhubServiceCenter request) {
+        if(request.getName() == null || request.getName().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Name is required");
+        }
+        if (request.getRegionId() == null || request.getRegionId().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Region Id is required");
+        }
+    }
+
+//    @Transactional(readOnly = true)
+//    @Override
+//    public Map<String, Object> singleNode(UUID nodeId) {
+//        ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+//        try {
+//            UserModel um = handleUserValidation();
+////
+//            Object cachedUser = nodeCache.get(nodeId.toString() + "_" + um.getOrgId());
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached Node " + status.getDesc(), cachedUser);
+//            }
+//
+//            List<Node> flatList = nodeMapper.getNodeWithChildren(nodeId, um.getOrgId());
+//            if (flatList == null || flatList.isEmpty()) {
+//                return ResponseMap.response(status.getSuccessCode(), "No nodes found", "");
+//            }
+//
+//            Map<UUID, Node> nodeMap = new HashMap<>();
+//            Node root = null;
+//
+//            for (Node node : flatList) {
+//                node.setNodesTree(new ArrayList<>());
+//                nodeMap.put(node.getId(), node);
+//            }
+//
+//            for (Node node : flatList) {
+//                if (node.getId().equals(nodeId)) {
+//                    root = node; // this is the node we're querying for
+//                }
+//                if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+//                    Node parent = nodeMap.get(node.getParentId());
+//                    parent.getNodesTree().add(node);
+//                }
+//            }
+//
+//            assert root != null;
+////            handleAddCache(root);
+//            return ResponseMap.response(status.getSuccessCode(), "Node " + status.getDesc(), root);
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while fetching node [ACTION]: {}", exception.getMessage().trim(), exception);
+//            genericHandler.logIncidentReport("Fetching node service failed");
+//            genericHandler.logAndSaveException(exception, "fetching single node");
+//            throw exception;
+//        }
+//    }
 
     @Transactional(readOnly = true)
     @Override
@@ -603,7 +637,7 @@ public class NodeServiceImpl implements NodeService {
             List<SubStationTransformerFeederLine> result = nodeMapper.getAllFeeder(um.getOrgId());
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
-        }catch (Exception exception) {
+        } catch (Exception exception) {
             log.error("Error fetching feeders: {}", exception.getMessage(), exception);
             genericHandler.logIncidentReport("fetching feeders service failed");
             genericHandler.logAndSaveException(exception, "fetching feeders");

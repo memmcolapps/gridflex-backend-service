@@ -31,9 +31,20 @@ public interface NodeMapper {
 
 
     @Select("SELECT * FROM substation_trans_feeder_lines WHERE node_id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "serialNo", column = "serial_no"),
+            @Result(property = "orgId", column = "org_id")
+    })
     SubStationTransformerFeederLine getSubStationTransformerFeederLine(UUID id);
 
     @Select("SELECT * FROM region_bhub_service_centers WHERE node_id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "orgId", column = "org_id")
+    })
     RegionBhubServiceCenter getRegionBhubServiceCenter(UUID id);
 
     @Select("SELECT * FROM substation_trans_feeder_lines WHERE id = #{id} AND org_id= #{orgId}")
@@ -112,9 +123,11 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
-    @Select("SELECT * FROM region_bhub_service_centers WHERE region_id = #{regionId} AND org_id = #{orgId} LIMIT 1")
+    @Select("SELECT * FROM region_bhub_service_centers " +
+            "WHERE region_id = #{regionId} AND org_id = #{orgId} LIMIT 1")
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "type", column = "type"),
             @Result(property = "regionId", column = "region_id"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "parentId", column = "parent_id"),
@@ -122,23 +135,39 @@ public interface NodeMapper {
     })
     RegionBhubServiceCenter verifyNode(String regionId, UUID orgId);
 
-    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} LIMIT 1")
+    @Select("SELECT * FROM region_bhub_service_centers " +
+            "WHERE region_id = #{regionId} AND org_id = #{orgId} AND type = #{type}")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "type", column = "type"),
+            @Result(property = "regionId", column = "region_id"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "parentId", column = "parent_id"),
             @Result(property = "orgId", column = "org_id")
     })
-    SubStationTransformerFeederLine verifySubNode(String assetId, UUID orgId);
+    RegionBhubServiceCenter verifyNodes(String regionId, UUID orgId, String type);
+
+    @Select("SELECT * FROM substation_trans_feeder_lines " +
+            "WHERE asset_id = #{assetId} " +
+            "AND org_id = #{orgId} AND type = #{type}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "type", column = "type"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "orgId", column = "org_id")
+
+    })
+    SubStationTransformerFeederLine verifySubNode(String assetId, UUID orgId, String type);
 
     @Select("""
     SELECT 1
     FROM substation_trans_feeder_lines
     WHERE org_id = #{orgId}
       AND serial_no = #{serialNo} AND type= #{type}
-    LIMIT 1
     """)
+
     Boolean existsBySerial(@Param("serialNo") String serialNo, @Param("orgId") UUID orgId, @Param("type") String type);
 
     @Select("""
@@ -223,11 +252,11 @@ public interface NodeMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "parentId", column = "parent_id"),
-//            @Result(property = "regionId", column = "region_id"),
-//            @Result(property = "phoneNo", column = "phone_number"),
-//            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
     })
     RegionBhubServiceCenter getBhubByOrgIdAndName(UUID id, String name);
 
@@ -238,11 +267,11 @@ public interface NodeMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "parentId", column = "parent_id"),
-//            @Result(property = "assetId", column = "asset_id"),
-//            @Result(property = "phoneNo", column = "phone_number"),
-//            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
     })
     SubStationTransformerFeederLine getSubTransformerFeederLineByOrgIdAndName(UUID id, String name);
 
@@ -300,17 +329,17 @@ public interface NodeMapper {
                                                     @Param("type") String type,
                                                     @Param("nodeId") UUID nodeId);
 
-    @Select("""
-    SELECT 1
-    FROM region_bhub_service_centers
-    WHERE org_id = #{orgId}
-      AND email = #{email}
-      AND node_id != #{nodeId}
-    LIMIT 1
-    """)
-    Boolean existsByRegionEmailExcludingCurrent(@Param("email") String email,
-                                                @Param("orgId") UUID orgId,
-                                                @Param("nodeId") UUID nodeId);
+//    @Select("""
+//    SELECT 1
+//    FROM region_bhub_service_centers
+//    WHERE org_id = #{orgId}
+//      AND email = #{email}
+//      AND node_id != #{nodeId}
+//    LIMIT 1
+//    """)
+//    Boolean existsByRegionEmailExcludingCurrent(@Param("email") String email,
+//                                                @Param("orgId") UUID orgId,
+//                                                @Param("nodeId") UUID nodeId);
 
     @Select("""
     SELECT 1
@@ -326,13 +355,23 @@ public interface NodeMapper {
 
     @Select("""
     SELECT 1
-    FROM region_bhub_service_centers
+    FROM substation_trans_feeder_lines
     WHERE org_id = #{orgId}
-      AND phone_number = #{phoneNo}
+      AND name = #{name}
       AND node_id != #{nodeId}
     LIMIT 1
     """)
-    Boolean existsByPhoneNumberExcludingCurrent(@Param("phoneNo") String phoneNo,
-                                                @Param("orgId") UUID orgId,
-                                                @Param("nodeId") UUID nodeId);
+    Boolean existsByNameExcludingCurrentName(String name, UUID orgId, UUID nodeId);
+
+//    @Select("""
+//    SELECT 1
+//    FROM region_bhub_service_centers
+//    WHERE org_id = #{orgId}
+//      AND phone_number = #{phoneNo}
+//      AND node_id != #{nodeId}
+//    LIMIT 1
+//    """)
+//    Boolean existsByPhoneNumberExcludingCurrent(@Param("phoneNo") String phoneNo,
+//                                                @Param("orgId") UUID orgId,
+//                                                @Param("nodeId") UUID nodeId);
 }
