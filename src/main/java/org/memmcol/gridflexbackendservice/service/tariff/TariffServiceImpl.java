@@ -651,37 +651,32 @@ public class TariffServiceImpl implements TariffService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-//            List<Tariff> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
-//            List<Tariff> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
-//            List<Tariff> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-//            List<Tariff> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
-
-            List<Tariff> approvedCreatedBands = batch.stream()
+            List<Tariff> approvedCreatedTariffs = batch.stream()
                     .filter(m -> "Pending-created".equalsIgnoreCase(m.getApprove_status()))
-                    .peek(m -> m.setApprove_status("Created"))
+                    .peek(m -> m.setApprove_status("Approved"))
                     .toList();
 
-            List<Tariff> approvedActivatedBands = batch.stream()
+            List<Tariff> approvedActivatedTariffs = batch.stream()
                     .filter(m -> "Pending-activated".equalsIgnoreCase(m.getApprove_status()))
                     .peek(m -> m.setApprove_status("Approved"))
                     .toList();
 
-            List<Tariff> approvedDeactivatedBands = batch.stream()
+            List<Tariff> approvedDeactivatedTariffs = batch.stream()
                     .filter(m -> "Pending-deactivated".equalsIgnoreCase(m.getApprove_status()))
                     .peek(m -> m.setApprove_status("Deactivated"))
                     .toList();
 
-            List<Tariff> approvedEditedBands = batch.stream()
+            List<Tariff> approvedEditedTariffs = batch.stream()
                     .filter(m -> "Pending-edited".equalsIgnoreCase(m.getApprove_status()))
                     .peek(m -> m.setApprove_status("Approved"))
                     .toList();
 
             // Combine all for main update
             List<Tariff> toUpdate = Stream.of(
-                            approvedCreatedBands,
-                            approvedActivatedBands,
-                            approvedDeactivatedBands,
-                            approvedEditedBands)
+                            approvedCreatedTariffs,
+                            approvedActivatedTariffs,
+                            approvedDeactivatedTariffs,
+                            approvedEditedTariffs)
                     .flatMap(Collection::stream)
                     .toList();
 
@@ -751,11 +746,6 @@ public class TariffServiceImpl implements TariffService {
                 resp.setMessage("Approve failed: "+reason);
                 resp.setData(tariff.getName());
                 failedRecords.add(resp);
-//                failedRecords.add(String.format(
-//                        "%s (Approve failed: %s)",
-//                        tariff.getName(),
-//                        reason
-//                ));
                 log.warn("Tariff {} failed individually: {}", tariff.getName(), reason);
             }
         }

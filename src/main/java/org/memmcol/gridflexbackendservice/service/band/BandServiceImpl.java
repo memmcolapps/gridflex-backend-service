@@ -89,6 +89,9 @@ public class BandServiceImpl implements BandService {
     @Override
     public Map<String, Object> createBand(Band band) {
         try {
+
+            handleRequestCheck(band);
+
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Newly Added";
@@ -134,10 +137,21 @@ public class BandServiceImpl implements BandService {
 
     }
 
+    private void handleRequestCheck(Band request) {
+
+        if(request.getName() == null || request.getName().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("Name is required");
+        }
+        if(request.getHour() == null || request.getHour().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("Hour is required");
+        }
+    }
+
     @Transactional
     @Override
     public Map<String, Object> updateBand(Band band) {
         try {
+            handleRequestCheck(band);
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
@@ -553,14 +567,11 @@ public class BandServiceImpl implements BandService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-//            List<Band> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
-//            List<Band> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
-//            List<Band> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-//            List<Band> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
 
             List<Band> approvedCreatedBands = batch.stream()
                     .filter(m -> "Pending-created".equalsIgnoreCase(m.getApproveStatus()))
-                    .peek(m -> m.setApproveStatus("Created"))
+                    .peek(m -> m.setApproveStatus("Approved"))
+//                    .peek(m -> m.setApproveStatus("Created"))
                     .toList();
 
             List<Band> approvedActivatedBands = batch.stream()
