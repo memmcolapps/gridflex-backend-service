@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.CreditDebitAdjustment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
@@ -206,4 +207,74 @@ public interface DebitCreditAdjustmentMapper {
     int addCreditDebitAdjustment(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
                                  @Param("newBalance") BigDecimal newBalance,
                                  @Param("debit") BigDecimal debit);
+
+    @Select("""
+        SELECT
+            id,
+            meter_id,
+            liability_cause_id,
+            debit,
+            balance,
+            status,
+            type,
+            org_id,
+            created_at,
+            updated_at
+        FROM credit_debit_adjustment
+        WHERE org_id = #{orgId}
+          AND meter_id = #{meterId}
+          AND status IN ('UNPAID', 'PARTIAL')
+          AND balance > 0
+        ORDER BY created_at ASC
+        FOR UPDATE
+    """)
+    @Results(id = "CreditDebitAdjustmentMap", value = {
+            @Result(column = "id", property = "id"),
+            @Result(column = "meter_id", property = "meterId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "debit", property = "debit"),
+            @Result(column = "balance", property = "balance"),
+            @Result(column = "status", property = "status"),
+            @Result(column = "type", property = "type"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    List<CreditDebitAdjustment> findActiveForUpdate(@Param("orgId") UUID orgId,
+                                                    @Param("meterId") UUID meterId);
+
+    @Select("""
+        SELECT
+            id,
+            meter_id,
+            liability_cause_id,
+            debit,
+            balance,
+            status,
+            type,
+            org_id,
+            created_at,
+            updated_at
+        FROM credit_debit_adjustment
+        WHERE org_id = #{orgId}
+          AND id = #{adjustmentId}
+        LIMIT 1
+    """)
+    @ResultMap("CreditDebitAdjustmentMap")
+    CreditDebitAdjustment findByIdForUpdate(@Param("orgId") UUID orgId,
+                                            @Param("id") UUID id);
+
+    @Update("""
+        UPDATE credit_debit_adjustment
+        SET
+            balance = #{newBalance},
+            status = #{newStatus},
+            updated_at = now()
+        WHERE id = #{adjustmentId}
+          AND org_id = #{orgId}
+    """)
+    int updateBalanceAndStatus(@Param("id") UUID id,
+                               @Param("orgId") UUID orgId,
+                               @Param("balance") BigDecimal balance,
+                               @Param("status") String status);
 }
