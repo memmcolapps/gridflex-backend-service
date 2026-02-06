@@ -92,7 +92,7 @@ public class VendingServiceImpl implements VendingService {
             // --- Adjustment Computation ---
             AdjustmentComputationResult adjResult = adjustmentSettlementService.computeAdjustmentImpact(
                     user.getOrgId(),
-                    meter.getMeterId(),
+                    meter.getId(),
                     creditToken.getInitialAmount()
             );
 
@@ -105,8 +105,8 @@ public class VendingServiceImpl implements VendingService {
             }
 
             // --- Compute netBalance (existing VAT, Tariff, units, etc) ---
-            BigDecimal totalDebit = vendMapper.calculateTotalByType(meter.getMeterId(), user.getOrgId(),"debit");
-            BigDecimal totalCredit = vendMapper.calculateTotalByType(meter.getMeterId(), user.getOrgId(), "credit");
+            BigDecimal totalDebit = vendMapper.calculateTotalByType(meter.getId(), user.getOrgId(),"debit");
+            BigDecimal totalCredit = vendMapper.calculateTotalByType(meter.getId(), user.getOrgId(), "credit");
             BigDecimal netBalance = totalCredit.add(effectiveAmount).subtract(totalDebit);
 
             // --- Token Generation ---
@@ -127,7 +127,7 @@ public class VendingServiceImpl implements VendingService {
             UUID transactionId = UUID.randomUUID();
             Transaction transaction = new Transaction();
             transaction.setId(transactionId);
-            transaction.setMeterId(meter.getMeterId());
+            transaction.setMeterId(meter.getId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(netBalance);
             transaction.setToken(generateDummyToken());//(tokenResponse.getTokens().get(0));
