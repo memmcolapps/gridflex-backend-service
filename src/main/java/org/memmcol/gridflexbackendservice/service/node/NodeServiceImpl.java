@@ -246,7 +246,7 @@ public class NodeServiceImpl implements NodeService {
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("dss") ? "dss" : request.getType().equals("feeder line") ? "feeder line" : "substation", subStationTransformerFeederLine, metadata);
             safeAuditService.saveAudit(auditLog);
 
-            return ResponseMap.response(status.getSuccessCode(),  "Node '"+ subStationTransformerFeederLine.getName() +"' "+ status.getRegDesc(), "");
+            return ResponseMap.response(status.getSuccessCode(),  "Node "+ status.getRegDesc(), "");
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
