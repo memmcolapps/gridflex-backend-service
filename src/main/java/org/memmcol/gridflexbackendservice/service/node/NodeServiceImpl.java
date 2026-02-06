@@ -81,7 +81,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
+            Node nd = nodeMapper.isNodeExist(request.getParentId(), um.getOrgId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
@@ -140,7 +140,7 @@ public class NodeServiceImpl implements NodeService {
                 regionBhubServiceCenter = nodeMapper.getRegionBhubServiceCenter(id);
                 desc = regionBhubServiceCenter.getName() + "newly created";
             } else {
-                throw new GlobalExceptionHandler.NotFoundException("Request type " +" ("+ request.getType()+")"+ " not found");
+                throw new GlobalExceptionHandler.NotFoundException("Request type " +"("+ request.getType()+")"+ " not found");
             }
 //            handleClearCache(node);
             AuditLog auditLog = buildAuditLog(um, desc, request.getType().equals("region") ? "region" : request.getType().equals("service center") ? "service center" : "business hub", regionBhubServiceCenter, metadata);
@@ -175,7 +175,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getParentId());
+            Node nd = nodeMapper.isNodeExist(request.getParentId(), um.getOrgId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
@@ -275,7 +275,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getNodeId());
+            Node nd = nodeMapper.isNodeExist(request.getNodeId(), um.getOrgId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Node does not exist");
@@ -386,7 +386,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getNodeId());
+            Node nd = nodeMapper.isNodeExist(request.getNodeId(), um.getOrgId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
