@@ -852,15 +852,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         String desc = "";
         if (batch.isEmpty()) return 0;
         try {
-//            List<LiabilityCause> approvedCreatedBands = getMetersByStatus(batch, "Pending-created", "Approved");
-//            List<LiabilityCause> approvedActivatedBands = getMetersByStatus(batch, "Pending-activated", "Approved");
-//            List<LiabilityCause> approvedDeactivatedBands = getMetersByStatus(batch, "Pending-deactivated", "Deactivated");
-//            List<LiabilityCause> approvedEditedBands = getMetersByStatus(batch, "Pending-edited", "Approved");
-
 
             List<LiabilityCause> approvedCreatedLc = batch.stream()
                     .filter(m -> "Pending-created".equalsIgnoreCase(m.getApproveStatus()))
-                    .peek(m -> m.setApproveStatus("Created"))
+                    .peek(m -> m.setApproveStatus("Approved"))
                     .toList();
 
             List<LiabilityCause> approvedActivatedLc = batch.stream()
@@ -1193,7 +1188,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             List<PercentageRange> approvedCreatedPr = batch.stream()
                     .filter(m -> "Pending-created".equalsIgnoreCase(m.getApproveStatus()))
-                    .peek(m -> m.setApproveStatus("Created"))
+                    .peek(m -> m.setApproveStatus("Approved"))
                     .toList();
 
             List<PercentageRange> approvedActivatedPr = batch.stream()

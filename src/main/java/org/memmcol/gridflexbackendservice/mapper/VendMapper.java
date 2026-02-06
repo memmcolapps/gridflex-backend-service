@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCre
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 
 import java.math.BigDecimal;
@@ -120,6 +121,7 @@ public interface VendMapper {
             "    m.meter_id, " +
             "    m.org_id, " +
             "    m.meter_number," +
+            "    m.meter_category," +
             "    m.old_sgc,  " +
             "    m.new_sgc,  " +
             "    m.old_krn,  " +
@@ -147,6 +149,7 @@ public interface VendMapper {
             "    m.meter_id, " +
             "    m.org_id, " +
             "    m.meter_number," +
+            "    m.meter_category," +
             "    m.meter_account_number, " +
             "    m.old_sgc, " +
             "    m.new_sgc, " +
@@ -171,6 +174,7 @@ public interface VendMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "customerFullname", column = "customer_fullname"),
             @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
             @Result(property = "tariffId", column = "tariff_id"),
             @Result(property = "tariffRate", column = "tariff_rate"),
@@ -194,6 +198,7 @@ public interface VendMapper {
             "    m.meter_id, " +
             "    m.org_id, " +
             "    m.meter_number," +
+            "    m.meter_category," +
             "    m.old_sgc,  " +
             "    m.new_sgc,  " +
             "    m.old_krn,  " +
@@ -215,6 +220,7 @@ public interface VendMapper {
             "    m.meter_id, " +
             "    m.org_id, " +
             "    m.meter_number," +
+            "    m.meter_category," +
             "    m.meter_account_number, " +
             "    m.old_sgc, " +
             "    m.new_sgc, " +
@@ -252,6 +258,7 @@ public interface VendMapper {
 
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+            "LEFT JOIN tariffs t ON t.id = m.tariff " +
             "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
     @Results({
             @Result(property = "id", column = "id"),
@@ -278,6 +285,8 @@ public interface VendMapper {
             @Result(property = "newTariffIndex", column = "new_tariff_index"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "tariffInfo", column = "tariffInfo",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getTariff")),
 //            @Result(property = "customer", column = "customer_id",
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
 //            @Result(property = "meterAssignLocation", column = "id",
@@ -293,6 +302,14 @@ public interface VendMapper {
 
     })
     Meter getMeter(UUID orgId, String meterNumber, String accountNumber);
+
+    @Select("SELECT * FROM tariffs WHERE id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "band_id", column = "band_id"),
+            @Result(property = "tariff_rate", column = "tariffRate"),
+    })
+    Tariff getTariff(UUID id);
 
 
     @Insert("INSERT INTO vending_transactions (" +

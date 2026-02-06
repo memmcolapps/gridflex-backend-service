@@ -73,12 +73,13 @@ public class VendingServiceImpl implements VendingService {
 
         try {
             // --- Meter Validation ---
-            MeterView meter = vendMapper.getMeterInfo(
+            Meter meter = vendMapper.getMeter(
+                            user.getOrgId(),
                             creditToken.getMeterNumber(),
-                            creditToken.getAccountNumber(),
-                            user.getOrgId()
-                    ).stream().findFirst()
-                    .orElseThrow(() -> new GlobalExceptionHandler.NotFoundException("Meter not found"));
+                            creditToken.getAccountNumber()
+                    );
+//                    .stream().findFirst()
+//                    .orElseThrow(() -> new GlobalExceptionHandler.NotFoundException("Meter not found"));
 
             if (!"Prepaid".equalsIgnoreCase(meter.getMeterCategory())
                     || !"Assigned".equalsIgnoreCase(meter.getMeterStage())
@@ -116,11 +117,11 @@ public class VendingServiceImpl implements VendingService {
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
             request.setMeterType("STS6");
 
-            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType());
-
-            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
-                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
-            }
+//            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType());
+//
+//            if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
+//            }
 
             // --- Persist Transaction ---
             UUID transactionId = UUID.randomUUID();
@@ -129,8 +130,8 @@ public class VendingServiceImpl implements VendingService {
             transaction.setMeterId(meter.getMeterId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(netBalance);
-            transaction.setToken(tokenResponse.getTokens().get(0));
-            transaction.setUnit(netBalance.divide(new BigDecimal(meter.getTariffRate()), 2, BigDecimal.ROUND_HALF_UP));
+            transaction.setToken(generateDummyToken());//(tokenResponse.getTokens().get(0));
+            transaction.setUnit(netBalance.divide(new BigDecimal(meter.getTariffInfo().getTariff_rate()), 2, BigDecimal.ROUND_HALF_UP));
             transaction.setUnitCost(netBalance);
             transaction.setTokenType(creditToken.getTokenType());
             transaction.setStatus("Successful");
@@ -138,6 +139,8 @@ public class VendingServiceImpl implements VendingService {
             transaction.setOrgId(user.getOrgId());
             transaction.setUserId(user.getId());
             transaction.setCustomerId(meter.getCustomerId());
+            transaction.setKct1(generateDummyToken());
+            transaction.setKct2(generateDummyToken());
 
             int created = vendMapper.createCreditToken(transaction);
             if (created == 0) {
