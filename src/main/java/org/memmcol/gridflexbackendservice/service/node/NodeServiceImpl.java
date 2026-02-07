@@ -98,7 +98,7 @@ public class NodeServiceImpl implements NodeService {
                 );
             }
 
-            if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmail(request.getEmail(), um.getOrgId()))) {
+            if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmail(request.getEmail()))) {
                 throw new GlobalExceptionHandler.NotFoundException(
                         "Email (" + request.getEmail() + ") already been used"
                 );
@@ -196,7 +196,7 @@ public class NodeServiceImpl implements NodeService {
                         "Serial No (" + request.getSerialNo() + ") " + status.getExistDesc());
             }
 
-            if (Boolean.TRUE.equals(nodeMapper.existsByEmail(request.getEmail(), um.getOrgId()))) {
+            if (Boolean.TRUE.equals(nodeMapper.existsByEmail(request.getEmail()))) {
                 throw new GlobalExceptionHandler.NotFoundException(
                         "Email (" + request.getEmail() + ") already been used"
                 );
@@ -299,17 +299,18 @@ public class NodeServiceImpl implements NodeService {
                     );
                 }
             }
+            Boolean existingEmail = nodeMapper.existsByRegionEmail(request.getEmail());
 
             // Validate Email (only if email changed)
-//            if (!request.getEmail().equalsIgnoreCase(existingRecord.getEmail())) {
-//
+            if (request.getEmail() != null && !request.getEmail().isEmpty() &&
+                    Boolean.TRUE.equals(existingEmail)) {
+
 //                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
-//                        request.getEmail(), um.getOrgId(), request.getNodeId()))) {
-//                    throw new GlobalExceptionHandler.NotFoundException(
-//                            "Email (" + request.getEmail() + ") already been used"
-//                    );
-//                }
-//            }
+//                        request.getEmail(), request.getOrgId(), request.getNodeId()))) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Email (" + request.getEmail() + ") already been used"
+                );
+            }
 
             // Validate Name (only if name changed)
             if (!request.getName().equalsIgnoreCase(existingRecord.getName())) {
@@ -410,17 +411,19 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-//            // Email Validation - only check if value changed
-//            if (!request.getEmail().equals(existingRecord.getEmail())) {
-//
-//                // Check if email exists for any other node in org
-//                if (Boolean.TRUE.equals(nodeMapper.existsByEmailForDifferentNode(
-//                        request.getEmail(), um.getOrgId(), request.getNodeId()))) {
-//                    throw new GlobalExceptionHandler.NotFoundException(
-//                            "Email (" + request.getEmail() + ") already been used"
-//                    );
+            Boolean existingEmail = nodeMapper.existsByEmail(request.getEmail());
+
+            // Validate Email (only if email changed)
+            if (request.getEmail() != null && !request.getEmail().isEmpty() &&
+                    Boolean.TRUE.equals(existingEmail)) {
+
+//                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
+//                        request.getEmail(), request.getOrgId(), request.getNodeId()))) {
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Email (" + request.getEmail() + ") already been used"
+                    );
 //                }
-//            }
+            }
 
             // Asset ID Validation - only check if value changed
             if (!request.getAssetId().equalsIgnoreCase(existingRecord.getAssetId())) {

@@ -173,20 +173,18 @@ public interface NodeMapper {
     @Select("""
     SELECT 1
     FROM substation_trans_feeder_lines
-    WHERE org_id = #{orgId}
-      AND email = #{email}
+    WHERE email = #{email}
     LIMIT 1
     """)
-    Boolean existsByEmail(@Param("email") String email, @Param("orgId") UUID orgId);
+    Boolean existsByEmail(@Param("email") String email);
 
     @Select("""
     SELECT 1
     FROM region_bhub_service_centers
-    WHERE org_id = #{orgId}
-      AND email = #{email}
+    WHERE email = #{email}
     LIMIT 1
     """)
-    Boolean existsByRegionEmail(@Param("email") String email, @Param("orgId") UUID orgId);
+    Boolean existsByRegionEmail(@Param("email") String email);
 
     @Select("""
             SELECT * FROM region_bhub_service_centers 
