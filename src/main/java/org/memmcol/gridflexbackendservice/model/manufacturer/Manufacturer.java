@@ -60,7 +60,7 @@ public class Manufacturer implements Serializable {
     }
 
     public String getName() {
-        return name;
+        return name == null ? name : name.trim();
     }
 
     public void setName(String name) {
@@ -69,7 +69,7 @@ public class Manufacturer implements Serializable {
 
 
     public String getContactPerson() {
-        return contactPerson;
+        return contactPerson == null ? contactPerson : contactPerson.trim();
     }
 
     public void setContactPerson(String contactPerson) {
@@ -77,7 +77,7 @@ public class Manufacturer implements Serializable {
     }
 
     public String getEmail() {
-        return email;
+        return email == null ? email : email.trim();
     }
 
     public void setEmail(String email) {
@@ -85,7 +85,7 @@ public class Manufacturer implements Serializable {
     }
 
     public String getPhoneNo() {
-        return phoneNo;
+        return phoneNo == null ? phoneNo : phoneNo.trim();
     }
 
     public void setPhoneNo(String phoneNo) {
@@ -117,7 +117,7 @@ public class Manufacturer implements Serializable {
     }
 
     public String getCity() {
-        return city;
+        return city == null ? city : city.trim();
     }
 
     public void setCity(String city) {
@@ -125,7 +125,7 @@ public class Manufacturer implements Serializable {
     }
 
     public String getStreet() {
-        return street;
+        return street == null ? street : street.trim();
     }
 
     public void setStreet(String street) {
@@ -133,7 +133,7 @@ public class Manufacturer implements Serializable {
     }
 
     public String getHouseNo() {
-        return houseNo;
+        return houseNo == null ? houseNo : houseNo.trim();
     }
 
     public void setHouseNo(String houseNo) {

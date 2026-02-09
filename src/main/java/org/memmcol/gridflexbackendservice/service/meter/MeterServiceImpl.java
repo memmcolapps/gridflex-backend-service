@@ -281,6 +281,28 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
+            if(request.getPaymentMode() != null) {
+                UUID meterId = request.getId();
+                request.getPaymentMode().setMeterId(meterId);
+                request.getPaymentMode().setOrgId(user.getOrgId());
+
+                //checking for one-off
+                if(request.getPaymentMode().getCreditPaymentMode().contains("one")
+                        || request.getPaymentMode().getDebitPaymentMode().contains("percentage")){
+                    request.getPaymentMode().setCreditPaymentPlan("");
+                }
+
+                if(request.getPaymentMode().getDebitPaymentMode().contains("one")
+                        || request.getPaymentMode().getDebitPaymentMode().contains("percentage")){
+                    request.getPaymentMode().setDebitPaymentPlan("");
+                }
+
+                int mdResult2 = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request.getPaymentMode());
+                if (mdResult2 == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " Payment mode " + status.getUpdateFailureDesc());
+                }
+            }
+
             String desc = MeterDesc + "," + MDDesc + ","+ SmartDesc;
 
             // Fetch updated meter and log audit
@@ -727,7 +749,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleMeterAssign(AssignMeterToCustomer request){
-        UserModel user = handleUserValidation();
+
         // Assign meter to customer
         request.setDescription("Meter Assigned");
         request.setMeterStage("Pending-assigned");
@@ -744,11 +766,24 @@ public class MeterServiceImpl implements MeterService {
             // Handle prepaid meter assignment
             if ("prepaid".equalsIgnoreCase(request.getMeterCategory())) {
                 request.setDescription("Payment mode assigned");
+
+                //checking for one-off
+                if(request.getCreditPaymentMode().contains("one")
+                        || request.getDebitPaymentMode().contains("percentage")){
+                    request.setCreditPaymentPlan("");
+                }
+
+                if(request.getDebitPaymentMode().contains("one")
+                        || request.getDebitPaymentMode().contains("percentage")){
+                    request.setDebitPaymentPlan("");
+                }
+
                 int paymentModeResult = meterMapper.assignPaymentModeVersion(request);
 
                 if (paymentModeResult == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Payment mode assignment failed");
                 }
+
             }
         } else {
             request.setType("VIRTUAL");
@@ -1258,7 +1293,11 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
         }
 
-        int c = customerMapper.totalCustomer(meter.getCustomerId());
+        String customerId = meter.getCustomerId();
+
+        int c = customerMapper.totalCustomer(customerId);
+
+        meter.setCustomerId(customerId);
 
         if(!"Pending-detached".equalsIgnoreCase(stage)){
 

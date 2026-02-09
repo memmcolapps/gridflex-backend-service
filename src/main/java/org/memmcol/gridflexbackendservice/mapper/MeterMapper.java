@@ -418,6 +418,7 @@ public interface MeterMapper {
             "cin = #{cin}, ",
             "fixed_energy = #{fixedEnergy}, ",
             "tariff = #{tariff}, ",
+            "meter_class = #{meterClass}, ",
             "updated_at = #{updatedAt} ",
             "WHERE meter_number = #{meterNumber} AND org_id = #{orgId}",
             "</script>"
