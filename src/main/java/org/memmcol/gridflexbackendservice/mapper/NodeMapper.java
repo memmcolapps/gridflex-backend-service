@@ -290,13 +290,11 @@ public interface NodeMapper {
     @Select("""
     SELECT 1
     FROM substation_trans_feeder_lines
-    WHERE org_id = #{orgId}
-      AND email = #{email}
+    WHERE email = #{email}
       AND node_id != #{nodeId}
     LIMIT 1
     """)
     Boolean existsByEmailForDifferentNode(@Param("email") String email,
-                                          @Param("orgId") UUID orgId,
                                           @Param("nodeId") UUID nodeId);
 
     @Select("""
@@ -327,17 +325,15 @@ public interface NodeMapper {
                                                     @Param("type") String type,
                                                     @Param("nodeId") UUID nodeId);
 
-//    @Select("""
-//    SELECT 1
-//    FROM region_bhub_service_centers
-//    WHERE org_id = #{orgId}
-//      AND email = #{email}
-//      AND node_id != #{nodeId}
-//    LIMIT 1
-//    """)
-//    Boolean existsByRegionEmailExcludingCurrent(@Param("email") String email,
-//                                                @Param("orgId") UUID orgId,
-//                                                @Param("nodeId") UUID nodeId);
+    @Select("""
+    SELECT 1
+    FROM region_bhub_service_centers
+    WHERE email = #{email}
+      AND node_id != #{nodeId}
+    LIMIT 1
+    """)
+    Boolean existsByRegionEmailExcludingCurrent(@Param("email") String email,
+                                                @Param("nodeId") UUID nodeId);
 
     @Select("""
     SELECT 1

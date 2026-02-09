@@ -299,17 +299,17 @@ public class NodeServiceImpl implements NodeService {
                     );
                 }
             }
-            Boolean existingEmail = nodeMapper.existsByRegionEmail(request.getEmail());
+//            Boolean existingEmail = nodeMapper.existsByRegionEmail(request.getEmail());
 
             // Validate Email (only if email changed)
-            if (request.getEmail() != null && !request.getEmail().isEmpty() &&
-                    Boolean.TRUE.equals(existingEmail)) {
+            if (request.getEmail() != null && !request.getEmail().isEmpty()) {
 
-//                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
-//                        request.getEmail(), request.getOrgId(), request.getNodeId()))) {
-                throw new GlobalExceptionHandler.NotFoundException(
+                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
+                        request.getEmail(), request.getNodeId()))) {
+                    throw new GlobalExceptionHandler.NotFoundException(
                         "Email (" + request.getEmail() + ") already been used"
-                );
+                    );
+                }
             }
 
             // Validate Name (only if name changed)
@@ -411,18 +411,17 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-            Boolean existingEmail = nodeMapper.existsByEmail(request.getEmail());
+//            Boolean existingEmail = nodeMapper.existsByEmail(request.getEmail());
 
             // Validate Email (only if email changed)
-            if (request.getEmail() != null && !request.getEmail().isEmpty() &&
-                    Boolean.TRUE.equals(existingEmail)) {
+            if (request.getEmail() != null && !request.getEmail().isEmpty() ) {
 
-//                if (Boolean.TRUE.equals(nodeMapper.existsByRegionEmailExcludingCurrent(
-//                        request.getEmail(), request.getOrgId(), request.getNodeId()))) {
+                if (Boolean.TRUE.equals(nodeMapper.existsByEmailForDifferentNode(
+                        request.getEmail(), request.getNodeId()))) {
                     throw new GlobalExceptionHandler.NotFoundException(
                             "Email (" + request.getEmail() + ") already been used"
                     );
-//                }
+                }
             }
 
             // Asset ID Validation - only check if value changed
