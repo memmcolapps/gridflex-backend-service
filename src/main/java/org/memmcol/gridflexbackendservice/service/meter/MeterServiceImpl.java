@@ -625,13 +625,13 @@ public class MeterServiceImpl implements MeterService {
             if(meterStatus) throw new GlobalExceptionHandler.NotFoundException("Meter ("+ request.getMeterNumber() +") already assigned to a customer");
 
             // Validate DSS
-            SubStationTransformerFeederLine dss = meterMapper.verifyDssFeeder(request.getDssAssetId(), user.getOrgId());
+            SubStationTransformerFeederLine dss = meterMapper.verifyDss(request.getDssAssetId(), user.getOrgId());
             if (dss == null) {
                 throw new GlobalExceptionHandler.NotFoundException("DSS " + status.getNotFoundDesc());
             }
 
             // Validate feeder line
-            SubStationTransformerFeederLine feederLine = meterMapper.verifyDssFeeder(request.getFeederAssetId(), user.getOrgId());
+            SubStationTransformerFeederLine feederLine = meterMapper.verifyFeeder(request.getFeederAssetId(), user.getOrgId());
             if (feederLine == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
             }
@@ -825,13 +825,13 @@ public class MeterServiceImpl implements MeterService {
 
             //Assign the new meter
             // Validate DSS
-            SubStationTransformerFeederLine dss = meterMapper.verifyDssFeeder(request.getDssAssetId(), user.getOrgId());
+            SubStationTransformerFeederLine dss = meterMapper.verifyDss(request.getDssAssetId(), user.getOrgId());
             if (dss == null) {
                 throw new GlobalExceptionHandler.NotFoundException("DSS " + status.getNotFoundDesc());
             }
 
             // Validate feeder line
-            SubStationTransformerFeederLine feederLine = meterMapper.verifyDssFeeder(request.getFeederAssetId(), user.getOrgId());
+            SubStationTransformerFeederLine feederLine = meterMapper.verifyFeeder(request.getFeederAssetId(), user.getOrgId());
             if (feederLine == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
             }

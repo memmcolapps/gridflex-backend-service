@@ -893,6 +893,7 @@ public interface MeterMapper {
             """)
     @Results({
             @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
@@ -1402,12 +1403,20 @@ public interface MeterMapper {
     void updateMeterCategory(UUID orgId, UUID meterId, String meterStage, LocalDateTime updateAt);
 
     @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} " +
-            "AND (type = 'dss' OR type = 'feeder line')")
+            "AND UPPER(type) = UPPER('dss')")
     @Results({
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "parentId", column = "parent_id"),
     })
-    SubStationTransformerFeederLine verifyDssFeeder(String assetId, UUID orgId);
+    SubStationTransformerFeederLine verifyDss(String assetId, UUID orgId);
+
+    @Select("SELECT * FROM substation_trans_feeder_lines WHERE asset_id = #{assetId} AND org_id = #{orgId} " +
+            "AND UPPER(type) = UPPER('feeder line')")
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+    })
+    SubStationTransformerFeederLine verifyFeeder(String assetId, UUID orgId);
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type," +
