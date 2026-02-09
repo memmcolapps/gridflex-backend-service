@@ -217,7 +217,7 @@ public interface NodeMapper {
     List<SubStationTransformerFeederLine> getFeederDss(UUID orgId);
 
     @Select("""
-            SELECT name, asset_id FROM substation_trans_feeder_lines
+            SELECT name, asset_id, type FROM substation_trans_feeder_lines
             WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
             """)
     @Results({
@@ -228,7 +228,7 @@ public interface NodeMapper {
     List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId);
 
     @Select("""
-            SELECT name, asset_id FROM substation_trans_feeder_lines
+            SELECT name, asset_id, type FROM substation_trans_feeder_lines
             WHERE org_id = #{orgId} AND parent_id = #{nodeId} AND UPPER(type) = UPPER('dss')
             """)
     @Results({
@@ -239,8 +239,11 @@ public interface NodeMapper {
 
     @Select("""
             SELECT node_id FROM substation_trans_feeder_lines
-            WHERE org_id = #{orgId} AND asset_id = #{assetId}
+            WHERE org_id = #{orgId} AND asset_id = #{assetId} AND UPPER(type) = UPPER('feeder line')
             """)
+    @Results({
+            @Result(property = "nodeId", column = "node_id"),
+    })
     UUID getFeederNodeId(UUID orgId, String assetId);
 
     @Select("""
