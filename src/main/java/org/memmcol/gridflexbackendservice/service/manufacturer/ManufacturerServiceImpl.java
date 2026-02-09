@@ -59,15 +59,17 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Override
     public Map<String, Object> createManufacturer(Manufacturer request) {
         try {
+
+            handlePayloadCheck(request);
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             String desc = capitalizeFirstLetter(request.getName()) + "newly created";
             UserModel um = handleUserValidation();
 
             // check if operator exist
-            Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
+            Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId(), request.getEmail());
             if (isManufacturer != null){
-                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " ("+request.getName()+") " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+") or email ("+request.getEmail()+") " + status.getExistDesc());
             }
 
             request.setOrgId(um.getOrgId());
@@ -91,10 +93,40 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         }
     }
 
+    private void handlePayloadCheck(Manufacturer request) {
+
+        if(request.getName() == null || request.getName().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("Name field is required");
+        }
+        if(request.getEmail() == null || request.getEmail().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("Email field is required");
+        }
+        if(request.getPhoneNo() == null || request.getPhoneNo().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("Phone number field is required");
+        }
+        if(request.getState() == null || request.getState().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("State field is required");
+        }
+        if(request.getStreet() == null || request.getStreet().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("Street field is required");
+        }
+        if(request.getCity() == null || request.getCity().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("City field is required");
+        }
+        if(request.getHouseNo() == null || request.getHouseNo().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("House number field is required");
+        }
+        if(request.getContactPerson() == null || request.getContactPerson().isEmpty()){
+            throw new GlobalExceptionHandler.NotFoundException("House number field is required");
+        }
+    }
+
     @Transactional
     @Override
     public Map<String, Object> updateManufacturer(Manufacturer request) {
         try {
+            handlePayloadCheck(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = capitalizeFirstLetter(request.getName()) + "edited";
             UserModel um = handleUserValidation();
@@ -105,9 +137,13 @@ public class ManufacturerServiceImpl implements ManufacturerService {
                 throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " " + status.getNotFoundDesc());
             }
 
-//            if (isManufacturer.getName().equals(request.getName())){
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(manufacturerName + " ("+request.getName()+") " + status.getExistDesc());
-//            }
+            if(!isManufacturer.getName().equalsIgnoreCase(request.getName())
+                    || !isManufacturer.getEmail().equalsIgnoreCase(request.getEmail())){
+                Manufacturer m = manufacturerMapper.find(request.getName(), request.getEmail());
+                if (m != null){
+                    throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+") or email ("+request.getEmail()+") " + status.getExistDesc());
+                }
+            }
 
             request.setOrgId(um.getOrgId());
 
@@ -119,13 +155,6 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 //            handleAddCache(user);
             AuditLog auditLog = buildAuditLog(um, desc, manufacturerName, manufacturer, metadata);
             safeAuditService.saveAudit(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setType(manfacturerName);
-//            auditNotificationDTO.setManufacturer(manufacturer);
-//            auditRepository.save(auditNotificationDTO);
 
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
