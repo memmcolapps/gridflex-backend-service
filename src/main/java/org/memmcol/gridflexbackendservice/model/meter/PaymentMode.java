@@ -16,10 +16,9 @@ public class PaymentMode implements Serializable {
     private UUID meterId;
     private Boolean status;
     private String meterCategory;
-    private String creditPaymentMode;
-    private String creditPaymentPlan;
-    private String debitPaymentMode;
-    private String debitPaymentPlan;
+    private String paymentMode;
+    private String paymentPlan;
+    private String paymentType;
     private String migrationFrom;
     private String meterStage;
     private String description;
@@ -67,47 +66,39 @@ public class PaymentMode implements Serializable {
     }
 
     public String getMeterCategory() {
-        return meterCategory;
+        return meterCategory == null ? meterCategory : meterCategory.trim();
     }
 
     public void setMeterCategory(String meterCategory) {
         this.meterCategory = meterCategory;
     }
 
-    public String getCreditPaymentMode() {
-        return creditPaymentMode;
+    public String getPaymentMode() {
+        return paymentMode == null ? paymentMode : paymentMode.trim();
     }
 
-    public void setCreditPaymentMode(String creditPaymentMode) {
-        this.creditPaymentMode = creditPaymentMode;
+    public void setPaymentMode(String paymentMode) {
+        this.paymentMode = paymentMode;
     }
 
-    public String getCreditPaymentPlan() {
-        return creditPaymentPlan;
+    public String getPaymentPlan() {
+        return paymentPlan == null ? paymentPlan : paymentPlan.trim();
     }
 
-    public void setCreditPaymentPlan(String creditPaymentPlan) {
-        this.creditPaymentPlan = creditPaymentPlan;
+    public void setPaymentPlan(String paymentPlan) {
+        this.paymentPlan = paymentPlan;
     }
 
-    public String getDebitPaymentMode() {
-        return debitPaymentMode;
+    public String getPaymentType() {
+        return paymentType == null ? paymentType : paymentType.toUpperCase().trim();
     }
 
-    public void setDebitPaymentMode(String debitPaymentMode) {
-        this.debitPaymentMode = debitPaymentMode;
-    }
-
-    public String getDebitPaymentPlan() {
-        return debitPaymentPlan;
-    }
-
-    public void setDebitPaymentPlan(String debitPaymentPlan) {
-        this.debitPaymentPlan = debitPaymentPlan;
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
     }
 
     public String getMigrationFrom() {
-        return migrationFrom;
+        return migrationFrom == null ? migrationFrom : migrationFrom.trim();
     }
 
     public void setMigrationFrom(String migrationFrom) {
@@ -115,7 +106,7 @@ public class PaymentMode implements Serializable {
     }
 
     public String getMeterStage() {
-        return meterStage;
+        return meterStage == null ? meterStage : meterStage.trim();
     }
 
     public void setMeterStage(String meterStage) {
@@ -123,7 +114,7 @@ public class PaymentMode implements Serializable {
     }
 
     public String getDescription() {
-        return description;
+        return description == null ? description : description.trim();
     }
 
     public void setDescription(String description) {

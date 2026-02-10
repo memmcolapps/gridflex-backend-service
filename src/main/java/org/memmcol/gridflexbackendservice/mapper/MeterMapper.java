@@ -1259,10 +1259,9 @@ public interface MeterMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
-            @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
-            @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
-            @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
-            @Result(property = "debitPaymentPlan", column = "debit_payment_plan"),
+            @Result(property = "paymentMode", column = "payment_mode"),
+            @Result(property = "paymentPlan", column = "payment_plan"),
+            @Result(property = "paymentType", column = "payment_type"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
@@ -1274,10 +1273,9 @@ public interface MeterMapper {
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "meterStage", column = "meter_stage"),
-            @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
-            @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
-            @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
-            @Result(property = "debitPaymentPlan", column = "debit_payment_plan"),
+            @Result(property = "paymentMode", column = "payment_mode"),
+            @Result(property = "paymentPlan", column = "payment_plan"),
+            @Result(property = "paymentType", column = "payment_type"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
@@ -1387,13 +1385,13 @@ public interface MeterMapper {
             "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, #{meterStage}, #{description}, #{createdBy})")
     void assignVerMeterToLocation(MeterAssignLocation request);
 
-    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
-            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
+    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, payment_mode, payment_plan, payment_type, created_at, updated_at, status, meter_stage, created_by, description)" +
+            "VALUES(#{orgId}, #{meterId}, #{paymentMode}, #{paymentPlan}, #{paymentType}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
     int assignPaymentModeVersion(AssignMeterToCustomer request);
 
-    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, meter_stage, credit_payment_mode, credit_payment_plan, debit_payment_mode, " +
-            "debit_payment_plan, created_at, updated_at, description, status, created_by)" +
-            "VALUES(#{orgId}, #{meterId}, #{meterStage}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, " +
+    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, meter_stage, payment_mode, payment_plan, payment_plan, " +
+            "created_at, updated_at, description, status, created_by)" +
+            "VALUES(#{orgId}, #{meterId}, #{meterStage}, #{paymentMode}, #{paymentPlan}, #{paymentType}, " +
             "#{createdAt}, #{updatedAt}, #{description}, #{status}, #{createdBy})")
     int assignPaymentModeWhenMigrationToPrepaid(PaymentMode request);
 
@@ -2357,13 +2355,13 @@ public interface MeterMapper {
     @Insert({
             "<script>",
             "INSERT INTO payment_mode_version (",
-            "org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, ",
+            "org_id, meter_id, payment_mode, payment_plan, payment_type, ",
             "created_at, updated_at, status, meter_stage, created_by, description",
             ") VALUES ",
             "<foreach collection='paymentModes' item='item' separator=','>",
             "(",
-            "#{item.orgId}, #{item.meterId}, #{item.creditPaymentMode}, #{item.creditPaymentPlan}, ",
-            "#{item.debitPaymentMode}, #{item.debitPaymentPlan}, ",
+            "#{item.orgId}, #{item.meterId}, #{item.paymentMode}, #{item.paymentPlan}, ",
+            "#{item.paymentType}, ",
             "#{item.createdAt}, #{item.updatedAt}, true, #{item.meterStage}, #{item.createdBy}, #{item.description}",
             ")",
             "</foreach>",
@@ -2426,12 +2424,12 @@ public interface MeterMapper {
     @Insert({
             "<script>",
             "INSERT INTO payment_mode (",
-            "  org_id, meter_id, credit_payment_mode, credit_payment_plan, ",
-            "  debit_payment_mode, debit_payment_plan, created_at, updated_at, status",
+            "  org_id, meter_id, payment_mode, payment_plan, ",
+            "  payment_type, created_at, updated_at, status",
             ")",
             "SELECT ",
-            "  pmv.org_id, pmv.meter_id, pmv.credit_payment_mode, pmv.credit_payment_plan, ",
-            "  pmv.debit_payment_mode, pmv.debit_payment_plan, pmv.created_at, pmv.updated_at, true ",
+            "  pmv.org_id, pmv.meter_id, pmv.payment_mode, pmv.payment_plan, ",
+            "  pmv.payment_type, pmv.created_at, pmv.updated_at, true ",
             "FROM payment_mode_version pmv ",
             "WHERE pmv.org_id = #{orgId} ",
             "  AND pmv.meter_id IN ",
@@ -2448,10 +2446,9 @@ public interface MeterMapper {
             "<script>",
             "UPDATE payment_mode AS pm",
             "SET ",
-            "  credit_payment_mode = pmv.credit_payment_mode,",
-            "  credit_payment_plan = pmv.credit_payment_plan,",
-            "  debit_payment_mode = pmv.debit_payment_mode,",
-            "  debit_payment_plan = pmv.debit_payment_plan,",
+            "  payment_mode = pmv.payment_mode,",
+            "  payment_plan = pmv.payment_plan,",
+            "  payment_type = pmv.payment_mode,",
             "  updated_at = pmv.updated_at,",
             "  status = true",
             "FROM payment_mode_version AS pmv",

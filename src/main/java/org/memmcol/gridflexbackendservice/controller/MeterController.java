@@ -96,10 +96,9 @@ public class MeterController {
             "city",
             "house number",
             "street name",
-            "credit payment mode",
-            "credit payment plan",
-            "debit payment mode",
-            "debit payment plan",
+            "payment mode",
+            "payment plan",
+            "payment type",
     };
 
     private static final String[] ASSIGNVHEADERS = {
@@ -470,7 +469,7 @@ public class MeterController {
     @GetMapping("/download/assign/template/csv")
     public ResponseEntity<Resource> downloadAssignCsvTemplate() throws IOException {
         String sampleRow = "0048675416677, customer-id, tariff test, E3241, E3241, XXXXXXXXX, " +
-                "Kwara, Ilorin, 40, Asa-dam, monthly, one-off, monthly, one-off";
+                "Kwara, Ilorin, 40, Asa-dam, monthly, 2, credit/debit";
 
         // Build CSV content in memory
         String csvContent = String.join(",", ASSIGNHEADERS) + "\n" + sampleRow;
@@ -500,7 +499,7 @@ public class MeterController {
 
             Object[] sampleData = {
                     "0048675416677","customer-id", "tariff test", "E3241", "E3241", "XXXXXXXXX",
-                    "Kwara", "Ilorin", "40", "Asa-dam", "monthly", "one-off", "monthly", "one-off"
+                    "Kwara", "Ilorin", "40", "Asa-dam", "monthly", "2", "credit/debit"
             };
 
             for (int i = 0; i < sampleData.length; i++) {

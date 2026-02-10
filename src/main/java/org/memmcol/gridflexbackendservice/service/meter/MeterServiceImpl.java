@@ -103,6 +103,8 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> createMeter(Meter request) {
         try {
+
+            handlePayloadCheck(request);
             // --- Step 1: Context & Validation ---
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
@@ -135,6 +137,99 @@ public class MeterServiceImpl implements MeterService {
             genericHandler.logIncidentReport("Creating meter service failed");
             genericHandler.logAndSaveException(ex, "creating meter");
             throw ex;
+        }
+    }
+
+    private void handlePayloadCheck(Meter request) {
+
+        if(request.getMeterNumber() == null || request.getMeterNumber().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Meter number field is required");
+        }
+        if(request.getSimNumber() == null || request.getSimNumber().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Sim number field is required");
+        }
+        if(request.getMeterClass() == null || request.getMeterClass().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Meter class field is required");
+        }
+        if(request.getMeterManufacturer() == null || request.getMeterManufacturer().equals("")) {
+            throw new GlobalExceptionHandler.NotFoundException("Meter class field is required");
+        }
+        if(request.getMeterType() == null || request.getMeterType().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Meter class field is required");
+        }
+        if(request.getOldSgc() == null || request.getOldSgc().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Old sgc field is required");
+        }
+
+        if(request.getNewSgc() == null || request.getNewSgc().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Old sgc field is required");
+        }
+        if(request.getOldKrn() == null || request.getOldKrn().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Old krn field is required");
+        }
+        if(request.getNewKrn() == null || request.getNewKrn().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("New krn field is required");
+        }
+        if(request.getOldTariffIndex() == null) {
+            throw new GlobalExceptionHandler.NotFoundException("Old tariff index field is required");
+        }
+        if(request.getNewTariffIndex() == null) {
+            throw new GlobalExceptionHandler.NotFoundException("New tariff index field is required");
+        }
+
+        if(request.getSmartStatus()) {
+            if(request.getSmartMeterInfo() == null){
+                throw new GlobalExceptionHandler.NotFoundException("Smart meter info field is required");
+            }
+
+            if(request.getSmartMeterInfo().getMeterModel() == null || request.getSmartMeterInfo().getMeterModel().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Meter model field is required");
+            }
+            if(request.getSmartMeterInfo().getProtocol() == null
+                    || request.getSmartMeterInfo().getProtocol().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Protocol field is required");
+            }
+            if(request.getSmartMeterInfo().getAuthentication() == null
+                    || request.getSmartMeterInfo().getAuthentication().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Authentication field is required");
+            }
+            if(request.getSmartMeterInfo().getPassword() == null
+                    || request.getSmartMeterInfo().getPassword().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Password field is required");
+            }
+        }
+
+
+        if(request.getMeterClass().equalsIgnoreCase("md")) {
+            if(request.getMdMeterInfo() == null){
+                throw new GlobalExceptionHandler.NotFoundException("MD meter info field is required");
+            }
+
+            if(request.getMdMeterInfo().getCtRatioNum() == null || request.getMdMeterInfo().getCtRatioNum().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("CT ratio Numerator field is required");
+            }
+            if(request.getMdMeterInfo().getCtRatioDenom() == null || request.getMdMeterInfo().getCtRatioDenom().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("CT ratio Denominator field is required");
+            }
+            if(request.getMdMeterInfo().getVoltRatioDenom() == null || request.getMdMeterInfo().getVoltRatioDenom().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Volt ratio Denominator field is required");
+            }
+            if(request.getMdMeterInfo().getVoltRatioNum() == null || request.getMdMeterInfo().getVoltRatioNum().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Volt ratio Numerator field is required");
+            }
+            if(request.getMdMeterInfo().getMultiplier() == null || request.getMdMeterInfo().getMultiplier().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Multiplier field is required");
+            }
+
+            if(request.getMdMeterInfo().getMeterRating() == null || request.getMdMeterInfo().getMeterRating().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Meter rating field is required");
+            }
+            if(request.getMdMeterInfo().getInitialReading() == null || request.getMdMeterInfo().getInitialReading().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Initial reading field is required");
+            }
+            if(request.getMdMeterInfo().getDial() == null || request.getMdMeterInfo().getDial().isBlank()){
+                throw new GlobalExceptionHandler.NotFoundException("Dial field is required");
+            }
         }
     }
 
@@ -286,17 +381,26 @@ public class MeterServiceImpl implements MeterService {
                 request.getPaymentMode().setMeterId(meterId);
                 request.getPaymentMode().setOrgId(user.getOrgId());
 
-                //checking for one-off
-                if(request.getPaymentMode().getCreditPaymentMode().contains("one")
-                        || request.getPaymentMode().getDebitPaymentMode().contains("percentage")){
-                    request.getPaymentMode().setCreditPaymentPlan("");
+                if(request.getPaymentMode().getPaymentType() == null || request.getPaymentMode().getPaymentType().isEmpty()){
+                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
+                } else if(!request.getPaymentMode().getPaymentType().equalsIgnoreCase("credit") ||
+                        !request.getPaymentMode().getPaymentType().equalsIgnoreCase("debit")){
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Payment type ("+request.getPaymentMode().getPaymentType()+") is not supported");
+                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("one-off") &&
+                        request.getPaymentMode().getPaymentMode().equalsIgnoreCase("percentage")){
+                    request.getPaymentMode().setPaymentPlan("");
+                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("monthly") &&
+                        request.getPaymentMode().getPaymentPlan() == null ||
+                        request.getPaymentMode().getPaymentPlan().isEmpty()) {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("non")) {
+                    request.getPaymentMode().setPaymentPlan("");
                 }
-
-                if(request.getPaymentMode().getDebitPaymentMode().contains("one")
-                        || request.getPaymentMode().getDebitPaymentMode().contains("percentage")){
-                    request.getPaymentMode().setDebitPaymentPlan("");
+                else {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode provided is not supported");
                 }
-
+                request.getPaymentMode().setStatus(true);
                 int mdResult2 = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request.getPaymentMode());
                 if (mdResult2 == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " Payment mode " + status.getUpdateFailureDesc());
@@ -768,14 +872,25 @@ public class MeterServiceImpl implements MeterService {
                 request.setDescription("Payment mode assigned");
 
                 //checking for one-off
-                if(request.getCreditPaymentMode().contains("one")
-                        || request.getDebitPaymentMode().contains("percentage")){
-                    request.setCreditPaymentPlan("");
-                }
 
-                if(request.getDebitPaymentMode().contains("one")
-                        || request.getDebitPaymentMode().contains("percentage")){
-                    request.setDebitPaymentPlan("");
+                if(request.getPaymentMode() != null && (request.getPaymentType() == null
+                        || request.getPaymentType().isEmpty())){
+                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
+                } else if(!request.getPaymentType().equalsIgnoreCase("credit") ||
+                        !request.getPaymentType().equalsIgnoreCase("debit")){
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Payment type ("+request.getPaymentType()+") is not supported");
+                } else if(request.getPaymentMode().equalsIgnoreCase("one-off") &&
+                        request.getPaymentMode().equalsIgnoreCase("percentage")){
+                    request.setPaymentPlan("");
+                } else if(request.getPaymentMode().equalsIgnoreCase("monthly") &&
+                        request.getPaymentPlan() == null || request.getPaymentPlan().isEmpty()) {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+                } else if(request.getPaymentMode().equalsIgnoreCase("non")) {
+                    request.setPaymentPlan("");
+                }
+                else {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
                 }
 
                 int paymentModeResult = meterMapper.assignPaymentModeVersion(request);
@@ -1085,6 +1200,25 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMigrationFrom().equalsIgnoreCase("postpaid") && meterById.getMeterCategory().equalsIgnoreCase("postpaid")){
                 desc = "Meter migration from postpaid to prepaid";
 
+                if(request.getPaymentMode() != null && (request.getPaymentType() == null
+                        || request.getPaymentType().isEmpty())){
+                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
+                } else if(!request.getPaymentType().equalsIgnoreCase("credit") ||
+                        !request.getPaymentType().equalsIgnoreCase("debit")){
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Payment type ("+request.getPaymentType()+") is not supported");
+                } else if(request.getPaymentMode().equalsIgnoreCase("one-off") &&
+                        request.getPaymentMode().equalsIgnoreCase("percentage")){
+                    request.setPaymentPlan("");
+                } else if(request.getPaymentMode().equalsIgnoreCase("monthly") &&
+                        request.getPaymentPlan() == null || request.getPaymentPlan().isEmpty()) {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+                } else if(request.getPaymentMode().equalsIgnoreCase("non")) {
+                    request.setPaymentPlan("");
+                } else {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
+                }
+
                 meterMapper.updateMeterCategory(um.getOrgId(), request.getMeterId(), meterStage, meterById.getUpdatedAt());
 
                 meterById.setMeterCategory("Prepaid");
@@ -1100,10 +1234,9 @@ public class MeterServiceImpl implements MeterService {
             } else if(request.getMigrationFrom().equalsIgnoreCase("prepaid") && meterById.getMeterCategory().equalsIgnoreCase("prepaid")){
                 desc = "Meter migration from prepaid to postpaid";
 
-                request.setCreditPaymentMode(meterById.getPaymentMode().getCreditPaymentMode());
-                request.setCreditPaymentPlan(meterById.getPaymentMode().getCreditPaymentPlan());
-                request.setDebitPaymentMode(meterById.getPaymentMode().getDebitPaymentMode());
-                request.setDebitPaymentPlan(meterById.getPaymentMode().getDebitPaymentPlan());
+                request.setPaymentMode(meterById.getPaymentMode().getPaymentMode());
+                request.setPaymentPlan(meterById.getPaymentMode().getPaymentPlan());
+                request.setPaymentType(meterById.getPaymentMode().getPaymentType());
 
                 meterMapper.updateMeterCategory(um.getOrgId(), request.getMeterId(), meterStage, meterById.getUpdatedAt());
 
@@ -1344,7 +1477,7 @@ public class MeterServiceImpl implements MeterService {
             //approve payment mode for prepaid meter Information
             if(meter.getPaymentMode() != null){
                 meter.getPaymentMode().setApproveBy(user.getId());
-                approvePrepaidMeterInfo(meter, approveStatus);
+                approvePrepaidMeterInfo(meter);
             }
         }
 
@@ -1437,7 +1570,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    private void approvePrepaidMeterInfo(Meter meter, String approveStatus) {
+    private void approvePrepaidMeterInfo(Meter meter) {
         int updateMDInfoApproval, mdInfoApproval;
         mdInfoApproval = meterMapper.approvePrepaidMeterVersion(meter.getPaymentMode());
         if (mdInfoApproval == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
@@ -3047,14 +3180,14 @@ public class MeterServiceImpl implements MeterService {
                     if (meter.getMdMeterInfo() == null) {
                         meter.setMdMeterInfo(new MDMeterInfo());
                     }
-                    meter.getMdMeterInfo().setCtRatioNum(parseLongSafe(record.get("ctRatioNum")));
-                    meter.getMdMeterInfo().setCtRatioDenom(parseLongSafe(record.get("ctRatioDenom")));
-                    meter.getMdMeterInfo().setVoltRatioNum(parseLongSafe(record.get("voltRatioNum")));
-                    meter.getMdMeterInfo().setVoltRatioDenom(parseLongSafe(record.get("voltRatioDenom")));
-                    meter.getMdMeterInfo().setMultiplier(parseLongSafe(record.get("multiplier")));
-                    meter.getMdMeterInfo().setMeterRating(parseLongSafe(record.get("meterRating")));
-                    meter.getMdMeterInfo().setInitialReading(parseLongSafe(record.get("initialReading")));
-                    meter.getMdMeterInfo().setDial(parseLongSafe(record.get("dial")));
+                    meter.getMdMeterInfo().setCtRatioNum(record.get("ctRatioNum"));
+                    meter.getMdMeterInfo().setCtRatioDenom(record.get("ctRatioDenom"));
+                    meter.getMdMeterInfo().setVoltRatioNum(record.get("voltRatioNum"));
+                    meter.getMdMeterInfo().setVoltRatioDenom(record.get("voltRatioDenom"));
+                    meter.getMdMeterInfo().setMultiplier(record.get("multiplier"));
+                    meter.getMdMeterInfo().setMeterRating(record.get("meterRating"));
+                    meter.getMdMeterInfo().setInitialReading(record.get("initialReading"));
+                    meter.getMdMeterInfo().setDial(record.get("dial"));
                     meter.getMdMeterInfo().setLatitude(record.get("latitude"));
                     meter.getMdMeterInfo().setLongitude(record.get("longitude"));
                 }
@@ -3117,14 +3250,14 @@ public class MeterServiceImpl implements MeterService {
                     if (meter.getMdMeterInfo() == null) {
                         meter.setMdMeterInfo(new MDMeterInfo());
                     }
-                    meter.getMdMeterInfo().setCtRatioNum(parseLongSafe(getStringCellValue(row.getCell(17))));
-                    meter.getMdMeterInfo().setCtRatioDenom(parseLongSafe(getStringCellValue(row.getCell(18))));
-                    meter.getMdMeterInfo().setVoltRatioNum(parseLongSafe(getStringCellValue(row.getCell(19))));
-                    meter.getMdMeterInfo().setVoltRatioDenom(parseLongSafe(getStringCellValue(row.getCell(20))));
-                    meter.getMdMeterInfo().setMultiplier(parseLongSafe(getStringCellValue(row.getCell(21))));
-                    meter.getMdMeterInfo().setMeterRating(parseLongSafe(getStringCellValue(row.getCell(22))));
-                    meter.getMdMeterInfo().setInitialReading(parseLongSafe(getStringCellValue(row.getCell(23))));
-                    meter.getMdMeterInfo().setDial(parseLongSafe(getStringCellValue(row.getCell(24))));
+                    meter.getMdMeterInfo().setCtRatioNum(getStringCellValue(row.getCell(17)));
+                    meter.getMdMeterInfo().setCtRatioDenom(getStringCellValue(row.getCell(18)));
+                    meter.getMdMeterInfo().setVoltRatioNum(getStringCellValue(row.getCell(19)));
+                    meter.getMdMeterInfo().setVoltRatioDenom(getStringCellValue(row.getCell(20)));
+                    meter.getMdMeterInfo().setMultiplier(getStringCellValue(row.getCell(21)));
+                    meter.getMdMeterInfo().setMeterRating(getStringCellValue(row.getCell(22)));
+                    meter.getMdMeterInfo().setInitialReading(getStringCellValue(row.getCell(23)));
+                    meter.getMdMeterInfo().setDial(getStringCellValue(row.getCell(24)));
                     meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
                     meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
                 }
@@ -3566,10 +3699,9 @@ public class MeterServiceImpl implements MeterService {
                     payment.setCreatedBy(user.getId());
                     payment.setDescription("Payment mode assigned");
                     payment.setMeterStage("Pending-assigned");
-                    payment.setCreditPaymentMode(req.getCreditPaymentMode());
-                    payment.setDebitPaymentMode(req.getDebitPaymentMode());
-                    payment.setCreditPaymentPlan(req.getCreditPaymentPlan());
-                    payment.setDebitPaymentPlan(req.getDebitPaymentPlan());
+                    payment.setPaymentMode(req.getPaymentMode());
+                    payment.setPaymentPlan(req.getPaymentPlan());
+                    payment.setPaymentType(req.getPaymentType());
                     validAssignPayment.add(payment);
                 }
                 validAssign.add(meter);
@@ -4226,10 +4358,9 @@ public class MeterServiceImpl implements MeterService {
                 meter.setCity(getStringCellValue(row.getCell(7)));
                 meter.setHouseNo(getStringCellValue(row.getCell(8)));
                 meter.setStreetName(getStringCellValue(row.getCell(9)));
-                meter.setCreditPaymentMode(getStringCellValue(row.getCell(10)));
-                meter.setCreditPaymentPlan(getStringCellValue(row.getCell(11)));
-                meter.setDebitPaymentMode(getStringCellValue(row.getCell(12)));
-                meter.setDebitPaymentPlan(getStringCellValue(row.getCell(13)));
+                meter.setPaymentMode(getStringCellValue(row.getCell(10)));
+                meter.setPaymentPlan(getStringCellValue(row.getCell(11)));
+                meter.setPaymentType(getStringCellValue(row.getCell(12)));
 
                 meters.add(meter);
             }
@@ -4257,10 +4388,9 @@ public class MeterServiceImpl implements MeterService {
                 meter.setCity(record.get("city"));
                 meter.setHouseNo(record.get("house number"));
                 meter.setStreetName(record.get("street name"));
-                meter.setCreditPaymentMode(record.get("credit payment mode"));
-                meter.setCreditPaymentPlan(record.get("credit payment plan"));
-                meter.setDebitPaymentMode(record.get("debit payment mode"));
-                meter.setDebitPaymentPlan(record.get("debit payment plan"));
+                meter.setPaymentMode(record.get("payment mode"));
+                meter.setPaymentPlan(record.get("payment plan"));
+                meter.setPaymentType(record.get("payment type"));
 
                 meters.add(meter);
             }
