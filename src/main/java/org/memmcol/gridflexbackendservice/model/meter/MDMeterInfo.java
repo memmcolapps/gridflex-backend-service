@@ -12,14 +12,14 @@ public class MDMeterInfo implements Serializable {
     private UUID id;
     private UUID meterId;
     private UUID orgId;
-    private Long ctRatioNum;
-    private Long ctRatioDenom;
-    private Long voltRatioNum;
-    private Long voltRatioDenom;
-    private Long multiplier;
-    private Long meterRating;
-    private Long initialReading;
-    private Long dial;
+    private String ctRatioNum;
+    private String ctRatioDenom;
+    private String voltRatioNum;
+    private String voltRatioDenom;
+    private String multiplier;
+    private String meterRating;
+    private String initialReading;
+    private String dial;
     private String latitude;
     private String longitude;
     private UUID createdBy;
@@ -51,67 +51,67 @@ public class MDMeterInfo implements Serializable {
         this.orgId = orgId;
     }
 
-    public Long getCtRatioNum() {
+    public String getCtRatioNum() {
         return ctRatioNum;
     }
 
-    public void setCtRatioNum(Long ctRatioNum) {
+    public void setCtRatioNum(String ctRatioNum) {
         this.ctRatioNum = ctRatioNum;
     }
 
-    public Long getCtRatioDenom() {
+    public String getCtRatioDenom() {
         return ctRatioDenom;
     }
 
-    public void setCtRatioDenom(Long ctRatioDenom) {
+    public void setCtRatioDenom(String ctRatioDenom) {
         this.ctRatioDenom = ctRatioDenom;
     }
 
-    public Long getVoltRatioNum() {
+    public String getVoltRatioNum() {
         return voltRatioNum;
     }
 
-    public void setVoltRatioNum(Long voltRatioNum) {
+    public void setVoltRatioNum(String voltRatioNum) {
         this.voltRatioNum = voltRatioNum;
     }
 
-    public Long getVoltRatioDenom() {
+    public String getVoltRatioDenom() {
         return voltRatioDenom;
     }
 
-    public void setVoltRatioDenom(Long voltRatioDenom) {
+    public void setVoltRatioDenom(String voltRatioDenom) {
         this.voltRatioDenom = voltRatioDenom;
     }
 
-    public Long getMultiplier() {
+    public String getMultiplier() {
         return multiplier;
     }
 
-    public void setMultiplier(Long multiplier) {
+    public void setMultiplier(String multiplier) {
         this.multiplier = multiplier;
     }
 
-    public Long getMeterRating() {
+    public String getMeterRating() {
         return meterRating;
     }
 
-    public void setMeterRating(Long meterRating) {
+    public void setMeterRating(String meterRating) {
         this.meterRating = meterRating;
     }
 
-    public Long getInitialReading() {
+    public String getInitialReading() {
         return initialReading;
     }
 
-    public void setInitialReading(Long initialReading) {
+    public void setInitialReading(String initialReading) {
         this.initialReading = initialReading;
     }
 
-    public Long getDial() {
+    public String getDial() {
         return dial;
     }
 
-    public void setDial(Long dial) {
+    public void setDial(String dial) {
         this.dial = dial;
     }
 

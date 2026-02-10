@@ -52,10 +52,9 @@ public class AssignMeterToCustomer implements Serializable {
     private String meterStage;
     private String status;
 
-    private String creditPaymentMode;
-    private String creditPaymentPlan;
-    private String debitPaymentMode;
-    private String debitPaymentPlan;
+    private String paymentMode;
+    private String paymentPlan;
+    private String paymentType;
 
     private UUID createdBy;
     private UUID updatedBy;
@@ -77,7 +76,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getSimNumber() {
-        return simNumber;
+        return simNumber == null ? simNumber : simNumber.trim();
     }
 
     public void setSimNumber(String simNumber) {
@@ -101,7 +100,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getMeterNumber() {
-        return meterNumber;
+        return meterNumber == null ? meterNumber : meterNumber.trim();
     }
 
     public void setMeterNumber(String meterNumber) {
@@ -117,7 +116,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getCustomerId() {
-        return customerId;
+        return customerId == null ? customerId : customerId.trim();
     }
 
     public void setCustomerId(String customerId) {
@@ -125,7 +124,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getType() {
-        return type;
+        return type == null ? type : type.trim();
     }
 
     public void setType(String type) {
@@ -141,7 +140,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getTariffName() {
-        return tariffName;
+        return tariffName == null ? tariffName : tariffName.trim();
     }
 
     public void setTariffName(String tariffName) {
@@ -149,7 +148,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getDssAssetId() {
-        return dssAssetId;
+        return dssAssetId == null ? dssAssetId : dssAssetId.trim();
     }
 
     public void setDssAssetId(String dssAssetId) {
@@ -157,7 +156,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getFeederAssetId() {
-        return feederAssetId;
+        return feederAssetId == null ? feederAssetId : feederAssetId.trim();
     }
 
     public void setFeederAssetId(String feederAssetId) {
@@ -181,7 +180,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getCin() {
-        return cin;
+        return cin == null ? cin : cin.trim();
     }
 
     public void setCin(String cin) {
@@ -189,7 +188,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getAccountNumber() {
-        return accountNumber;
+        return accountNumber == null ? accountNumber : accountNumber.trim();
     }
 
     public void setAccountNumber(String accountNumber) {
@@ -197,23 +196,15 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getMeterClass() {
-        return meterClass;
+        return meterClass == null ? meterClass : meterClass.trim();
     }
 
     public void setMeterClass(String meterClass) {
         this.meterClass = meterClass;
     }
 
-//    public String getMeterModel() {
-//        return meterModel;
-//    }
-//
-//    public void setMeterModel(String meterModel) {
-//        this.meterModel = meterModel;
-//    }
-
     public String getMeterType() {
-        return meterType;
+        return meterType == null ? meterType : meterType.trim();
     }
 
     public void setMeterType(String meterType) {
@@ -237,7 +228,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getOldSgc() {
-        return oldSgc;
+        return oldSgc == null ? oldSgc : oldSgc.trim();
     }
 
     public void setOldSgc(String oldSgc) {
@@ -245,7 +236,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getNewSgc() {
-        return newSgc;
+        return newSgc == null ? newSgc : newSgc.trim();
     }
 
     public void setNewSgc(String newSgc) {
@@ -253,7 +244,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getOldKrn() {
-        return oldKrn;
+        return oldKrn == null ? oldKrn : oldKrn.trim();
     }
 
     public void setOldKrn(String oldKrn) {
@@ -261,7 +252,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getNewKrn() {
-        return newKrn;
+        return newKrn == null ? newKrn : newKrn.trim();
     }
 
     public void setNewKrn(String newKrn) {
@@ -269,7 +260,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public Long getOldTariffIndex() {
-        return oldTariffIndex;
+        return oldTariffIndex == null ? oldTariffIndex : oldTariffIndex;
     }
 
     public void setOldTariffIndex(Long oldTariffIndex) {
@@ -277,7 +268,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public Long getNewTariffIndex() {
-        return newTariffIndex;
+        return newTariffIndex == null ? newTariffIndex : newTariffIndex;
     }
 
     public void setNewTariffIndex(Long newTariffIndex) {
@@ -285,7 +276,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getState() {
-        return state;
+        return state == null ? state : state.toUpperCase().trim();
     }
 
     public void setState(String state) {
@@ -293,7 +284,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getCity() {
-        return city;
+        return  city == null ? city : city.trim();
     }
 
     public void setCity(String city) {
@@ -301,7 +292,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getHouseNo() {
-        return houseNo;
+        return houseNo == null ? houseNo : houseNo.trim();
     }
 
     public void setHouseNo(String houseNo) {
@@ -309,7 +300,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getStreetName() {
-        return streetName;
+        return streetName == null ? streetName : streetName.trim();
     }
 
     public void setStreetName(String streetName) {
@@ -317,7 +308,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getFixedEnergy() {
-        return fixedEnergy;
+        return fixedEnergy == null ? fixedEnergy : fixedEnergy.trim();
     }
 
     public void setFixedEnergy(String fixedEnergy) {
@@ -325,7 +316,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getMeterCategory() {
-        return meterCategory;
+        return meterCategory == null ? meterCategory : meterCategory.trim();
     }
 
     public void setMeterCategory(String meterCategory) {
@@ -333,7 +324,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getMeterStage() {
-        return meterStage;
+        return meterStage == null ? meterStage : meterStage.trim();
     }
 
     public void setMeterStage(String meterStage) {
@@ -341,43 +332,35 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getStatus() {
-        return status;
+        return  status == null ? status : status.trim();
     }
 
     public void setStatus(String status) {
         this.status = status;
     }
 
-    public String getCreditPaymentMode() {
-        return creditPaymentMode;
+    public String getPaymentMode() {
+        return paymentMode == null ? paymentMode : paymentMode.trim();
     }
 
-    public void setCreditPaymentMode(String creditPaymentMode) {
-        this.creditPaymentMode = creditPaymentMode;
+    public void setPaymentMode(String paymentMode) {
+        this.paymentMode = paymentMode;
     }
 
-    public String getCreditPaymentPlan() {
-        return creditPaymentPlan;
+    public String getPaymentPlan() {
+        return paymentPlan == null ? paymentPlan : paymentPlan.trim();
     }
 
-    public void setCreditPaymentPlan(String creditPaymentPlan) {
-        this.creditPaymentPlan = creditPaymentPlan;
+    public void setPaymentPlan(String paymentPlan) {
+        this.paymentPlan = paymentPlan;
     }
 
-    public String getDebitPaymentMode() {
-        return debitPaymentMode;
+    public String getPaymentType() {
+        return paymentType == null ? paymentType : paymentType.trim();
     }
 
-    public void setDebitPaymentMode(String debitPaymentMode) {
-        this.debitPaymentMode = debitPaymentMode;
-    }
-
-    public String getDebitPaymentPlan() {
-        return debitPaymentPlan;
-    }
-
-    public void setDebitPaymentPlan(String debitPaymentPlan) {
-        this.debitPaymentPlan = debitPaymentPlan;
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
     }
 
     public UUID getCreatedBy() {
@@ -397,7 +380,7 @@ public class AssignMeterToCustomer implements Serializable {
     }
 
     public String getDescription() {
-        return description;
+        return description == null ? description : description.trim();
     }
 
     public void setDescription(String description) {
