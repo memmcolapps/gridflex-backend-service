@@ -49,8 +49,8 @@ public class AdjustmentComputationService {
             if (balance.compareTo(BigDecimal.ZERO) <= 0) continue;
 
             String type = normalize(adj.getType());
-            boolean isDebit = TYPE_DEBIT.equals(type);
-            boolean isCredit = TYPE_CREDIT.equals(type);
+            boolean isDebit = TYPE_DEBIT.equalsIgnoreCase(type);
+            boolean isCredit = TYPE_CREDIT.equalsIgnoreCase(type);
 
             if (!isDebit && !isCredit) {
                 // Unknown type => ignore to avoid wrong financial postings
@@ -142,19 +142,19 @@ public class AdjustmentComputationService {
     private String resolveMode(PaymentMode pm, String type) {
         if (pm == null) return MODE_ONEOFF;
 
-        if (TYPE_DEBIT.equals(type)) {
-            return pm.getDebitPaymentMode() == null ? MODE_ONEOFF : pm.getDebitPaymentMode();
+        if (TYPE_DEBIT.equalsIgnoreCase(type) && TYPE_DEBIT.equalsIgnoreCase(pm.getPaymentType())) {
+            return pm.getPaymentMode() == null ? MODE_ONEOFF : pm.getPaymentMode();
         }
-        return pm.getCreditPaymentMode() == null ? MODE_ONEOFF : pm.getCreditPaymentMode();
+        return pm.getPaymentMode() == null ? MODE_ONEOFF : pm.getPaymentMode();
     }
 
     private String resolvePlan(PaymentMode pm, String type) {
         if (pm == null) return null;
 
-        if (TYPE_DEBIT.equals(type)) {
-            return pm.getDebitPaymentPlan();
+        if (TYPE_DEBIT.equalsIgnoreCase(type) && TYPE_DEBIT.equalsIgnoreCase(pm.getPaymentType())) {
+            return pm.getPaymentPlan();
         }
-        return pm.getCreditPaymentPlan();
+        return pm.getPaymentPlan();
     }
 
     private String normalize(String s) {
