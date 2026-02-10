@@ -128,13 +128,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 //            handleAddCache(debitAdjustment);
             AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
             safeAuditService.saveAudit(auditLog);
-//            auditNotificationDTO.setCreator(um);
-//            auditNotificationDTO.setDescription(desc);
-//            auditNotificationDTO.setType("debit-credit");
-//            auditNotificationDTO.setUserAgent(userAgent);
-//            auditNotificationDTO.setIpAddress(ipAddress);
-//            auditNotificationDTO.setDebitCreditAdjust(debitAdjustment);
-//            auditRepository.save(auditNotificationDTO);
 
             if(request.getType().equalsIgnoreCase("credit")){
                 return ResponseMap.response(status.getSuccessCode(), credit + " " + status.getRegDesc(), "");
@@ -216,7 +209,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             UserModel um = handleUserValidation();
 
             if (meterNumber == null && accountNumber == null) {
-                throw new GlobalExceptionHandler.NotFoundException("At least one of meterId, meterNumber, or accountNumber must be provided.");
+                throw new GlobalExceptionHandler.NotFoundException("At least one of meterNumber or accountNumber must be provided.");
             }
 
             if(meterNumber != null){
@@ -282,27 +275,38 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 //                return ResponseMap.response(status.getSuccessCode(), "Cached " + db + status.getDesc(), cachedDebitCreditAdjustment);
 //            }
 
-            List<DebitCreditAdjust> allDebitCreditAdjustment;
+            List<Meter> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
 
             allDebitCreditAdjustment = mapper.GetDebitCreditAdjustment(um.getOrgId(), type, page,size);
 
-            List<DebitCreditAdjust> filteredDebitCreditAdjustment = allDebitCreditAdjustment.stream()
-                    .filter(t -> customerId == null || customerId.isEmpty() ||
-                            t.getMeter().stream().anyMatch(m -> m.getCustomerId().equalsIgnoreCase(customerId)))
-                    .filter(t -> accountNumber == null || accountNumber.isEmpty() ||
-                            t.getMeter().stream().anyMatch(m -> m.getAccountNumber().equalsIgnoreCase(accountNumber)))
-                    .filter(t -> customerName == null || customerName.isEmpty() ||
-                            t.getMeter().stream().anyMatch(m -> m.getCustomer().getFirstname().equalsIgnoreCase(customerName)))
-                    .filter(t -> meterNumber == null || meterNumber.isEmpty() ||
-                            t.getMeter().stream().anyMatch(m -> m.getMeterNumber().equalsIgnoreCase(meterNumber)))
-                    .filter(t -> balance == null || t.getBalance().equals(balance))
-                    .collect(Collectors.toList());
+            List<Meter> filteredDebitCreditAdjustment =
+                    allDebitCreditAdjustment.stream().toList();
+//                            .filter(u ->
+//                                    // customerId filter (mandatory)
+//                                    u.getCustomerId() != null
+//                                            && customerId != null
+//                                            && u.getCustomerId().equalsIgnoreCase(customerId)
+//                            )
+//                            .filter(u ->
+//                                    // accountNumber filter (optional)
+//                                    accountNumber == null || accountNumber.isBlank()
+//                                            || (u.getAccountNumber() != null
+//                                            && u.getAccountNumber().equalsIgnoreCase(accountNumber))
+//                            )
+//                            .filter(u ->
+//                                    // accountNumber filter (optional)
+//                                    customerName == null || customerName.isBlank()
+//                                            || (u.getCustomer().getFirstname() != null
+//                                            && u.getCustomer().getFirstname().equalsIgnoreCase(customerName))
+//                            )
+//                            .collect(Collectors.toList());
+
 
 
             // Pagination logic
             int totalDebitCreditAdjustment = filteredDebitCreditAdjustment.size();
-            List<DebitCreditAdjust> paginatedDebitCreditAdjustment;
+            List<Meter> paginatedDebitCreditAdjustment;
 
             if (size <= 0) {
                 paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment; // Return all users
@@ -338,6 +342,99 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             throw exception;
         }
     }
+
+
+//    @Transactional(readOnly = true)
+//    @Override
+//    public Map<String, Object> getDebitAdjustments(
+//            int page, int size, String customerId, String accountNumber,
+//            String customerName, String meterNumber, BigDecimal balance, String type) {
+//        try {
+//            String db;
+//            if("credit".equals(type) ){
+//                db = credit;
+//            } else if("debit".equalsIgnoreCase(type)){
+//                db = debit;
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
+//            }
+//            UserModel um = handleUserValidation();
+//
+//            // Build a unique cache key
+//            StringBuilder cacheKeyBuilder = new StringBuilder("debitCreditAdjustments_"+um.getOrgId());
+//            if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
+//            if (accountNumber != null && !accountNumber.isEmpty()) cacheKeyBuilder.append("_accountNumber_").append(accountNumber);
+//            if (customerName != null && !customerName.isEmpty()) cacheKeyBuilder.append("_customerName_").append(customerName);
+//            if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
+//            if (type != null && !type.isEmpty()) cacheKeyBuilder.append("_type_").append(type);
+//            if (balance != null) cacheKeyBuilder.append("_balance_").append(balance);
+//            cacheKeyBuilder.append("_page_").append(page);
+//            cacheKeyBuilder.append("_size_").append(size);
+//
+//            String cacheKey = cacheKeyBuilder.toString();
+//
+//            // Return from cache if available
+////            Object cachedDebitCreditAdjustment = debitCreditCache.get(cacheKey);
+////            if (cachedDebitCreditAdjustment != null) {
+////                return ResponseMap.response(status.getSuccessCode(), "Cached " + db + status.getDesc(), cachedDebitCreditAdjustment);
+////            }
+//
+//            List<DebitCreditAdjust> allDebitCreditAdjustment;
+//            // Ideally, this should be a dynamic query in the mapper layer
+//
+//            allDebitCreditAdjustment = mapper.GetDebitCreditAdjustment(um.getOrgId(), type, page,size);
+//
+//            List<DebitCreditAdjust> filteredDebitCreditAdjustment = allDebitCreditAdjustment.stream()
+//                    .filter(t -> customerId == null || customerId.isEmpty() ||
+//                            t.getMeter().stream().anyMatch(m -> m.getCustomerId().equalsIgnoreCase(customerId)))
+//                    .filter(t -> accountNumber == null || accountNumber.isEmpty() ||
+//                            t.getMeter().stream().anyMatch(m -> m.getAccountNumber().equalsIgnoreCase(accountNumber)))
+//                    .filter(t -> customerName == null || customerName.isEmpty() ||
+//                            t.getMeter().stream().anyMatch(m -> m.getCustomer().getFirstname().equalsIgnoreCase(customerName)))
+//                    .filter(t -> meterNumber == null || meterNumber.isEmpty() ||
+//                            t.getMeter().stream().anyMatch(m -> m.getMeterNumber().equalsIgnoreCase(meterNumber)))
+//                    .filter(t -> balance == null || t.getBalance().equals(balance))
+//                    .collect(Collectors.toList());
+//
+//
+//            // Pagination logic
+//            int totalDebitCreditAdjustment = filteredDebitCreditAdjustment.size();
+//            List<DebitCreditAdjust> paginatedDebitCreditAdjustment;
+//
+//            if (size <= 0) {
+//                paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment; // Return all users
+//                page = 0;
+//            } else {
+//                int fromIndex = Math.min(page * size, totalDebitCreditAdjustment);
+//                int toIndex = Math.min(fromIndex + size, totalDebitCreditAdjustment);
+//                paginatedDebitCreditAdjustment = filteredDebitCreditAdjustment.subList(fromIndex, toIndex);
+//            }
+//
+//            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalDebitCreditAdjustment / size);
+//
+//            // Prepare response with pagination metadata
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("data", paginatedDebitCreditAdjustment);
+//            response.put("totalData", totalDebitCreditAdjustment);
+//            response.put("page", page);
+//            response.put("size", size);
+//            response.put("totalPages", totalPages);
+//
+////            debitCreditCache.put(cacheKey, response);
+//            assert type != null;
+//            if(type.equalsIgnoreCase("credit")){
+//                return ResponseMap.response(status.getSuccessCode(),  credit + " "+status.getDesc(), response);
+//            } else {
+//                return ResponseMap.response(status.getSuccessCode(),  debit + " "+status.getDesc(), response);
+//            }
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
+//            genericHandler.logIncidentReport("Fetching debit adjustments service failed");
+//            genericHandler.logAndSaveException(exception, "fetch debit adjustments");
+//            throw exception;
+//        }
+//    }
 
     @Transactional(readOnly = true)
     @Override
