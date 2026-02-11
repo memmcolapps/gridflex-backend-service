@@ -251,17 +251,17 @@ public interface CustomerMapper {
     @Select("SELECT COUNT(*) FROM customers WHERE customer_id = #{customerId}")
     int totalCustomer(String customerId);
 
-    @Select("SELECT * FROM customers WHERE email = #{Email} AND org_id = #{orgId}")
-    @Results({
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "phoneNumber", column = "phone_number"),
-            @Result(property = "streetName", column = "street_name"),
-            @Result(property = "houseNo", column = "house_no"),
-//            @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "meterAssigned", column = "meter_assigned"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-    })
-    Customer findByEmail(String Email, UUID orgId);
+//    @Select("SELECT * FROM customers WHERE phone_number = #{phoneNumber} AND org_id = #{orgId}")
+//    @Results({
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "phoneNumber", column = "phone_number"),
+//            @Result(property = "streetName", column = "street_name"),
+//            @Result(property = "houseNo", column = "house_no"),
+////            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "meterAssigned", column = "meter_assigned"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//    })
+//    Customer findByPhoneNo(String phoneNumber, UUID orgId);
 }

@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.customer;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -87,14 +88,11 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Map<String, Object> createCustomer(Customer request) {
         try {
+            handleRequired(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
-
-            Customer email = customerMapper.findByEmail(request.getEmail(),um.getOrgId());
-            if (email != null && email.getEmail().equalsIgnoreCase(request.getEmail())) {
-                throw new GlobalExceptionHandler.NotFoundException("Email already used by a Customer");
-            }
 
 //            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
             String uniqueCustomerId = "C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
@@ -104,6 +102,9 @@ public class CustomerServiceImpl implements CustomerService {
             request.setStatus("Inactive");
 
             capitalizeFirstLetter(request.getVat());
+            request.setEmail(
+                    StringUtils.isBlank(request.getEmail()) ? null : request.getEmail()
+            );
 
             // Insert into customer
             customerMapper.insertCustomer(request);
@@ -129,6 +130,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Map<String, Object> updateCustomer(Customer request) {
         try {
+            handleRequired(request);
+
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
@@ -139,6 +142,9 @@ public class CustomerServiceImpl implements CustomerService {
 //            }
 
             request.setOrgId(um.getOrgId());
+            request.setEmail(
+                    StringUtils.isBlank(request.getEmail()) ? null : request.getEmail()
+            );
 
             // Insert into customer
             customerMapper.updateCustomer(request);
@@ -154,6 +160,27 @@ public class CustomerServiceImpl implements CustomerService {
             genericHandler.logIncidentReport("Editing customer Service failed");
             genericHandler.logAndSaveException(exception, "updating customer");
             throw exception;
+        }
+    }
+
+    private void handleRequired(Customer request){
+        if(request.getFirstname() == null || request.getFirstname().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Firstname is required");
+        }
+        if (request.getLastname() == null || request.getLastname().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Lastname is required");
+        }
+        if (request.getState() == null || request.getState().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("State is required");
+        }
+        if (request.getCity() == null || request.getCity().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("City is required");
+        }
+        if(request.getHouseNo() == null || request.getHouseNo().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("House No is required");
+        }
+        if (request.getStreetName() == null || request.getStreetName().isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Street Name is required");
         }
     }
 

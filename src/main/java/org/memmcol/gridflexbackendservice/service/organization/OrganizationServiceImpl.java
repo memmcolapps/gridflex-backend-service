@@ -124,7 +124,6 @@ public class OrganizationServiceImpl implements OrganizationService {
             genericHandler.logAndSaveException(exception, "editing organization");
             throw exception;
         }
-
     }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Organization createdEntity, Map<String, String> metadata) {
