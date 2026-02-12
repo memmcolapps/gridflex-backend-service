@@ -105,23 +105,23 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause not found");
             }
 
-            DebitCreditAdjust liabilityResult = mapper.getDebitAdjustmentByMeterIdAndLiabilityCause(request.getMeterId(),um.getOrgId(),
-                    request.getLiabilityCauseId(),request.getType());
-            if (liabilityResult != null) {
-
-                int rows = mapper.addCreditDebitAdjustment(liabilityResult.getId(), request.getAmount(), request.getAmount());
-                if (rows == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(request.getType()+" adjustment failed");
-                }
-            }else {
+//            DebitCreditAdjust liabilityResult = mapper.getDebitAdjustmentByMeterIdAndLiabilityCause(request.getMeterId(),um.getOrgId(),
+//                    request.getLiabilityCauseId(),request.getType());
+//            if (liabilityResult != null) {
+//
+//                int rows = mapper.addCreditDebitAdjustment(liabilityResult.getId(), request.getAmount(), request.getAmount());
+//                if (rows == 0) {
+//                    throw new GlobalExceptionHandler.NotFoundException(request.getType()+" adjustment failed");
+//                }
+//            } else {
                 request.setOrgId(um.getOrgId());
                 request.setStatus("UNPAID");
                 result = mapper.createDebitAdjustment(request);
 
                 if(result == 0){
-                    throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getNotFoundDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
                 }
-            }
+//            }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
             um.setPassword("");

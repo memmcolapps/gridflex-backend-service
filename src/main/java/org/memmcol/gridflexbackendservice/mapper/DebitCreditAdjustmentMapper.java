@@ -139,7 +139,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("""
             <script>
-                SELECT *
+                SELECT DISTINCT m.*
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
                 WHERE c.org_id = #{orgId}
                 AND UPPER(c.type) = UPPER(#{type})
@@ -281,10 +281,10 @@ public interface DebitCreditAdjustmentMapper {
     })
     DebitCreditAdjust getDebitAdjustmentByMeterIdAndLiabilityCause(UUID meterId, UUID orgId, UUID liabilityCauseId, String type);
 
-    @Update("UPDATE credit_debit_adjustment SET balance = balance + #{newBalance}, debit = debit + #{debit}, updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
-    int addCreditDebitAdjustment(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
-                                 @Param("newBalance") BigDecimal newBalance,
-                                 @Param("debit") BigDecimal debit);
+//    @Update("UPDATE credit_debit_adjustment SET balance = balance + #{newBalance}, debit = debit + #{debit}, updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
+//    int addCreditDebitAdjustment(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
+//                                 @Param("newBalance") BigDecimal newBalance,
+//                                 @Param("debit") BigDecimal debit);
 
     @Select("""
         SELECT

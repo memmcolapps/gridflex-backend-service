@@ -346,7 +346,7 @@ public class MeterServiceImpl implements MeterService {
             if (result == 0 || res == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
 
             // Handle MD meter-specific logic
-            if (request.getMdMeterInfo() != null) {
+            if (request.getMdMeterInfo() != null && request.getMeterClass().equalsIgnoreCase("md")) {
                 UUID meterId = request.getId();
                 request.getMdMeterInfo().setMeterId(meterId);
                 request.getMdMeterInfo().setOrgId(user.getOrgId());
@@ -362,7 +362,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // Handle smart meter-specific logic
-            if (request.getSmartMeterInfo() != null) {
+            if (request.getSmartMeterInfo() != null && request.getSmartStatus()) {
                 UUID meterId = request.getId();
                 request.getSmartMeterInfo().setMeterId(meterId);
                 request.getSmartMeterInfo().setOrgId(user.getOrgId());
@@ -376,36 +376,99 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-            if(request.getPaymentMode() != null) {
-                UUID meterId = request.getId();
-                request.getPaymentMode().setMeterId(meterId);
-                request.getPaymentMode().setOrgId(user.getOrgId());
+            if (request.getPaymentMode() != null &&
+                    "Prepaid".equalsIgnoreCase(request.getMeterCategory())) {
 
-                if(request.getPaymentMode().getPaymentType() == null || request.getPaymentMode().getPaymentType().isEmpty()){
+                UUID meterId = request.getId();
+                var payment = request.getPaymentMode();
+
+                payment.setMeterId(meterId);
+                payment.setOrgId(user.getOrgId());
+                payment.setCreatedBy(user.getId());
+                payment.setDescription("Pending edited");
+                payment.setMeterStage(meterStage);
+
+                String paymentType = payment.getPaymentType();
+                String paymentMode = payment.getPaymentMode();
+                String paymentPlan = payment.getPaymentPlan();
+
+                // Validate payment type
+                if (paymentType == null || paymentType.isBlank()) {
                     throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
-                } else if(!request.getPaymentMode().getPaymentType().equalsIgnoreCase("credit") ||
-                        !request.getPaymentMode().getPaymentType().equalsIgnoreCase("debit")){
+                }
+
+                if (!paymentType.equalsIgnoreCase("credit") &&
+                        !paymentType.equalsIgnoreCase("debit")) {
                     throw new GlobalExceptionHandler.NotFoundException(
-                            "Payment type ("+request.getPaymentMode().getPaymentType()+") is not supported");
-                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("one-off") &&
-                        request.getPaymentMode().getPaymentMode().equalsIgnoreCase("percentage")){
-                    request.getPaymentMode().setPaymentPlan("");
-                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("monthly") &&
-                        request.getPaymentMode().getPaymentPlan() == null ||
-                        request.getPaymentMode().getPaymentPlan().isEmpty()) {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
-                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("non")) {
-                    request.getPaymentMode().setPaymentPlan("");
+                            "Payment type (" + paymentType + ") is not supported");
                 }
-                else {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment mode provided is not supported");
+
+                // Validate payment mode
+                if (paymentMode == null) {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode is required");
                 }
-                request.getPaymentMode().setStatus(true);
-                int mdResult2 = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request.getPaymentMode());
-                if (mdResult2 == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(meterName + " Payment mode " + status.getUpdateFailureDesc());
+
+                if (paymentMode.equalsIgnoreCase("one-off") ||
+                        paymentMode.equalsIgnoreCase("percentage")) {
+
+                    payment.setPaymentPlan("");
+
+                } else if (paymentMode.equalsIgnoreCase("monthly")) {
+
+                    if (paymentPlan == null || paymentPlan.isBlank()) {
+                        throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+                    }
+
+                } else if (paymentMode.equalsIgnoreCase("non")) {
+
+                    payment.setPaymentPlan("");
+
+                } else {
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            "Payment mode (" + paymentMode + ") is not supported");
+                }
+
+                payment.setStatus(true);
+
+                int resp = meterMapper.assignPaymentModeWhenMigrationToPrepaid(payment);
+                if (resp == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(
+                            meterName + " Payment mode " + status.getUpdateFailureDesc());
                 }
             }
+
+
+//            if(request.getPaymentMode() != null &&
+//                    request.getMeterCategory().equalsIgnoreCase("Prepaid")) {
+//                UUID meterId = request.getId();
+//                request.getPaymentMode().setMeterId(meterId);
+//                request.getPaymentMode().setOrgId(user.getOrgId());
+//
+//                if(request.getPaymentMode().getPaymentType() == null || request.getPaymentMode().getPaymentType().isEmpty()){
+//                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
+//                } else if(!request.getPaymentMode().getPaymentType().equalsIgnoreCase("credit") &&
+//                        !request.getPaymentMode().getPaymentType().equalsIgnoreCase("debit")){
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Payment type ("+request.getPaymentMode().getPaymentType()+") is not supported");
+//                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("one-off") ||
+//                        request.getPaymentMode().getPaymentMode().equalsIgnoreCase("percentage")){
+//                    request.getPaymentMode().setPaymentPlan("");
+//                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("monthly") &&
+//                        (request.getPaymentMode().getPaymentPlan() == null ||
+//                        request.getPaymentMode().getPaymentPlan().isBlank())) {
+//                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+//                } else if(request.getPaymentMode().getPaymentMode().equalsIgnoreCase("non")) {
+//                    request.getPaymentMode().setPaymentPlan("");
+//                }
+//                else {
+//                    throw new GlobalExceptionHandler.NotFoundException("Payment mode provided is not supported");
+//                }
+//                request.getPaymentMode().setStatus(true);
+//                int mdResult2 = meterMapper.assignPaymentModeWhenMigrationToPrepaid(request.getPaymentMode());
+//                if (mdResult2 == 0) {
+//                    throw new GlobalExceptionHandler.NotFoundException(meterName + " Payment mode " + status.getUpdateFailureDesc());
+//                }
+//            }
 
             String desc = MeterDesc + "," + MDDesc + ","+ SmartDesc;
 
@@ -1434,7 +1497,7 @@ public class MeterServiceImpl implements MeterService {
 
         if(!"Pending-detached".equalsIgnoreCase(stage)){
 
-            if("Pending-assigned".equalsIgnoreCase(stage)){
+            if("Pending-assigned".equalsIgnoreCase(stage)) {
                 if (meterMapper.approvePendingMeter(meter) == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
@@ -1444,17 +1507,45 @@ public class MeterServiceImpl implements MeterService {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
                 }
             } else {
-                //Approve meter in meters table
-                if (meterMapper.approveMeter(meter) == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
-                }
-                //Change customer status to Active
-                if(c == 1) {
-                    int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
-                    if (customerStatus == 0) {
-                        throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+
+                if ("Pending-edited".equalsIgnoreCase(stage)) {
+
+                    if (meter.getCustomerId() != null && !meter.getCustomerId().isBlank()) {
+
+                        if (meterMapper.updateMeterAssignedMeter(meter) == 0) {
+                            throw new GlobalExceptionHandler.NotFoundException(
+                                    meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                        }
+
+                    } else if (meter.getNodeId() == null) {
+
+                        if (meterMapper.updateMeterCreatedMeter(meter) == 0) {
+                            throw new GlobalExceptionHandler.NotFoundException(
+                                    meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                        }
+
+                    } else {
+
+                        if (meterMapper.updateMeterAllocatedMeter(meter) == 0) {
+                            throw new GlobalExceptionHandler.NotFoundException(
+                                    meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
+                        }
+                    }
+
+                } else {
+
+                    if (meterMapper.approveMeter(meter) == 0) {
+                        throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                     }
                 }
+
+//                //Change customer status to Active
+//                if(c == 1) {
+//                    int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
+//                    if (customerStatus == 0) {
+//                        throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
+//                    }
+//                }
 
             }
 
@@ -1494,7 +1585,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
             }
 
-            if(c == 1) {
+            if(c < 1) {
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
@@ -4649,23 +4740,23 @@ public class MeterServiceImpl implements MeterService {
         return changes.toString();
     }
 
-    private String buildSmartMeterInfoChangeDescription(SmartMeterInfo oldMeter, SmartMeterInfo newMeter) {
+    private String buildSmartMeterInfoChangeDescription(SmartMeterInfo smartMeter, SmartMeterInfo newMeter) {
         StringBuilder changes = new StringBuilder("Edited smart meter ");
 
-        if (!Objects.equals(oldMeter.getMeterModel(), newMeter.getMeterModel())) {
-            changes.append(String.format("model: '%s' → '%s' ", oldMeter.getMeterModel(), newMeter.getMeterModel()));
+        if (!Objects.equals(smartMeter.getMeterModel(), newMeter.getMeterModel())) {
+            changes.append(String.format("model: '%s' → '%s' ", smartMeter.getMeterModel(), newMeter.getMeterModel()));
         }
 
-        if (!Objects.equals(oldMeter.getAuthentication(), newMeter.getAuthentication())) {
-            changes.append(String.format("authentication: '%s' → '%s' ", oldMeter.getAuthentication(), newMeter.getAuthentication()));
+        if (!Objects.equals(smartMeter.getAuthentication(), newMeter.getAuthentication())) {
+            changes.append(String.format("authentication: '%s' → '%s' ", smartMeter.getAuthentication(), newMeter.getAuthentication()));
         }
 
-        if (!Objects.equals(oldMeter.getPassword(), newMeter.getPassword())) {
-            changes.append(String.format("password: '%s' → '%s' ", oldMeter.getPassword(), newMeter.getPassword()));
+        if (!Objects.equals(smartMeter.getPassword(), newMeter.getPassword())) {
+            changes.append(String.format("password: '%s' → '%s' ", smartMeter.getPassword(), newMeter.getPassword()));
         }
 
-        if (!Objects.equals(oldMeter.getProtocol(), newMeter.getProtocol())) {
-            changes.append(String.format("protocol: '%s' → '%s' ", oldMeter.getProtocol(), newMeter.getProtocol()));
+        if (!Objects.equals(smartMeter.getProtocol(), newMeter.getProtocol())) {
+            changes.append(String.format("protocol: '%s' → '%s' ", smartMeter.getProtocol(), newMeter.getProtocol()));
         }
 
         return changes.toString();
