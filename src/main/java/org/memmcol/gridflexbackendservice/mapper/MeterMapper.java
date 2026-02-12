@@ -400,10 +400,90 @@ public interface MeterMapper {
     })
     int approveMeter(Meter request);
 
-//    @Update("UPDATE meters SET status = #{status}, meter_stage = #{meterStage}, updated_at = #{updatedAt} " +
-//            "WHERE meter_number = #{meterNumber} AND org_id = #{orgId} ")
-//    int approveMeter(Meter request);
+    @Update({
+            "<script>",
+            "UPDATE meters",
+            "<set>",
 
+            " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
+            " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
+            " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
+            " <if test='simNumber != null'> sim_number = #{simNumber}, </if>",
+            " <if test='meterType != null'> meter_type = #{meterType}, </if>",
+            " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
+            " <if test='dss != null'> dss = #{dss}, </if>",
+            " <if test='cin != null'> cin = #{cin}, </if>",
+            " <if test='fixedEnergy != null'> fixed_energy = #{fixedEnergy}, </if>",
+            " <if test='tariff != null'> tariff = #{tariff}, </if>",
+            " <if test='oldSgc != null'> old_sgc = #{oldSgc}, </if>",
+            " <if test='newSgc != null'> new_sgc = #{newSgc}, </if>",
+            " <if test='oldKrn != null'> old_krn = #{oldKrn}, </if>",
+            " <if test='newKrn != null'> new_krn = #{newKrn}, </if>",
+            " <if test='oldTariffIndex != null'> old_tariff_index = #{oldTariffIndex}, </if>",
+            " <if test='newTariffIndex != null'> new_tariff_index = #{newTariffIndex}, </if>",
+            " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
+            " updated_at = #{updatedAt}, ",
+
+            "</set>",
+            "WHERE id = #{meterId} AND org_id = #{orgId}",
+            "</script>"
+    })
+    int updateMeterAssignedMeter(Meter meter);
+
+    @Update({
+            "<script>",
+            "UPDATE meters",
+            "<set>",
+
+            " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
+            " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
+            " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
+            " <if test='simNumber != null'> sim_number = #{simNumber}, </if>",
+            " <if test='meterType != null'> meter_type = #{meterType}, </if>",
+            " <if test='fixedEnergy != null'> fixed_energy = #{fixedEnergy}, </if>",
+            " <if test='oldSgc != null'> old_sgc = #{oldSgc}, </if>",
+            " <if test='newSgc != null'> new_sgc = #{newSgc}, </if>",
+            " <if test='oldKrn != null'> old_krn = #{oldKrn}, </if>",
+            " <if test='newKrn != null'> new_krn = #{newKrn}, </if>",
+            " <if test='oldTariffIndex != null'> old_tariff_index = #{oldTariffIndex}, </if>",
+            " <if test='newTariffIndex != null'> new_tariff_index = #{newTariffIndex}, </if>",
+            " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
+            " updated_at = #{updatedAt}, ",
+
+            "</set>",
+            "WHERE id = #{meterId} AND org_id = #{orgId}",
+            "</script>"
+    })
+    int updateMeterCreatedMeter(Meter meter);
+
+
+    @Update({
+            "<script>",
+            "UPDATE meters",
+            "<set>",
+
+            " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
+            " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
+            " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
+            " <if test='simNumber != null'> sim_number = #{simNumber}, </if>",
+            " <if test='meterType != null'> meter_type = #{meterType}, </if>",
+            " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
+            " <if test='fixedEnergy != null'> fixed_energy = #{fixedEnergy}, </if>",
+            " <if test='tariff != null'> tariff = #{tariff}, </if>",
+            " <if test='oldSgc != null'> old_sgc = #{oldSgc}, </if>",
+            " <if test='newSgc != null'> new_sgc = #{newSgc}, </if>",
+            " <if test='oldKrn != null'> old_krn = #{oldKrn}, </if>",
+            " <if test='newKrn != null'> new_krn = #{newKrn}, </if>",
+            " <if test='oldTariffIndex != null'> old_tariff_index = #{oldTariffIndex}, </if>",
+            " <if test='newTariffIndex != null'> new_tariff_index = #{newTariffIndex}, </if>",
+            " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
+            " updated_at = #{updatedAt}, ",
+
+            "</set>",
+            "WHERE id = #{meterId} AND org_id = #{orgId}",
+            "</script>"
+    })
+    int updateMeterAllocatedMeter(Meter meter);
 
     @Update({
             "<script>",
@@ -498,14 +578,14 @@ public interface MeterMapper {
             "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
     int approvePrepaidMeterVersion(PaymentMode paymentMode);
 
-    @Update("UPDATE payment_mode SET status = #{status}, credit_payment_mode = #{creditPaymentMode}, credit_payment_plan = #{creditPaymentPlan}, " +
-            "debit_payment_mode = #{debitPaymentMode}, debit_payment_plan = #{debitPaymentPlan}, " +
+    @Update("UPDATE payment_mode SET status = #{status}, payment_mode = #{paymentMode}, payment_plan = #{paymentPlan}, " +
+            "payment_type = #{paymentType}, " +
             "updated_at = #{updatedAt} WHERE meter_id = #{meterId} AND status = true")
     int updatePrepaidMeterVersion(PaymentMode paymentMode);
 
-    @Insert("INSERT INTO payment_mode (meter_id, org_id, status, credit_payment_mode, credit_payment_plan, debit_payment_mode, " +
-            "debit_payment_plan, updated_at, created_at) " +
-            "VALUES (#{meterId}, #{orgId}, true, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO payment_mode (meter_id, org_id, status, payment_mode, payment_plan, " +
+            "payment_type, updated_at, created_at) " +
+            "VALUES (#{meterId}, #{orgId}, true, #{paymentMode}, #{paymentPlan}, #{paymentType}, #{createdAt}, #{updatedAt})")
     int insertPrepaidMeterVersion(PaymentMode paymentMode);
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
@@ -1389,7 +1469,7 @@ public interface MeterMapper {
             "VALUES(#{orgId}, #{meterId}, #{paymentMode}, #{paymentPlan}, #{paymentType}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
     int assignPaymentModeVersion(AssignMeterToCustomer request);
 
-    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, meter_stage, payment_mode, payment_plan, payment_plan, " +
+    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, meter_stage, payment_mode, payment_plan, payment_type, " +
             "created_at, updated_at, description, status, created_by)" +
             "VALUES(#{orgId}, #{meterId}, #{meterStage}, #{paymentMode}, #{paymentPlan}, #{paymentType}, " +
             "#{createdAt}, #{updatedAt}, #{description}, #{status}, #{createdBy})")

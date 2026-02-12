@@ -108,8 +108,24 @@ public class Meter implements Serializable {
         this.nodeId = nodeId;
     }
 
+    public UUID getMeterId() {
+        return meterId;
+    }
+
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
+    }
+
+    public String getAssetId() {
+        return assetId == null ? assetId : assetId.trim();
+    }
+
+    public void setAssetId(String assetId) {
+        this.assetId = assetId;
+    }
+
     public String getMeterNumber() {
-        return meterNumber;
+        return meterNumber == null ? meterNumber : meterNumber.trim();
     }
 
     public void setMeterNumber(String meterNumber) {
@@ -117,7 +133,7 @@ public class Meter implements Serializable {
     }
 
     public String getAccountNumber() {
-        return accountNumber;
+        return accountNumber == null ? accountNumber : accountNumber.trim();
     }
 
     public void setAccountNumber(String accountNumber) {
@@ -125,7 +141,7 @@ public class Meter implements Serializable {
     }
 
     public String getSimNumber() {
-        return simNumber;
+        return simNumber == null ? simNumber : simNumber.trim();
     }
 
     public void setSimNumber(String simNumber) {
@@ -140,20 +156,20 @@ public class Meter implements Serializable {
         this.cin = cin;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
     public UUID getTariff() {
         return tariff;
     }
 
     public void setTariff(UUID tariff) {
         this.tariff = tariff;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getFixedEnergy() {
@@ -188,6 +204,14 @@ public class Meter implements Serializable {
         this.meterClass = meterClass;
     }
 
+    public String getMeterType() {
+        return meterType;
+    }
+
+    public void setMeterType(String meterType) {
+        this.meterType = meterType;
+    }
+
     public UUID getMeterManufacturer() {
         return meterManufacturer;
     }
@@ -202,22 +226,6 @@ public class Meter implements Serializable {
 
     public void setMeterManufacturerName(String meterManufacturerName) {
         this.meterManufacturerName = meterManufacturerName;
-    }
-
-    public Manufacturer getManufacturer() {
-        return manufacturer;
-    }
-
-    public void setManufacturer(Manufacturer manufacturer) {
-        this.manufacturer = manufacturer;
-    }
-
-    public String getMeterType() {
-        return meterType;
-    }
-
-    public void setMeterType(String meterType) {
-        this.meterType = meterType;
     }
 
     public String getMeterStage() {
@@ -300,54 +308,6 @@ public class Meter implements Serializable {
         this.newTariffIndex = newTariffIndex;
     }
 
-    public Customer getCustomer() {
-        return customer;
-    }
-
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
-    }
-
-    public MeterAssignLocation getMeterAssignLocation() {
-        return meterAssignLocation;
-    }
-
-    public void setMeterAssignLocation(MeterAssignLocation meterAssignLocation) {
-        this.meterAssignLocation = meterAssignLocation;
-    }
-
-    public MDMeterInfo getMdMeterInfo() {
-        return mdMeterInfo;
-    }
-
-    public void setMdMeterInfo(MDMeterInfo mdMeterInfo) {
-        this.mdMeterInfo = mdMeterInfo;
-    }
-
-    public PaymentMode getPaymentMode() {
-        return paymentMode;
-    }
-
-    public void setPaymentMode(PaymentMode paymentMode) {
-        this.paymentMode = paymentMode;
-    }
-
-    public UUID getMeterId() {
-        return meterId;
-    }
-
-    public void setMeterId(UUID meterId) {
-        this.meterId = meterId;
-    }
-
-    public String getAssetId() {
-        return assetId;
-    }
-
-    public void setAssetId(String assetId) {
-        this.assetId = assetId;
-    }
-
     public UUID getCreatedBy() {
         return createdBy;
     }
@@ -380,20 +340,44 @@ public class Meter implements Serializable {
         this.reason = reason;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public Customer getCustomer() {
+        return customer;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public MeterAssignLocation getMeterAssignLocation() {
+        return meterAssignLocation;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setMeterAssignLocation(MeterAssignLocation meterAssignLocation) {
+        this.meterAssignLocation = meterAssignLocation;
+    }
+
+    public MDMeterInfo getMdMeterInfo() {
+        return mdMeterInfo;
+    }
+
+    public void setMdMeterInfo(MDMeterInfo mdMeterInfo) {
+        this.mdMeterInfo = mdMeterInfo;
+    }
+
+    public PaymentMode getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(PaymentMode paymentMode) {
+        this.paymentMode = paymentMode;
+    }
+
+    public Manufacturer getManufacturer() {
+        return manufacturer;
+    }
+
+    public void setManufacturer(Manufacturer manufacturer) {
+        this.manufacturer = manufacturer;
     }
 
     public SmartMeterInfo getSmartMeterInfo() {
@@ -466,5 +450,21 @@ public class Meter implements Serializable {
 
     public void setDebitCreditAdjustVersionInfo(DebitCreditAdjustVersion debitCreditAdjustVersionInfo) {
         this.debitCreditAdjustVersionInfo = debitCreditAdjustVersionInfo;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
