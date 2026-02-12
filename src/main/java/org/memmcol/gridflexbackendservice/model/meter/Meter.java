@@ -45,6 +45,7 @@ public class Meter implements Serializable {
     private String meterManufacturerName;
     private String meterStage;
     private String status;
+    private String image;
 //    private String approveState;
     private Boolean smartStatus;
     private String customerId;
@@ -117,7 +118,7 @@ public class Meter implements Serializable {
     }
 
     public String getAssetId() {
-        return assetId == null ? assetId : assetId.trim();
+        return assetId;
     }
 
     public void setAssetId(String assetId) {
@@ -125,7 +126,7 @@ public class Meter implements Serializable {
     }
 
     public String getMeterNumber() {
-        return meterNumber == null ? meterNumber : meterNumber.trim();
+        return meterNumber;
     }
 
     public void setMeterNumber(String meterNumber) {
@@ -133,7 +134,7 @@ public class Meter implements Serializable {
     }
 
     public String getAccountNumber() {
-        return accountNumber == null ? accountNumber : accountNumber.trim();
+        return accountNumber;
     }
 
     public void setAccountNumber(String accountNumber) {
@@ -141,7 +142,7 @@ public class Meter implements Serializable {
     }
 
     public String getSimNumber() {
-        return simNumber == null ? simNumber : simNumber.trim();
+        return simNumber;
     }
 
     public void setSimNumber(String simNumber) {
@@ -242,6 +243,14 @@ public class Meter implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public Boolean getSmartStatus() {

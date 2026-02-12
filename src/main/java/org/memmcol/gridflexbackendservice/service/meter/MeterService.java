@@ -2,7 +2,6 @@ package org.memmcol.gridflexbackendservice.service.meter;
 
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,7 +29,7 @@ public interface MeterService {
 
     Map<String, Object> allocateMeter(String meterNumber, String regionId);
 
-    Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer assignMeterToCustomer);
+    Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer assignMeterToCustomer, MultipartFile image);
 
     Map<String, Object> migrate(PaymentMode paymentMode);
 

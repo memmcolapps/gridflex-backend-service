@@ -42,6 +42,8 @@ public class AssignMeterToCustomer implements Serializable {
     private Long oldTariffIndex;
     private Long newTariffIndex;
 
+    private String image;
+
     private String state;
     private String city;
     private String houseNo;
@@ -275,6 +277,14 @@ public class AssignMeterToCustomer implements Serializable {
         this.newTariffIndex = newTariffIndex;
     }
 
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public String getState() {
         return state == null ? state : state.toUpperCase().trim();
     }
@@ -418,4 +428,5 @@ public class AssignMeterToCustomer implements Serializable {
     public void setDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjust) {
         this.debitCreditAdjust = debitCreditAdjust;
     }
+
 }

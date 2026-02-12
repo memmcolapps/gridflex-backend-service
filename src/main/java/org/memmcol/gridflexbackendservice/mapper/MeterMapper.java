@@ -422,6 +422,7 @@ public interface MeterMapper {
             " <if test='oldTariffIndex != null'> old_tariff_index = #{oldTariffIndex}, </if>",
             " <if test='newTariffIndex != null'> new_tariff_index = #{newTariffIndex}, </if>",
             " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
+            " <if test='image != null'> image = #{image}, </if>",
             " updated_at = #{updatedAt}, ",
 
             "</set>",
@@ -435,6 +436,7 @@ public interface MeterMapper {
             "UPDATE meters",
             "<set>",
 
+            " <if test='meterNumber != null'> meter_number = #{meterNumber}, </if>",
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
             " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
@@ -462,6 +464,7 @@ public interface MeterMapper {
             "UPDATE meters",
             "<set>",
 
+            " <if test='meterNumber != null'> meter_number = #{meterNumber}, </if>",
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
             " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
@@ -499,6 +502,7 @@ public interface MeterMapper {
             "fixed_energy = #{fixedEnergy}, ",
             "tariff = #{tariff}, ",
             "meter_class = #{meterClass}, ",
+            "image = #{image}, ",
             "updated_at = #{updatedAt} ",
             "WHERE meter_number = #{meterNumber} AND org_id = #{orgId}",
             "</script>"
@@ -1426,13 +1430,13 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
             "meter_stage, status, customer_id, cin, tariff, meter_number, type, smart_status," +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index," +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, image, " +
             "created_at, updated_at, created_by, description, meter_id, account_number, dss, node_id) " +
             "VALUES (" +
             "#{orgId}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, " +
             "#{meterStage}, #{status}, #{customerId}, #{cin}, #{tariffId}, #{meterNumber}, " +
-            "#{type}, #{smartStatus}, #{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, " +
-            "#{createdAt}, #{updatedAt},#{createdBy}, #{description}, #{meterId}, #{accountNumber}, #{dss}, #{nodeId})")
+            "#{type}, #{smartStatus}, #{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, " +
+            "#{newTariffIndex}, #{image}, #{createdAt}, #{updatedAt},#{createdBy}, #{description}, #{meterId}, #{accountNumber}, #{dss}, #{nodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
 
