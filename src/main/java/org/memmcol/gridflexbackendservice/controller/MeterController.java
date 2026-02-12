@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -10,6 +11,7 @@ import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.MeterRequest;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
+import org.memmcol.gridflexbackendservice.service.meter.FileStorageService;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -41,6 +43,8 @@ public class MeterController {
     @Autowired
     private GlobalExceptionHandler exception;
 
+    @Autowired
+    private FileStorageService fileStorageService;
 
     // Common headers for both formats
     private static final String[] HEADERS = {
@@ -260,15 +264,70 @@ public class MeterController {
         }
     }
 
-    @PostMapping("/cin/assign")
-    public ResponseEntity<Map<String, Object>> AssignMeter(@RequestBody AssignMeterToCustomer assignMeterToCustomer) {
+    @PostMapping(value = "/cin/assign",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> assignMeter(
+            @RequestParam(value = "meterNumber", required = true) String meterNumber,
+            @RequestParam(value = "customerId", required = true) String customerId,
+            @RequestParam(value = "tariffId", required = true) String tariffId,
+            @RequestParam(value = "dssAssetId", required = true) String dssAssetId,
+            @RequestParam(value = "feederAssetId", required = true) String feederAssetId,
+            @RequestParam(value = "cin", required = true) String cin,
+            @RequestParam(value = "accountNumber", required = true) String accountNumber,
+            @RequestParam(value = "state", required = true) String state,
+            @RequestParam(value = "city", required = true) String city,
+            @RequestParam(value = "houseNo", required = true) String houseNo,
+            @RequestParam(value = "streetName", required = true) String streetName,
+            @RequestParam(value = "paymentMode", required = true) String paymentMode,
+            @RequestParam(value = "paymentPlan", required = true) String paymentPlan,
+            @RequestParam(value = "paymentType", required = true) String paymentType,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
-            Map<String, Object> result = service.assignMeterToCustomer(assignMeterToCustomer);
+
+            AssignMeterToCustomer assign = new AssignMeterToCustomer();
+            assign.setMeterNumber(meterNumber.trim());
+            assign.setCustomerId(customerId.trim());
+            assign.setTariffId(UUID.fromString(tariffId.trim()));
+            assign.setDssAssetId(dssAssetId.trim());
+            assign.setFeederAssetId(feederAssetId.trim());
+            assign.setCin(cin.trim());
+
+            assign.setAccountNumber(accountNumber.trim());
+            assign.setState(state.trim());
+            assign.setCity(city.trim());
+            assign.setHouseNo(houseNo.trim());
+            assign.setStreetName(streetName.trim());
+            assign.setPaymentMode(paymentMode.trim());
+            assign.setPaymentPlan(paymentPlan.trim());
+            assign.setPaymentType(paymentType.trim());
+
+            if (image != null) {
+                String fileUrl = fileStorageService.saveFile(image);
+                assign.setImage(fileUrl);
+            }
+
+            Map<String, Object> result = service.assignMeterToCustomer(assign, image);
             return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
+        } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
     }
+
+
+//    @PostMapping("/cin/assign")
+//    public ResponseEntity<Map<String, Object>> AssignMeter(
+//            @RequestBody AssignMeterToCustomer assignMeterToCustomer
+//    ) {
+//        try {
+//            Map<String, Object> result = service.assignMeterToCustomer(assignMeterToCustomer);
+//            return ResponseEntity.ok(result);
+//        } catch (SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     @GetMapping("/customer")
     public ResponseEntity<?> singleCustomer(
