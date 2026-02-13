@@ -134,15 +134,15 @@ public interface VendMapper {
             "    m.tariff_name," +
             "    m.liability_name, " +
             "    m.adjustment_type, " +
-            "    m.created_at, " +
-            "    m.updated_at, " +
+            "    m.cda_created_at AS created_at, " +
+            "    m.cda_updated_at AS updated_at, " +
             "    m.customer_fullname, " +
             "    m.customer_id, " +
             "    m.address, " +
             "    m.tariff_id, " +
-            "    MIN(m.balance_after_adjustment) AS balance, " +
-            "    SUM(m.debit_amount) AS total_debit, " +
-            "    SUM(m.credit_amount) AS total_credit " +
+            "    m.balance_after_adjustment AS balance, " +
+            "    m.debit_amount AS total_debit, " +
+            "    m.credit_amount AS total_credit " +
             "FROM vw_meter_summary m " +
             "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
             "GROUP BY " +
@@ -165,9 +165,12 @@ public interface VendMapper {
             "    m.address, " +
             "    m.customer_fullname, " +
             "    m.liability_name, " +
-            "    m.created_at, " +
-            "    m.updated_at," +
-            "    m.adjustment_type")
+            "    m.cda_created_at, " +
+            "    m.cda_updated_at," +
+            "    m.adjustment_type," +
+            "    m.balance_after_adjustment, " +
+            "    m.debit_amount," +
+            "    m.credit_amount ")
     @Results({
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "orgId", column = "org_id"),
