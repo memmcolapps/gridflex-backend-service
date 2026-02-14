@@ -1705,66 +1705,6 @@ public interface MeterMapper {
     @Select("SELECT id, meter_number AS meterNumber FROM meters WHERE org_id = #{orgId}")
     List<Meter> fetchMeters(UUID orgId);
 
-//    @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id WHERE m.meter_number = #{meterNumber} AND " +
-//            "(m.meter_stage IN('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
-//            "OR m.status IN ('Pending-deactivated', 'Pending-activated')) " +
-//            "ORDER BY m.created_at DESC")
-//    @Results({
-//            @Result(property = "id", column = "id"),
-//            @Result(property = "customerId", column = "customer_id"),
-//            @Result(property = "meterId", column = "meter_id"),
-//            @Result(property = "assetId", column = "asset_id"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "meterNumber", column = "meter_number"),
-//            @Result(property = "accountNumber", column = "account_number"),
-//            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
-//            @Result(property = "simNumber", column = "sim_number"),
-//            @Result(property = "fixedEnergy", column = "fixed_energy"),
-//            @Result(property = "meterCategory", column = "meter_category"),
-//            @Result(property = "meterClass", column = "meter_class"),
-//            @Result(property = "meterType", column = "meter_type"),
-//            @Result(property = "meterStage", column = "meter_stage"),
-//            @Result(property = "smartStatus", column = "smart_status"),
-//            @Result(property = "oldSgc", column = "old_sgc"),
-//            @Result(property = "newSgc", column = "new_sgc"),
-//            @Result(property = "oldKrn", column = "old_krn"),
-//            @Result(property = "newKrn", column = "new_krn"),
-//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
-//            @Result(property = "createdAt", column = "created_at"),
-//            @Result(property = "updatedAt", column = "updated_at"),
-//            @Result(property = "customer", column = "customer_id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
-//            @Result(property = "meterAssignLocation", column = "meter_id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
-//            @Result(property = "mdMeterInfo", column = "meter_id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
-//            @Result(property = "paymentMode", column = "meter_id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
-//            @Result(property = "manufacturer", column = "meter_manufacturer",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
-//            @Result(property = "smartMeterInfo", column = "meter_id",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion")),
-//
-//    })
-//    List<Meter> getMetersByVersionMeterNumbers(String meterNumber, UUID orgId);
-
-
-    //    @Select({
-//            "<script>",
-//            "SELECT * FROM meters_version m",
-//            "LEFT JOIN customers c ON c.customer_id = m.customer_id",
-//            "WHERE m.meter_number IN",
-//            "<foreach item='meterNumber' collection='meterNumbers' open='(' separator=',' close=')'>",
-//            "#{meterNumber}",
-//            "</foreach>",
-//            "AND (m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned')",
-//            "AND m.status IN ('Active')",
-//            "AND m.org_id = #{orgId}",
-//            "</script>"
-//    })
-// "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
-//         "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Select({
             "<script>",
             "SELECT * FROM meters_version m",
@@ -1965,22 +1905,6 @@ public interface MeterMapper {
     })
     List<Meter> getMetersByCins(@Param("cins") List<String> cin, @Param("orgId") UUID orgId);
 
-//    @Update({
-//            "<script>",
-//            "<foreach collection='batch' item='m' separator=';'>",
-//            "UPDATE meters_version",
-//            "SET",
-//            " meter_stage = #{m.meterStage},",
-//            " status = #{m.status},",
-//            " approve_by = #{m.approveBy},",
-//            " updated_at = #{m.updatedAt}",
-//            "WHERE meter_number = #{m.meterNumber}",
-//            "  AND org_id = #{m.orgId}",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    void updateBatchVersionMeters(@Param("batch") List<Meter> batch);
-
     @Update({
             "<script>",
             "UPDATE meters_version",
@@ -2080,23 +2004,6 @@ public interface MeterMapper {
             "</script>"
     })
     void updateBatchMeters(@Param("batch") List<Meter> batch);
-
-
-//    @Update({
-//            "<script>",
-//            "<foreach collection='batch' item='m' separator=';'>",
-//            "UPDATE meters",
-//            "SET",
-//            " meter_stage = #{m.meterStage},",
-//            " status = #{m.status},",
-//            " approve_by = #{m.approveBy},",
-//            " updated_at = #{m.updatedAt}",
-//            "WHERE meter_number = #{m.meterNumber}",
-//            "  AND org_id = #{m.orgId}",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    void updateBatchMeters(@Param("batch") List<Meter> batch);
 
 
     @Update({
@@ -2255,26 +2162,6 @@ public interface MeterMapper {
     })
     List<RegionBhubServiceCenter> getRegionBhubMappings(@Param("regionIds") List<String> regionIds, @Param("orgId") UUID orgId);
 
-//    @Update({
-//            "<script>",
-//            "UPDATE meter_version",
-//            "SET node_id = CASE meter_number",
-//            "<foreach collection='batch' item='m'>",
-//            "WHEN #{m.meterNumber} THEN #{m.nodeId}",
-//            "</foreach>",
-//            "END,",
-//            "meter_stage = 'Pending-allocated',",
-//            "updated_by = #{batch[0].updatedBy},",
-//            "updated_at = NOW()",
-//            "WHERE org_id = #{batch[0].orgId}",
-//            "AND meter_number IN",
-//            "<foreach collection='batch' item='m' open='(' separator=',' close=')'>",
-//            "#{m.meterNumber}",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    void updateBatchVersionMeterAllocation(@Param("batch") List<Meter> batch);
-
     @Update({
             "<script>",
             "UPDATE meters",
@@ -2337,25 +2224,7 @@ public interface MeterMapper {
             "</script>"
     })
     List<Customer> getByCustomerIds(List<String> customerIds, UUID orgId);
-//    @Results({
-//            @Result(property = "id", column = "id"),
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "customerId", column = "customer_id"),
-//    }) //share
 
-    //    @Select("SELECT node_id AS nodeId, parent_id AS parentId, asset_id AS assetId, name, type, created_at AS createdAt, updated_at AS updatedAt " +
-//            "FROM substation_trans_feeder_lines WHERE node_id = #{id}")
-//    @Select({
-//            "<script>",
-//            "SELECT node_id AS nodeId FROM substation_trans_feeder_lines c",
-//            "WHERE c.node_id IN",
-//            "<foreach item='dssFeederId' collection='dssFeederIds' open='(' separator=',' close=')'>",
-//            "#{dssFeederId}",
-//            "</foreach>",
-//            "AND c.org_id = #{org_id}",
-//            "ORDER BY t.created_at DESC",
-//            "</script>"
-//    })
     @Select({
             "<script>",
             "SELECT c.node_id AS nodeId, c.asset_id AS assetId",
@@ -2371,22 +2240,6 @@ public interface MeterMapper {
             @Param("dssFeederIds") List<String> dssFeederIds,
             @Param("orgId") UUID orgId
     );
-
-//    @Select({
-//            "<script>",
-//            "SELECT c.node_id AS nodeId",
-//            "FROM substation_trans_feeder_lines c",
-//            "WHERE c.org_id = #{orgId}",
-//            "AND c.node_id IN",
-//            "<foreach collection='dssFeederIds' item='dssFeederId' open='(' separator=',' close=')'>",
-//            "#{dssFeederId}",
-//            "</foreach>",
-//            "</script>"
-//    })
-//    List<SubStationTransformerFeederLine> getDss(
-//            @Param("dssFeederIds") List<String> dssFeederIds,
-//            @Param("orgId") UUID orgId
-//    );
 
     @Select({
             "<script>",
@@ -2466,22 +2319,6 @@ public interface MeterMapper {
             "</script>"
     })
     void copyAssignLocationFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
-
-
-//    @Insert({
-//            "<script>",
-//            "INSERT INTO meter_assign_locations (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at)",
-//            "SELECT org_id, meter_id, state, city, house_no, street_name, created_at, updated_at",
-//            "FROM meter_assign_locations_version",
-//            "WHERE meter_id IN",
-//            "<foreach collection='list' item='meter' open='(' separator=',' close=')'>",
-//            "#{meter.meterId}",
-//            "</foreach>",
-//            "AND org_id = #{orgId}",
-//            "</script>"
-//    })
-//    void updateAssignLocationFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
-
 
     @Update({
             "<script>",
@@ -2589,35 +2426,6 @@ public interface MeterMapper {
             "</script>"
     })
     void updateAssignLocationVersion(@Param("list") List<Meter> meters);
-
-
-//    @Update({
-//            "<script>",
-//            "UPDATE meter_assign_locations_version",
-//            "SET ",
-//            "  meter_stage = CASE id",
-//            "    <foreach collection='list' item='m'>",
-//            "      WHEN #{m.id} THEN 'Assigned'",
-//            "    </foreach>",
-//            "  END,",
-//            "  approve_by = CASE id",
-//            "    <foreach collection='list' item='m'>",
-//            "      WHEN #{m.id} THEN CAST(#{m.approveBy} AS UUID)",
-//            "    </foreach>",
-//            "  END,",
-//            "  updated_at = CASE id",
-//            "    <foreach collection='list' item='m'>",
-//            "       WHEN #{m.id} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
-//            "    </foreach>",
-//            "  END",
-//            "WHERE id IN ",
-//            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
-//            "    #{m.id}",
-//            "  </foreach>",
-//            "  AND org_id = #{list[0].orgId}",
-//            "</script>"
-//    })
-//    void updateAssignLocationVersion(@Param("list") List<Meter> meters);
 
     @Update({
             "<script>",
@@ -2828,20 +2636,6 @@ public interface MeterMapper {
             "AND org_id = #{orgId} AND status = true")
     int updateDebitCreditAdjVersion(UUID oldMeterId, UUID newMeterId, boolean status, UUID orgId);
 
-    //    @Update({
-//            "<script>",
-//            "UPDATE credit_debit_adjustment",
-//            "SET meter_id = newData.new_meter_id",
-//            "FROM (",
-//            "   VALUES",
-//            "   <foreach collection='list' item='item' separator=','>",
-//            "       (#{item.oldMeterId}, #{item.newMeterId}, #{item.orgId})",
-//            "   </foreach>",
-//            ") AS newData(old_meter_id, new_meter_id, org_id)",
-//            "WHERE credit_debit_adjustment.meter_id = newData.old_meter_id",
-//            "AND credit_debit_adjustment.org_id = newData.org_id",
-//            "</script>"
-//    })
     @Update({
             "<script>",
             "<foreach collection='list' item='item' separator=';'>",
@@ -2853,23 +2647,6 @@ public interface MeterMapper {
     })
     void updateBatchDebitCreditAdj(@Param("list") List<DebitCreditAdjustVersion> list);
 
-
-    //    @Update({
-//            "<script>",
-//            "UPDATE credit_debit_adjustment_version",
-//            "SET status = #{status}",
-//            "FROM (",
-//            "   VALUES",
-//            "   <foreach collection='list' item='item' separator=','>",
-//            "       (#{item.oldMeterId}, #{item.newMeterId}, #{item.orgId})",
-//            "   </foreach>",
-//            ") AS newData(old_meter_id, new_meter_id, org_id)",
-//            "WHERE credit_debit_adjustment_version.old_meter_id = newData.old_meter_id",
-//            "AND credit_debit_adjustment_version.new_meter_id = newData.new_meter_id",
-//            "AND credit_debit_adjustment_version.org_id = newData.org_id",
-//            "AND credit_debit_adjustment_version.status = TRUE",
-//            "</script>"
-//    })
     @Update({
             "<script>",
             "<foreach collection='list' item='item' separator=';'>",
@@ -2885,40 +2662,5 @@ public interface MeterMapper {
     void updateBatchDebitCreditAdjVersion(
             @Param("list") List<DebitCreditAdjustVersion> list);
 
-
-//    void updateDetachBatchMeters(List<Meter> toUpdate);
-
-//    @Update({
-//            "<script>",
-//            "UPDATE payment_mode_version",
-//            "SET ",
-//            "  meter_stage = CASE meter_id",
-//            "    <foreach collection='batch' item='m'>",
-//            "      WHEN #{m.meter_id} THEN 'Assigned'",
-//            "    </foreach>",
-//            "  END,",
-//            "  status = CASE meter_id",
-//            "    <foreach collection='batch' item='m'>",
-//            "      WHEN #{m.meter_id} THEN true",
-//            "    </foreach>",
-//            "  END,",
-//            "  approve_by = CASE meter_id",
-//            "    <foreach collection='batch' item='m'>",
-//            "      WHEN #{m.meter_id} THEN CAST(#{m.approveBy} AS UUID)",
-//            "    </foreach>",
-//            "  END,",
-//            "  updated_at = CASE meter_id",
-//            "    <foreach collection='batch' item='m'>",
-//            "       WHEN #{m.meter_id} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",
-//            "    </foreach>",
-//            "  END",
-//            "WHERE id IN ",
-//            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
-//            "    #{m.id}",
-//            "  </foreach>",
-//            "  AND org_id = #{list[0].orgId}",
-//            "</script>"
-//    })
-//    void updatePaymentModeVersion(@Param("list") List<Meter> meters);
 
 }

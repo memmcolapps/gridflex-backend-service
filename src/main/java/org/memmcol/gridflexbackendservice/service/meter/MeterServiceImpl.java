@@ -944,26 +944,6 @@ public class MeterServiceImpl implements MeterService {
                     throw new GlobalExceptionHandler.NotFoundException(
                             "Payment mode (" + paymentMode + ") is not supported");
                 }
-
-//                if(request.getPaymentMode() != null && (request.getPaymentType() == null
-//                        || request.getPaymentType().isBlank())){
-//                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
-//                } else if(!request.getPaymentType().equalsIgnoreCase("credit") &&
-//                        !request.getPaymentType().equalsIgnoreCase("debit")){
-//                    throw new GlobalExceptionHandler.NotFoundException(
-//                            "Payment type ("+request.getPaymentType()+") is not supported");
-//                } else if(request.getPaymentMode().equalsIgnoreCase("one-off") &&
-//                        request.getPaymentMode().equalsIgnoreCase("percentage")){
-//                    request.setPaymentPlan("");
-//                } else if(request.getPaymentMode().equalsIgnoreCase("monthly") &&
-//                        request.getPaymentPlan() == null && request.getPaymentPlan().isBlank()) {
-//                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
-//                } else if(request.getPaymentMode().equalsIgnoreCase("non")) {
-//                    request.setPaymentPlan("");
-//                }
-//                else {
-//                    throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
-//                }
                 int paymentModeResult = meterMapper.assignPaymentModeVersion(request);
 
                 if (paymentModeResult == 0) {
