@@ -255,12 +255,51 @@ public class MeterController {
 
     @PostMapping("/assign")
     public ResponseEntity<Map<String, Object>> ContinueAssignMeter(
-            @RequestBody AssignMeterToCustomer meterView) {
+            @RequestParam(value = "meterNumber", required = true) String meterNumber,
+            @RequestParam(value = "customerId", required = true) String customerId,
+            @RequestParam(value = "tariffId", required = true) String tariffId,
+            @RequestParam(value = "dssAssetId", required = true) String dssAssetId,
+            @RequestParam(value = "feederAssetId", required = true) String feederAssetId,
+            @RequestParam(value = "cin", required = true) String cin,
+            @RequestParam(value = "accountNumber", required = true) String accountNumber,
+            @RequestParam(value = "state", required = true) String state,
+            @RequestParam(value = "city", required = true) String city,
+            @RequestParam(value = "houseNo", required = true) String houseNo,
+            @RequestParam(value = "streetName", required = true) String streetName,
+            @RequestParam(value = "paymentMode", required = true) String paymentMode,
+            @RequestParam(value = "paymentPlan", required = true) String paymentPlan,
+            @RequestParam(value = "paymentType", required = true) String paymentType,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
-            Map<String, Object> result = service.continueAssignMeter(meterView);
+
+            AssignMeterToCustomer assign = new AssignMeterToCustomer();
+            assign.setMeterNumber(meterNumber.trim());
+            assign.setCustomerId(customerId.trim());
+            assign.setTariffId(UUID.fromString(tariffId.trim()));
+            assign.setDssAssetId(dssAssetId.trim());
+            assign.setFeederAssetId(feederAssetId.trim());
+            assign.setCin(cin.trim());
+
+            assign.setAccountNumber(accountNumber.trim());
+            assign.setState(state.trim());
+            assign.setCity(city.trim());
+            assign.setHouseNo(houseNo.trim());
+            assign.setStreetName(streetName.trim());
+            assign.setPaymentMode(paymentMode.trim());
+            assign.setPaymentPlan(paymentPlan.trim());
+            assign.setPaymentType(paymentType.trim());
+
+            if (image != null) {
+                String fileUrl = fileStorageService.saveFile(image);
+                assign.setImage(fileUrl);
+            }
+
+            Map<String, Object> result = service.continueAssignMeter(assign, image);
             return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
+        } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

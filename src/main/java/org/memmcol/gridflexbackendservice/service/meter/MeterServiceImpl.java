@@ -990,7 +990,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
-    public Map<String, Object> continueAssignMeter(AssignMeterToCustomer request) {
+    public Map<String, Object> continueAssignMeter(AssignMeterToCustomer request, MultipartFile image) {
         int result;
         boolean state = false;
         try {
