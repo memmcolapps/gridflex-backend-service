@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.model.vend;
 
 import lombok.Data;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -71,8 +72,16 @@ public class MeterView implements Serializable {
     private String liabilityName;
     private String liabilityCode;
 
+    // --- Payment mode ---
+    private String paymentMode;
+    private String paymentPlan;
+    private String paymentType;
+
     //---------manufacturer----------
     private String meterManufacturer;
+
+    //---------Debt percentage----------
+    private PercentageRange percentageRange;
 
     // --- Metadata ---
     private Date createdAt;
@@ -468,5 +477,37 @@ public class MeterView implements Serializable {
 
     public void setVat(String vat) {
         this.vat = vat;
+    }
+
+    public String getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(String paymentMode) {
+        this.paymentMode = paymentMode;
+    }
+
+    public String getPaymentPlan() {
+        return paymentPlan;
+    }
+
+    public void setPaymentPlan(String paymentPlan) {
+        this.paymentPlan = paymentPlan;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
+    }
+
+    public PercentageRange getPercentageRange() {
+        return percentageRange;
+    }
+
+    public void setPercentageRange(PercentageRange percentageRange) {
+        this.percentageRange = percentageRange;
     }
 }

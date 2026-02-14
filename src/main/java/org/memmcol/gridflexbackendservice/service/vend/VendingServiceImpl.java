@@ -320,38 +320,17 @@ public class VendingServiceImpl implements VendingService {
     public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
 
         try {
-            Map<String, String> metadata =
-                    genericHandler.extractRequestMetadata(httpServletRequest);
+
+            if (creditToken.getMeterNumber() == null || creditToken.getMeterNumber().isBlank()) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter number is required");
+            }
+
+            if (creditToken.getInitialAmount() == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Initial amount is required");
+            }
 
             UserModel user = handleUserValidation();
 
-            // ------------------------------------------------------------------
-            // Validate meter
-            // ------------------------------------------------------------------
-            Meter meterResult = vendMapper.getMeter(
-                    user.getOrgId(),
-                    creditToken.getMeterNumber(),
-                    creditToken.getAccountNumber()
-            );
-
-            if (meterResult == null) {
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "Invalid meter for this organization.");
-            }
-
-            boolean isValidForVending =
-                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
-                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
-                            && "Active".equalsIgnoreCase(meterResult.getStatus());
-
-            if (!isValidForVending) {
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "Vending is only allowed for active, assigned prepaid meters.");
-            }
-
-            // ------------------------------------------------------------------
-            // Fetch meter info
-            // ------------------------------------------------------------------
             List<MeterView> meters = vendMapper.getMeterInfo(
                     creditToken.getMeterNumber(),
                     creditToken.getAccountNumber(),
@@ -359,98 +338,86 @@ public class VendingServiceImpl implements VendingService {
             );
 
             if (meters.isEmpty()) {
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "Meter not found for provided details.");
+                throw new GlobalExceptionHandler.NotFoundException("Meter not found.");
             }
 
             MeterView meter = meters.get(0);
 
-            // ------------------------------------------------------------------
-            // Debit & Credit totals
-            // ------------------------------------------------------------------
-            BigDecimal totalDebit = calculateTotalByType(meters, "debit");
-            BigDecimal totalCredit = calculateTotalByType(meters, "credit");
+            String paymentMode = meter.getPaymentMode();
+            String paymentPlan = meter.getPaymentPlan();
+            String paymentType = meter.getPaymentType();
 
-            // ------------------------------------------------------------------
-            // VAT setup
-            // ------------------------------------------------------------------
+            BigDecimal totalDebit = calculateTotalByType(meters, "debit");
+            BigDecimal totalCreditUnits = calculateTotalByType(meters,"credit");
+
             BigDecimal vatMultiplier =
-                    meter.getVat().equalsIgnoreCase("Paying")
-                            ? new BigDecimal("1.075")   // 7.5% tax
+                    "Paying".equalsIgnoreCase(meter.getVat())
+                            ? new BigDecimal("1.075")
                             : BigDecimal.ONE;
 
-            // ------------------------------------------------------------------
-            // Parse tariff safely
-            // ------------------------------------------------------------------
-            BigDecimal tariffRate;
-            try {
-                tariffRate = new BigDecimal(meter.getTariffRate());
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Invalid tariff rate.");
-            }
+            BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
 
             if (tariffRate.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Tariff must be greater than zero.");
+                throw new IllegalArgumentException("Invalid tariff rate");
             }
 
-            // ------------------------------------------------------------------
-            // 6️⃣ Remove VAT FIRST (industry standard)
-            // ------------------------------------------------------------------
+            // ✅ Get strategy
+            PaymentStrategy strategy =
+                    PaymentStrategyFactory.getStrategy(paymentMode, paymentType, paymentPlan);
+
+            BigDecimal debitToDeduct =
+                    strategy.calculateDebitToDeduct(totalDebit);
+
+            BigDecimal creditUnitsToApply =
+                    strategy.calculateCreditUnits(totalCreditUnits);
+
+            // Remove debit first
+            BigDecimal amountAfterDebit =
+                    creditToken.getInitialAmount().subtract(debitToDeduct);
+
+            if (amountAfterDebit.compareTo(BigDecimal.ZERO) < 0) {
+                amountAfterDebit = BigDecimal.ZERO;
+            }
+
+            // VAT
             BigDecimal netTender =
-                    creditToken.getInitialAmount()
-                            .divide(vatMultiplier, 6, RoundingMode.HALF_UP);
+                    amountAfterDebit.divide(vatMultiplier, 6, RoundingMode.HALF_UP);
 
             BigDecimal vatAmount =
-                    creditToken.getInitialAmount().subtract(netTender);
+                    amountAfterDebit.subtract(netTender);
 
-            // ------------------------------------------------------------------
-            // 7️⃣ Apply debit / credit adjustments
-            // ------------------------------------------------------------------
-            BigDecimal energyAmount = netTender
-                    .subtract(totalDebit)
-                    .add(totalCredit);
+            // Units from money
+            BigDecimal unitsFromTender =
+                    netTender.divide(tariffRate, 3, RoundingMode.HALF_UP);
 
-            // prevent negative vending
-            if (energyAmount.compareTo(BigDecimal.ZERO) < 0) {
-                energyAmount = BigDecimal.ZERO;
-            }
+            // Add credit units
+            BigDecimal finalUnits =
+                    unitsFromTender.add(creditUnitsToApply);
 
-            // ------------------------------------------------------------------
-            // 8️⃣ Calculate units
-            // ------------------------------------------------------------------
-            BigDecimal units =
-                    energyAmount.divide(tariffRate, 3, RoundingMode.HALF_UP);
+            BigDecimal costPerUnit =
+                    finalUnits.compareTo(BigDecimal.ZERO) > 0
+                            ? netTender.divide(finalUnits, 2, RoundingMode.HALF_UP)
+                            : BigDecimal.ZERO;
 
-            // ------------------------------------------------------------------
-            // 9️⃣ Calculate real cost per unit (after adjustments)
-            // ------------------------------------------------------------------
-            BigDecimal costPerUnit = units.compareTo(BigDecimal.ZERO) > 0
-                    ? energyAmount.divide(units, 2, RoundingMode.HALF_UP)
-                    : BigDecimal.ZERO;
-
-            // ------------------------------------------------------------------
-            // 9️⃣ Populate response object
-            // ------------------------------------------------------------------
+            // Set response
             creditToken.setVat(
                     vatMultiplier.equals(BigDecimal.ONE)
                             ? BigDecimal.ZERO
                             : vatMultiplier
             );
 
-            creditToken.setCostOfUnit(costPerUnit);   // real cost per unit
-            creditToken.setUnit(units);
             creditToken.setVatAmount(vatAmount);
-            creditToken.setFinalAmount(energyAmount);
+            creditToken.setUnit(finalUnits);
+            creditToken.setCostOfUnit(costPerUnit);
+            creditToken.setFinalAmount(netTender);
 
-            // ------------------------------------------------------------------
-            // 🔟 Build response
-            // ------------------------------------------------------------------
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("data", creditToken);
-            responseData.put("meter", meters);
             responseData.put("totalDebitBalance", totalDebit);
-            responseData.put("totalCreditBalance", totalCredit);
-            responseData.put("netTender", netTender);
+            responseData.put("totalCreditUnits", totalCreditUnits);
+            responseData.put("debitDeducted", debitToDeduct);
+            responseData.put("creditUnitsApplied", creditUnitsToApply);
+            responseData.put("meter", meters);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
@@ -459,107 +426,152 @@ public class VendingServiceImpl implements VendingService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Calculating credit token service failed");
             genericHandler.logAndSaveException(ex, "calculate credit token");
             throw ex;
         }
     }
 
+//    private BigDecimal calculateTotalDebit(List<MeterView> meters) {
+//
+//        return meters.stream()
+//                .map(MeterView::getDebitAmount)
+//                .filter(Objects::nonNull)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
+//
+//
+//    private BigDecimal calculateTotalCreditUnits(List<MeterView> meters) {
+//
+//        return meters.stream()
+//                .map(MeterView::getCreditAmount)
+//                .filter(Objects::nonNull)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
 
 
+///-----------------
+    ///------------------------------------------
 //    @Transactional
 //    @Override
 //    public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
+//
 //        try {
-//            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+//            if(creditToken.getMeterNumber() == null || creditToken.getMeterNumber().isBlank()){
+//                throw new GlobalExceptionHandler.NotFoundException("Meter number is required");
+//            }
+//
+//            if(creditToken.getInitialAmount() == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Initial amount is required");
+//            }
+//
 //            UserModel user = handleUserValidation();
 //
-//            Meter meterResult = vendMapper.getMeter(user.getOrgId(), creditToken.getMeterNumber(), creditToken.getAccountNumber());
-//
-//            if (meterResult == null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
-//            }
-//
-//            boolean isValidForVending =
-//                    "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
-//                            && "Assigned".equalsIgnoreCase(meterResult.getMeterStage())
-//                            && "Active".equalsIgnoreCase(meterResult.getStatus());
-//
-//            if (!isValidForVending) {
-//                throw new GlobalExceptionHandler.NotFoundException(
-//                        "Vending is only allowed for active, assigned prepaid meters."
-//                );
-//            }
-//
-//            // --- Fetch meter info ---
 //            List<MeterView> meters = vendMapper.getMeterInfo(
 //                    creditToken.getMeterNumber(),
 //                    creditToken.getAccountNumber(),
 //                    user.getOrgId()
 //            );
-//            if (meters.isEmpty()) {
-//                throw new GlobalExceptionHandler.NotFoundException("Meter not found for provided details.");
-//            }
 //
+//            if (meters.isEmpty()) {
+//                throw new GlobalExceptionHandler.NotFoundException("Meter not found.");
+//            }
 //
 //            MeterView meter = meters.get(0);
 //
-//            // --- Balance Calculations ---
-//            BigDecimal totalDebit = calculateTotalByType(meters, "debit");
-//            BigDecimal totalCredit = calculateTotalByType(meters, "credit");
+//            String paymentMode = meter.getPaymentMode();
+//            String paymentPlan = meter.getPaymentPlan();
+//            String paymentType = meter.getPaymentPlan();
 //
-//            BigDecimal netBalance = calculateNetBalance(totalCredit, creditToken.getInitialAmount(), totalDebit);
+//            // ------------------------------------------------------------
+//            // 1️⃣ Debit (money) & Credit (units)
+//            // ------------------------------------------------------------
+//            BigDecimal totalDebit = calculateTotalByType(meters, "debit");     // MONEY
+//            BigDecimal totalCreditUnits = calculateTotalByType(meters, "credit"); // ALREADY UNITS
 //
-//            // --- VAT and Unit Calculations ---
-//            BigDecimal vatRate = meter.getVat().equalsIgnoreCase("Paying")
-//                    ? new BigDecimal("1.075") : BigDecimal.ONE;
-////            BigDecimal vatAmount = calculateVatAmount(netBalance, vatRate);
-////            BigDecimal totalWithVat = netBalance.add(vatAmount);
+//            // ------------------------------------------------------------
+//            // 2️⃣ VAT
+//            // ------------------------------------------------------------
+//            BigDecimal vatMultiplier =
+//                    meter.getVat().equalsIgnoreCase("Paying")
+//                            ? new BigDecimal("1.075")
+//                            : BigDecimal.ONE;
 //
-//            // --- Tariff Rate (safe parse) ---
-//            BigDecimal tariffRate;
-//            try {
-//                tariffRate = new BigDecimal(meter.getTariffRate());
-//            } catch (Exception e) {
-//                tariffRate = BigDecimal.ZERO; // invalid rate should act as 0
+//            // ------------------------------------------------------------
+//            // 3️⃣ Tariff
+//            // ------------------------------------------------------------
+//            BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
+//
+//            if (tariffRate.compareTo(BigDecimal.ZERO) <= 0) {
+//                throw new IllegalArgumentException("Invalid tariff rate");
 //            }
 //
-//            BigDecimal units = BigDecimal.ZERO;
-//            BigDecimal costPerUnit = BigDecimal.ZERO;
+//            // ------------------------------------------------------------
+//            // 4️⃣ Remove debit FIRST
+//            // ------------------------------------------------------------
+//            BigDecimal amountAfterDebit =
+//                    creditToken.getInitialAmount().subtract(totalDebit);
 //
-//            if (tariffRate.compareTo(BigDecimal.ZERO) > 0) {
-//                costPerUnit = netBalance.divide(vatRate,  2, RoundingMode.HALF_UP);
-//                // Normal calculation if tariffRate is valid
-//                units = costPerUnit.divide(tariffRate, 2, RoundingMode.HALF_UP);
-////                if (units.compareTo(BigDecimal.ZERO) > 0) {
-////                    costPerUnit = totalWithVat.divide(units, 2, RoundingMode.HALF_UP);
-////                }
-//            } else {
-//                costPerUnit = netBalance.divide(vatRate,  2, RoundingMode.HALF_UP);
-//                units = costPerUnit.divide(tariffRate.equals(BigDecimal.ZERO) ? BigDecimal.ONE : tariffRate, 2, RoundingMode.HALF_UP);
+//            if (amountAfterDebit.compareTo(BigDecimal.ZERO) < 0) {
+//                amountAfterDebit = BigDecimal.ZERO;
 //            }
 //
-//            BigDecimal vatAmount = creditToken.getInitialAmount().subtract(costPerUnit);
-//            //            BigDecimal finalAmount = netBalance.subtract(vatAmount);
+//            // ------------------------------------------------------------
+//            // 5️⃣ Remove VAT after debit
+//            // ------------------------------------------------------------
+//            BigDecimal netTender =
+//                    amountAfterDebit.divide(vatMultiplier, 6, RoundingMode.HALF_UP);
 //
-//            vatRate = vatRate.equals(BigDecimal.ONE) ? BigDecimal.ZERO : vatRate;
-//            // --- Build Response Data ---
-//            creditToken.setVat(vatRate);
-//            creditToken.setCostOfUnit(costPerUnit);
-//            creditToken.setUnit(units);
+//            BigDecimal vatAmount =
+//                    amountAfterDebit.subtract(netTender);
+//
+//            // ------------------------------------------------------------
+//            // 6️⃣ Units from money
+//            // ------------------------------------------------------------
+//            BigDecimal unitsFromTender =
+//                    netTender.divide(tariffRate, 3, RoundingMode.HALF_UP);
+//
+//            // ------------------------------------------------------------
+//            // 7️⃣ Add credit units directly
+//            // ------------------------------------------------------------
+//            BigDecimal finalUnits =
+//                    unitsFromTender.add(totalCreditUnits);
+//
+//            // ------------------------------------------------------------
+//            // 8️⃣ Effective cost per unit (money only)
+//            // ------------------------------------------------------------
+//            BigDecimal costPerUnit = finalUnits.compareTo(BigDecimal.ZERO) > 0
+//                    ? netTender.divide(finalUnits, 2, RoundingMode.HALF_UP)
+//                    : BigDecimal.ZERO;
+//
+//            // ------------------------------------------------------------
+//            // 9️⃣ Set response
+//            // ------------------------------------------------------------
+//            creditToken.setVat(
+//                    vatMultiplier.equals(BigDecimal.ONE)
+//                            ? BigDecimal.ZERO
+//                            : vatMultiplier
+//            );
+//
 //            creditToken.setVatAmount(vatAmount);
-//            creditToken.setFinalAmount(netBalance.subtract(vatAmount));
+//            creditToken.setUnit(finalUnits);
+//            creditToken.setCostOfUnit(costPerUnit);
+//            creditToken.setFinalAmount(netTender);
 //
 //            Map<String, Object> responseData = new HashMap<>();
 //            responseData.put("data", creditToken);
-//            responseData.put("meter", meters);
 //            responseData.put("totalDebitBalance", totalDebit);
-//            responseData.put("totalCreditBalance", totalCredit);
+//            responseData.put("totalCreditUnits", totalCreditUnits);
+//            responseData.put("netTender", netTender);
+//            responseData.put("unitsFromTender", unitsFromTender);
+//            responseData.put("meter", meters);
 //
-//            return ResponseMap.response(status.getSuccessCode(), "Credit token calculated successfully", responseData);
+//            return ResponseMap.response(
+//                    status.getSuccessCode(),
+//                    "Credit token calculated successfully",
+//                    responseData
+//            );
 //
 //        } catch (Exception ex) {
-//            genericHandler.logIncidentReport("Calculating credit token service failed");
 //            genericHandler.logAndSaveException(ex, "calculate credit token");
 //            throw ex;
 //        }
