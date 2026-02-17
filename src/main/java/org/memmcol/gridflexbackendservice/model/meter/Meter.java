@@ -72,6 +72,7 @@ public class Meter implements Serializable {
     private Tariff tariffInfo;
     private FlatNode flatNode;
     private List<DebitCreditAdjust> debitCreditAdjustInfo;
+    private List<DebitCreditAdjust> debitCreditAdjust;
     private DebitCreditAdjustVersion debitCreditAdjustVersionInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -475,5 +476,13 @@ public class Meter implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<DebitCreditAdjust> getDebitCreditAdjust() {
+        return debitCreditAdjust;
+    }
+
+    public void setDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjust) {
+        this.debitCreditAdjust = debitCreditAdjust;
     }
 }

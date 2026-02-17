@@ -198,7 +198,7 @@ public interface DebitCreditAdjustmentMapper {
         //share
     Customer getByCustomerId(String customerId);
 
-    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = UPPER('credit') ")
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = 'CREDIT' ")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -213,14 +213,6 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
     List<DebitCreditAdjust> fetchCreditAdjustmentById(UUID id);
-
-
-
-
-
-
-
-
 
     @Select("""
             <script>
@@ -258,6 +250,8 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchDebitAdjustmentById")),
+            @Result(property = "debitCreditAdjust", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchUniqueDebitAdjustmentById")),
             @Result(property = "customer", column = "customer_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
 //            @Result(property = "payment", column = "id",
@@ -266,7 +260,7 @@ public interface DebitCreditAdjustmentMapper {
     })
     List<Meter> GetDebitAdjustment(UUID orgId, int page, int size);
 
-    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = UPPER('debit') ")
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = 'DEBIT' ")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -281,6 +275,41 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
     List<DebitCreditAdjust> fetchDebitAdjustmentById(UUID id);
+
+//    @Select("""
+//        SELECT
+//            meter_id,
+//            liability_cause_id,
+//            org_id,
+//            SUM(debit) AS debit
+//        FROM credit_debit_adjustment
+//        WHERE meter_id = #{id}
+//          AND UPPER(type) = 'DEBIT'
+//        GROUP BY meter_id, liability_cause_id, org_id
+//    """)
+    @Select("""
+        SELECT
+            meter_id,
+            liability_cause_id,
+            org_id,
+            SUM(debit) AS total_debit,
+            SUM(SUM(debit)) OVER (PARTITION BY meter_id) AS grand_total
+        FROM credit_debit_adjustment
+        WHERE meter_id = #{id}
+          AND UPPER(type) = 'DEBIT'
+        GROUP BY meter_id, liability_cause_id, org_id
+    """)
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "meter_id", property = "meterId"),
+            @Result(column = "debit", property = "amount"),
+            @Result(column = "grandTotal", property = "grand_total"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    List<DebitCreditAdjust> fetchUniqueDebitAdjustmentById(UUID id);
 
 
     @Select("SELECT * FROM credit_debit_payment WHERE credit_debit_adj_id = #{debitCreditAdjustmentId}")

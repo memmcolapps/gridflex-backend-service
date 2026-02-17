@@ -24,6 +24,7 @@ public class DebitCreditAdjust implements Serializable {
     private String status;
     private String type;
     private UUID orgId;
+    private BigDecimal grandTotal;
     private List<DebitCreditPayment> payment;
     private LiabilityCause liabilityCause;
     private List<Meter> meter;
@@ -142,5 +143,13 @@ public class DebitCreditAdjust implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public BigDecimal getGrandTotal() {
+        return grandTotal;
+    }
+
+    public void setGrandTotal(BigDecimal grandTotal) {
+        this.grandTotal = grandTotal;
     }
 }
