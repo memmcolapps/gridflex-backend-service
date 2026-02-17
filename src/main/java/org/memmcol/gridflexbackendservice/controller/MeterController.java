@@ -100,9 +100,10 @@ public class MeterController {
             "city",
             "house number",
             "street name",
-            "payment mode",
-            "payment plan",
-            "payment type",
+            "debit payment mode",
+            "debit payment plan",
+            "credit payment mode",
+            "credit payment plan",
     };
 
     private static final String[] ASSIGNVHEADERS = {
@@ -266,9 +267,10 @@ public class MeterController {
             @RequestParam(value = "city", required = true) String city,
             @RequestParam(value = "houseNo", required = true) String houseNo,
             @RequestParam(value = "streetName", required = true) String streetName,
-            @RequestParam(value = "paymentMode", required = true) String paymentMode,
-            @RequestParam(value = "paymentPlan", required = true) String paymentPlan,
-            @RequestParam(value = "paymentType", required = true) String paymentType,
+            @RequestParam(value = "debitPaymentMode", required = true) String debitPaymentMode,
+            @RequestParam(value = "debitPaymentPlan", required = true) String debitPaymentPlan,
+            @RequestParam(value = "creditPaymentMode", required = true) String creditPaymentMode,
+            @RequestParam(value = "creditPaymentPlan", required = true) String creditPaymentPlan,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
 
@@ -285,9 +287,10 @@ public class MeterController {
             assign.setCity(city.trim());
             assign.setHouseNo(houseNo.trim());
             assign.setStreetName(streetName.trim());
-            assign.setPaymentMode(paymentMode.trim());
-            assign.setPaymentPlan(paymentPlan.trim());
-            assign.setPaymentType(paymentType.trim());
+            assign.setDebitPaymentMode(debitPaymentMode.trim());
+            assign.setDebitPaymentPlan(debitPaymentPlan.trim());
+            assign.setCreditPaymentMode(creditPaymentMode.trim());
+            assign.setCreditPaymentPlan(creditPaymentPlan.trim());
 
             if (image != null) {
                 String fileUrl = fileStorageService.saveFile(image);
@@ -317,9 +320,10 @@ public class MeterController {
             @RequestParam(value = "city", required = true) String city,
             @RequestParam(value = "houseNo", required = true) String houseNo,
             @RequestParam(value = "streetName", required = true) String streetName,
-            @RequestParam(value = "paymentMode", required = true) String paymentMode,
-            @RequestParam(value = "paymentPlan", required = true) String paymentPlan,
-            @RequestParam(value = "paymentType", required = true) String paymentType,
+            @RequestParam(value = "debitPaymentMode", required = true) String debitPaymentMode,
+            @RequestParam(value = "debitPaymentPlan", required = true) String debitPaymentPlan,
+            @RequestParam(value = "creditPaymentMode", required = true) String creditPaymentMode,
+            @RequestParam(value = "creditPaymentPlan", required = true) String creditPaymentPlan,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
 
@@ -336,9 +340,10 @@ public class MeterController {
             assign.setCity(city.trim());
             assign.setHouseNo(houseNo.trim());
             assign.setStreetName(streetName.trim());
-            assign.setPaymentMode(paymentMode.trim());
-            assign.setPaymentPlan(paymentPlan.trim());
-            assign.setPaymentType(paymentType.trim());
+            assign.setDebitPaymentMode(debitPaymentMode.trim());
+            assign.setDebitPaymentPlan(debitPaymentPlan.trim());
+            assign.setCreditPaymentMode(creditPaymentMode.trim());
+            assign.setCreditPaymentPlan(creditPaymentPlan.trim());
 
             if (image != null) {
                 String fileUrl = fileStorageService.saveFile(image);
@@ -597,7 +602,7 @@ public class MeterController {
 
             Object[] sampleData = {
                     "0048675416677","customer-id", "tariff test", "E3241", "E3241", "XXXXXXXXX",
-                    "Kwara", "Ilorin", "40", "Asa-dam", "monthly", "2", "credit/debit"
+                    "Kwara", "Ilorin", "40", "Asa-dam", "monthly", "2", "one-off", ""
             };
 
             for (int i = 0; i < sampleData.length; i++) {

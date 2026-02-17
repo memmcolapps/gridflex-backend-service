@@ -16,9 +16,10 @@ public class PaymentMode implements Serializable {
     private UUID meterId;
     private Boolean status;
     private String meterCategory;
-    private String paymentMode;
-    private String paymentPlan;
-    private String paymentType;
+    private String creditPaymentMode;
+    private String creditPaymentPlan;
+    private String debitPaymentMode;
+    private String debitPaymentPlan;
     private String migrationFrom;
     private String meterStage;
     private String description;
@@ -73,28 +74,36 @@ public class PaymentMode implements Serializable {
         this.meterCategory = meterCategory;
     }
 
-    public String getPaymentMode() {
-        return paymentMode == null ? paymentMode : paymentMode.trim();
+    public String getCreditPaymentMode() {
+        return creditPaymentMode;
     }
 
-    public void setPaymentMode(String paymentMode) {
-        this.paymentMode = paymentMode;
+    public void setCreditPaymentMode(String creditPaymentMode) {
+        this.creditPaymentMode = creditPaymentMode;
     }
 
-    public String getPaymentPlan() {
-        return paymentPlan == null ? paymentPlan : paymentPlan.trim();
+    public String getCreditPaymentPlan() {
+        return creditPaymentPlan;
     }
 
-    public void setPaymentPlan(String paymentPlan) {
-        this.paymentPlan = paymentPlan;
+    public void setCreditPaymentPlan(String creditPaymentPlan) {
+        this.creditPaymentPlan = creditPaymentPlan;
     }
 
-    public String getPaymentType() {
-        return paymentType == null ? paymentType : paymentType.toUpperCase().trim();
+    public String getDebitPaymentMode() {
+        return debitPaymentMode;
     }
 
-    public void setPaymentType(String paymentType) {
-        this.paymentType = paymentType;
+    public void setDebitPaymentMode(String debitPaymentMode) {
+        this.debitPaymentMode = debitPaymentMode;
+    }
+
+    public String getDebitPaymentPlan() {
+        return debitPaymentPlan;
+    }
+
+    public void setDebitPaymentPlan(String debitPaymentPlan) {
+        this.debitPaymentPlan = debitPaymentPlan;
     }
 
     public String getMigrationFrom() {

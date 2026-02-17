@@ -306,6 +306,17 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
+
+            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
+
+
+            System.out.print("iddd>>1: "+meter.getId());
+            System.out.print("iddd>>2: "+existingMeter.getId());
+
+            if(meter != null && !meter.getId().equals(existingMeter.getId())) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
+            }
+
             String MDDesc = "";
             String SmartDesc = "";
             String MeterDesc = "";
@@ -374,8 +385,9 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-            if (request.getPaymentMode() != null &&
-                    "Prepaid".equalsIgnoreCase(request.getMeterCategory())) {
+            if (request.getPaymentMode() != null
+                    && "Prepaid".equalsIgnoreCase(request.getMeterCategory())
+                    && existingMeter.getMeterStage().equalsIgnoreCase("Assigned")) {
 
                 UUID meterId = request.getId();
                 var payment = request.getPaymentMode();
@@ -386,44 +398,62 @@ public class MeterServiceImpl implements MeterService {
                 payment.setDescription("Pending edited");
                 payment.setMeterStage(meterStage);
 
-                String paymentType = payment.getPaymentType();
-                String paymentMode = payment.getPaymentMode();
-                String paymentPlan = payment.getPaymentPlan();
+//                String paymentType = payment.getPaymentType();
+                String creditPaymentMode = payment.getCreditPaymentMode();
+                String creditPaymentPlan = payment.getCreditPaymentPlan();
 
-                // Validate payment type
-                if (paymentType == null || paymentType.isBlank()) {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
-                }
+                String debitPaymentMode = payment.getDebitPaymentMode();
+                String debitPaymentPlan = payment.getDebitPaymentPlan();
 
-                if (!paymentType.equalsIgnoreCase("credit") &&
-                        !paymentType.equalsIgnoreCase("debit")) {
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Payment type (" + paymentType + ") is not supported");
-                }
+//                // Validate payment type
+//                if (paymentType == null || paymentType.isBlank()) {
+//                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
+//                }
+//
+//                if (!paymentType.equalsIgnoreCase("credit") &&
+//                        !paymentType.equalsIgnoreCase("debit")) {
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Payment type (" + paymentType + ") is not supported");
+//                }
 
                 // Validate payment mode
-                if (paymentMode == null) {
+                if ((debitPaymentMode == null || creditPaymentMode.isBlank()) && (creditPaymentMode == null || creditPaymentMode.isBlank())) {
                     throw new GlobalExceptionHandler.NotFoundException("Payment mode is required");
                 }
 
-                if (paymentMode.equalsIgnoreCase("one-off") ||
-                        paymentMode.equalsIgnoreCase("percentage")) {
+                assert debitPaymentMode != null;
+                if (debitPaymentMode.equalsIgnoreCase("one-off") ||
+                        debitPaymentMode.equalsIgnoreCase("percentage")) {
 
-                    payment.setPaymentPlan("");
+                    payment.setDebitPaymentPlan("");
 
-                } else if (paymentMode.equalsIgnoreCase("monthly")) {
+                } else if (creditPaymentMode.equalsIgnoreCase("one-off") ||
+                        creditPaymentMode.equalsIgnoreCase("percentage")) {
 
-                    if (paymentPlan == null || paymentPlan.isBlank()) {
-                        throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+                    payment.setCreditPaymentPlan("");
+
+                } else if (debitPaymentMode.equalsIgnoreCase("monthly")) {
+
+                    if (debitPaymentPlan == null || debitPaymentPlan.isBlank()) {
+                        throw new GlobalExceptionHandler.NotFoundException("Debit payment monthly plan is required");
                     }
 
-                } else if (paymentMode.equalsIgnoreCase("non")) {
+                } else if (creditPaymentMode.equalsIgnoreCase("monthly")) {
 
-                    payment.setPaymentPlan("");
+                    if (creditPaymentPlan == null || creditPaymentPlan.isBlank()) {
+                        throw new GlobalExceptionHandler.NotFoundException("Credit payment monthly plan is required");
+                    }
+                } else if (creditPaymentMode.equalsIgnoreCase("non")) {
 
-                } else {
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Payment mode (" + paymentMode + ") is not supported");
+                    payment.setCreditPaymentPlan("");
+
+                } else if (debitPaymentMode.equalsIgnoreCase("non")) {
+
+                    payment.setDebitPaymentPlan("");
+
+                }
+                else {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode is not supported");
                 }
 
                 payment.setStatus(true);
@@ -901,49 +931,93 @@ public class MeterServiceImpl implements MeterService {
 
                 //checking for one-off
 
-                System.out.print(">>>>PaymentMode: "+request.getPaymentMode());
+//                System.out.print(">>>>PaymentMode: "+request.getPaymentMode());
 
-                String paymentType = request.getPaymentType();
-                String paymentMode = request.getPaymentMode();
-                String paymentPlan = request.getPaymentPlan();
+                String creditPaymentPlan = request.getCreditPaymentPlan();
+                String creditPaymentMode = request.getCreditPaymentMode();
+                String debitPaymentPlan = request.getDebitPaymentPlan();
+                String debitPaymentMode = request.getDebitPaymentMode();
 
                 // Validate payment type
-                if (paymentType == null || paymentType.isBlank()) {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
-                }
+//                if (paymentType == null || paymentType.isBlank()) {
+//                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
+//                }
+//
+//                if (!paymentType.equalsIgnoreCase("credit") &&
+//                        !paymentType.equalsIgnoreCase("debit")) {
+//
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Payment type (" + paymentType + ") is not supported");
+//                }
 
-                if (!paymentType.equalsIgnoreCase("credit") &&
-                        !paymentType.equalsIgnoreCase("debit")) {
-
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Payment type (" + paymentType + ") is not supported");
-                }
-
+//                // Validate payment mode
+//                if (paymentMode == null || paymentMode.isBlank()) {
+//                    throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
+//                }
+//
+//                if (paymentMode.equalsIgnoreCase("one-off") ||
+//                        paymentMode.equalsIgnoreCase("percentage")) {
+//
+//                    request.setPaymentPlan("");
+//
+//                } else if (paymentMode.equalsIgnoreCase("monthly")) {
+//
+//                    if (paymentPlan == null || paymentPlan.isBlank()) {
+//                        throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+//                    }
+//
+//                } else if (paymentMode.equalsIgnoreCase("non")) {
+//
+//                    request.setPaymentPlan("");
+//
+//                } else {
+//
+//                    throw new GlobalExceptionHandler.NotFoundException(
+//                            "Payment mode (" + paymentMode + ") is not supported");
+//                }
                 // Validate payment mode
-                if (paymentMode == null || paymentMode.isBlank()) {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
+
+
+                if ((debitPaymentMode == null || creditPaymentMode.isBlank()) && (creditPaymentMode == null || creditPaymentMode.isBlank())) {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode is required");
                 }
 
-                if (paymentMode.equalsIgnoreCase("one-off") ||
-                        paymentMode.equalsIgnoreCase("percentage")) {
+                assert debitPaymentMode != null;
+                if (debitPaymentMode.equalsIgnoreCase("one-off") ||
+                        debitPaymentMode.equalsIgnoreCase("percentage")) {
 
-                    request.setPaymentPlan("");
+                    request.setDebitPaymentPlan("");
 
-                } else if (paymentMode.equalsIgnoreCase("monthly")) {
+                } else if (creditPaymentMode.equalsIgnoreCase("one-off") ||
+                        creditPaymentMode.equalsIgnoreCase("percentage")) {
 
-                    if (paymentPlan == null || paymentPlan.isBlank()) {
-                        throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
+                    request.setCreditPaymentPlan("");
+
+                } else if (debitPaymentMode.equalsIgnoreCase("monthly")) {
+
+                    if (debitPaymentPlan == null || debitPaymentPlan.isBlank()) {
+                        throw new GlobalExceptionHandler.NotFoundException("Debit payment monthly plan is required");
                     }
 
-                } else if (paymentMode.equalsIgnoreCase("non")) {
+                } else if (creditPaymentMode.equalsIgnoreCase("monthly")) {
 
-                    request.setPaymentPlan("");
+                    if (creditPaymentPlan == null || creditPaymentPlan.isBlank()) {
+                        throw new GlobalExceptionHandler.NotFoundException("Credit payment monthly plan is required");
+                    }
+                } else if (creditPaymentMode.equalsIgnoreCase("non")) {
 
-                } else {
+                    request.setCreditPaymentPlan("");
 
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Payment mode (" + paymentMode + ") is not supported");
+                } else if (debitPaymentMode.equalsIgnoreCase("non")) {
+
+                    request.setDebitPaymentPlan("");
+
                 }
+                else {
+                    throw new GlobalExceptionHandler.NotFoundException("Payment mode is not supported");
+                }
+
+//                request.setStatus(true);
                 int paymentModeResult = meterMapper.assignPaymentModeVersion(request);
 
                 if (paymentModeResult == 0) {
@@ -1251,22 +1325,25 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMigrationFrom().equalsIgnoreCase("postpaid") && meterById.getMeterCategory().equalsIgnoreCase("postpaid")){
                 desc = "Meter migration from postpaid to prepaid";
 
-                if(request.getPaymentMode() != null && (request.getPaymentType() == null
-                        || request.getPaymentType().isEmpty())){
-                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
-                } else if(!request.getPaymentType().equalsIgnoreCase("credit") ||
-                        !request.getPaymentType().equalsIgnoreCase("debit")){
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            "Payment type ("+request.getPaymentType()+") is not supported");
-                } else if(request.getPaymentMode().equalsIgnoreCase("one-off") &&
-                        request.getPaymentMode().equalsIgnoreCase("percentage")){
-                    request.setPaymentPlan("");
-                } else if(request.getPaymentMode().equalsIgnoreCase("monthly") &&
-                        request.getPaymentPlan() == null || request.getPaymentPlan().isEmpty()) {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
-                } else if(request.getPaymentMode().equalsIgnoreCase("non")) {
-                    request.setPaymentPlan("");
-                } else {
+                if(request.getDebitPaymentPlan().equalsIgnoreCase("one-off") &&
+                        request.getDebitPaymentPlan().equalsIgnoreCase("percentage")){
+                    request.setDebitPaymentPlan("");
+                } else if(request.getCreditPaymentPlan().equalsIgnoreCase("one-off") &&
+                        request.getCreditPaymentPlan().equalsIgnoreCase("percentage")){
+                    request.setCreditPaymentPlan("");
+                }
+                else if(request.getDebitPaymentMode().equalsIgnoreCase("monthly") &&
+                        request.getDebitPaymentPlan() == null || request.getDebitPaymentPlan().isBlank()) {
+                    throw new GlobalExceptionHandler.NotFoundException("Debit Payment monthly plan is required");
+                } else if(request.getCreditPaymentMode().equalsIgnoreCase("monthly") &&
+                        request.getCreditPaymentPlan() == null || request.getCreditPaymentPlan().isBlank()) {
+                    throw new GlobalExceptionHandler.NotFoundException("Credit Payment monthly plan is required");
+                } else if(request.getDebitPaymentMode().equalsIgnoreCase("non")) {
+                    request.setDebitPaymentPlan("");
+                } else if(request.getCreditPaymentMode().equalsIgnoreCase("non")) {
+                    request.setCreditPaymentPlan("");
+                }
+                else {
                     throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
                 }
 
@@ -1285,9 +1362,11 @@ public class MeterServiceImpl implements MeterService {
             } else if(request.getMigrationFrom().equalsIgnoreCase("prepaid") && meterById.getMeterCategory().equalsIgnoreCase("prepaid")){
                 desc = "Meter migration from prepaid to postpaid";
 
-                request.setPaymentMode(meterById.getPaymentMode().getPaymentMode());
-                request.setPaymentPlan(meterById.getPaymentMode().getPaymentPlan());
-                request.setPaymentType(meterById.getPaymentMode().getPaymentType());
+                request.setDebitPaymentMode(meterById.getPaymentMode().getDebitPaymentMode());
+                request.setDebitPaymentPlan(meterById.getPaymentMode().getDebitPaymentPlan());
+
+                request.setCreditPaymentMode(meterById.getPaymentMode().getCreditPaymentMode());
+                request.setCreditPaymentPlan(meterById.getPaymentMode().getCreditPaymentPlan());
 
                 meterMapper.updateMeterCategory(um.getOrgId(), request.getMeterId(), meterStage, meterById.getUpdatedAt());
 
@@ -3778,9 +3857,10 @@ public class MeterServiceImpl implements MeterService {
                     payment.setCreatedBy(user.getId());
                     payment.setDescription("Payment mode assigned");
                     payment.setMeterStage("Pending-assigned");
-                    payment.setPaymentMode(req.getPaymentMode());
-                    payment.setPaymentPlan(req.getPaymentPlan());
-                    payment.setPaymentType(req.getPaymentType());
+                    payment.setCreditPaymentMode(req.getCreditPaymentMode());
+                    payment.setCreditPaymentPlan(req.getCreditPaymentPlan());
+                    payment.setDebitPaymentMode(req.getDebitPaymentMode());
+                    payment.setDebitPaymentPlan(req.getDebitPaymentPlan());
                     validAssignPayment.add(payment);
                 }
                 validAssign.add(meter);
@@ -4437,9 +4517,10 @@ public class MeterServiceImpl implements MeterService {
                 meter.setCity(getStringCellValue(row.getCell(7)));
                 meter.setHouseNo(getStringCellValue(row.getCell(8)));
                 meter.setStreetName(getStringCellValue(row.getCell(9)));
-                meter.setPaymentMode(getStringCellValue(row.getCell(10)));
-                meter.setPaymentPlan(getStringCellValue(row.getCell(11)));
-                meter.setPaymentType(getStringCellValue(row.getCell(12)));
+                meter.setDebitPaymentMode(getStringCellValue(row.getCell(10)));
+                meter.setDebitPaymentPlan(getStringCellValue(row.getCell(11)));
+                meter.setCreditPaymentMode(getStringCellValue(row.getCell(12)));
+                meter.setCreditPaymentPlan(getStringCellValue(row.getCell(13)));
 
                 meters.add(meter);
             }
@@ -4467,9 +4548,10 @@ public class MeterServiceImpl implements MeterService {
                 meter.setCity(record.get("city"));
                 meter.setHouseNo(record.get("house number"));
                 meter.setStreetName(record.get("street name"));
-                meter.setPaymentMode(record.get("payment mode"));
-                meter.setPaymentPlan(record.get("payment plan"));
-                meter.setPaymentType(record.get("payment type"));
+                meter.setDebitPaymentMode(record.get("debit payment mode"));
+                meter.setDebitPaymentPlan(record.get("debit payment plan"));
+                meter.setCreditPaymentMode(record.get("credit payment mode"));
+                meter.setCreditPaymentPlan(record.get("credit payment plan"));
 
                 meters.add(meter);
             }

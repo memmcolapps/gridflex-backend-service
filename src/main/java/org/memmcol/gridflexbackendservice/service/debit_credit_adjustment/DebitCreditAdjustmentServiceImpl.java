@@ -277,8 +277,14 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             List<Meter> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
+            if(type.equalsIgnoreCase("debit")) {
+                allDebitCreditAdjustment = mapper.GetDebitAdjustment(um.getOrgId(), page,size);
+            } else if (type.equalsIgnoreCase("credit")){
+                allDebitCreditAdjustment = mapper.GetCreditAdjustment(um.getOrgId(), page,size);
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Type parameter (" + type + ") not supported");
+            }
 
-            allDebitCreditAdjustment = mapper.GetDebitCreditAdjustment(um.getOrgId(), type, page,size);
 
             List<Meter> filteredDebitCreditAdjustment =
                     allDebitCreditAdjustment.stream().toList();

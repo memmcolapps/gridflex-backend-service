@@ -137,12 +137,97 @@ public interface DebitCreditAdjustmentMapper {
 //    })
 //    List<DebitCreditAdjust> GetDebitCreditAdjustment(UUID orgId, String type, int page, int size);
 
+
     @Select("""
             <script>
                 SELECT DISTINCT m.*
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
                 WHERE c.org_id = #{orgId}
-                AND UPPER(c.type) = UPPER(#{type})
+                AND UPPER(c.type) = UPPER('credit')
+                <if test="size > 0">
+                    LIMIT #{size} OFFSET #{page}  * #{size}
+                </if>
+            </script>
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "debitCreditAdjustInfo", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchCreditAdjustmentById")),
+            @Result(property = "customer", column = "customer_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "payment", column = "id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
+
+    })
+    List<Meter> GetCreditAdjustment(UUID orgId, int page, int size);
+
+    @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "phoneNumber", column = "phone_number"),
+            @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "streetName", column = "street_name"),
+            @Result(property = "meterAssigned", column = "meter_assigned"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+        //share
+    Customer getByCustomerId(String customerId);
+
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = UPPER('credit') ")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "meter_id", property = "meterId"),
+            @Result(column = "debit", property = "amount"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "liabilityCause", column = "liability_cause_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLcById")),
+            @Result(property = "payment", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
+    })
+    List<DebitCreditAdjust> fetchCreditAdjustmentById(UUID id);
+
+
+
+
+
+
+
+
+
+    @Select("""
+            <script>
+                SELECT DISTINCT m.*
+                FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
+                WHERE c.org_id = #{orgId}
+                AND UPPER(c.type) = UPPER('debit')
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page}  * #{size}
                 </if>
@@ -179,25 +264,9 @@ public interface DebitCreditAdjustmentMapper {
 //                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
 
     })
-    List<Meter> GetDebitCreditAdjustment(UUID orgId, String type, int page, int size);
+    List<Meter> GetDebitAdjustment(UUID orgId, int page, int size);
 
-    @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "phoneNumber", column = "phone_number"),
-            @Result(property = "houseNo", column = "house_no"),
-            @Result(property = "streetName", column = "street_name"),
-            @Result(property = "meterAssigned", column = "meter_assigned"),
-            @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-    })
-        //share
-    Customer getByCustomerId(String customerId);
-
-    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id}")
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = UPPER('debit') ")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
