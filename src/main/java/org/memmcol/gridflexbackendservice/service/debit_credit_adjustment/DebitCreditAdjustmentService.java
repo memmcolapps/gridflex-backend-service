@@ -16,4 +16,6 @@ public interface DebitCreditAdjustmentService {
     Map<String, Object> reconcileDebt(UUID debitCreditAdjustmentId, String amount);
 
     Map<String, Object> getMeterAndLiabilityCause(String meterNumber, String accountNumber);
+
+    Map<String, Object> getDebitAdjustmentPaymentHistory(UUID meterId, UUID liabilityCauseId, String type);
 }

@@ -239,6 +239,35 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Override
+    public Map<String, Object> getDebitAdjustmentPaymentHistory(
+            UUID meterId, UUID liabilityCauseId, String type) {
+        try {
+
+            UserModel um = handleUserValidation();
+
+            List<DebitCreditAdjust> response;
+            // Ideally, this should be a dynamic query in the mapper layer
+            if(type.equalsIgnoreCase("debit") || type.equalsIgnoreCase("credit")) {
+                response = mapper.FetchDebitCreditAdjustmentById(meterId, liabilityCauseId, type, um.getOrgId());
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Type parameter (" + type + ") not supported");
+            }
+
+            if(type.equalsIgnoreCase("credit")){
+                return ResponseMap.response(status.getSuccessCode(),  credit + " "+status.getDesc(), response);
+            } else {
+                return ResponseMap.response(status.getSuccessCode(),  debit + " "+status.getDesc(), response);
+            }
+
+        } catch (Exception exception) {
+            log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Fetching debit adjustments service failed");
+            genericHandler.logAndSaveException(exception, "fetch debit adjustments");
+            throw exception;
+        }
+    }
+
 
     @Transactional(readOnly = true)
     @Override
@@ -246,14 +275,14 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             int page, int size, String customerId, String accountNumber,
             String customerName, String meterNumber, BigDecimal balance, String type) {
         try {
-            String db;
-            if("credit".equals(type) ){
-                db = credit;
-            } else if("debit".equalsIgnoreCase(type)){
-                db = debit;
-            } else {
-                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
-            }
+//            String db;
+//            if("credit".equals(type) ){
+//                db = credit;
+//            } else if("debit".equalsIgnoreCase(type)){
+//                db = debit;
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
+//            }
             UserModel um = handleUserValidation();
 
             // Build a unique cache key
