@@ -276,7 +276,7 @@ public interface DebitCreditAdjustmentMapper {
     })
     List<DebitCreditAdjust> fetchDebitAdjustmentById(UUID id);
 
-//    @Select("""
+    //    @Select("""
 //        SELECT
 //            meter_id,
 //            liability_cause_id,

@@ -39,14 +39,14 @@ public class Meter implements Serializable {
     private UUID dss;
     private String meterCategory;
     private String meterClass;
-//    private String meterModel;
+    //    private String meterModel;
     private String meterType;
     private UUID meterManufacturer;
     private String meterManufacturerName;
     private String meterStage;
     private String status;
     private String image;
-//    private String approveState;
+    //    private String approveState;
     private Boolean smartStatus;
     private String customerId;
     private String oldSgc;

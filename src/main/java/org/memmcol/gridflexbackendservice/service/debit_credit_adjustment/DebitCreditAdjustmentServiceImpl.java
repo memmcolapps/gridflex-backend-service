@@ -60,7 +60,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     private HttpServletRequest httpServletRequest;
 
     private final IMap<String, Object> debitCreditCache;
-//
+    //
     private final IMap<String, Object> auditCache;
 
     private String debit = "Debit Adjustment";
@@ -114,13 +114,13 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 //                    throw new GlobalExceptionHandler.NotFoundException(request.getType()+" adjustment failed");
 //                }
 //            } else {
-                request.setOrgId(um.getOrgId());
-                request.setStatus("UNPAID");
-                result = mapper.createDebitAdjustment(request);
+            request.setOrgId(um.getOrgId());
+            request.setStatus("UNPAID");
+            result = mapper.createDebitAdjustment(request);
 
-                if(result == 0){
-                    throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
-                }
+            if(result == 0){
+                throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
+            }
 //            }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
