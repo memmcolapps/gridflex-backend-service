@@ -15,9 +15,13 @@ public class DebitCreditPayment implements Serializable {
 
     @Id
     private UUID id;
+    private UUID parentId;
     private UUID orgId;
     private UUID creditDebitAdjId;
     private BigDecimal credit;
+    private BigDecimal debt;
+    private BigDecimal balance;
+    private BigDecimal outstandingBalance;
     private String paymentMethod;
     private UUID transId;
     private String paymentMode;
@@ -35,6 +39,14 @@ public class DebitCreditPayment implements Serializable {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(UUID parentId) {
+        this.parentId = parentId;
     }
 
     public UUID getOrgId() {
@@ -91,6 +103,30 @@ public class DebitCreditPayment implements Serializable {
 
     public void setPaymentMode(String paymentMode) {
         this.paymentMode = paymentMode;
+    }
+
+    public BigDecimal getDebt() {
+        return debt;
+    }
+
+    public void setDebt(BigDecimal debt) {
+        this.debt = debt;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
+    }
+
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
+    public BigDecimal getOutstandingBalance() {
+        return outstandingBalance;
+    }
+
+    public void setOutstandingBalance(BigDecimal outstandingBalance) {
+        this.outstandingBalance = outstandingBalance;
     }
 }
 
