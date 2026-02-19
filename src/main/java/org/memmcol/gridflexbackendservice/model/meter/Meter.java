@@ -14,7 +14,6 @@ import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeeder
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -40,14 +39,14 @@ public class Meter implements Serializable {
     private UUID dss;
     private String meterCategory;
     private String meterClass;
-//    private String meterModel;
+    //    private String meterModel;
     private String meterType;
     private UUID meterManufacturer;
     private String meterManufacturerName;
     private String meterStage;
     private String status;
     private String image;
-//    private String approveState;
+    //    private String approveState;
     private Boolean smartStatus;
     private String customerId;
     private String oldSgc;
@@ -60,7 +59,6 @@ public class Meter implements Serializable {
     private UUID approveBy;
     private String description;
     private String reason;
-    private BigDecimal outstandingBalance;
     private Customer customer;
     private MeterAssignLocation meterAssignLocation;
     private MDMeterInfo mdMeterInfo;
@@ -74,6 +72,7 @@ public class Meter implements Serializable {
     private Tariff tariffInfo;
     private FlatNode flatNode;
     private List<DebitCreditAdjust> debitCreditAdjustInfo;
+    private List<DebitCreditAdjust> debitCreditAdjust;
     private DebitCreditAdjustVersion debitCreditAdjustVersionInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -479,11 +478,11 @@ public class Meter implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public BigDecimal getOutstandingBalance() {
-        return outstandingBalance;
+    public List<DebitCreditAdjust> getDebitCreditAdjust() {
+        return debitCreditAdjust;
     }
 
-    public void setOutstandingBalance(BigDecimal outstandingBalance) {
-        this.outstandingBalance = outstandingBalance;
+    public void setDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjust) {
+        this.debitCreditAdjust = debitCreditAdjust;
     }
 }

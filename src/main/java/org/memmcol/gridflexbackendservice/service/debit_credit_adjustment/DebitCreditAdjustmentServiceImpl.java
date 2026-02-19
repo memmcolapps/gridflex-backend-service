@@ -60,7 +60,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     private HttpServletRequest httpServletRequest;
 
     private final IMap<String, Object> debitCreditCache;
-//
+    //
     private final IMap<String, Object> auditCache;
 
     private String debit = "Debit Adjustment";
@@ -122,6 +122,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
             }
 
+
             // 1. Save payment record
             DebitCreditPayment payment = new DebitCreditPayment();
             payment.setCreditDebitAdjId(request.getId());
@@ -134,6 +135,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             if(res == 0){
                 throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
             }
+//            }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
             um.setPassword("");
@@ -373,21 +375,20 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     }
 
 
-
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustments(
             int page, int size, String customerId, String accountNumber,
             String customerName, String meterNumber, BigDecimal balance, String type) {
         try {
-//            String db;
-//            if("credit".equals(type) ){
-//                db = credit;
-//            } else if("debit".equalsIgnoreCase(type)){
-//                db = debit;
-//            } else {
-//                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
-//            }
+            String db;
+            if("credit".equals(type) ){
+                db = credit;
+            } else if("debit".equalsIgnoreCase(type)){
+                db = debit;
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
+            }
             UserModel um = handleUserValidation();
 
             // Build a unique cache key
