@@ -1,0 +1,61 @@
+# =============================================================
+# HES Data Collection Scheduler — Application Configuration
+# =============================================================
+
+spring:
+  application:
+    name: hes-data-collection-scheduler
+
+  # ---- Database -------------------------------------------------------------
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hes_db
+    username: ${DB_USERNAME:hes_user}
+    password: ${DB_PASSWORD:hes_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 3
+      connection-timeout: 30000
+
+  # ---- JPA ------------------------------------------------------------------
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+        format_sql: true
+
+  # ---- Quartz ---------------------------------------------------------------
+  # We manage Quartz via QuartzConfig.java for full control over the JDBC store.
+  # Setting enabled=false here disables Spring Boot's auto-configured Quartz
+  # so our manual SchedulerFactoryBean takes over.
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never   # qrtz_* tables already exist in the DB
+    properties:
+      org.quartz.scheduler.instanceName: HESDataCollectionScheduler
+      org.quartz.scheduler.instanceId: AUTO
+
+# ---- Server -----------------------------------------------------------------
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# ---- Swagger / OpenAPI ------------------------------------------------------
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ---- Logging ----------------------------------------------------------------
+logging:
+  level:
+    com.hes.datacollection: DEBUG
+    org.quartz: INFO
+    org.springframework.web: INFO
