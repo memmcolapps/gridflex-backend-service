@@ -155,7 +155,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "assetId", column = "asset_id"),
+//            @Result(property = "assetId", column = "asset_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
 //            @Result(property = "nodeId", column = "node_id"),
@@ -283,6 +283,35 @@ public interface DebitCreditAdjustmentMapper {
     List<DebitCreditAdjust> FetchDebitCreditAdjustmentById(
             UUID meterId, UUID liabilityCauseId, String type, UUID orgId);
 
+    @Select("""
+        SELECT p.*,
+               adj_total.total_balance AS outstanding_balance
+        FROM credit_debit_payment p
+                 JOIN credit_debit_adjustment ca
+                      ON ca.id = p.credit_debit_adj_id
+                 JOIN (
+            SELECT id, SUM(balance) OVER () AS total_balance
+            FROM credit_debit_adjustment
+            WHERE meter_id = #{meterId}
+              AND org_id = #{orgId}
+              AND liability_cause_id = #{liabilityCauseId}
+              AND UPPER(type) = 'DEBIT'
+        ) adj_total
+                      ON adj_total.id = ca.id
+        WHERE UPPER(ca.type) = 'DEBIT';
+    """)
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "credit_debit_adj_id", property = "creditDebitAdjId"),
+            @Result(column = "parent_id", property = "parentId"),
+            @Result(column = "payment_method", property = "paymentMethod"),
+            @Result(column = "outstanding_balance", property = "outstandingBalance"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    List<DebitCreditPayment> FetchDebitCreditPaymentHistory(
+            UUID meterId, UUID liabilityCauseId, String type, UUID orgId);
+
 
     @Select("""
         SELECT
@@ -360,10 +389,12 @@ public interface DebitCreditAdjustmentMapper {
     Customer getCustomer(String customerId);
 
     @Update("UPDATE credit_debit_adjustment SET balance = #{newBalance}, status = #{status}, created_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
-    void updateReconciledDebt(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId, @Param("newBalance") BigDecimal newBalance, @Param("status") String status);
+    int updateReconciledDebt(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId, @Param("newBalance") BigDecimal newBalance, @Param("status") String status);
 
-    @Insert("INSERT INTO credit_debit_payment (credit_debit_adj_id, credit, created_at, org_id) VALUES (#{creditDebitAdjId}, #{credit}, #{createdAt}, #{orgId})")
-    void insertDebtCreditPayment(DebitCreditPayment payment);
+    @Insert("INSERT INTO credit_debit_payment (parent_id, credit_debit_adj_id, credit, debt, balance, created_at, org_id) " +
+            "VALUES (#{parentId}, #{creditDebitAdjId}, #{credit}, #{debt}, #{balance}, #{createdAt}, #{orgId})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertDebtCreditPayment(DebitCreditPayment payment);
 
     @Select("SELECT id, customer_id, meter_number, account_number FROM meters WHERE meter_number = #{meterNumber} AND org_id = #{orgId}")
     @Results({
@@ -476,4 +507,18 @@ public interface DebitCreditAdjustmentMapper {
                                @Param("orgId") UUID orgId,
                                @Param("balance") BigDecimal balance,
                                @Param("status") String status);
+
+    @Select("""
+        SELECT * FROM credit_debit_payment WHERE org_id = #{orgId} 
+                 AND credit_debit_adj_id = #{adjId} AND parent_id IS NULL
+    """)
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "credit_debit_adj_id", property = "creditDebitAdjId"),
+            @Result(column = "payment_method", property = "paymentMethod"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    DebitCreditPayment getPaymentById(UUID adjId, UUID orgId);
 }
