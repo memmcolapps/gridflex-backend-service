@@ -26,7 +26,7 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/hes/data-collection/schedules")
+@RequestMapping("/data-collection/schedules")
 @RequiredArgsConstructor
 @Tag(name = "Data Collection Scheduler",
         description = "Manage meter sync intervals and communication schedules (HES/Controls)")
