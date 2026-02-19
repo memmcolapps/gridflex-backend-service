@@ -59,12 +59,13 @@ public class DebitCreditAdjustment {
             return handleException(e);
         }
     }
+
     @GetMapping("/payment-history")
     public ResponseEntity<?> getDebitAdjustmentPaymentHistory(
             @RequestParam(value = "meterId", required = true) UUID meterId,
             @RequestParam(value = "liabilityCauseId", required = true) UUID liabilityCauseId,
             @RequestParam(value = "type", required = true) String type
-            ) {
+    ) {
         try {
             Map<String, Object> result = service.getDebitAdjustmentPaymentHistory(
                     meterId, liabilityCauseId, type);
