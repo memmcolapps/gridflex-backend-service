@@ -108,35 +108,6 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "updated_at", property = "updatedAt")
     })
     List<LiabilityCause> getLiabilityCause(UUID orgId);
-//
-//    @Select("""
-//            <script>
-//                SELECT *
-//                FROM credit_debit_adjustment
-//                WHERE org_id = #{orgId}
-//                AND type = #{type}
-//                <if test="size > 0">
-//                    LIMIT #{size} OFFSET #{page}  * #{size}
-//                </if>
-//            </script>
-//            """)
-//    @Results({
-//            @Result(column = "id", property = "id"),
-//            @Result(column = "org_id", property = "orgId"),
-//            @Result(column = "meter_id", property = "meterId"),
-//            @Result(column = "debit", property = "amount"),
-//            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
-//            @Result(column = "created_at", property = "createdAt"),
-//            @Result(column = "updated_at", property = "updatedAt"),
-//            @Result(property = "liabilityCause", column = "liability_cause_id",
-//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLcById")),
-//            @Result(property = "meter", column = "meter_id",
-//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
-//            @Result(property = "payment", column = "id",
-//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
-//    })
-//    List<DebitCreditAdjust> GetDebitCreditAdjustment(UUID orgId, String type, int page, int size);
-
 
     @Select("""
             <script>
@@ -155,23 +126,8 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
-//            @Result(property = "assetId", column = "asset_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "simNumber", column = "sim_number"),
-//            @Result(property = "meterStage", column = "meter_stage"),
-//            @Result(property = "smartStatus", column = "smart_status"),
-//            @Result(property = "fixedEnergy", column = "fixed_energy"),
-//            @Result(property = "meterCategory", column = "meter_category"),
-//            @Result(property = "meterClass", column = "meter_class"),
-//            @Result(property = "meterType", column = "meter_type"),
-//            @Result(property = "oldSgc", column = "old_sgc"),
-//            @Result(property = "newSgc", column = "new_sgc"),
-//            @Result(property = "oldKrn", column = "old_krn"),
-//            @Result(property = "newKrn", column = "new_krn"),
-//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
             @Result(property = "outstandingBalance", column = "outstanding_balance"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
@@ -215,6 +171,7 @@ public interface DebitCreditAdjustmentMapper {
     })
     List<DebitCreditAdjust> fetchCreditAdjustmentById(UUID id);
 
+    // get
     @Select("""
             <script>
                 SELECT DISTINCT m.*,
@@ -226,29 +183,14 @@ public interface DebitCreditAdjustmentMapper {
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page}  * #{size}
                 </if>
-            </script>
+            </script> 
             """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
-//            @Result(property = "assetId", column = "asset_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "simNumber", column = "sim_number"),
-//            @Result(property = "meterStage", column = "meter_stage"),
-//            @Result(property = "smartStatus", column = "smart_status"),
-//            @Result(property = "fixedEnergy", column = "fixed_energy"),
-//            @Result(property = "meterCategory", column = "meter_category"),
-//            @Result(property = "meterClass", column = "meter_class"),
-//            @Result(property = "meterType", column = "meter_type"),
-//            @Result(property = "oldSgc", column = "old_sgc"),
-//            @Result(property = "newSgc", column = "new_sgc"),
-//            @Result(property = "oldKrn", column = "old_krn"),
-//            @Result(property = "newKrn", column = "new_krn"),
-//            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
-//            @Result(property = "newTariffIndex", column = "new_tariff_index"),
             @Result(property = "outstandingBalance", column = "outstanding_balance"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
