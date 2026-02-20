@@ -288,10 +288,10 @@ public interface DebitCreditAdjustmentMapper {
             WHERE meter_id = #{meterId}
               AND org_id = #{orgId}
               AND liability_cause_id = #{liabilityCauseId}
-              AND UPPER(type) = 'DEBIT'
+              AND UPPER(type) = UPPER(#{type})
         ) adj_total
                       ON adj_total.id = ca.id
-        WHERE UPPER(ca.type) = 'DEBIT';
+        WHERE UPPER(ca.type) = UPPER(#{type});
     """)
     @Results({
             @Result(column = "id", property = "id"),

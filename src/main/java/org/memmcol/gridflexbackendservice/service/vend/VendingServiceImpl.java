@@ -361,7 +361,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new IllegalArgumentException("Invalid tariff rate");
             }
 
-            // ✅ Get strategy
+            // Get strategy
             PaymentStrategy strategy =
                     PaymentStrategyFactory.getStrategy(paymentMode, paymentType, paymentPlan);
 
