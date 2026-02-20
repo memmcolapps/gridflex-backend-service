@@ -21,14 +21,15 @@ public class DebitCreditAdjust implements Serializable {
     private UUID liabilityCauseId;
     private BigDecimal amount;
     private BigDecimal balance;
+    private BigDecimal totalBalance;
     private String status;
     private String type;
     private UUID orgId;
-    private BigDecimal grandTotal;
+    private BigDecimal outstandingBalance;
     private List<DebitCreditPayment> payment;
     private LiabilityCause liabilityCause;
     private List<Meter> meter;
-
+    private List<DebitCreditAdjust> debitCreditAdjustInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -113,6 +114,14 @@ public class DebitCreditAdjust implements Serializable {
         this.balance = balance;
     }
 
+    public BigDecimal getTotalBalance() {
+        return totalBalance;
+    }
+
+    public void setTotalBalance(BigDecimal totalBalance) {
+        this.totalBalance = totalBalance;
+    }
+
     public LiabilityCause getLiabilityCause() {
         return liabilityCause;
     }
@@ -145,11 +154,19 @@ public class DebitCreditAdjust implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public BigDecimal getGrandTotal() {
-        return grandTotal;
+    public BigDecimal getOutstandingBalance() {
+        return outstandingBalance;
     }
 
-    public void setGrandTotal(BigDecimal grandTotal) {
-        this.grandTotal = grandTotal;
+    public void setOutstandingBalance(BigDecimal outstandingBalance) {
+        this.outstandingBalance = outstandingBalance;
+    }
+
+    public List<DebitCreditAdjust> getDebitCreditAdjustInfo() {
+        return debitCreditAdjustInfo;
+    }
+
+    public void setDebitCreditAdjustInfo(List<DebitCreditAdjust> debitCreditAdjustInfo) {
+        this.debitCreditAdjustInfo = debitCreditAdjustInfo;
     }
 }
