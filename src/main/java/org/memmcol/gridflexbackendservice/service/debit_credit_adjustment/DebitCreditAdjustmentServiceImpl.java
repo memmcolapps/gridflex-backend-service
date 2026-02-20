@@ -239,6 +239,74 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Override
+    public Map<String, Object> getDebitAdjustmentPaymentHistory(
+            UUID meterId, UUID liabilityCauseId, String type) {
+
+        try {
+
+            UserModel um = handleUserValidation();
+
+            if (!type.equalsIgnoreCase("debit") &&
+                    !type.equalsIgnoreCase("credit")) {
+
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Type parameter (" + type + ") not supported"
+                );
+            }
+
+            List<DebitCreditPayment> response =
+                    mapper.FetchDebitCreditPaymentHistory(
+                            meterId,
+                            liabilityCauseId,
+                            type,
+                            um.getOrgId()
+                    );
+
+            // 🔥 Group root + children correctly
+            Map<UUID, List<DebitCreditPayment>> grouped = new LinkedHashMap<>();
+
+            for (DebitCreditPayment payment : response) {
+
+                UUID rootId;
+
+                // Case 1: Root record (parentId is null OR equals its own id)
+                if (payment.getParentId() == null ||
+                        payment.getParentId().equals(payment.getId())) {
+
+                    rootId = payment.getId();
+                }
+                // Case 2: Child record
+                else {
+                    rootId = payment.getParentId();
+                }
+
+                grouped
+                        .computeIfAbsent(rootId, k -> new ArrayList<>())
+                        .add(payment);
+            }
+
+            List<List<DebitCreditPayment>> groupedList =
+                    new ArrayList<>(grouped.values());
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    type + " " + status.getDesc(),
+                    groupedList
+            );
+
+        } catch (Exception exception) {
+
+            log.error("Error occurred while fetching debit/credit payment history: {}",
+                    exception.getMessage().trim(), exception);
+
+            genericHandler.logIncidentReport("Fetching debit/credit payment history failed");
+            genericHandler.logAndSaveException(exception, "fetch debit/credit payment history");
+
+            throw exception;
+        }
+    }
+
 
     @Transactional(readOnly = true)
     @Override
