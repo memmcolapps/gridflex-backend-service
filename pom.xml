@@ -153,6 +153,13 @@
             <version>11.11.2</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- Swagger / OpenAPI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <!--suppress UnresolvedMavenProperty -->
+            <version>2.3.0</version>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>

@@ -186,4 +186,8 @@ public class Schedule implements Serializable {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public enum ScheduleStatus {
+        ACTIVE, PAUSED
+    }
 }

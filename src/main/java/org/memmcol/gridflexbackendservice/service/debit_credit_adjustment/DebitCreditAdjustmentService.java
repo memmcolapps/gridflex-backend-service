@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface DebitCreditAdjustmentService {
     Map<String, Object> createDebitAdjustment(DebitCreditAdjust debitAdjustment);
-    
+
     Map<String, Object> getDebitAdjustment(UUID meterId, String type);
 
     Map<String, Object> getDebitAdjustments(int page, int size, String customerId, String accountNumber, String customerName, String meterNumber, BigDecimal balance, String type);
@@ -17,5 +17,5 @@ public interface DebitCreditAdjustmentService {
 
     Map<String, Object> getMeterAndLiabilityCause(String meterNumber, String accountNumber);
 
-    Map<String, Object> getDebitAdjustmentPaymentHistory(UUID meterId, UUID liabilityCauseId, String type);
+    Map<String, Object> getDebitAdjustmentPaymentHistory( UUID meterId, UUID liabilityCauseId, String type );
 }

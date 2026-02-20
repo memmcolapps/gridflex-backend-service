@@ -132,9 +132,11 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "debitCreditAdjustInfo", column = "id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchUniqueCreditAdjustmentById")),
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchCreditAdjustmentById")),
             @Result(property = "customer", column = "customer_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "payment", column = "id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
 
     })
     List<Meter> GetCreditAdjustment(UUID orgId, int page, int size);
@@ -152,7 +154,6 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
-        //share
     Customer getByCustomerId(String customerId);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = 'CREDIT' ")
@@ -173,7 +174,7 @@ public interface DebitCreditAdjustmentMapper {
 
     // get
     @Select("""
-            <script>
+           <script>
                 SELECT DISTINCT m.*,
                 SUM(SUM(c.balance)) OVER (PARTITION BY m.id) AS outstanding_balance
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
@@ -189,32 +190,27 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "accountNumber", column = "account_number"),
-            @Result(property = "outstandingBalance", column = "outstanding_balance"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "debitCreditAdjustInfo", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchDebitAdjustmentById")),
+            @Result(property = "debitCreditAdjust", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.fetchUniqueDebitAdjustmentById")),
             @Result(property = "customer", column = "customer_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+//            @Result(property = "payment", column = "id",
+//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
 
     })
     List<Meter> GetDebitAdjustment(UUID orgId, int page, int size);
 
-    @Select("SELECT c.*, " +
-            "SUM(c.balance) OVER (PARTITION BY c.meter_id, c.liability_cause_id, c.org_id) " +
-            "AS outstanding_balance " +
-            "FROM credit_debit_adjustment c WHERE meter_id = #{meterId} " +
-            "AND liability_cause_id = #{liabilityCauseId} AND org_id = #{orgId} " +
-            "AND UPPER(type) = UPPER(#{type}) ")
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND UPPER(type) = 'DEBIT' ")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "meter_id", property = "meterId"),
             @Result(column = "debit", property = "amount"),
-            @Result(column = "outstanding_balance", property = "outstandingBalance"),
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt"),
             @Result(property = "liabilityCause", column = "liability_cause_id",
@@ -254,14 +250,13 @@ public interface DebitCreditAdjustmentMapper {
     List<DebitCreditPayment> FetchDebitCreditPaymentHistory(
             UUID meterId, UUID liabilityCauseId, String type, UUID orgId);
 
-
     @Select("""
         SELECT
             meter_id,
             liability_cause_id,
             org_id,
-            SUM(balance) AS total_balance,
-            SUM(SUM(balance)) OVER (PARTITION BY meter_id) AS outstanding_balance
+            SUM(debit) AS total_debit,
+            SUM(SUM(debit)) OVER (PARTITION BY meter_id) AS grand_total
         FROM credit_debit_adjustment
         WHERE meter_id = #{id}
           AND UPPER(type) = 'DEBIT'
@@ -272,38 +267,12 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "org_id", property = "orgId"),
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "meter_id", property = "meterId"),
-            @Result(column = "total_balance", property = "totalBalance"),
-            @Result(column = "outstanding_balance", property = "outstandingBalance"),
+            @Result(column = "debit", property = "amount"),
+            @Result(column = "grandTotal", property = "grand_total"),
             @Result(column = "created_at", property = "createdAt"),
-            @Result(column = "updated_at", property = "updatedAt"),
-            @Result(property = "liabilityCause", column = "liability_cause_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLcById")),
+            @Result(column = "updated_at", property = "updatedAt")
     })
     List<DebitCreditAdjust> fetchUniqueDebitAdjustmentById(UUID id);
-
-    @Select("""
-        SELECT
-            meter_id,
-            liability_cause_id,
-            org_id,
-            SUM(balance) AS total_balance,
-            SUM(SUM(balance)) OVER (PARTITION BY meter_id) AS outstanding_balance
-        FROM credit_debit_adjustment
-        WHERE meter_id = #{id}
-          AND UPPER(type) = 'CREDIT'
-        GROUP BY meter_id, liability_cause_id, org_id
-    """)
-    @Results({
-            @Result(column = "id", property = "id"),
-            @Result(column = "org_id", property = "orgId"),
-            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
-            @Result(column = "meter_id", property = "meterId"),
-            @Result(column = "total_balance", property = "totalBalance"),
-            @Result(column = "outstanding_balance", property = "outstandingBalance"),
-            @Result(column = "created_at", property = "createdAt"),
-            @Result(column = "updated_at", property = "updatedAt"),
-    })
-    List<DebitCreditAdjust> fetchUniqueCreditAdjustmentById(UUID id);
 
 
     @Select("SELECT * FROM credit_debit_payment WHERE credit_debit_adj_id = #{debitCreditAdjustmentId}")
