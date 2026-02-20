@@ -121,6 +121,20 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
             }
+
+
+            // 1. Save payment record
+            DebitCreditPayment payment = new DebitCreditPayment();
+            payment.setCreditDebitAdjId(request.getId());
+            payment.setCredit(BigDecimal.ZERO);
+            payment.setBalance(request.getAmount());
+            payment.setDebt(request.getAmount());
+            payment.setOrgId(um.getOrgId());
+
+            int res = mapper.insertDebtCreditPayment(payment);
+            if(res == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
+            }
 //            }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
@@ -157,6 +171,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Debit Adjustment not found");
             }
 
+            if (debitCreditAdjust.getStatus().equalsIgnoreCase("PAID")) {
+                throw new GlobalExceptionHandler.NotFoundException("Customer have no debt");
+            }
 
             // Convert strings to BigDecimal for precise monetary calculation
             BigDecimal currentBalance = debitCreditAdjust.getBalance();
@@ -171,19 +188,37 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Payment exceeds current balance");
             }
 
+            BigDecimal returnBalance = debitCreditAdjust.getStatus().equalsIgnoreCase( "UNPAID")
+                    ? currentBalance.subtract(paymentAmount) : currentBalance;
+
+            DebitCreditPayment debitCreditPayment = mapper.getPaymentById(debitCreditAdjustmentId, um.getOrgId());
+
+            if (debitCreditPayment == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
+            }
+
             // 1. Save payment record
             DebitCreditPayment payment = new DebitCreditPayment();
+            payment.setParentId(debitCreditPayment.getId());
             payment.setCreditDebitAdjId(debitCreditAdjustmentId);
             payment.setCredit(paymentAmount);
+            payment.setBalance(returnBalance);
+            payment.setDebt(BigDecimal.ZERO);
             payment.setOrgId(um.getOrgId());
-            mapper.insertDebtCreditPayment(payment);
 
+            int res = mapper.insertDebtCreditPayment(payment);
+            if(res == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
+            }
             // 2. Update penalty balance
             BigDecimal newBalance = currentBalance.subtract(paymentAmount);
             String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "PAID" : "PARTIALLY_PAID";
 
             // Persist the updated values
-            mapper.updateReconciledDebt(debitCreditAdjustmentId, newBalance, newStatus);
+            int resp = mapper.updateReconciledDebt(debitCreditAdjustmentId, newBalance, newStatus);
+            if(resp == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
+            }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debitCreditAdjustmentId, um.getOrgId());
             String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
@@ -238,6 +273,38 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             throw exception;
         }
     }
+
+//    @Override
+//    public Map<String, Object> getDebitAdjustmentPaymentHistory(
+//            UUID meterId, UUID liabilityCauseId, String type) {
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//
+//            List<DebitCreditPayment> response;
+//            // Ideally, this should be a dynamic query in the mapper layer
+//            if(type.equalsIgnoreCase("debit") || type.equalsIgnoreCase("credit")) {
+//                response = mapper.FetchDebitCreditPaymentHistory(meterId, liabilityCauseId, type, um.getOrgId());
+//            } else {
+//                throw new GlobalExceptionHandler.NotFoundException("Type parameter (" + type + ") not supported");
+//            }
+//
+//            Map<String, Object> responseData = new HashMap<>();
+//
+//
+//            if(type.equalsIgnoreCase("credit")){
+//                return ResponseMap.response(status.getSuccessCode(),  credit + " "+status.getDesc(), response);
+//            } else {
+//                return ResponseMap.response(status.getSuccessCode(),  debit + " "+status.getDesc(), response);
+//            }
+//
+//        } catch (Exception exception) {
+//            log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
+//            genericHandler.logIncidentReport("Fetching debit adjustments service failed");
+//            genericHandler.logAndSaveException(exception, "fetch debit adjustments");
+//            throw exception;
+//        }
+//    }
 
     @Override
     public Map<String, Object> getDebitAdjustmentPaymentHistory(
