@@ -137,6 +137,7 @@ public interface MeterMapper {
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "tariff", column = "tariff"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "meterStage", column = "meter_stage"),
@@ -880,7 +881,8 @@ public interface MeterMapper {
                       AND m.meter_stage IN (
                             'Assigned',
                             'Unassigned',
-                            'Pending-assigned'
+                            'Pending-assigned',
+                            'Pending-edited'
                       )
                     ORDER BY m.created_at DESC
                     
@@ -965,6 +967,7 @@ public interface MeterMapper {
                     FROM meters m
                     WHERE m.org_id = #{orgId}
                       AND m.node_id IS NOT NULL
+                         AND m.dss IS NOT NULL
                       AND m.meter_stage IN (
                             'Assigned',
                             'Pending-detached',
