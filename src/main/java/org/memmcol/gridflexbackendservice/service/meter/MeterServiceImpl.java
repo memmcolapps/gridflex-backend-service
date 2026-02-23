@@ -2613,10 +2613,10 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // --- Edited (can behave similar to assigned) ---
-            if (!approvedEditedMeters.isEmpty()) {
-                desc = "Meter edit approved";
-                handleEditedMeters(approvedEditedMeters, user);
-            }
+//            if (!approvedEditedMeters.isEmpty()) {
+//                desc = "Meter edit approved";
+//                handleEditedMeters(approvedEditedMeters, user);
+//            }
 
             // --- Created ---
             if (!approvedCreatedMeters.isEmpty()) {
