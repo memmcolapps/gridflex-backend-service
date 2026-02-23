@@ -306,6 +306,10 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
+            if (existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
+                throw new GlobalExceptionHandler.NotFoundException("Assigned meter can not be edited");
+            }
+
             Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
 
             if(meter != null && !meter.getId().equals(existingMeter.getId())) {
