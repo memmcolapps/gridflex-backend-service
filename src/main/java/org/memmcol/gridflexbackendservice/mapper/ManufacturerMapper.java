@@ -56,7 +56,7 @@ public interface ManufacturerMapper {
                     "  <if test='manufacturerId != null'> manufacturer_id = #{manufacturerId},</if>"+
                     "  <if test='name != null'> name = #{name},</if>"+
                     "  <if test='contactPerson != null'> contact_person = #{contactPerson},</if>"+
-                    "  <if test='email != null'> email = #{email},</if>"+
+//                    "  <if test='email != null'> email = #{email},</if>"+
                     "  <if test='phoneNo != null'> phone_no = #{phoneNo},</if>"+
                     "  <if test='state != null'> state = #{state},</if>"+
                     "  <if test='city != null'> city = #{city},</if>"+
