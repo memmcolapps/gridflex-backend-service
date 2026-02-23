@@ -306,12 +306,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
 
-
             Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
-
-
-            System.out.print("iddd>>1: "+meter.getId());
-            System.out.print("iddd>>2: "+existingMeter.getId());
 
             if(meter != null && !meter.getId().equals(existingMeter.getId())) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
@@ -2618,10 +2613,10 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // --- Edited (can behave similar to assigned) ---
-            if (!approvedEditedMeters.isEmpty()) {
-                desc = "Meter edit approved";
-                handleEditedMeters(approvedEditedMeters, user);
-            }
+//            if (!approvedEditedMeters.isEmpty()) {
+//                desc = "Meter edit approved";
+//                handleEditedMeters(approvedEditedMeters, user);
+//            }
 
             // --- Created ---
             if (!approvedCreatedMeters.isEmpty()) {
@@ -3042,6 +3037,10 @@ public class MeterServiceImpl implements MeterService {
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
 
+        if (meters == null || meters.isEmpty()) {
+            throw new IllegalArgumentException("Meter list cannot be empty");
+        }
+
         List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
         Map<String, UUID> manufacturerNameToId = manufacturers.stream()
                 .collect(Collectors.toMap(
@@ -3049,6 +3048,12 @@ public class MeterServiceImpl implements MeterService {
                         Manufacturer::getId
                 ));
 
+        if(manufacturerNameToId.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    "Meters upload failed - manufacturer not found",
+                    result
+            );
+        }
 
         int successCount = 0;
 
@@ -3073,6 +3078,7 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+
         if (!failedRecords.isEmpty()) {
             throw new GlobalExceptionHandler.PartialFailureException(
                     failedRecords.size() + " of " + meters.size() + " Meters upload failed",
@@ -3090,6 +3096,13 @@ public class MeterServiceImpl implements MeterService {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void insertBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<GenericResp> failedRecords) {
         prepareMeters(batch, user, manufacturerNameToId, failedRecords);
+
+        // ABSOLUTE SAFETY CHECK
+        batch.removeIf(m -> m.getMeterManufacturer() == null);
+
+        if (batch.isEmpty()) {
+            return; // nothing valid to insert
+        }
 
         // Step 1: Insert main meters
         meterMapper.insertMeters(batch);
@@ -3192,7 +3205,6 @@ public class MeterServiceImpl implements MeterService {
                 resp.setData(meter.getMeterNumber());
 
                 failedRecords.add(resp);
-//                failedRecords.add(meter.getMeterNumber() + " (Missing manufacturer name)");
                 iterator.remove();
                 continue;
             }
@@ -3305,18 +3317,18 @@ public class MeterServiceImpl implements MeterService {
 
             for (CSVRecord record : csvParser) {
                 Meter meter = new Meter();
-                meter.setMeterNumber(record.get("meterNumber"));
-                meter.setSimNumber(record.get("simNumber"));
-                meter.setMeterCategory(record.get("meterCategory"));
-                meter.setMeterClass(record.get("meterClass"));
-                meter.setMeterManufacturerName(record.get("meterManufacturerName"));
-                meter.setMeterType(record.get("meterType"));
-                meter.setOldSgc(record.get("oldSgc"));
-                meter.setNewSgc(record.get("newSgc"));
-                meter.setOldKrn(record.get("oldKrn"));
-                meter.setNewKrn(record.get("newKrn"));
-                meter.setOldTariffIndex(Long.parseLong(record.get("oldTariffIndex")));
-                meter.setNewTariffIndex(Long.parseLong(record.get("newTariffIndex")));
+                meter.setMeterNumber(record.get("meterNumber".trim()));
+                meter.setSimNumber(record.get("simNumber".trim().trim()));
+                meter.setMeterCategory(record.get("meterCategory".trim()));
+                meter.setMeterClass(record.get("meterClass".trim()));
+                meter.setMeterManufacturerName(record.get("meterManufacturerName".trim()));
+                meter.setMeterType(record.get("meterType".trim()));
+                meter.setOldSgc(record.get("oldSgc".trim()));
+                meter.setNewSgc(record.get("newSgc".trim()));
+                meter.setOldKrn(record.get("oldKrn".trim()));
+                meter.setNewKrn(record.get("newKrn".trim()));
+                meter.setOldTariffIndex(Long.parseLong(record.get("oldTariffIndex".trim())));
+                meter.setNewTariffIndex(Long.parseLong(record.get("newTariffIndex".trim())));
 
                 boolean isSmart = Boolean.parseBoolean(record.get("smartStatus"));
                 meter.setSmartStatus(isSmart);
@@ -3326,28 +3338,28 @@ public class MeterServiceImpl implements MeterService {
                     if (meter.getSmartMeterInfo() == null) {
                         meter.setSmartMeterInfo(new SmartMeterInfo());
                     }
-                    meter.getSmartMeterInfo().setMeterModel(record.get("meterModel"));
-                    meter.getSmartMeterInfo().setProtocol(record.get("protocol"));
-                    meter.getSmartMeterInfo().setAuthentication(record.get("authentication"));
-                    meter.getSmartMeterInfo().setPassword(record.get("password"));
+                    meter.getSmartMeterInfo().setMeterModel(record.get("meterModel".trim()));
+                    meter.getSmartMeterInfo().setProtocol(record.get("protocol".trim()));
+                    meter.getSmartMeterInfo().setAuthentication(record.get("authentication".trim()));
+                    meter.getSmartMeterInfo().setPassword(record.get("password".trim()));
                 }
 
                 // Handle MD meter info (only if class matches certain type)
-                String meterClass = record.get("meterClass");
+                String meterClass = record.get("meterClass".trim());
                 if ("MD".equalsIgnoreCase(meterClass)) { // or whatever condition applies
                     if (meter.getMdMeterInfo() == null) {
                         meter.setMdMeterInfo(new MDMeterInfo());
                     }
-                    meter.getMdMeterInfo().setCtRatioNum(record.get("ctRatioNum"));
-                    meter.getMdMeterInfo().setCtRatioDenom(record.get("ctRatioDenom"));
-                    meter.getMdMeterInfo().setVoltRatioNum(record.get("voltRatioNum"));
-                    meter.getMdMeterInfo().setVoltRatioDenom(record.get("voltRatioDenom"));
-                    meter.getMdMeterInfo().setMultiplier(record.get("multiplier"));
-                    meter.getMdMeterInfo().setMeterRating(record.get("meterRating"));
-                    meter.getMdMeterInfo().setInitialReading(record.get("initialReading"));
-                    meter.getMdMeterInfo().setDial(record.get("dial"));
-                    meter.getMdMeterInfo().setLatitude(record.get("latitude"));
-                    meter.getMdMeterInfo().setLongitude(record.get("longitude"));
+                    meter.getMdMeterInfo().setCtRatioNum(record.get("ctRatioNum".trim()));
+                    meter.getMdMeterInfo().setCtRatioDenom(record.get("ctRatioDenom".trim()));
+                    meter.getMdMeterInfo().setVoltRatioNum(record.get("voltRatioNum".trim()));
+                    meter.getMdMeterInfo().setVoltRatioDenom(record.get("voltRatioDenom".trim()));
+                    meter.getMdMeterInfo().setMultiplier(record.get("multiplier".trim()));
+                    meter.getMdMeterInfo().setMeterRating(record.get("meterRating".trim()));
+                    meter.getMdMeterInfo().setInitialReading(record.get("initialReading".trim()));
+                    meter.getMdMeterInfo().setDial(record.get("dial".trim()));
+                    meter.getMdMeterInfo().setLatitude(record.get("latitude".trim()));
+                    meter.getMdMeterInfo().setLongitude(record.get("longitude".trim()));
                 }
 
                 meters.add(meter);

@@ -303,6 +303,7 @@ public interface DebtSettingMapper {
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
+            @Result(column = "band_id", property = "bandId"),
             @Result(column = "debt_percentage_id", property = "percentageId"),
             @Result(column = "approve_status", property = "approveStatus"),
             @Result(column = "amount_start_range", property = "amountStartRange"),
@@ -321,7 +322,7 @@ public interface DebtSettingMapper {
     int approvePercentageVersion(PercentageRange percentage);
 
     @Update("UPDATE debt_percentage SET percentage = #{percentage}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, " +
-            "amount_start_range = #{amountStartRange}, amount_end_range = #{amountEndRange} WHERE id = #{percentageId}")
+            "amount_start_range = #{amountStartRange}, amount_end_range = #{amountEndRange}, band_id = #{bandId}, WHERE id = #{percentageId}")
     int approvePercentage(PercentageRange percentage);
 
     @Update("UPDATE debt_percentage_version SET approve_status = #{approveStatus}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +

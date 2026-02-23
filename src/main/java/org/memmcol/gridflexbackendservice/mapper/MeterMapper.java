@@ -1957,6 +1957,12 @@ public interface MeterMapper {
             "    </foreach>",
             "  END,",
 
+            "  meter_number = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterNumber}",
+            "    </foreach>",
+            "  END,",
+
             "  node_id = CASE id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterId} THEN CAST(#{m.nodeId} AS uuid)",
