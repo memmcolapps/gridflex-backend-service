@@ -67,9 +67,9 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             UserModel um = handleUserValidation();
 
             // check if operator exist
-            Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId(), request.getEmail());
+            Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
             if (isManufacturer != null){
-                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+") or email ("+request.getEmail()+") " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+")" + status.getExistDesc());
             }
 
             request.setOrgId(um.getOrgId());
@@ -97,9 +97,6 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
         if(request.getName() == null || request.getName().isEmpty()){
             throw new GlobalExceptionHandler.NotFoundException("Name field is required");
-        }
-        if(request.getEmail() == null || request.getEmail().isEmpty()){
-            throw new GlobalExceptionHandler.NotFoundException("Email field is required");
         }
         if(request.getPhoneNo() == null || request.getPhoneNo().isEmpty()){
             throw new GlobalExceptionHandler.NotFoundException("Phone number field is required");
@@ -137,11 +134,10 @@ public class ManufacturerServiceImpl implements ManufacturerService {
                 throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " " + status.getNotFoundDesc());
             }
 
-            if(!isManufacturer.getName().equalsIgnoreCase(request.getName())
-                    || !isManufacturer.getEmail().equalsIgnoreCase(request.getEmail())){
-                Manufacturer m = manufacturerMapper.find(request.getName(), request.getEmail());
+            if(!isManufacturer.getName().equalsIgnoreCase(request.getName())){
+                Manufacturer m = manufacturerMapper.find(request.getName());
                 if (m != null){
-                    throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+") or email ("+request.getEmail()+") " + status.getExistDesc());
+                    throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+")" + status.getExistDesc());
                 }
             }
 

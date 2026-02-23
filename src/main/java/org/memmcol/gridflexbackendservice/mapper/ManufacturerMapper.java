@@ -9,7 +9,7 @@ import java.util.UUID;
 @Mapper
 public interface ManufacturerMapper {
 
-    @Select("SELECT * FROM manufacturers WHERE org_id = #{orgId} AND name = #{name} OR email = #{email} ")
+    @Select("SELECT * FROM manufacturers WHERE org_id = #{orgId} AND name = #{name}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "manufacturerId", column = "manufacturer_id"),
@@ -17,9 +17,9 @@ public interface ManufacturerMapper {
             @Result(property = "houseNo", column = "house_no"),
             @Result(property = "phoneNo", column = "phone_no")
     })
-    Manufacturer findByName(String name, UUID orgId, String email);
+    Manufacturer findByName(String name, UUID orgId);
 
-    @Select("SELECT * FROM manufacturers WHERE name = #{name} OR email = #{email} ")
+    @Select("SELECT * FROM manufacturers WHERE name = #{name} ")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "manufacturerId", column = "manufacturer_id"),
@@ -27,7 +27,7 @@ public interface ManufacturerMapper {
             @Result(property = "houseNo", column = "house_no"),
             @Result(property = "phoneNo", column = "phone_no")
     })
-    Manufacturer find(String name, String email);
+    Manufacturer find(String name);
 
     @Insert("INSERT INTO manufacturers (manufacturer_id, name, state, contact_person, email, phone_no, org_id, created_at, updated_at, city, street, house_no) " +
             "VALUES (#{manufacturerId}, #{name}, #{state}, #{contactPerson}, #{email}, #{phoneNo}, #{orgId}, #{createdAt}, #{updatedAt}, #{city}, #{street}, #{houseNo})")

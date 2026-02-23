@@ -21,7 +21,6 @@ public class Manufacturer implements Serializable {
     private String city;
     private String street;
     private String houseNo;
-    private String email;
     private String phoneNo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -74,14 +73,6 @@ public class Manufacturer implements Serializable {
 
     public void setContactPerson(String contactPerson) {
         this.contactPerson = contactPerson;
-    }
-
-    public String getEmail() {
-        return email == null ? email : email.trim();
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getPhoneNo() {

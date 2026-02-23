@@ -15,6 +15,9 @@ import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.meter.MDMeterInfo;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -450,16 +453,16 @@ public class CustomerServiceImpl implements CustomerService {
         ) {
             for (CSVRecord record : parser) {
                 Customer customer = buildCustomer(
-                        record.get("firstname"),
-                        record.get("lastname"),
-                        record.get("nin"),
-                        record.get("phoneNumber"),
-                        record.get("email"),
-                        record.get("state"),
-                        record.get("city"),
-                        record.get("houseNo"),
-                        record.get("streetName"),
-                        record.get("vat")
+                        record.get("firstname".trim()),
+                        record.get("lastname".trim()),
+                        record.get("nin".trim()),
+                        record.get("phoneNumber".trim()),
+                        record.get("email".trim()),
+                        record.get("state".trim()),
+                        record.get("city".trim()),
+                        record.get("houseNo".trim()),
+                        record.get("streetName".trim()),
+                        record.get("vat".trim())
                 );
                 customerConsumer.accept(customer);
             }
