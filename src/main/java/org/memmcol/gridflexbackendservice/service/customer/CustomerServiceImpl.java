@@ -49,7 +49,6 @@ import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
-import static org.memmcol.gridflexbackendservice.service.meter.MeterServiceImpl.getStringCellValue;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
