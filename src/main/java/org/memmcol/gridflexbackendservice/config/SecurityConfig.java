@@ -296,7 +296,8 @@ public class  SecurityConfig {
 						basePath + "/service/reports/summary",
 						basePath + "/service/trigger/daily",
 						basePath + "/service/trigger/monthly",
-						basePath + "/band/service/clear-cache"
+						basePath + "/band/service/clear-cache",
+						basePath + "/data-collection/schedules/**"
 				).permitAll()
 				.requestMatchers(
 						basePath + "/band/service/create",

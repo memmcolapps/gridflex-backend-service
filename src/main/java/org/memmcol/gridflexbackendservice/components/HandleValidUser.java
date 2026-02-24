@@ -23,7 +23,7 @@ public class HandleValidUser {
 
     public static UserModel handleUserValidation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = "Unknown";
+        String username = "";
 
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
@@ -31,6 +31,8 @@ public class HandleValidUser {
         }
 
         UserModel user = staticOperatorMapper.findAuthByUserEmail(username);
+
+        System.out.println("user info: " + user.getFirstname());
 
         if (user == null) {
             throw new UsernameNotFoundException("User not found");

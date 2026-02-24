@@ -33,7 +33,7 @@ public interface SchedulerJobInfoRepository extends JpaRepository<SchedulerJobIn
      */
     @Query("""
             SELECT j FROM SchedulerJobInfo j
-            WHERE j.jobGroup = 'DATA_COLLECTION'
+            WHERE (j.jobGroup = 'DATA_COLLECTION' or j.jobGroup = 'profiles')
               AND (:orgId IS NULL   OR j.orgId   = :orgId)
               AND (:status IS NULL  OR j.jobStatus = :status)
               AND (:search IS NULL  OR :search = ''
@@ -64,7 +64,7 @@ public interface SchedulerJobInfoRepository extends JpaRepository<SchedulerJobIn
     @Query("""
             SELECT COUNT(j) > 0 FROM SchedulerJobInfo j
             WHERE LOWER(j.name) = LOWER(:name)
-              AND j.jobGroup = 'DATA_COLLECTION'
+              AND (j.jobGroup = 'DATA_COLLECTION' or j.jobGroup = 'profiles')
               AND (:orgId IS NULL OR j.orgId = :orgId)
               AND j.jobId <> :excludeId
             """)
@@ -81,7 +81,7 @@ public interface SchedulerJobInfoRepository extends JpaRepository<SchedulerJobIn
     @Query("""
             SELECT COUNT(j) > 0 FROM SchedulerJobInfo j
             WHERE LOWER(j.name) = LOWER(:name)
-              AND j.jobGroup = 'DATA_COLLECTION'
+              AND (j.jobGroup = 'DATA_COLLECTION' or j.jobGroup = 'profiles')
               AND (:orgId IS NULL OR j.orgId = :orgId)
               AND j.jobId <> :excludeId
             """)

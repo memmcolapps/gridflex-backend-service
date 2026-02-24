@@ -59,7 +59,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				"/service/trigger/daily",
 				"/service/trigger/monthly",
 				"/band/service/clear-cache",
-                "/auth/service/test"
+                "/auth/service/test",
+                "/data-collection/schedules"
 //				"/meter/service/virtual/export",
 //				"/meter/service/export"
 		);
@@ -135,6 +136,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                     filterChain.doFilter(request, response);
 
                 } catch (JWTVerificationException exception) {
+                    log.error("JWT Verification Exception caught", exception);
                     String errorMessage;
                     if (exception.getMessage().contains("expired")) {
                         errorMessage = "Authorization Token Expired";
@@ -146,6 +148,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
                     handleException(response, exception, errorMessage, HttpServletResponse.SC_FORBIDDEN);
                 } catch (Exception exception) {
+                    log.error("Unexpected exception", exception);
                     handleException(response, exception, "Internal Server Error", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 }
             } else {
