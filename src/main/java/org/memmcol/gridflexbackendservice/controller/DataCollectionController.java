@@ -3,19 +3,19 @@ package org.memmcol.gridflexbackendservice.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.memmcol.gridflexbackendservice.model.hes.scheduler.dto.ApiResponse;
 import org.memmcol.gridflexbackendservice.model.hes.scheduler.dto.PagedResponse;
 import org.memmcol.gridflexbackendservice.model.hes.scheduler.dto.SyncScheduleRequest;
 import org.memmcol.gridflexbackendservice.model.hes.scheduler.dto.SyncScheduleResponse;
 import org.memmcol.gridflexbackendservice.service.hes.DataCollectionService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.memmcol.gridflexbackendservice.util.ResponseMap;
+import org.memmcol.gridflexbackendservice.util.StatusConstants;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -33,30 +33,38 @@ import java.util.UUID;
 public class DataCollectionController {
 
     private final DataCollectionService service;
+    private final StatusConstants status;
 
     // =========================================================================
     // CREATE
     // =========================================================================
 
     @PostMapping
-    @Operation(summary = "Create a new sync schedule",
-            description = "Inserts a row into scheduler_job_info. AMI Core will pick it up and schedule the Quartz job.")
-    public ResponseEntity<ApiResponse<SyncScheduleResponse>> createSchedule(
-            @Valid @RequestBody SyncScheduleRequest request) {
+    @Operation(summary = "Create a new sync schedule")
+    public Map<String, Object> createSchedule(@Valid @RequestBody SyncScheduleRequest request) {
+        try {
+            log.info("Creating data collection schedule: {}", request.getEventProfileType());
 
-        SyncScheduleResponse response = service.createSchedule(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Sync schedule created successfully"));
+            SyncScheduleResponse response = service.createSchedule(request);
+
+            return ResponseMap.response(
+                    status.getRegCode(),
+                    "Data Collection Schedule " + status.getRegDesc(),
+                    response
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while creating schedule: {}", exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     // =========================================================================
     // READ
     // =========================================================================
 
-    @GetMapping
+    @GetMapping("/all/schedules")
     @Operation(summary = "List all Data Collection schedules with search, filter, and pagination")
-    public ResponseEntity<ApiResponse<PagedResponse<SyncScheduleResponse>>> getAllSchedules(
+    public Map<String, Object> getAllSchedules(
 
             @Parameter(description = "Search by event/profile type, description, or OBIS codes")
             @RequestParam(required = false) String search,
@@ -79,18 +87,40 @@ public class DataCollectionController {
             @Parameter(description = "Sort direction: asc or desc")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        PagedResponse<SyncScheduleResponse> result =
-                service.getAllSchedules(search, status, orgId, page, size, sortBy, sortDir);
+        try {
+            log.info("Fetching all schedules - page: {}, size: {}, search: {}", page, size, search);
 
-        return ResponseEntity.ok(ApiResponse.success(result));
+            PagedResponse<SyncScheduleResponse> result =
+                    service.getAllSchedules(search, status, orgId, page, size, sortBy, sortDir);
+
+            return ResponseMap.response(
+                    this.status.getGetCode(),
+                    "Data Collection Schedules " + this.status.getGetDesc(),
+                    result
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching schedules: {}", exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     @GetMapping("/{jobId}")
     @Operation(summary = "Get a single sync schedule by job ID")
-    public ResponseEntity<ApiResponse<SyncScheduleResponse>> getScheduleById(
-            @PathVariable Long jobId) {
+    public Map<String, Object> getScheduleById(@PathVariable Long jobId) {
+        try {
+            log.info("Fetching schedule by jobId: {}", jobId);
 
-        return ResponseEntity.ok(ApiResponse.success(service.getScheduleById(jobId)));
+            SyncScheduleResponse response = service.getScheduleById(jobId);
+
+            return ResponseMap.response(
+                    status.getGetCode(),
+                    "Data Collection Schedule " + status.getGetDesc(),
+                    response
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching schedule {}: {}", jobId, exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     // =========================================================================
@@ -98,14 +128,25 @@ public class DataCollectionController {
     // =========================================================================
 
     @PutMapping("/{jobId}")
-    @Operation(summary = "Update an existing sync schedule",
-            description = "Updates scheduler_job_info. AMI Core will detect the change and refresh the Quartz trigger.")
-    public ResponseEntity<ApiResponse<SyncScheduleResponse>> updateSchedule(
+    @Operation(summary = "Update an existing sync schedule")
+    public Map<String, Object> updateSchedule(
             @PathVariable Long jobId,
             @Valid @RequestBody SyncScheduleRequest request) {
 
-        SyncScheduleResponse response = service.updateSchedule(jobId, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Sync schedule updated successfully"));
+        try {
+            log.info("Updating schedule jobId: {}", jobId);
+
+            SyncScheduleResponse response = service.updateSchedule(jobId, request);
+
+            return ResponseMap.response(
+                    status.getUpdateCode(),
+                    "Data Collection Schedule " + status.getUpdateDesc(),
+                    response
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while updating schedule {}: {}", jobId, exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     // =========================================================================
@@ -113,26 +154,45 @@ public class DataCollectionController {
     // =========================================================================
 
     @PatchMapping("/{jobId}/toggle-status")
-    @Operation(summary = "Toggle schedule status between ACTIVE and PAUSED",
-            description = "Updates job_status in scheduler_job_info. AMI Core will pause/resume the job accordingly.")
-    public ResponseEntity<ApiResponse<SyncScheduleResponse>> toggleStatus(
-            @PathVariable Long jobId) {
+    @Operation(summary = "Toggle schedule status between ACTIVE and PAUSED")
+    public Map<String, Object> toggleStatus(@PathVariable Long jobId) {
+        try {
+            log.info("Toggling status for schedule jobId: {}", jobId);
 
-        SyncScheduleResponse response = service.toggleStatus(jobId);
-        return ResponseEntity.ok(
-                ApiResponse.success(response, "Schedule status changed to " + response.getStatus()));
+            SyncScheduleResponse response = service.toggleStatus(jobId);
+
+            return ResponseMap.response(
+                    status.getUpdateCode(),
+                    "Data Collection Schedule Status " + status.getUpdateDesc(),
+                    response
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while toggling status for schedule {}: {}", jobId, exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     @PatchMapping("/bulk/status")
     @Operation(summary = "Bulk update status for multiple schedules")
-    public ResponseEntity<ApiResponse<List<SyncScheduleResponse>>> bulkUpdateStatus(
+    public Map<String, Object> bulkUpdateStatus(
             @RequestParam List<Long> jobIds,
             @Parameter(description = "Target status: ACTIVE or PAUSED")
             @RequestParam String status) {
 
-        List<SyncScheduleResponse> responses = service.bulkSetStatus(jobIds, status);
-        return ResponseEntity.ok(ApiResponse.success(responses,
-                "Bulk status updated to " + status + " for " + responses.size() + " schedules"));
+        try {
+            log.info("Bulk updating status for {} schedules to: {}", jobIds.size(), status);
+
+            List<SyncScheduleResponse> responses = service.bulkSetStatus(jobIds, status);
+
+            return ResponseMap.response(
+                    this.status.getUpdateCode(),
+                    "Bulk Status " + this.status.getUpdateDesc() + " for " + responses.size() + " schedules",
+                    responses
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred during bulk status update: {}", exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     // =========================================================================
@@ -140,18 +200,40 @@ public class DataCollectionController {
     // =========================================================================
 
     @DeleteMapping("/{jobId}")
-    @Operation(summary = "Delete a sync schedule",
-            description = "Removes the row from scheduler_job_info. AMI Core will unregister the Quartz job.")
-    public ResponseEntity<ApiResponse<Void>> deleteSchedule( @PathVariable Long jobId) {
-        service.deleteSchedule(jobId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Schedule deleted successfully"));
+    @Operation(summary = "Delete a sync schedule")
+    public Map<String, Object> deleteSchedule(@PathVariable Long jobId) {
+        try {
+            log.info("Deleting schedule jobId: {}", jobId);
+
+            service.deleteSchedule(jobId);
+
+            return ResponseMap.response(
+                    status.getDelCode(),
+                    "Data Collection Schedule " + status.getDelDesc(),
+                    null
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred while deleting schedule {}: {}", jobId, exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     @DeleteMapping("/bulk")
     @Operation(summary = "Bulk delete sync schedules")
-    public ResponseEntity<ApiResponse<Void>> bulkDelete(@RequestParam List<Long> jobIds) {
-        service.bulkDeleteSchedules(jobIds);
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "Successfully deleted " + jobIds.size() + " schedules"));
+    public Map<String, Object> bulkDelete(@RequestParam List<Long> jobIds) {
+        try {
+            log.info("Bulk deleting {} schedules", jobIds.size());
+
+            service.bulkDeleteSchedules(jobIds);
+
+            return ResponseMap.response(
+                    status.getDelCode(),
+                    jobIds.size() + " Data Collection Schedules " + status.getDelDesc(),
+                    null
+            );
+        } catch (Exception exception) {
+            log.error("Error occurred during bulk delete: {}", exception.getMessage(), exception);
+            throw exception;
+        }
     }
 }
