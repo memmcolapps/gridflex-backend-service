@@ -8,8 +8,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
@@ -48,6 +49,7 @@ import java.util.stream.Stream;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
+import static org.memmcol.gridflexbackendservice.service.meter.MeterServiceImpl.getStringCellValue;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -390,7 +392,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (filename.endsWith(".csv")) {
             parseCSV(file, customerConsumer);
         } else if (filename.endsWith(".xlsx")) {
-            parseExcel(file, customerConsumer);
+            parseExcel(file.getInputStream());
         } else {
             throw new IllegalArgumentException("Unsupported file type");
         }
@@ -469,23 +471,65 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    public void parseExcel(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
-        try {
-            OPCPackage pkg = OPCPackage.open(file.getInputStream());
-            XSSFReader reader = new XSSFReader(pkg);
-            InputStream sheetStream = reader.getSheetsData().next(); // Only first sheet
 
-            XMLReader parser = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
-            parser.setContentHandler(new ExcelSheetHandler(customerConsumer));
+    public static List<Customer> parseExcel(InputStream inputStream) throws IOException {
+        List<Customer> customers = new ArrayList<>();
 
-            parser.parse(new InputSource(sheetStream));
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
 
-            sheetStream.close();
-            pkg.close();
-        } catch (Exception e) {
-            throw new IOException("Error while parsing Excel file", e);
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                Customer cust = new Customer();
+
+                cust.setFirstname(getStringCellValue(row.getCell(0)).trim());
+                cust.setLastname(getStringCellValue(row.getCell(1)).trim());
+                cust.setNin(getStringCellValue(row.getCell(2)).trim());
+                cust.setPhoneNumber(getStringCellValue(row.getCell(3)).trim());
+                cust.setEmail(getStringCellValue(row.getCell(4)).trim());
+                cust.setState(getStringCellValue(row.getCell(5)).trim());
+                cust.setCity(getStringCellValue(row.getCell(7)).trim());
+                cust.setHouseNo(getStringCellValue(row.getCell(8)).trim());
+                cust.setStreetName(getStringCellValue(row.getCell(9)).trim());
+                cust.setVat(getStringCellValue(row.getCell(10)).trim());
+
+
+                customers.add(cust);
+            }
         }
+        return customers;
     }
+
+    private static String getStringCellValue(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
+    }
+
+
+//    public void parseExcel(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
+//        try {
+//            OPCPackage pkg = OPCPackage.open(file.getInputStream());
+//            XSSFReader reader = new XSSFReader(pkg);
+//            InputStream sheetStream = reader.getSheetsData().next(); // Only first sheet
+//
+//            XMLReader parser = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+//            parser.setContentHandler(new ExcelSheetHandler(customerConsumer));
+//
+//            parser.parse(new InputSource(sheetStream));
+//
+//            sheetStream.close();
+//            pkg.close();
+//        } catch (Exception e) {
+//            throw new IOException("Error while parsing Excel file", e);
+//        }
+//    }
 
 
     private String extractErrorMessage(Exception e) {
