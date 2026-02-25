@@ -30,6 +30,8 @@ public class Meter implements Serializable {
     private UUID nodeId;
     private UUID meterId;
     private String assetId;
+    private String dssAssetId;
+    private String feederAssetId;
     private String meterNumber;
     private String accountNumber;
     private String simNumber;
@@ -125,6 +127,22 @@ public class Meter implements Serializable {
 
     public void setAssetId(String assetId) {
         this.assetId = assetId;
+    }
+
+    public String getDssAssetId() {
+        return dssAssetId;
+    }
+
+    public void setDssAssetId(String dssAssetId) {
+        this.dssAssetId = dssAssetId;
+    }
+
+    public String getFeederAssetId() {
+        return feederAssetId;
+    }
+
+    public void setFeederAssetId(String feederAssetId) {
+        this.feederAssetId = feederAssetId;
     }
 
     public String getMeterNumber() {
