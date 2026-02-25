@@ -83,18 +83,16 @@ public interface MeterMapper {
     @Update({
             "<script>",
             "UPDATE meter_assign_locations",
-            "SET " +
-                    " <if test='state != null'> state = #{state},</if>" +
-                    " <if test='city != null'> city = #{city},</if>" +
-                    " <if test='house_no != null'> house_no = #{house_no},</if>" +
-                    " <if test='streetName != null'> street_name = #{streetName},</if>" +
-                    " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>" +
-                    " <if test='createdBy != null'> created_by = #{createdBy},</if>" +
-                    " <if test='description != null'> description = #{description},</if>" +
-                    " <if test='createdAt != null'> created_at = #{createdAt},</if>" +
-                    " <if test='updatedAt != null'> updatedAt = #{updatedAt},</if>" +
-                    " WHERE meter_id = #{meter_id} AND org_id = #{orgId}" +
-                    "</script>"
+            "<set>",
+            "   <if test='state != null'> state = #{state}, </if>",
+            "   <if test='city != null'> city = #{city}, </if>",
+            "   <if test='houseNo != null'> house_no = #{houseNo}, </if>",
+            "   <if test='streetName != null'> street_name = #{streetName}, </if>",
+            "   <if test='updatedAt != null'> updated_at = #{updatedAt}, </if>",
+            "</set>",
+            "WHERE meter_id = #{meterId}",
+            "AND org_id = #{orgId}",
+            "</script>"
     })
     int updateMeterLocation(MeterAssignLocation request);
 
@@ -232,6 +230,7 @@ public interface MeterMapper {
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "smartStatus", column = "smart_status"),
@@ -407,23 +406,11 @@ public interface MeterMapper {
             "<set>",
 
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
-            " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
-            " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
-            " <if test='simNumber != null'> sim_number = #{simNumber}, </if>",
-            " <if test='meterType != null'> meter_type = #{meterType}, </if>",
+            " <if test='accountNumber != null'> account_number = #{accountNumber}, </if>",
             " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
             " <if test='dss != null'> dss = #{dss}, </if>",
             " <if test='cin != null'> cin = #{cin}, </if>",
-            " <if test='fixedEnergy != null'> fixed_energy = #{fixedEnergy}, </if>",
             " <if test='tariff != null'> tariff = #{tariff}, </if>",
-            " <if test='oldSgc != null'> old_sgc = #{oldSgc}, </if>",
-            " <if test='newSgc != null'> new_sgc = #{newSgc}, </if>",
-            " <if test='oldKrn != null'> old_krn = #{oldKrn}, </if>",
-            " <if test='newKrn != null'> new_krn = #{newKrn}, </if>",
-            " <if test='oldTariffIndex != null'> old_tariff_index = #{oldTariffIndex}, </if>",
-            " <if test='newTariffIndex != null'> new_tariff_index = #{newTariffIndex}, </if>",
-            " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
-            " <if test='image != null'> image = #{image}, </if>",
             " updated_at = #{updatedAt}, ",
 
             "</set>",
@@ -438,7 +425,6 @@ public interface MeterMapper {
             "<set>",
 
             " <if test='meterNumber != null'> meter_number = #{meterNumber}, </if>",
-            " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
             " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
@@ -1474,7 +1460,7 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, meter_stage, description, created_by) " +
             "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, #{meterStage}, #{description}, #{createdBy})")
-    void assignVerMeterToLocation(MeterAssignLocation request);
+    int assignVerMeterToLocation(MeterAssignLocation request);
 
     @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
             "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
@@ -2677,4 +2663,15 @@ public interface MeterMapper {
             @Param("list") List<DebitCreditAdjustVersion> list);
 
 
+    @Select("SELECT * FROM manufacturers WHERE org_id = #{orgId} AND id = #{id}")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "manufacturerId", column = "manufacturer_id"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "phoneNo", column = "phone_no"),
+            @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Manufacturer findManufacturerById(UUID id, UUID orgId);
 }
