@@ -23,7 +23,6 @@ import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeeder
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
-import org.memmcol.gridflexbackendservice.service.customer.CustomerServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -56,7 +55,7 @@ import static org.memmcol.gridflexbackendservice.components.HandleValidUser.hand
 
 @Service
 public class MeterServiceImpl implements MeterService {
-    private static final Logger log = LoggerFactory.getLogger(CustomerServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(MeterServiceImpl.class);
 
     @Autowired
     private ResponseProperties status;
@@ -596,7 +595,7 @@ public class MeterServiceImpl implements MeterService {
 //             response.put("totalPages", totalPages);
 
             response.put("totalPages", (int) Math.ceil((double) totalMeters / size));
-  
+
 
 //            userCache.put(cacheKey, response);
 
@@ -3202,7 +3201,7 @@ public class MeterServiceImpl implements MeterService {
 
             // --- Validate and set Manufacturer ID ---
             String manuName = meter.getMeterManufacturerName();
-            if (manuName == null || manuName.trim().isEmpty()) {
+            if (manuName == null || manuName.trim().isBlank()) {
                 GenericResp resp = new GenericResp();
                 resp.setId(meter.getMeterId().toString());
                 resp.setMessage("Missing manufacturer name");

@@ -24,6 +24,7 @@ import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
+import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -31,7 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +47,7 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -353,122 +357,409 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
-        UserModel currentUser = handleUserValidation();
-        String filename = file.getOriginalFilename();
+        try {
+            UserModel user = handleUserValidation();
+            String filename = file.getOriginalFilename();
 
-        if (filename == null || filename.trim().isEmpty()) {
-            throw new IllegalArgumentException("Uploaded file must have a valid name.");
-        }
-
-        final int MAX_UPLOAD_LIMIT = 5000;
-        final int BATCH_SIZE = 200;
-        final List<Customer> batch = new ArrayList<>();
-        final List<String> failedRecords = new ArrayList<>();
-        final int[] totalCount = {0};
-        final int[] successCount = {0};
-        ExceptionErrorLogs errorLogs = new ExceptionErrorLogs();
-
-        Consumer<Customer> customerConsumer = customer -> {
-//            if (totalCount[0] >= MAX_UPLOAD_LIMIT) {
-//                return; // Ignore further records after hitting the limit
-//            }
-            if (totalCount[0] >= MAX_UPLOAD_LIMIT) {
-                throw new IllegalArgumentException("Maximum upload limit of " + MAX_UPLOAD_LIMIT + " records exceeded.");
+            if (filename == null || filename.trim().isEmpty()) {
+                throw new IllegalArgumentException("Uploaded file must have a valid name.");
             }
 
-            totalCount[0]++;
-            customer.setCustomerId("C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-            customer.setOrgId(currentUser.getOrgId());
-            customer.setStatus("Inactive");
-            batch.add(customer);
-
-            if (batch.size() >= BATCH_SIZE) {
-                processBatch(batch, successCount, failedRecords);
+            List<Customer> customers;
+            if (filename.endsWith(".csv")) {
+                customers = parseCSV(file.getInputStream());
+            } else if (filename.endsWith(".xlsx")) {
+                customers = parseExcel(file.getInputStream());
+            } else {
+                throw new IllegalArgumentException("Unsupported file type");
             }
-        };
 
-        // Parse with streaming logic
-        if (filename.endsWith(".csv")) {
-            parseCSV(file, customerConsumer);
-        } else if (filename.endsWith(".xlsx")) {
-            parseExcel(file.getInputStream());
-        } else {
-            throw new IllegalArgumentException("Unsupported file type");
+            Map<String, Object> result = processBatch(customers, user);
+            return result;
+        }
+        catch (GlobalExceptionHandler.PartialFailureException e) {
+            throw e;
+        } catch (Exception e){
+            log.error("Error in bulk upload: {}", e.getMessage(), e);
+            genericHandler.logIncidentReport("Bulk upload service failed");
+            genericHandler.logAndSaveException(e, "Bulk upload meter");
+            throw new IOException("Bulk upload failed: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> processBatch(List<Customer> customers, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
+
+        if (customers == null || customers.isEmpty()) {
+            throw new IllegalArgumentException("Meter list cannot be empty");
         }
 
-        // Final insert for any remaining customers
-        if (!batch.isEmpty()) {
-            processBatch(batch, successCount, failedRecords);
+        int successCount = 0;
+
+        int batchSize = 500; // try 500–1000 for optimal JDBC performance
+
+        for (int i = 0; i < customers.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, customers.size());
+//            List<Customer> batch = customers.subList(i, end);
+            // IMPORTANT: create copy to avoid modifying original list
+            List<Customer> batch = new ArrayList<>(customers.subList(i, end));
+            try {
+                insertBatchTransactional(batch, user,failedRecords);
+                successCount += batch.size();
+                log.info("Batch {} processed successfully", (i / batchSize) + 1);
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed. Retrying with sub-batches. Reason: {}",
+                        (i / batchSize) + 1, e.getMessage());
+                // Attempt smaller sub-batches to isolate failure
+                successCount += insertSubBatchTransactional(batch, user, failedRecords);
+//                customerMapper.insertCustomer(batch.get(i));
+            }
         }
 
-        if(successCount[0] == 0){
-            throw new GlobalExceptionHandler.NotFoundException("Customer record upload failed");
+        result.put("totalRecords", customers.size());
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+
+        if (!failedRecords.isEmpty()) {
+            throw new GlobalExceptionHandler.PartialFailureException(
+                    failedRecords.size() + " of " + customers.size() + " Customer upload failed",
+                    result
+            );
         }
+
         return ResponseMap.response(
                 status.getSuccessCode(),
-                String.format("%d of %d %ss %s", successCount[0], totalCount[0], customerName, status.getRegDesc()),
-                Map.of(
-                        "successful", successCount[0],
-                        "failed", failedRecords.size(),
-                        "failedDetails", failedRecords
-                )
+                successCount + " of " + customers.size() + " Customers uploaded successfully",
+                result
         );
     }
 
-    private void processBatch(List<Customer> batch, int[] successCount, List<String> failedRecords) {
-        try {
-            customerMapper.bulkInsertCustomers(batch);
-            successCount[0] += batch.size();
-            log.warn("Batch insert");
-        } catch (Exception batchEx) {
+    private int insertSubBatchTransactional(
+            List<Customer> batch, UserModel user, List<GenericResp> failedRecords) {
+        int successCount = 0;
+        int subBatchSize = 100;
+        for (int i = 0; i < batch.size(); i += subBatchSize) {
+            int end = Math.min(i + subBatchSize, batch.size());
+            List<Customer> subBatch = batch.subList(i, end);
 
-            log.warn("Batch insert failed. Falling back to single inserts");
-            for (Customer customer : batch) {
-                try {
-                    customerMapper.insertCustomer(customer);
-                    successCount[0]++;
-                } catch (Exception e) {
-                    String errorMessage = extractErrorMessage(e);
+            try {
+                insertBatchTransactional(subBatch, user,failedRecords);
+                successCount += subBatch.size();
+            } catch (Exception e) {
+                log.warn("Sub-batch failed (size={}): {}", subBatch.size(), e.getMessage());
 
-                    String failedId = String.format(
-                            "Email: %s | Phone number: %s | Reason: %s",
-                            customer.getEmail(),
-                            customer.getPhoneNumber(),
-                            errorMessage
-                    );
-
-                    failedRecords.add(failedId);
-                    log.error("Single insert failed for {}: {}", failedId, e.getMessage(), e);
+                if (subBatch.size() > 50) {
+                    successCount += insertSinglesFallbackAsync(subBatch, user, failedRecords);
+                } else {
+                    successCount += insertSinglesFallback(subBatch, user, failedRecords);
                 }
+
+//                successCount += insertSinglesFallback(subBatch, user, failedRecords);
             }
         }
-        batch.clear();
+        return successCount;
     }
 
-    private void parseCSV(MultipartFile file, Consumer<Customer> customerConsumer) throws IOException {
-        try (
-                Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
-                CSVParser parser = CSVFormat.DEFAULT
-                        .withFirstRecordAsHeader()
-                        .parse(reader)
-        ) {
-            for (CSVRecord record : parser) {
-                Customer customer = buildCustomer(
-                        record.get("firstname".trim()),
-                        record.get("lastname".trim()),
-                        record.get("nin".trim()),
-                        record.get("phoneNumber".trim()),
-                        record.get("email".trim()),
-                        record.get("state".trim()),
-                        record.get("city".trim()),
-                        record.get("houseNo".trim()),
-                        record.get("streetName".trim()),
-                        record.get("vat".trim())
-                );
-                customerConsumer.accept(customer);
+public void insertBatchTransactional(
+        List<Customer> batch, UserModel user, List<GenericResp> failedRecords) {
+
+    prepareCustomers(batch, user, failedRecords);
+
+    // IMPORTANT: avoid inserting empty batch
+    if (batch.isEmpty()) {
+        return;
+    }
+
+    // generate IDs
+    for (Customer customer : batch) {
+        String uniqueCustomerId = "C" + UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 12);
+
+        customer.setCustomerId(uniqueCustomerId);
+    }
+    // Step 1: Insert main customers
+    customerMapper.bulkInsertCustomers(batch);
+
+    // Audit logs
+    auditBatch(batch, user, "Customer created");
+}
+
+    private void prepareCustomers(
+            List<Customer> batch,
+            UserModel user,
+            List<GenericResp> failedRecords) {
+
+        Iterator<Customer> iterator = batch.iterator();
+
+        while (iterator.hasNext()) {
+
+            Customer customer = iterator.next();
+
+            if (isBlank(customer.getFirstname())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "Firstname is required"));
+
+                iterator.remove();
+                continue;
             }
+
+            if (isBlank(customer.getLastname())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "Lastname is required"));
+
+                iterator.remove();
+                continue;
+            }
+
+            if (isBlank(customer.getPhoneNumber())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "Phone number is required"));
+
+                iterator.remove();
+                continue;
+            }
+
+            if (isBlank(customer.getVat())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "VAT is required"));
+
+                iterator.remove();
+                continue;
+            }
+
+            if (isBlank(customer.getState())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "State is required"));
+
+                iterator.remove();
+                continue;
+            }
+
+            if (isBlank(customer.getCity())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "City is required"));
+
+                iterator.remove();
+                continue;
+            }
+
+            if (isBlank(customer.getHouseNo())) {
+
+                failedRecords.add(
+                        buildFailure(customer, "House number is required"));
+
+                iterator.remove();
+                continue;
+            }
+
+            customer.setOrgId(user.getOrgId());
+            customer.setStatus("Inactive");
         }
     }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private GenericResp buildFailure(Customer customer, String message) {
+
+        GenericResp resp = new GenericResp();
+
+        resp.setId(customer.getCustomerId());
+        resp.setMessage(message);
+        resp.setData(customer);
+
+        return resp;
+    }
+
+    private void auditBatch(List<Customer> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (Customer m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc,"", customerName, m, metadata);
+            safeAuditService.saveAudit(auditLog);
+        }
+    }
+
+    public int insertSinglesFallbackAsync(List<Customer> batch, UserModel user, List<GenericResp> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (Customer customer : batch) {
+            futures.add(insertSingleAsync(customer, user, failedRecords));
+        }
+
+        // Wait for all tasks to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Sum successful inserts
+        return futures.stream().mapToInt(f -> f.join()).sum();
+    }
+
+    public int insertSinglesFallback(List<Customer> batch, UserModel user, List<GenericResp> failedRecords) {
+        int successCount = 0;
+
+        for (Customer customer : batch) {
+            try {
+                log.debug("Fallback single upload for customer: {}", customer.getCustomerId());
+                insertSingleTransactional(customer, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Customer single save failed: "+reason);
+                resp.setData(customer);
+
+                failedRecords.add(resp);
+//                failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+                log.warn("Customer {} failed individually: {}", customer.getCustomerId(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Async("bulkUploadExecutor")
+    public CompletableFuture<Integer> insertSingleAsync(
+            Customer customer, UserModel user, List<GenericResp> failedRecords) {
+        try {
+            insertSingleTransactional(customer, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            GenericResp resp = new GenericResp();
+            resp.setId(customer.getCustomerId());
+            resp.setMessage("Customer upload failed: "+reason);
+            resp.setData("");
+
+            failedRecords.add(resp);
+//            failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+            log.warn("Async single insert failed for {}: {}", customer.getCustomerId(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void insertSingleTransactional(Customer customer, UserModel user) {
+//        try {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        // --- Step 1: Prepare core meter entity ---
+        customer.setOrgId(user.getOrgId());
+        customer.setStatus("Inactive");
+//        meter.setMeterStage("Pending-created");
+//        meter.setType("NON-VIRTUAL");
+//        meter.setDescription("Newly Added");
+
+        // --- Step 2: Insert into main + version tables ---
+        customerMapper.insertCustomer(customer);
+
+        // --- Step 4: Audit logging ---
+        Customer customer1 = customerMapper.findById(customer.getId(), user.getOrgId());
+        AuditLog auditLog = buildAuditLog(user, "Customer created", "", customerName, customer1, metadata);
+        safeAuditService.saveAudit(auditLog);
+
+//        } catch (Exception e) {
+//            log.error("Failed to insert meter {}: {}", meter.getMeterNumber(), e.getMessage(), e);
+//            throw e; // rethrow so parent caller can track failure count
+//        }
+    }
+
+
+
+//    private void processBatch(List<Customer> batch, int[] successCount, List<String> failedRecords) {
+//        try {
+//            customerMapper.bulkInsertCustomers(batch);
+//            successCount[0] += batch.size();
+//            log.warn("Batch insert");
+//        } catch (Exception batchEx) {
+//
+//            log.warn("Batch insert failed. Falling back to single inserts");
+//            for (Customer customer : batch) {
+//                try {
+//                    customerMapper.insertCustomer(customer);
+//                    successCount[0]++;
+//                } catch (Exception e) {
+//                    String errorMessage = extractErrorMessage(e);
+//
+//                    String failedId = String.format(
+//                            "Email: %s | Phone number: %s | Reason: %s",
+//                            customer.getEmail(),
+//                            customer.getPhoneNumber(),
+//                            errorMessage
+//                    );
+//
+//                    failedRecords.add(failedId);
+//                    log.error("Single insert failed for {}: {}", failedId, e.getMessage(), e);
+//                }
+//            }
+//        }
+//        batch.clear();
+//    }
+
+    public static List<Customer> parseCSV(InputStream inputStream) throws IOException {
+        List<Customer> customers = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                Customer customer = new Customer();
+                customer.setFirstname(record.get("firstname".trim()));
+                customer.setLastname(record.get("lastname".trim().trim()));
+                customer.setNin(record.get("nin".trim()));
+                customer.setPhoneNumber(record.get("phoneNumber".trim()));
+                customer.setEmail(record.get("email".trim()));
+                customer.setState(record.get("state".trim()));
+                customer.setCity(record.get("city".trim()));
+                customer.setHouseNo(record.get("houseNo".trim()));
+                customer.setStreetName(record.get("streetName".trim()));
+                customer.setVat(record.get("vat".trim()));
+
+
+                customers.add(customer);
+            }
+        }
+        return customers;
+    }
+
+
+//    private void parseCSV(InputStream inputStream) throws IOException {
+//        List<Customer> meters = new ArrayList<>();
+//        try (
+//                Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+//                CSVParser parser = CSVFormat.DEFAULT
+//                        .withFirstRecordAsHeader()
+//                        .parse(reader)
+//        ) {
+//            for (CSVRecord record : parser) {
+//                Customer customer = buildCustomer(
+//                        record.get("firstname".trim()),
+//                        record.get("lastname".trim()),
+//                        record.get("nin".trim()),
+//                        record.get("phoneNumber".trim()),
+//                        record.get("email".trim()),
+//                        record.get("state".trim()),
+//                        record.get("city".trim()),
+//                        record.get("houseNo".trim()),
+//                        record.get("streetName".trim()),
+//                        record.get("vat".trim())
+//                );
+//                customerConsumer.accept(customer);
+//            }
+//        }
+//    }
 
 
     public static List<Customer> parseExcel(InputStream inputStream) throws IOException {
@@ -493,10 +784,10 @@ public class CustomerServiceImpl implements CustomerService {
                 cust.setPhoneNumber(getStringCellValue(row.getCell(3)).trim());
                 cust.setEmail(getStringCellValue(row.getCell(4)).trim());
                 cust.setState(getStringCellValue(row.getCell(5)).trim());
-                cust.setCity(getStringCellValue(row.getCell(7)).trim());
-                cust.setHouseNo(getStringCellValue(row.getCell(8)).trim());
-                cust.setStreetName(getStringCellValue(row.getCell(9)).trim());
-                cust.setVat(getStringCellValue(row.getCell(10)).trim());
+                cust.setCity(getStringCellValue(row.getCell(6)).trim());
+                cust.setHouseNo(getStringCellValue(row.getCell(7)).trim());
+                cust.setStreetName(getStringCellValue(row.getCell(8)).trim());
+                cust.setVat(getStringCellValue(row.getCell(9)).trim());
 
 
                 customers.add(cust);

@@ -6,7 +6,7 @@ import java.util.UUID;
 public class GenericResp implements Serializable {
     String id;
     String message;
-    String data;
+    Object data;
 
     public String getId() {
         return id;
@@ -24,11 +24,19 @@ public class GenericResp implements Serializable {
         this.message = message;
     }
 
-    public String getData() {
+    public Object getData() {
         return data;
     }
 
-    public void setData(String data) {
+    public void setData(Object data) {
         this.data = data;
     }
+
+    //    public String getData() {
+//        return data;
+//    }
+//
+//    public void setData(String data) {
+//        this.data = data;
+//    }
 }
