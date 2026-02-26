@@ -868,7 +868,8 @@ public interface MeterMapper {
                             'Assigned',
                             'Unassigned',
                             'Pending-assigned',
-                            'Pending-edited'
+                            'Pending-edited',
+                            'Pending-detached'
                       )
                     ORDER BY m.created_at DESC
                     
