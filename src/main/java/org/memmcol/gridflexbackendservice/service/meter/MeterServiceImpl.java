@@ -307,6 +307,14 @@ public class MeterServiceImpl implements MeterService {
             if (existingMeter == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
+            // Insert or update meter version
+            int result;
+            if (existingMeter.getMeterStage().contains("Pending") || existingMeter.getStatus().contains("Pending")) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter ("+existingMeter.getMeterNumber()+ ") have a pending state that needs to be cleared");
+            }
+            if(existingMeter.getStatus().equalsIgnoreCase("Deactivated")){
+                throw new GlobalExceptionHandler.NotFoundException(existingMeter.getMeterNumber()+ " is deactivated and cannot be edited");
+            }
 
             // check if operator exist
             if(!existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
@@ -321,6 +329,11 @@ public class MeterServiceImpl implements MeterService {
                 if (isManufacturer == null){
                     throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
                 }
+
+                request.setNodeId(existingMeter.getNodeId());
+                request.setDss(existingMeter.getDss());
+                request.setCin(existingMeter.getCin());
+                request.setAccountNumber(existingMeter.getAccountNumber());
             }
 
             String MDDesc = "";
@@ -336,10 +349,7 @@ public class MeterServiceImpl implements MeterService {
             request.setDescription("Meter edited");
             request.setCreatedBy(user.getId());
 
-            request.setNodeId(existingMeter.getNodeId());
-            request.setDss(existingMeter.getDss());
-            request.setCin(existingMeter.getCin());
-            request.setAccountNumber(existingMeter.getAccountNumber());
+
             request.setOrgId(user.getOrgId());
             request.setMeterId(existingMeter.getMeterId());
             request.setCreatedBy(user.getId());
@@ -347,14 +357,6 @@ public class MeterServiceImpl implements MeterService {
             request.setTariff(existingMeter.getTariff());
             request.setMeterId(existingMeter.getId());
 
-            // Insert or update meter version
-            int result;
-            if (existingMeter.getMeterStage().contains("Pending") || existingMeter.getStatus().contains("Pending")) {
-                throw new GlobalExceptionHandler.NotFoundException(existingMeter.getMeterNumber()+ " have a pending state that needs to be cleared");
-            }
-            if(existingMeter.getStatus().equalsIgnoreCase("Deactivated")){
-                throw new GlobalExceptionHandler.NotFoundException(existingMeter.getMeterNumber()+ " is deactivated and cannot be edited");
-            }
 
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
 
@@ -385,6 +387,8 @@ public class MeterServiceImpl implements MeterService {
                             "provided does not belong to the feeder line ("+request.getFeederAssetId()+")");
                 }
 
+                request.setCin(request.getCin());
+                request.setAccountNumber(request.getAccountNumber());
                 request.setNodeId(feederLine.getNodeId());
                 request.setDss(dss.getNodeId());
                 request.setMeterNumber(existingMeter.getMeterNumber());
@@ -2680,10 +2684,10 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // --- Edited (can behave similar to assigned) ---
-//            if (!approvedEditedMeters.isEmpty()) {
-//                desc = "Meter edit approved";
-//                handleEditedMeters(approvedEditedMeters, user);
-//            }
+            if (!approvedEditedMeters.isEmpty()) {
+                desc = "Meter edit approved";
+                handleEditedMeters(approvedEditedMeters, user);
+            }
 
             // --- Created ---
             if (!approvedCreatedMeters.isEmpty()) {

@@ -957,7 +957,8 @@ public interface MeterMapper {
                       AND m.meter_stage IN (
                             'Assigned',
                             'Pending-detached',
-                            'Pending-migrated'
+                            'Pending-migrated',
+                            'Pending-edited'
                       )
                       AND m.type != 'VIRTUAL'
                     ORDER BY m.created_at DESC
