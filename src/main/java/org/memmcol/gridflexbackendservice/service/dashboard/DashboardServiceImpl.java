@@ -85,7 +85,7 @@ public class DashboardServiceImpl implements  DashboardService{
                 .count();
 
         long assigned = filteredMeters.stream()
-                .filter(m -> m.getCustomerId() != null)
+                .filter(m -> m.getCustomerId() != null || m.getDss() != null)
                 .count();
 
         long deactivated = filteredMeters.stream()

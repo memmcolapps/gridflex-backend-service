@@ -32,10 +32,12 @@ public class DebitCreditAdjustment {
 
     @PostMapping("/reconcile-dept")
     public ResponseEntity<?> reconcileDept(
-            @RequestParam(value = "debitCreditAdjustmentId", required = true) UUID debitCreditAdjustmentId,
-            @RequestParam(value = "amount", required = true, defaultValue = "") String amount) {
+            @RequestParam(value = "meterId", required = true) UUID meterId,
+            @RequestParam(value = "liabilityCauseId", required = true) UUID liabilityCauseId,
+            @RequestParam(value = "amount", required = true) String amount,
+            @RequestParam(value = "type", required = true) String type) {
         try {
-            Map<String, Object> result = service.reconcileDebt(debitCreditAdjustmentId, amount);
+            Map<String, Object> result = service.reconcileDebt(meterId, liabilityCauseId, amount, type);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

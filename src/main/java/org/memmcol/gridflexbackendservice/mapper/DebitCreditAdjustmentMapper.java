@@ -20,6 +20,29 @@ public interface DebitCreditAdjustmentMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createDebitAdjustment(DebitCreditAdjust request);
 
+    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} " +
+            "AND liability_cause_id = #{liabilityCauseId} " +
+            "AND org_id = #{orgId} AND UPPER(type) = UPPER(#{type}) " +
+            "AND status IN ('UNPAID', 'PARTIALLY_PAID')" +
+            "ORDER BY created_at ASC ")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "liability_cause_id", property = "liabilityCauseId"),
+            @Result(column = "meter_id", property = "meterId"),
+            @Result(column = "debit", property = "amount"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "liabilityCause", column = "liability_cause_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLcById")),
+            @Result(property = "meter", column = "meter_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getMeter")),
+            @Result(property = "payment", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
+    })
+    List<DebitCreditAdjust> getDebitAdjustmentByMeterIdAndLcId(
+            UUID meterId, UUID liabilityCauseId, UUID orgId, String type);
+
     @Select("SELECT * FROM credit_debit_adjustment WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(column = "id", property = "id"),
@@ -37,6 +60,7 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
     DebitCreditAdjust getDebitAdjustmentById(UUID id, UUID orgId);
+
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE id = #{id} AND org_id = #{orgId} AND status != 'PAID'")
     @Results({
@@ -302,6 +326,8 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "outstanding_balance", property = "outstandingBalance"),
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "liabilityCause", column = "liability_cause_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getLcById")),
     })
     List<DebitCreditAdjust> fetchUniqueCreditAdjustmentById(UUID id);
 
@@ -330,8 +356,12 @@ public interface DebitCreditAdjustmentMapper {
     @Select("SELECT id, firstname, lastname FROM customers WHERE customer_id = #{customerId}")
     Customer getCustomer(String customerId);
 
-    @Update("UPDATE credit_debit_adjustment SET balance = #{newBalance}, status = #{status}, created_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
-    int updateReconciledDebt(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId, @Param("newBalance") BigDecimal newBalance, @Param("status") String status);
+    @Update("UPDATE credit_debit_adjustment SET balance = #{newBalance}, " +
+            "status = #{status}, updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
+    int updateReconciledDebt(
+            @Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
+            @Param("newBalance") BigDecimal newBalance,
+            @Param("status") String status);
 
     @Insert("INSERT INTO credit_debit_payment (parent_id, credit_debit_adj_id, credit, debt, balance, created_at, org_id) " +
             "VALUES (#{parentId}, #{creditDebitAdjId}, #{credit}, #{debt}, #{balance}, #{createdAt}, #{orgId})")
