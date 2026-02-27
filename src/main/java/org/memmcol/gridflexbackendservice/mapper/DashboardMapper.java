@@ -62,6 +62,7 @@ public interface DashboardMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "dss", column = "dss"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
