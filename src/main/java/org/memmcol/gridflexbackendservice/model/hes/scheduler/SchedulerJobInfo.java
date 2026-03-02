@@ -31,6 +31,11 @@ public class SchedulerJobInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "scheduler_job_seq",
+            sequenceName = "scheduler_job_info_job_id_seq", // make sure this exists in DB
+            allocationSize = 1
+    )
     @Column(name = "job_id")
     private Long jobId;
 

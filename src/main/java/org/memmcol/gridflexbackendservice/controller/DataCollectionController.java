@@ -39,7 +39,7 @@ public class DataCollectionController {
     // CREATE
     // =========================================================================
 
-    @PostMapping
+    @PostMapping("/create")
     @Operation(summary = "Create a new sync schedule")
     public Map<String, Object> createSchedule(@Valid @RequestBody SyncScheduleRequest request) {
         try {
@@ -127,7 +127,7 @@ public class DataCollectionController {
     // UPDATE
     // =========================================================================
 
-    @PutMapping("/{jobId}")
+    @PutMapping("/update/{jobId}")
     @Operation(summary = "Update an existing sync schedule")
     public Map<String, Object> updateSchedule(
             @PathVariable Long jobId,
@@ -199,7 +199,7 @@ public class DataCollectionController {
     // DELETE
     // =========================================================================
 
-    @DeleteMapping("/{jobId}")
+    @DeleteMapping("/delete/{jobId}")
     @Operation(summary = "Delete a sync schedule")
     public Map<String, Object> deleteSchedule(@PathVariable Long jobId) {
         try {
@@ -218,7 +218,7 @@ public class DataCollectionController {
         }
     }
 
-    @DeleteMapping("/bulk")
+    @DeleteMapping("/delete/bulk")
     @Operation(summary = "Bulk delete sync schedules")
     public Map<String, Object> bulkDelete(@RequestParam List<Long> jobIds) {
         try {

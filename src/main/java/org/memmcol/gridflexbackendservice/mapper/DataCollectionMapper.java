@@ -20,8 +20,26 @@ public class DataCollectionMapper {
     // -------------------------------------------------------------------------
     // Request → new Entity
     // -------------------------------------------------------------------------
+    public SchedulerJobInfo toEntity(SyncScheduleRequest req) {
+        CronHelper.TriggerData trigger = cronHelper.buildTriggerData(
+                req.getTimeInterval(), req.getTimeUnit(), req.getActiveDays());
 
-    public SchedulerJobInfo toEntity( SyncScheduleRequest req) {
+        String jobName = sanitizeJobName(req.getEventProfileType());
+        String jobClass = req.getJobClass() != null && !req.getJobClass().isBlank()
+                ? req.getJobClass()
+                : "com.memmcol.hes.jobs.DataCollectionJob";
+
+        return SchedulerJobInfo.builder()
+                .name(req.getEventProfileType())
+                .description(req.getEventProfileType())
+                .jobName(jobName)
+                .jobGroup("profiles")  // Changed from "DATA_COLLECTION" to match existing data
+                .jobClass(jobClass)
+                // ... rest of fields
+                .build();
+    }
+
+    public SchedulerJobInfo toEntityV1( SyncScheduleRequest req) {
         CronHelper.TriggerData trigger = cronHelper.buildTriggerData(
                 req.getTimeInterval(), req.getTimeUnit(), req.getActiveDays());
 
@@ -79,11 +97,28 @@ public class DataCollectionMapper {
     // Entity → Response DTO
     // -------------------------------------------------------------------------
 
-    public SyncScheduleResponse toResponse( SchedulerJobInfo entity) {
+    public SyncScheduleResponse toResponse(SchedulerJobInfo entity) {
         List<ActiveDay> activeDays = resolveActiveDays(entity);
         IntervalUnit unit          = resolveUnit(entity);
         int interval               = resolveInterval(entity, unit);
 
+        // Clean up event profile type (remove trailing whitespace)
+        String cleanEventType = entity.getName() != null
+                ? entity.getName().trim()
+                : "";
+
+        return getSyncScheduleResponse(entity, activeDays, unit, interval);
+    }
+
+    public SyncScheduleResponse toResponseV1( SchedulerJobInfo entity) {
+        List<ActiveDay> activeDays = resolveActiveDays(entity);
+        IntervalUnit unit          = resolveUnit(entity);
+        int interval               = resolveInterval(entity, unit);
+
+        return getSyncScheduleResponse(entity, activeDays, unit, interval);
+    }
+
+    private SyncScheduleResponse getSyncScheduleResponse( SchedulerJobInfo entity, List<ActiveDay> activeDays, IntervalUnit unit, int interval ) {
         return SyncScheduleResponse.builder()
                 .jobId(entity.getJobId())
                 .eventProfileType(entity.getName())
@@ -131,7 +166,7 @@ public class DataCollectionMapper {
         return IntervalUnit.MINS;
     }
 
-    private int resolveInterval(SchedulerJobInfo entity, IntervalUnit unit) {
+    private int resolveIntervalV1(SchedulerJobInfo entity, IntervalUnit unit) {
         return switch (unit) {
             case MINS -> entity.getRepeatMinutes() != null ? entity.getRepeatMinutes() : 0;
             case HRS  -> entity.getRepeatHours() != null ? entity.getRepeatHours() : 0;
@@ -176,5 +211,59 @@ public class DataCollectionMapper {
         return eventProfileType.trim()
                 .replaceAll("[^a-zA-Z0-9_\\-]", "_")
                 .replaceAll("_+", "_");
+    }
+
+    private int resolveInterval(SchedulerJobInfo entity, IntervalUnit unit) {
+        // First try the repeat fields
+        if (entity.getRepeatMinutes() != null && entity.getRepeatMinutes() > 0) {
+            return entity.getRepeatMinutes();
+        }
+        if (entity.getRepeatHours() != null && entity.getRepeatHours() > 0) {
+            return entity.getRepeatHours();
+        }
+
+        // If cron expression exists, try to extract interval
+        if (Boolean.TRUE.equals(entity.getCronJob()) && entity.getCronExpression() != null) {
+            return extractIntervalFromCron(entity.getCronExpression(), unit);
+        }
+
+        return 0; // fallback
+    }
+
+    private int extractIntervalFromCron(String cronExpression, IntervalUnit unit) {
+        try {
+            String[] parts = cronExpression.split("\\s+");
+            if (parts.length < 6) return 0;
+
+            String minutes = parts[1];  // e.g., "0", "*/30", "0/15"
+            String hours = parts[2];    // e.g., "0", "*/2", "1-23"
+
+            // Check for interval patterns like "*/N" or "0/N"
+            if (unit == IntervalUnit.MINS && minutes.contains("/")) {
+                String[] minParts = minutes.split("/");
+                return Integer.parseInt(minParts[1]);
+            }
+
+            if (unit == IntervalUnit.HRS && hours.contains("/")) {
+                String[] hourParts = hours.split("/");
+                return Integer.parseInt(hourParts[1]);
+            }
+
+            // For specific times like "0 10 0 * * ?" (daily at 00:10)
+            // or "0 0 1,4,7,10,13,16,19,22 * * ?" (every 3 hours)
+            if (hours.contains(",")) {
+                String[] hourList = hours.split(",");
+                if (hourList.length > 1) {
+                    int interval = Integer.parseInt(hourList[1]) - Integer.parseInt(hourList[0]);
+                    return Math.abs(interval);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+//            log.warn("Could not parse interval from cron: {}", cronExpression, e);
+        }
+
+        return 0;
     }
 }

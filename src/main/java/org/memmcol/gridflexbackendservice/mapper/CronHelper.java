@@ -67,20 +67,40 @@ public class CronHelper {
     // -------------------------------------------------------------------------
     // Cron trigger (specific days, interval within those days)
     // -------------------------------------------------------------------------
-
     private TriggerData buildCronTrigger(int interval, IntervalUnit unit, List<ActiveDay> activeDays) {
+        String cron = activeDayEnlister(interval, unit, activeDays); // <-- now cron is set
+
+        int repeatMinutes = (unit == IntervalUnit.MINS) ? interval : 0;
+        int repeatHours   = (unit == IntervalUnit.HRS)  ? interval : (unit == IntervalUnit.DAYS ? interval * 24 : 0);
+        int repeatSeconds = 0;
+
+        return new TriggerData(
+                true,         // cronJob
+                cron,         // cronExpression
+                null,         // repeatTimeMs not used for cron
+                repeatMinutes,
+                repeatHours,
+                repeatSeconds
+        );
+    }
+
+    private String activeDayEnlister(int interval, IntervalUnit unit, List<ActiveDay> activeDays) {
         String dayList = activeDays.stream()
                 .map(ActiveDay::toCronCode)
                 .collect(Collectors.joining(","));
 
-        String cron = switch (unit) {
+        return switch (unit) {
             case MINS  -> String.format("0 0/%d * ? * %s *", interval, dayList);
             case HRS   -> String.format("0 0 0/%d ? * %s *", interval, dayList);
             case DAYS  -> String.format("0 0 0 1/%d * ? *", interval);
         };
+    }
+
+    private TriggerData buildCronTriggerV1(int interval, IntervalUnit unit, List<ActiveDay> activeDays) {
+        activeDayEnlister(interval, unit, activeDays);
 
         return new TriggerData(
-                true, cron, null,
+                true, "", null,
                 unit == IntervalUnit.MINS ? interval : null,
                 unit == IntervalUnit.HRS  ? interval : (unit == IntervalUnit.DAYS ? interval * 24 : null),
                 null
