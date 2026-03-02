@@ -32,15 +32,15 @@ public interface SchedulerJobInfoRepository extends JpaRepository<SchedulerJobIn
      * @param orgId   org filter (nullable = no filter)
      */
     @Query("""
-            SELECT j FROM SchedulerJobInfo j
-            WHERE (j.jobGroup = 'DATA_COLLECTION' or j.jobGroup = 'profiles')
-              AND (:orgId IS NULL   OR j.orgId   = :orgId)
-              AND (:status IS NULL  OR j.jobStatus = :status)
-              AND (:search IS NULL  OR :search = ''
-                   OR LOWER(j.name)        LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(j.description) LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(j.obisCodes)   LIKE LOWER(CONCAT('%', :search, '%')))
-            """)
+        SELECT j FROM SchedulerJobInfo j
+        WHERE j.jobGroup IN ('DATA_COLLECTION', 'profiles')
+          AND (:orgId IS NULL   OR j.orgId   = :orgId)
+          AND (:status IS NULL  OR j.jobStatus = :status)
+          AND (:search IS NULL  OR :search = ''
+               OR LOWER(j.name)        LIKE LOWER(CONCAT('%', :search, '%'))
+               OR LOWER(j.description) LIKE LOWER(CONCAT('%', :search, '%'))
+               OR LOWER(j.obisCodes)   LIKE LOWER(CONCAT('%', :search, '%')))
+        """)
     Page<SchedulerJobInfo> findDataCollectionSchedules(
             @Param("search") String search,
             @Param("status") String status,
