@@ -126,9 +126,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             // 1. Save payment record
             DebitCreditPayment payment = new DebitCreditPayment();
             payment.setCreditDebitAdjId(request.getId());
-            payment.setCredit(BigDecimal.ZERO);
+            payment.setCredit(request.getType().equalsIgnoreCase("credit")
+                    ? request.getAmount() : BigDecimal.ZERO);
             payment.setBalance(request.getAmount());
-            payment.setDebt(request.getAmount());
+            payment.setDebt(request.getType().equalsIgnoreCase("credit")
+                    ? BigDecimal.ZERO : request.getAmount());
             payment.setOrgId(um.getOrgId());
 
             int res = mapper.insertDebtCreditPayment(payment);
@@ -167,9 +169,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             UserModel um = handleUserValidation();
 
-            if (type == null ||
-                    (!type.trim().equalsIgnoreCase("credit")
-                            && !type.trim().equalsIgnoreCase("debit"))) {
+            if (type == null || !type.trim().equalsIgnoreCase("debit")) {
                 throw new GlobalExceptionHandler.NotFoundException("Parameter type must be; type: 'credit' or 'debit'");
             }
 
@@ -195,10 +195,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             if (remainingPayment.compareTo(totalOutstanding) > 0) {
                 throw new GlobalExceptionHandler.NotFoundException(
-                        "Payment exceeds total outstanding debt");
+                        "Payment exceeds total outstanding debt ("+totalOutstanding+")");
             }
 
-            // 2️⃣ Loop through debts
+            // Loop through debts
             for (DebitCreditAdjust debt : debts) {
 
                 if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
@@ -221,7 +221,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                     paymentForThisDebt = remainingPayment;
                 }
 
-//                BigDecimal newBalance = currentBalance.subtract(paymentForThisDebt);
                 BigDecimal newBalance = currentBalance.subtract(paymentForThisDebt);
 
                 if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
@@ -240,7 +239,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                     throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
                 }
 
-                // 3️⃣ Insert payment record
+                // Insert payment record
                 DebitCreditPayment payment = new DebitCreditPayment();
                 payment.setParentId(debitCreditPayment.getId());
                 payment.setCreditDebitAdjId(debt.getId());
@@ -254,7 +253,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                     throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
                 }
 
-                // 4️⃣ Update debt record
+                // Update debt record
                 int resp = mapper.updateReconciledDebt(
                         debt.getId(),
                         newBalance,
@@ -264,7 +263,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                     throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
                 }
 
-                // 5️⃣ Reduce remaining payment
+                // Reduce remaining payment
                 remainingPayment = remainingPayment.subtract(paymentForThisDebt);
 
                 DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debt.getId(), um.getOrgId());
@@ -415,38 +414,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
-//    @Override
-//    public Map<String, Object> getDebitAdjustmentPaymentHistory(
-//            UUID meterId, UUID liabilityCauseId, String type) {
-//        try {
-//
-//            UserModel um = handleUserValidation();
-//
-//            List<DebitCreditPayment> response;
-//            // Ideally, this should be a dynamic query in the mapper layer
-//            if(type.equalsIgnoreCase("debit") || type.equalsIgnoreCase("credit")) {
-//                response = mapper.FetchDebitCreditPaymentHistory(meterId, liabilityCauseId, type, um.getOrgId());
-//            } else {
-//                throw new GlobalExceptionHandler.NotFoundException("Type parameter (" + type + ") not supported");
-//            }
-//
-//            Map<String, Object> responseData = new HashMap<>();
-//
-//
-//            if(type.equalsIgnoreCase("credit")){
-//                return ResponseMap.response(status.getSuccessCode(),  credit + " "+status.getDesc(), response);
-//            } else {
-//                return ResponseMap.response(status.getSuccessCode(),  debit + " "+status.getDesc(), response);
-//            }
-//
-//        } catch (Exception exception) {
-//            log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
-//            genericHandler.logIncidentReport("Fetching debit adjustments service failed");
-//            genericHandler.logAndSaveException(exception, "fetch debit adjustments");
-//            throw exception;
-//        }
-//    }
-
+    @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustmentPaymentHistory(
             UUID meterId, UUID liabilityCauseId, String type) {
@@ -471,36 +439,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                             um.getOrgId()
                     );
 
-            // 🔥 Group root + children correctly
-            Map<UUID, List<DebitCreditPayment>> grouped = new LinkedHashMap<>();
-
-            for (DebitCreditPayment payment : response) {
-
-                UUID rootId;
-
-                // Case 1: Root record (parentId is null OR equals its own id)
-                if (payment.getParentId() == null ||
-                        payment.getParentId().equals(payment.getId())) {
-
-                    rootId = payment.getId();
-                }
-                // Case 2: Child record
-                else {
-                    rootId = payment.getParentId();
-                }
-
-                grouped
-                        .computeIfAbsent(rootId, k -> new ArrayList<>())
-                        .add(payment);
-            }
-
-            List<List<DebitCreditPayment>> groupedList =
-                    new ArrayList<>(grouped.values());
-
             return ResponseMap.response(
                     status.getSuccessCode(),
                     type + " " + status.getDesc(),
-                    groupedList
+                    response
             );
 
         } catch (Exception exception) {
@@ -514,7 +456,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             throw exception;
         }
     }
-
 
     @Transactional(readOnly = true)
     @Override

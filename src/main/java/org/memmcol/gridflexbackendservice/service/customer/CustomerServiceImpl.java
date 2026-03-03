@@ -418,22 +418,32 @@ public class CustomerServiceImpl implements CustomerService {
             }
         }
 
+        final int totalRecords = customers.size();
+
         result.put("totalRecords", customers.size());
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
 
+//        if (!failedRecords.isEmpty()) {
+//            throw new GlobalExceptionHandler.PartialFailureException(
+//                    failedRecords.size() + " of " + customers.size() + " Customer upload failed",
+//                    result
+//            );
+//        }
+
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
-                    failedRecords.size() + " of " + customers.size() + " Customer upload failed",
+            return ResponseMap.response(
+                    "131",
+                    failedRecords.size() + " of " + totalRecords + " Meters upload failed",
                     result
             );
         }
 
         return ResponseMap.response(
                 status.getSuccessCode(),
-                successCount + " of " + customers.size() + " Customers uploaded successfully",
+                successCount + " of " + totalRecords + " Customers uploaded successfully",
                 result
         );
     }
@@ -444,8 +454,8 @@ public class CustomerServiceImpl implements CustomerService {
         int subBatchSize = 100;
         for (int i = 0; i < batch.size(); i += subBatchSize) {
             int end = Math.min(i + subBatchSize, batch.size());
-            List<Customer> subBatch = batch.subList(i, end);
-
+//            List<Customer> subBatch = batch.subList(i, end);
+            List<Customer> subBatch = new ArrayList<>(batch.subList(i, end));
             try {
                 insertBatchTransactional(subBatch, user,failedRecords);
                 successCount += subBatch.size();

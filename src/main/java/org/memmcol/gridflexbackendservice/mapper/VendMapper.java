@@ -140,9 +140,10 @@ public interface VendMapper {
             "    m.customer_id, " +
             "    m.address, " +
             "    m.tariff_id, " +
-            "    m.payment_mode, " +
-            "    m.payment_plan, " +
-            "    m.payment_type, " +
+            "    m.debit_payment_mode, " +
+            "    m.debit_payment_plan, " +
+            "    m.credit_payment_mode, " +
+            "    m.credit_payment_plan, " +
             "    m.balance_after_adjustment AS balance, " +
             "    m.debit_amount AS total_debit, " +
             "    m.credit_amount AS total_credit, " +
@@ -154,7 +155,7 @@ public interface VendMapper {
             "    m.updated_at " +
             "FROM vw_meter_summary m " +
             "LEFT JOIN debt_percentage d ON d.org_id = m.org_id " +
-            "AND m.payment_mode = LOWER('percentage') " +
+            "AND (m.debit_payment_mode = LOWER('percentage') OR credit_payment_mode = LOWER('percentage')) " +
             "WHERE m.org_id = #{orgId} " +
             "AND (m.meter_number = #{meterNumber} " +
             "OR m.meter_account_number = #{accountNumber}) " +
@@ -173,9 +174,10 @@ public interface VendMapper {
             "    m.new_tariff_index," +
             "    m.tariff_rate, " +
             "    m.tariff_name," +
-            "    m.payment_mode, " +
-            "    m.payment_plan, " +
-            "    m.payment_type, " +
+            "    m.debit_payment_mode, " +
+            "    m.debit_payment_plan, " +
+            "    m.credit_payment_mode, " +
+            "    m.credit_payment_plan, " +
             "    d.percentage, " +
             "    d.code, " +
             "    d.amount_start_range, " +
@@ -214,9 +216,10 @@ public interface VendMapper {
             @Result(property = "debitAmount", column = "total_debit"),
             @Result(property = "creditAmount", column = "total_credit"),
             @Result(property = "adjustmentType", column = "adjustment_type"),
-            @Result(property = "paymentMode", column = "payment_mode"),
-            @Result(property = "paymentType", column = "payment_type"),
-            @Result(property = "paymentPlan", column = "payment_plan"),
+            @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
+            @Result(property = "debitPaymentPlan", column = "debit_payment_plan"),
+            @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
+            @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "percentageRange.percentage", column = "percentage"),
@@ -245,9 +248,10 @@ public interface VendMapper {
             "    m.customer_fullname, " +
             "    m.customer_id, " +
             "    m.address, " +
-            "    m.payment_mode, " +
-            "    m.payment_plan, " +
-            "    m.payment_type, " +
+            "    m.debit_payment_mode, " +
+            "    m.debit_payment_plan, " +
+            "    m.credit_payment_mode, " +
+            "    m.credit_payment_plan, " +
             "    m.tariff_id " +
             "FROM vw_meter_summary m " +
             "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
@@ -268,9 +272,10 @@ public interface VendMapper {
             "    m.tariff_id, " +
             "    m.customer_id, " +
             "    m.address, " +
-            "    m.payment_mode, " +
-            "    m.payment_plan, " +
-            "    m.payment_type, " +
+            "    m.debit_payment_mode, " +
+            "    m.debit_payment_plan, " +
+            "    m.credit_payment_mode, " +
+            "    m.credit_payment_plan, " +
             "    m.customer_fullname, " +
             "    m.created_at, " +
             "    m.updated_at ")
@@ -289,9 +294,10 @@ public interface VendMapper {
             @Result(property = "newKrn", column = "new_krn"),
             @Result(property = "oldTariffIndex", column = "old_tariff_index"),
             @Result(property = "newTariffIndex", column = "new_tariff_index"),
-            @Result(property = "paymentMode", column = "payment_mode"),
-            @Result(property = "paymentType", column = "payment_type"),
-            @Result(property = "paymentPlan", column = "payment_plan"),
+            @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
+            @Result(property = "debitPaymentPlan", column = "debit_payment_plan"),
+            @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
+            @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
