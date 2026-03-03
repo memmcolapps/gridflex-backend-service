@@ -264,7 +264,12 @@ public interface DebitCreditAdjustmentMapper {
               AND UPPER(type) = UPPER(#{type})
         ) adj_total
                       ON adj_total.id = ca.id
-        WHERE UPPER(ca.type) = UPPER(#{type});
+        WHERE UPPER(ca.type) = UPPER(#{type})
+        ORDER BY
+            MIN(CASE WHEN p.parent_id IS NULL THEN p.created_at END)
+            OVER (PARTITION BY COALESCE(p.parent_id, p.id)) ASC,
+            (p.parent_id IS NOT NULL),
+            p.created_at ASC;
     """)
     @Results({
             @Result(column = "id", property = "id"),

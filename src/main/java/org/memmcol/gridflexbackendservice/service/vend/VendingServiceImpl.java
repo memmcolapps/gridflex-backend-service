@@ -343,9 +343,12 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = meters.get(0);
 
-            String paymentMode = meter.getPaymentMode();
-            String paymentPlan = meter.getPaymentPlan();
-            String paymentType = meter.getPaymentType();
+            String debitPaymentMode = meter.getDebitPaymentMode();
+            String debitPaymentPlan = meter.getDebitPaymentPlan();
+            String creditPaymentMode = meter.getDebitPaymentMode();
+            String creditPaymentPlan = meter.getDebitPaymentPlan();
+
+//            String paymentType = meter.getPaymentType();
 
             BigDecimal totalDebit = calculateTotalByType(meters, "debit");
             BigDecimal totalCreditUnits = calculateTotalByType(meters,"credit");
@@ -362,14 +365,17 @@ public class VendingServiceImpl implements VendingService {
             }
 
             // Get strategy
-            PaymentStrategy strategy =
-                    PaymentStrategyFactory.getStrategy(paymentMode, paymentType, paymentPlan);
+            PaymentStrategy debitStrategy =
+                    PaymentStrategyFactory.getStrategy(debitPaymentMode, "debit", debitPaymentPlan);
+
+            PaymentStrategy creditStrategy =
+                    PaymentStrategyFactory.getStrategy(creditPaymentMode, "credit", creditPaymentPlan);
 
             BigDecimal debitToDeduct =
-                    strategy.calculateDebitToDeduct(totalDebit);
+                    debitStrategy.calculateDebitToDeduct(totalDebit);
 
             BigDecimal creditUnitsToApply =
-                    strategy.calculateCreditUnits(totalCreditUnits);
+                    creditStrategy.calculateCreditUnits(totalCreditUnits);
 
             // Remove debit first
             BigDecimal amountAfterDebit =

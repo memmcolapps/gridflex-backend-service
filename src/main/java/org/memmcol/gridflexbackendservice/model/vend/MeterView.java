@@ -73,9 +73,11 @@ public class MeterView implements Serializable {
     private String liabilityCode;
 
     // --- Payment mode ---
-    private String paymentMode;
-    private String paymentPlan;
-    private String paymentType;
+    private String debitPaymentMode;
+    private String debitPaymentPlan;
+    private String creditPaymentMode;
+    private String creditPaymentPlan;
+
 
     //---------manufacturer----------
     private String meterManufacturer;
@@ -479,28 +481,36 @@ public class MeterView implements Serializable {
         this.vat = vat;
     }
 
-    public String getPaymentMode() {
-        return paymentMode;
+    public String getCreditPaymentPlan() {
+        return creditPaymentPlan;
     }
 
-    public void setPaymentMode(String paymentMode) {
-        this.paymentMode = paymentMode;
+    public void setCreditPaymentPlan(String creditPaymentPlan) {
+        this.creditPaymentPlan = creditPaymentPlan;
     }
 
-    public String getPaymentPlan() {
-        return paymentPlan;
+    public String getCreditPaymentMode() {
+        return creditPaymentMode;
     }
 
-    public void setPaymentPlan(String paymentPlan) {
-        this.paymentPlan = paymentPlan;
+    public void setCreditPaymentMode(String creditPaymentMode) {
+        this.creditPaymentMode = creditPaymentMode;
     }
 
-    public String getPaymentType() {
-        return paymentType;
+    public String getDebitPaymentPlan() {
+        return debitPaymentPlan;
     }
 
-    public void setPaymentType(String paymentType) {
-        this.paymentType = paymentType;
+    public void setDebitPaymentPlan(String debitPaymentPlan) {
+        this.debitPaymentPlan = debitPaymentPlan;
+    }
+
+    public String getDebitPaymentMode() {
+        return debitPaymentMode;
+    }
+
+    public void setDebitPaymentMode(String debitPaymentMode) {
+        this.debitPaymentMode = debitPaymentMode;
     }
 
     public PercentageRange getPercentageRange() {

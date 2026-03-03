@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -118,6 +119,12 @@ public class CustomerController {
     public ResponseEntity<?> bulkUpload(@RequestParam("file") MultipartFile file){
         try {
             Map<String, Object> result = service.bulkUpload(file);
+
+            String code = (String) result.get("responsecode");
+
+            if ("131".equals(code)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+            }
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

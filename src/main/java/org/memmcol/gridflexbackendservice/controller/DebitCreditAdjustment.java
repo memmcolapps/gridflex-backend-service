@@ -34,10 +34,9 @@ public class DebitCreditAdjustment {
     public ResponseEntity<?> reconcileDept(
             @RequestParam(value = "meterId", required = true) UUID meterId,
             @RequestParam(value = "liabilityCauseId", required = true) UUID liabilityCauseId,
-            @RequestParam(value = "amount", required = true) String amount,
-            @RequestParam(value = "type", required = true) String type) {
+            @RequestParam(value = "amount", required = true) String amount) {
         try {
-            Map<String, Object> result = service.reconcileDebt(meterId, liabilityCauseId, amount, type);
+            Map<String, Object> result = service.reconcileDebt(meterId, liabilityCauseId, amount);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

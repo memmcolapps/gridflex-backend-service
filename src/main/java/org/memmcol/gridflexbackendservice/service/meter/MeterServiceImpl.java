@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -2050,6 +2052,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             Map<String, Object> result = bulkInsertMeters(meters, user);
+
             return result;
 
         } catch (Exception e) {
@@ -2102,8 +2105,8 @@ public class MeterServiceImpl implements MeterService {
 
         for (int i = 0; i < allocations.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, allocations.size());
-            List<MeterRequest> subBatch = allocations.subList(i, end);
-
+//            List<MeterRequest> subBatch = allocations.subList(i, end);
+            List<MeterRequest> subBatch = new ArrayList<>(allocations.subList(i, end));
             // Extract meter numbers and region IDs
             List<String> meterNumbers = subBatch.stream()
                     .map(MeterRequest::getMeterNumber)
@@ -2161,7 +2164,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (meter == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("Meter Not found");
                     resp.setData(meter.getMeterNumber());
 
@@ -2171,7 +2174,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (nodeId == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("Meter Allocate failed: region not found in business hub");
                     resp.setData(meter.getMeterNumber());
 
@@ -3126,13 +3129,79 @@ public class MeterServiceImpl implements MeterService {
             );
         }
 
+        // ---------------------------------------------------
+        // Fetch Existing Meter Numbers (ONE DB CALL)
+        // ---------------------------------------------------
+        Set<String> allMeterNumbers = meters.stream()
+                .map(Meter::getMeterNumber)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        Set<String> existingMeterNumbers = new HashSet<>();
+
+        if (!allMeterNumbers.isEmpty()) {
+
+            existingMeterNumbers =
+                    meterMapper.getMetersList(
+                                    new ArrayList<>(allMeterNumbers),
+                                    user.getOrgId()
+                            )
+                            .stream()
+                            .map(Meter::getMeterNumber)
+                            .collect(Collectors.toSet());
+        }
+
         int successCount = 0;
 
         int batchSize = 500; // try 500–1000 for optimal JDBC performance
 
         for (int i = 0; i < meters.size(); i += batchSize) {
             int end = Math.min(i + batchSize, meters.size());
-            List<Meter> batch = meters.subList(i, end);
+//            List<Meter> batch = meters.subList(i, end);
+            List<Meter> batch = new ArrayList<>(meters.subList(i, end));
+
+            // -----------------------------------------------
+            // Remove duplicates (already existing meters)
+            // -----------------------------------------------
+            Iterator<Meter> duplicateIterator = batch.iterator();
+
+            while (duplicateIterator.hasNext()) {
+
+                Meter meter = duplicateIterator.next();
+
+                if (meter.getMeterNumber() == null ||
+                        meter.getMeterNumber().trim().isEmpty()) {
+
+                    GenericResp resp = new GenericResp();
+                    resp.setId(null);
+                    resp.setMessage("Missing meter number");
+                    resp.setData(null);
+
+                    failedRecords.add(resp);
+                    duplicateIterator.remove();
+                    continue;
+                }
+
+                String meterNumber = meter.getMeterNumber().trim();
+
+                if (existingMeterNumbers.equals(meterNumber)) {
+
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meterNumber);
+                    resp.setMessage("Meter already exists");
+                    resp.setData(meterNumber);
+
+                    failedRecords.add(resp);
+                    duplicateIterator.remove();
+                }
+            }
+
+            if (batch.isEmpty()) {
+                continue;
+            }
+
 
             try {
                 insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
@@ -3143,33 +3212,35 @@ public class MeterServiceImpl implements MeterService {
                 successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
             }
         }
+        final int totalRecords = meters.size();
 
-        result.put("totalRecords", meters.size());
+        result.put("totalRecords", totalRecords);
         result.put("successCount", successCount);
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
-
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
-                    failedRecords.size() + " of " + meters.size() + " Meters upload failed",
+            return ResponseMap.response(
+                    "131",
+                    failedRecords.size() + " of " + totalRecords + " Meters upload failed",
                     result
             );
         }
 
         return ResponseMap.response(
                 status.getSuccessCode(),
-                successCount + " of " + meters.size() + " Meters uploaded successfully",
+                successCount + " of " + totalRecords + " Meters uploaded successfully",
                 result
         );
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void insertBatchTransactional(List<Meter> batch, UserModel user,  Map<String, UUID> manufacturerNameToId, List<GenericResp> failedRecords) {
+
         prepareMeters(batch, user, manufacturerNameToId, failedRecords);
 
         // ABSOLUTE SAFETY CHECK
-        batch.removeIf(m -> m.getMeterManufacturer() == null);
+//        batch.removeIf(m -> m.getMeterManufacturer() == null);
 
         if (batch.isEmpty()) {
             return; // nothing valid to insert
@@ -3198,7 +3269,8 @@ public class MeterServiceImpl implements MeterService {
 
         for (int i = 0; i < batch.size(); i += subBatchSize) {
             int end = Math.min(i + subBatchSize, batch.size());
-            List<Meter> subBatch = batch.subList(i, end);
+//            List<Meter> subBatch = batch.subList(i, end);
+            List<Meter> subBatch = new ArrayList<>(batch.subList(i, end));
 
             try {
                 insertBatchTransactional(subBatch, user, manufacturerNameToId, failedRecords);
@@ -3243,7 +3315,7 @@ public class MeterServiceImpl implements MeterService {
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
                 GenericResp resp = new GenericResp();
-                resp.setId(meter.getMeterId().toString());
+                resp.setId(meter.getMeterNumber());
                 resp.setMessage("Meter single save failed: "+reason);
                 resp.setData(meter.getMeterNumber());
 
@@ -3267,11 +3339,22 @@ public class MeterServiceImpl implements MeterService {
         while (iterator.hasNext()) {
             Meter meter = iterator.next();
 
+//            if(meter != null){
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meter.getMeterNumber());
+//                resp.setMessage("Meter already exist");
+//                resp.setData(meter);
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+
             // --- Validate and set Manufacturer ID ---
             String manuName = meter.getMeterManufacturerName();
             if (manuName == null || manuName.trim().isBlank()) {
                 GenericResp resp = new GenericResp();
-                resp.setId(meter.getMeterId().toString());
+                resp.setId(meter.getMeterNumber());
                 resp.setMessage("Missing manufacturer name");
                 resp.setData(meter.getMeterNumber());
 
@@ -3283,7 +3366,7 @@ public class MeterServiceImpl implements MeterService {
             UUID manuId = manufacturerNameToId.get(manuName.trim().toLowerCase());
             if (manuId == null) {
                 GenericResp resp = new GenericResp();
-                resp.setId(meter.getMeterId().toString());
+                resp.setId(meter.getMeterNumber());
                 resp.setMessage("Invalid manufacturer: "+manuName);
                 resp.setData(meter.getMeterNumber());
 
@@ -3295,6 +3378,19 @@ public class MeterServiceImpl implements MeterService {
 
             meter.setMeterManufacturer(manuId);
 
+            String validationError = validateRequiredFields(meter);
+
+            if (validationError != null) {
+                GenericResp resp = new GenericResp();
+                resp.setId(String.valueOf(meter.getMeterNumber()));
+                resp.setMessage(validationError);
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+                iterator.remove();
+                continue;
+            }
+
             // --- Default Meter Fields ---
             meter.setOrgId(user.getOrgId());
             meter.setCreatedBy(user.getId());
@@ -3303,6 +3399,16 @@ public class MeterServiceImpl implements MeterService {
             meter.setType("NON-VIRTUAL");
             meter.setDescription("Newly Added");
         }
+    }
+
+    private String validateRequiredFields(Meter meter) {
+
+        if (meter.getOldTariffIndex() == null) return "old tariff index is required";
+        if (meter.getNewTariffIndex() == null) return "new tariff index is required";
+        if (meter.getMeterNumber() == null || meter.getMeterNumber().trim().isEmpty()) return "meter number is required";
+        if (meter.getMeterCategory() == null || meter.getMeterCategory().trim().isEmpty()) return "meter category is required";
+
+        return null;
     }
 
     private void insertChildMeterData(List<Meter> batch, UserModel user) {
@@ -3330,14 +3436,6 @@ public class MeterServiceImpl implements MeterService {
 
         if (!smartInfos.isEmpty()) meterMapper.insertBatchSmartMeterInfoVersion(smartInfos);
         if (!mdInfos.isEmpty()) meterMapper.insertBatchMDMeterInfoVersion(mdInfos);
-    }
-
-    private void auditBatch(List<Meter> batch, UserModel user, String desc) {
-        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-        for (Meter m : batch) {
-            AuditLog auditLog = buildAuditLog(user, desc, "Meter", m, metadata, "");
-            safeAuditService.saveAudit(auditLog);
-        }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
@@ -3509,6 +3607,14 @@ public class MeterServiceImpl implements MeterService {
         return meters;
     }
 
+
+    private void auditBatch(List<Meter> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (Meter m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc, "Meter", m, metadata, "");
+            safeAuditService.saveAudit(auditLog);
+        }
+    }
     @Override
     public ByteArrayInputStream exportActualMeter() {
 
