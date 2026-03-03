@@ -161,7 +161,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
     @Transactional
     public Map<String, Object> reconcileDebt(UUID meterId, UUID liabilityCauseId,
-                                             String amount, String type) {
+                                             String amount) {
 
         try {
 
