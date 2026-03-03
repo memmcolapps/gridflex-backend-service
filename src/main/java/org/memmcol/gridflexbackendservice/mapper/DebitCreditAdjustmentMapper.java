@@ -22,7 +22,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} " +
             "AND liability_cause_id = #{liabilityCauseId} " +
-            "AND org_id = #{orgId} AND UPPER(type) = UPPER(#{type}) " +
+            "AND org_id = #{orgId} " +
             "AND status IN ('UNPAID', 'PARTIALLY_PAID')" +
             "ORDER BY created_at ASC ")
     @Results({
@@ -41,7 +41,7 @@ public interface DebitCreditAdjustmentMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
     List<DebitCreditAdjust> getDebitAdjustmentByMeterIdAndLcId(
-            UUID meterId, UUID liabilityCauseId, UUID orgId, String type);
+            UUID meterId, UUID liabilityCauseId, UUID orgId);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE id = #{id} AND org_id = #{orgId}")
     @Results({

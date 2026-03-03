@@ -169,12 +169,8 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             UserModel um = handleUserValidation();
 
-            if (type == null || !type.trim().equalsIgnoreCase("debit")) {
-                throw new GlobalExceptionHandler.NotFoundException("Parameter type must be; type: 'credit' or 'debit'");
-            }
-
             List<DebitCreditAdjust> debts = mapper.getDebitAdjustmentByMeterIdAndLcId(
-                    meterId, liabilityCauseId, um.getOrgId(), type);
+                    meterId, liabilityCauseId, um.getOrgId());
 
             if (debts == null || debts.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException(
