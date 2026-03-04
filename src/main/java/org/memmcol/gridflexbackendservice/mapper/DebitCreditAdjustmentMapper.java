@@ -22,8 +22,7 @@ public interface DebitCreditAdjustmentMapper {
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{meterId} " +
             "AND liability_cause_id = #{liabilityCauseId} " +
-            "AND org_id = #{orgId} " +
-            "AND status IN ('UNPAID', 'PARTIALLY_PAID')" +
+            "AND org_id = #{orgId} AND status IN ('UNPAID', 'PARTIALLY_PAID')" +
             "ORDER BY created_at ASC ")
     @Results({
             @Result(column = "id", property = "id"),
@@ -40,7 +39,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "payment", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
-    List<DebitCreditAdjust> getDebitAdjustmentByMeterIdAndLcId(
+    DebitCreditAdjust getDebitAdjustmentByMeterIdAndLcId(
             UUID meterId, UUID liabilityCauseId, UUID orgId);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE id = #{id} AND org_id = #{orgId}")
@@ -265,11 +264,7 @@ public interface DebitCreditAdjustmentMapper {
         ) adj_total
                       ON adj_total.id = ca.id
         WHERE UPPER(ca.type) = UPPER(#{type})
-        ORDER BY
-            MIN(CASE WHEN p.parent_id IS NULL THEN p.created_at END)
-            OVER (PARTITION BY COALESCE(p.parent_id, p.id)) ASC,
-            (p.parent_id IS NOT NULL),
-            p.created_at ASC;
+        ORDER BY p.created_at ASC;
     """)
     @Results({
             @Result(column = "id", property = "id"),
@@ -368,8 +363,10 @@ public interface DebitCreditAdjustmentMapper {
             @Param("newBalance") BigDecimal newBalance,
             @Param("status") String status);
 
-    @Insert("INSERT INTO credit_debit_payment (parent_id, credit_debit_adj_id, credit, debt, balance, created_at, org_id) " +
-            "VALUES (#{parentId}, #{creditDebitAdjId}, #{credit}, #{debt}, #{balance}, #{createdAt}, #{orgId})")
+    @Insert("INSERT INTO credit_debit_payment " +
+            "(parent_id, credit_debit_adj_id, credit, debt, balance, created_at, org_id) " +
+            "VALUES " +
+            "(#{parentId}, #{creditDebitAdjId}, #{credit}, #{debt}, #{balance}, #{createdAt}, #{orgId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertDebtCreditPayment(DebitCreditPayment payment);
 
@@ -401,6 +398,7 @@ public interface DebitCreditAdjustmentMapper {
             @Result(column = "liability_cause_id", property = "liabilityCauseId"),
             @Result(column = "meter_id", property = "meterId"),
             @Result(column = "debit", property = "amount"),
+            @Result(column = "balance", property = "balance"),
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "updated_at", property = "updatedAt"),
             @Result(property = "liabilityCause", column = "liability_cause_id",
@@ -410,7 +408,14 @@ public interface DebitCreditAdjustmentMapper {
     })
     DebitCreditAdjust getDebitAdjustmentByMeterIdAndLiabilityCause(UUID meterId, UUID orgId, UUID liabilityCauseId, String type);
 
-//    @Update("UPDATE credit_debit_adjustment SET balance = balance + #{newBalance}, debit = debit + #{debit}, updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
+    @Update("UPDATE credit_debit_adjustment SET balance = balance + #{newBalance}, debit = debit + #{debit}, " +
+            "updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
+    int addCreditDebitAdjustment(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
+                                 @Param("newBalance") BigDecimal newBalance,
+                                 @Param("debit") BigDecimal debit);
+
+//    @Update("UPDATE credit_debit_adjustment SET balance = balance + #{newBalance}, debit = debit + #{debit}, " +
+//            "updated_at = NOW() WHERE id = #{debitCreditAdjustmentId}")
 //    int addCreditDebitAdjustment(@Param("debitCreditAdjustmentId") UUID debitCreditAdjustmentId,
 //                                 @Param("newBalance") BigDecimal newBalance,
 //                                 @Param("debit") BigDecimal debit);
@@ -486,8 +491,13 @@ public interface DebitCreditAdjustmentMapper {
                                @Param("status") String status);
 
     @Select("""
-        SELECT * FROM credit_debit_payment WHERE org_id = #{orgId} 
-                 AND credit_debit_adj_id = #{adjId} AND parent_id IS NULL
+       SELECT *
+          FROM credit_debit_payment
+          WHERE org_id = '119a7451-63a7-4bfb-95f6-75c1284d1da5'
+            AND credit_debit_adj_id = '1ab9a645-ed4a-4041-be2c-f6dae47c6b0b'
+            AND parent_id IS NULL
+          ORDER BY balance DESC
+          LIMIT 1;
     """)
     @Results({
             @Result(column = "id", property = "id"),

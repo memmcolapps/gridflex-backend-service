@@ -336,6 +336,7 @@ public class MeterServiceImpl implements MeterService {
                 request.setDss(existingMeter.getDss());
                 request.setCin(existingMeter.getCin());
                 request.setAccountNumber(existingMeter.getAccountNumber());
+                request.setTariff(existingMeter.getTariff());
             }
 
             String MDDesc = "";
@@ -356,7 +357,6 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterId(existingMeter.getMeterId());
             request.setCreatedBy(user.getId());
             request.setCustomerId(existingMeter.getCustomerId());
-            request.setTariff(existingMeter.getTariff());
             request.setMeterId(existingMeter.getId());
 
 
