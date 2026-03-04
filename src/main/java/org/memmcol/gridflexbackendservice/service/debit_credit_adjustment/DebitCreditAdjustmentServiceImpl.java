@@ -105,30 +105,37 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause not found");
             }
 
-//            DebitCreditAdjust liabilityResult = mapper.getDebitAdjustmentByMeterIdAndLiabilityCause(request.getMeterId(),um.getOrgId(),
-//                    request.getLiabilityCauseId(),request.getType());
-//            if (liabilityResult != null) {
-//
-//                int rows = mapper.addCreditDebitAdjustment(liabilityResult.getId(), request.getAmount(), request.getAmount());
-//                if (rows == 0) {
-//                    throw new GlobalExceptionHandler.NotFoundException(request.getType()+" adjustment failed");
-//                }
-//            } else {
-            request.setOrgId(um.getOrgId());
-            request.setStatus("UNPAID");
-            result = mapper.createDebitAdjustment(request);
+            DebitCreditAdjust AdjustResult = mapper.getDebitAdjustmentByMeterIdAndLiabilityCause(
+                    request.getMeterId(),
+                    um.getOrgId(),
+                    request.getLiabilityCauseId(),
+                    request.getType());
 
-            if(result == 0){
-                throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
+            if (AdjustResult != null) {
+
+//                request.setBalance(liabilityResult.getBalance().add(request.getBalance()));
+
+                int rows = mapper.addCreditDebitAdjustment(AdjustResult.getId(), request.getAmount(), request.getAmount());
+                if (rows == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(request.getType()+" adjustment failed");
+                }
+                request.setBalance(AdjustResult.getBalance().add(request.getAmount()));
+                request.setId(AdjustResult.getId());
+            } else {
+                request.setOrgId(um.getOrgId());
+                request.setStatus("UNPAID");
+                result = mapper.createDebitAdjustment(request);
+                if(result == 0){
+                    throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getRegFailureDesc());
+                }
             }
-
 
             // 1. Save payment record
             DebitCreditPayment payment = new DebitCreditPayment();
             payment.setCreditDebitAdjId(request.getId());
             payment.setCredit(request.getType().equalsIgnoreCase("credit")
                     ? request.getAmount() : BigDecimal.ZERO);
-            payment.setBalance(request.getAmount());
+            payment.setBalance(AdjustResult != null ? request.getBalance() : request.getAmount());
             payment.setDebt(request.getType().equalsIgnoreCase("credit")
                     ? BigDecimal.ZERO : request.getAmount());
             payment.setOrgId(um.getOrgId());
@@ -137,7 +144,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             if(res == 0){
                 throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
             }
-//            }
 
             DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(request.getId(), um.getOrgId());
             um.setPassword("");
@@ -159,218 +165,214 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
-    @Transactional
-    public Map<String, Object> reconcileDebt(UUID meterId, UUID liabilityCauseId,
-                                             String amount) {
-
-        try {
-
-            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-
-            UserModel um = handleUserValidation();
-
-            List<DebitCreditAdjust> debts = mapper.getDebitAdjustmentByMeterIdAndLcId(
-                    meterId, liabilityCauseId, um.getOrgId());
-
-            if (debts == null || debts.isEmpty()) {
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "No outstanding debts found");
-            }
-
-            BigDecimal remainingPayment = new BigDecimal(amount);
-
-            if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "Payment must be greater than zero");
-            }
-
-            BigDecimal totalOutstanding = debts.stream()
-                    .map(DebitCreditAdjust::getBalance)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            if (remainingPayment.compareTo(totalOutstanding) > 0) {
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "Payment exceeds total outstanding debt ("+totalOutstanding+")");
-            }
-
-            // Loop through debts
-            for (DebitCreditAdjust debt : debts) {
-
-                if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
-                    break; // stop if no money left
-                }
-
-                BigDecimal currentBalance = debt.getBalance();
-
-                if (currentBalance.compareTo(BigDecimal.ZERO) <= 0) {
-                    continue; // skip already paid
-                }
-
-                BigDecimal paymentForThisDebt;
-
-                if (remainingPayment.compareTo(currentBalance) >= 0) {
-                    // Fully pay this debt
-                    paymentForThisDebt = currentBalance;
-                } else {
-                    // Partially pay this debt
-                    paymentForThisDebt = remainingPayment;
-                }
-
-                BigDecimal newBalance = currentBalance.subtract(paymentForThisDebt);
-
-                if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-                    newBalance = BigDecimal.ZERO; // hard safety guard
-                }
-
-                String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0
-                        ? "PAID"
-                        : "PARTIALLY_PAID";
-
-                DebitCreditPayment debitCreditPayment = mapper.getPaymentById(
-                        debt.getId(),
-                        um.getOrgId());
-
-                if (debitCreditPayment == null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
-                }
-
-                // Insert payment record
-                DebitCreditPayment payment = new DebitCreditPayment();
-                payment.setParentId(debitCreditPayment.getId());
-                payment.setCreditDebitAdjId(debt.getId());
-                payment.setCredit(paymentForThisDebt);
-                payment.setBalance(newBalance);
-                payment.setDebt(BigDecimal.ZERO);
-                payment.setOrgId(um.getOrgId());
-
-                int res = mapper.insertDebtCreditPayment(payment);
-                if(res == 0){
-                    throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
-                }
-
-                // Update debt record
-                int resp = mapper.updateReconciledDebt(
-                        debt.getId(),
-                        newBalance,
-                        newStatus
-                );
-                if(resp == 0){
-                    throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
-                }
-
-                // Reduce remaining payment
-                remainingPayment = remainingPayment.subtract(paymentForThisDebt);
-
-                DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debt.getId(), um.getOrgId());
-                String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
-                um.setPassword("");
-    //            handleAddCache(debitAdjustment);
-                AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
-                safeAuditService.saveAudit(auditLog);
-//            return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
-//
-//
-            }
-
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Debt reconciliation successful",
-                    ""
-            );
-
-        } catch (Exception e) {
-            log.error("Reconciliation failed", e);
-            throw e;
-        }
-    }
-
 //    @Transactional
-//    @Override
-//    public Map<String, Object> reconcileDebt(
-//            UUID meterId, UUID liabilityCauseId, String amount, String type, String createAt) {
+//    public Map<String, Object> reconcileDebt(UUID meterId, UUID liabilityCauseId,
+//                                             String amount) {
 //
 //        try {
+//
 //            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 //
 //            UserModel um = handleUserValidation();
 //
-//            if (type == null ||
-//                    (!type.trim().equalsIgnoreCase("credit")
-//                            && !type.trim().equalsIgnoreCase("debit"))) {
-//                throw new GlobalExceptionHandler.NotFoundException("Parameter type must be; type: 'credit' or 'debit'");
+//            List<DebitCreditAdjust> debts = mapper.getDebitAdjustmentByMeterIdAndLcId(
+//                    meterId, liabilityCauseId, um.getOrgId());
+//
+//            if (debts == null) {
+//                throw new GlobalExceptionHandler.NotFoundException(
+//                        "No outstanding debts found");
 //            }
 //
-//            DebitCreditAdjust debitCreditAdjust = mapper.getDebitAdjustmentByMeterIdAndLcId(
-//                    meterId, liabilityCauseId, um.getOrgId(), type, createAt);
-//            if (debitCreditAdjust == null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Debit Adjustment not found");
+//            BigDecimal remainingPayment = new BigDecimal(amount);
+//
+//            if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
+//                throw new GlobalExceptionHandler.NotFoundException(
+//                        "Payment must be greater than zero");
 //            }
 //
-//            if (debitCreditAdjust.getStatus().equalsIgnoreCase("PAID")) {
-//                throw new GlobalExceptionHandler.NotFoundException("No outstanding adjustment debt");
+//            BigDecimal totalOutstanding = debts.stream()
+//                    .map(DebitCreditAdjust::getBalance)
+//                    .filter(Objects::nonNull)
+//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//            if (remainingPayment.compareTo(totalOutstanding) > 0) {
+//                throw new GlobalExceptionHandler.NotFoundException(
+//                        "Payment exceeds total outstanding debt ("+totalOutstanding+")");
 //            }
 //
-//            // Convert strings to BigDecimal for precise monetary calculation
-//            BigDecimal currentBalance = debitCreditAdjust.getBalance();
-//            BigDecimal paymentAmount = new BigDecimal(amount);
+//            // Loop through debts
+//            for (DebitCreditAdjust debt : debts) {
 //
-//            if (paymentAmount.compareTo(BigDecimal.ZERO) <= 0) {
-//                throw new GlobalExceptionHandler.NotFoundException("Payment amount must be greater than zero");
+//                if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
+//                    break; // stop if no money left
+//                }
+//
+//                BigDecimal currentBalance = debt.getBalance();
+//
+//                if (currentBalance.compareTo(BigDecimal.ZERO) <= 0) {
+//                    continue; // skip already paid
+//                }
+//
+//                BigDecimal paymentForThisDebt;
+//
+//                if (remainingPayment.compareTo(currentBalance) >= 0) {
+//                    // Fully pay this debt
+//                    paymentForThisDebt = currentBalance;
+//                } else {
+//                    // Partially pay this debt
+//                    paymentForThisDebt = remainingPayment;
+//                }
+//
+//                BigDecimal newBalance = currentBalance.subtract(paymentForThisDebt);
+//
+//                if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+//                    newBalance = BigDecimal.ZERO; // hard safety guard
+//                }
+//
+//                String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0
+//                        ? "PAID"
+//                        : "PARTIALLY_PAID";
+//
+//                DebitCreditPayment debitCreditPayment = mapper.getPaymentById(
+//                        debt.getId(),
+//                        um.getOrgId());
+//
+//                if (debitCreditPayment == null) {
+//                    throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
+//                }
+//
+//                // Insert payment record
+//                DebitCreditPayment payment = new DebitCreditPayment();
+//                payment.setParentId(debitCreditPayment.getId());
+//                payment.setCreditDebitAdjId(debt.getId());
+//                payment.setCredit(paymentForThisDebt);
+//                payment.setBalance(newBalance);
+//                payment.setDebt(BigDecimal.ZERO);
+//                payment.setOrgId(um.getOrgId());
+//
+//                int res = mapper.insertDebtCreditPayment(payment);
+//                if(res == 0){
+//                    throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
+//                }
+//
+//                // Update debt record
+//                int resp = mapper.updateReconciledDebt(
+//                        debt.getId(),
+//                        newBalance,
+//                        newStatus
+//                );
+//                if(resp == 0){
+//                    throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
+//                }
+//
+//                // Reduce remaining payment
+//                remainingPayment = remainingPayment.subtract(paymentForThisDebt);
+//
+//                DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debt.getId(), um.getOrgId());
+//                String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
+//                um.setPassword("");
+//    //            handleAddCache(debitAdjustment);
+//                AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
+//                safeAuditService.saveAudit(auditLog);
+////            return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
+////
+////
 //            }
 //
-//            // Ensure we don't allow overpayment
-//            if (paymentAmount.compareTo(currentBalance) > 0) {
-//                throw new GlobalExceptionHandler.NotFoundException("Payment exceeds current balance");
-//            }
+//            return ResponseMap.response(
+//                    status.getSuccessCode(),
+//                    "Debt reconciliation successful",
+//                    ""
+//            );
 //
-//            BigDecimal returnBalance = debitCreditAdjust.getStatus().equalsIgnoreCase( "UNPAID")
-//                    ? currentBalance.subtract(paymentAmount) : currentBalance;
-//
-//            DebitCreditPayment debitCreditPayment = mapper.getPaymentById(debitCreditAdjustmentId, um.getOrgId());
-//
-//            if (debitCreditPayment == null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
-//            }
-//
-//            // 1. Save payment record
-//            DebitCreditPayment payment = new DebitCreditPayment();
-//            payment.setParentId(debitCreditPayment.getId());
-//            payment.setCreditDebitAdjId(debitCreditAdjustmentId);
-//            payment.setCredit(paymentAmount);
-//            payment.setBalance(returnBalance);
-//            payment.setDebt(BigDecimal.ZERO);
-//            payment.setOrgId(um.getOrgId());
-//
-//            int res = mapper.insertDebtCreditPayment(payment);
-//            if(res == 0){
-//                throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
-//            }
-//            // 2. Update penalty balance
-//            BigDecimal newBalance = currentBalance.subtract(paymentAmount);
-//            String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "PAID" : "PARTIALLY_PAID";
-//
-//            // Persist the updated values
-//            int resp = mapper.updateReconciledDebt(debitCreditAdjustmentId, newBalance, newStatus);
-//            if(resp == 0){
-//                throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
-//            }
-//
-//            DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentByMeterIdAndLcId(meterId, liabilityCauseId, um.getOrgId(), type, createdAt);
-//            String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
-//            um.setPassword("");
-////            handleAddCache(debitAdjustment);
-//            AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
-//            safeAuditService.saveAudit(auditLog);
-//            return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
-//
-//        } catch (Exception exception) {
-//            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-//            genericHandler.logIncidentReport("Reconciliation dept service failed");
-//            genericHandler.logAndSaveException(exception, "reconcile dept");
-//            throw exception;
+//        } catch (Exception e) {
+//            log.error("Reconciliation failed", e);
+//            throw e;
 //        }
 //    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> reconcileDebt(
+            UUID meterId, UUID liabilityCauseId, String amount) {
+
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+            UserModel um = handleUserValidation();
+
+
+            DebitCreditAdjust debitCreditAdjust = mapper.getDebitAdjustmentByMeterIdAndLcId(
+                    meterId, liabilityCauseId, um.getOrgId());
+            if (debitCreditAdjust == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit Adjustment not found");
+            }
+
+            if (debitCreditAdjust.getStatus().equalsIgnoreCase("PAID")) {
+                throw new GlobalExceptionHandler.NotFoundException("No outstanding adjustment debt");
+            }
+
+            // Convert strings to BigDecimal for precise monetary calculation
+            BigDecimal currentBalance = debitCreditAdjust.getBalance();
+            BigDecimal paymentAmount = new BigDecimal(amount);
+
+            if (paymentAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Payment amount must be greater than zero");
+            }
+
+            // Ensure we don't allow overpayment
+            if (paymentAmount.compareTo(currentBalance) > 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Payment exceeds current balance");
+            }
+
+            BigDecimal returnBalance = debitCreditAdjust.getStatus().equalsIgnoreCase( "UNPAID")
+                    || debitCreditAdjust.getStatus().equalsIgnoreCase( "PARTIALLY_PAID")
+                    ? currentBalance.subtract(paymentAmount) : currentBalance;
+
+            DebitCreditPayment debitCreditPayment = mapper.getPaymentById(debitCreditAdjust.getId(), um.getOrgId());
+
+            if (debitCreditPayment == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
+            }
+
+            // 1. Save payment record
+            DebitCreditPayment payment = new DebitCreditPayment();
+            payment.setParentId(debitCreditPayment.getId());
+            payment.setCreditDebitAdjId(debitCreditAdjust.getId());
+            payment.setCredit(paymentAmount);
+            payment.setBalance(returnBalance);
+            payment.setDebt(BigDecimal.ZERO);
+            payment.setOrgId(um.getOrgId());
+
+            int res = mapper.insertDebtCreditPayment(payment);
+            if(res == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Debt Reconciliation" + status.getRegFailureDesc());
+            }
+            // 2. Update penalty balance
+            BigDecimal newBalance = currentBalance.subtract(paymentAmount);
+            String newStatus = newBalance.compareTo(BigDecimal.ZERO) == 0 ? "PAID" : "PARTIALLY_PAID";
+
+            // Persist the updated values
+            int resp = mapper.updateReconciledDebt(debitCreditAdjust.getId(), newBalance, newStatus);
+            if(resp == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
+            }
+
+            DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentByMeterIdAndLcId(meterId, liabilityCauseId, um.getOrgId());
+            String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
+            um.setPassword("");
+//            handleAddCache(debitAdjustment);
+            AuditLog auditLog = buildAuditLog(um, desc, "debit-credit", debitAdjustment, metadata);
+            safeAuditService.saveAudit(auditLog);
+            return ResponseMap.response(status.getSuccessCode(), "Payment reconciliation successful", "");
+
+        } catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Reconciliation dept service failed");
+            genericHandler.logAndSaveException(exception, "reconcile dept");
+            throw exception;
+        }
+    }
 
     @Transactional(readOnly = true)
     @Override
