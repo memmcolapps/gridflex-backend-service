@@ -358,7 +358,8 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Balance" + status.getUpdateFailureDesc());
             }
 
-            DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentByMeterIdAndLcId(meterId, liabilityCauseId, um.getOrgId());
+//            DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentByMeterIdAndLcId(meterId, liabilityCauseId, um.getOrgId());
+            DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debitCreditAdjust.getId(), um.getOrgId());
             String desc = capitalizeFirstLetter(debitAdjustment.getLiabilityCause().getName())+" debt reconcile "+newStatus;
             um.setPassword("");
 //            handleAddCache(debitAdjustment);
