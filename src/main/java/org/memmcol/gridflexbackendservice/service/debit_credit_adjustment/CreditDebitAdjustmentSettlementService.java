@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.debit_credit_adjustment;
 
 import lombok.RequiredArgsConstructor;
+import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.CreditDebitPaymentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.PaymentModeMapper;
@@ -10,6 +11,8 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.CreditDe
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +28,9 @@ public class CreditDebitAdjustmentSettlementService {
     private final DebitCreditAdjustmentMapper adjustmentMapper;
     private final PaymentModeMapper paymentModeMapper;
     private final CreditDebitPaymentMapper paymentMapper;
+
+    @Autowired
+    private ResponseProperties status;
 
     private final AdjustmentComputationService computationService = new AdjustmentComputationService();
 
@@ -48,24 +54,89 @@ public class CreditDebitAdjustmentSettlementService {
      * Called ONLY after token generation succeeds.
      * Applies settlements + inserts payments.
      */
-    public void settleAdjustments(UUID orgId,
-                                  UUID transactionId,
-                                  List<AdjustmentAllocation> allocations) {
+//    public void settleAdjustments(UUID orgId,
+//                                  UUID transactionId,
+//                                  List<AdjustmentAllocation> allocations) {
+//
+//        if (allocations == null || allocations.isEmpty()) return;
+//
+//        for (AdjustmentAllocation alloc : allocations) {
+//            BigDecimal paid = alloc.getAllocatedAmount();
+//            if (paid == null || paid.compareTo(BigDecimal.ZERO) <= 0) continue;
+//
+//            CreditDebitAdjustment adj = adjustmentMapper.findByIdForUpdate(orgId, alloc.getAdjustmentId());
+//            if (adj == null) continue;
+//
+//            BigDecimal currentBal = adj.getBalance() == null ? BigDecimal.ZERO : adj.getBalance();
+//            BigDecimal newBal = currentBal.subtract(paid);
+//
+//            if (newBal.compareTo(BigDecimal.ZERO) < 0) {
+//                newBal = BigDecimal.ZERO; // safety clamp
+//            }
+//
+//            String newStatus;
+//            if (newBal.compareTo(BigDecimal.ZERO) == 0) {
+//                newStatus = STATUS_PAID;
+//            } else if (newBal.compareTo(currentBal) < 0) {
+//                newStatus = STATUS_PARTIAL;
+//            } else {
+//                newStatus = adj.getStatus() == null ? STATUS_UNPAID : adj.getStatus();
+//            }
+//
+//            // update balance/status
+//            adjustmentMapper.updateBalanceAndStatus(orgId, adj.getId(), newBal, newStatus);
+//
+//            // insert payment record
+//            DebitCreditPayment dcp = new DebitCreditPayment();
+//            dcp.setOrgId(orgId);
+//            dcp.setCreditDebitAdjId(adj.getId());
+//            dcp.setPaymentMode(alloc.getPaymentMode());
+//            dcp.setTransId(transactionId);
+//            dcp.setCredit(alloc.getAllocatedAmount());
+//
+//            paymentMapper.insertPayment(dcp);
+//        }
+//    }
 
-        if (allocations == null || allocations.isEmpty()) return;
+    /**
+     * Settle debts sequentially after token generation.
+     * Updates the balance and inserts payment records for each debt processed.
+     */
+    public void settleDebtsSequentially(UUID orgId, UUID meterId,
+                                        List<SettledDebt> settledDebts) {
+        if (settledDebts == null || settledDebts.isEmpty()) return;
 
-        for (AdjustmentAllocation alloc : allocations) {
-            BigDecimal paid = alloc.getAllocatedAmount();
+        // Get all active debit adjustments for this meter
+        List<CreditDebitAdjustment> activeDebits = adjustmentMapper.findActiveForUpdate(orgId, meterId)
+                .stream()
+                .filter(adj -> "debit".equalsIgnoreCase(adj.getType()))
+                .collect(java.util.stream.Collectors.toList());
+
+        for (SettledDebt debt : settledDebts) {
+            BigDecimal paid = debt.getAmountPaid();
             if (paid == null || paid.compareTo(BigDecimal.ZERO) <= 0) continue;
 
-            CreditDebitAdjustment adj = adjustmentMapper.findByIdForUpdate(orgId, alloc.getAdjustmentId());
-            if (adj == null) continue;
+            // Find matching adjustment based on balance
+            CreditDebitAdjustment matchingAdj = activeDebits.stream()
+                    .filter(adj -> adj.getBalance() != null && adj.getBalance().compareTo(debt.getBalanceBefore()) == 0)
+                    .findFirst()
+                    .orElse(null);
 
-            BigDecimal currentBal = adj.getBalance() == null ? BigDecimal.ZERO : adj.getBalance();
+            // If no exact match, try to find any unpaid adjustment
+            if (matchingAdj == null) {
+                matchingAdj = activeDebits.stream()
+                        .filter(adj -> "UNPAID".equalsIgnoreCase(adj.getStatus()) || "PARTIALLY_PAID".equalsIgnoreCase(adj.getStatus()))
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (matchingAdj == null) continue;
+
+            BigDecimal currentBal = matchingAdj.getBalance() == null ? BigDecimal.ZERO : matchingAdj.getBalance();
             BigDecimal newBal = currentBal.subtract(paid);
 
             if (newBal.compareTo(BigDecimal.ZERO) < 0) {
-                newBal = BigDecimal.ZERO; // safety clamp
+                newBal = BigDecimal.ZERO;
             }
 
             String newStatus;
@@ -74,21 +145,45 @@ public class CreditDebitAdjustmentSettlementService {
             } else if (newBal.compareTo(currentBal) < 0) {
                 newStatus = STATUS_PARTIAL;
             } else {
-                newStatus = adj.getStatus() == null ? STATUS_UNPAID : adj.getStatus();
+                newStatus = matchingAdj.getStatus() == null ? STATUS_UNPAID : matchingAdj.getStatus();
             }
 
+            System.out.println("matchingAdj.getId():"+matchingAdj.getId());
+            System.out.println("orgId:"+orgId);
+            System.out.println("newBal:"+newBal);
+            System.out.println("newStatus:"+newStatus);
+
             // update balance/status
-            adjustmentMapper.updateBalanceAndStatus(orgId, adj.getId(), newBal, newStatus);
+            int respAdjust = adjustmentMapper.updateBalanceAndStatus(matchingAdj.getId(), orgId, newBal, newStatus);
+            if(respAdjust == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Balance " + status.getUpdateFailureDesc());
+            }
 
             // insert payment record
             DebitCreditPayment dcp = new DebitCreditPayment();
+//            dcp.setParentId(dcp.getId());
+            dcp.setCreditDebitAdjId(matchingAdj.getId());
+            dcp.setBalance(newBal);
+            dcp.setDebt(matchingAdj.getDebit());
             dcp.setOrgId(orgId);
-            dcp.setCreditDebitAdjId(adj.getId());
-            dcp.setPaymentMode(alloc.getPaymentMode());
-            dcp.setTransId(transactionId);
-            dcp.setCredit(alloc.getAllocatedAmount());
+////            dcp.setPaymentMode("ONE-OFF");
+////            dcp.setTransId(transactionId);
+            dcp.setCredit(paid);
 
-            paymentMapper.insertPayment(dcp);
+            int respAdjustPayment = paymentMapper.insertPayment(dcp);
+            if(respAdjustPayment == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Failed to pay debit adjustment");
+            }
         }
+    }
+
+    /**
+     * Helper class to hold settled debt information
+     */
+    @lombok.Data
+    @lombok.Builder
+    public static class SettledDebt {
+        private BigDecimal amountPaid;
+        private BigDecimal balanceBefore;
     }
 }

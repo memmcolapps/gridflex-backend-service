@@ -430,7 +430,7 @@ public interface DebitCreditAdjustmentMapper {
         FROM credit_debit_adjustment
         WHERE org_id = #{orgId}
           AND meter_id = #{meterId}
-          AND status IN ('UNPAID', 'PARTIAL')
+          AND status IN ('UNPAID', 'PARTIALLY_PAID')
           AND balance > 0
         ORDER BY created_at ASC
         FOR UPDATE
@@ -474,16 +474,16 @@ public interface DebitCreditAdjustmentMapper {
     @Update("""
         UPDATE credit_debit_adjustment
         SET
-            balance = #{newBalance},
+            balance = #{newBal},
             status = #{newStatus},
             updated_at = now()
-        WHERE id = #{adjustmentId}
+        WHERE id = #{id}
           AND org_id = #{orgId}
     """)
     int updateBalanceAndStatus(@Param("id") UUID id,
                                @Param("orgId") UUID orgId,
-                               @Param("balance") BigDecimal balance,
-                               @Param("status") String status);
+                               @Param("newBal") BigDecimal newBal,
+                               @Param("newStatus") String newStatus);
 
     @Select("""
         SELECT * FROM credit_debit_payment WHERE org_id = #{orgId} 
