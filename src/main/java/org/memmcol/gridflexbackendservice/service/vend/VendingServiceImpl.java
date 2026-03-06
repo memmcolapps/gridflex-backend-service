@@ -516,12 +516,11 @@ public class VendingServiceImpl implements VendingService {
                     finalPaymentAmount.subtract(netTender);
 
             // Units from money
-            BigDecimal unitsFromTender =
-                    netTender.divide(tariffRate, 3, RoundingMode.HALF_UP);
 
+            BigDecimal finalUnits = (netTender.add(creditUnitsToApply)).divide(tariffRate, 3, RoundingMode.HALF_UP);
             // Add credit units
-            BigDecimal finalUnits =
-                    unitsFromTender.add(creditUnitsToApply);
+//            BigDecimal finalUnits =
+//                    unitsFromTender.add(creditUnitsToApply);
 
             BigDecimal costPerUnit =
                     finalUnits.compareTo(BigDecimal.ZERO) > 0
