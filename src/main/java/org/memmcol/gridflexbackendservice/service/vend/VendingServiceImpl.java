@@ -431,10 +431,11 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = meters.get(0);
 
-//            String debitPaymentMode = meter.getDebitPaymentMode();
-//            String debitPaymentPlan = meter.getDebitPaymentPlan();
-//            String creditPaymentMode = meter.getCreditPaymentMode();
-//            String creditPaymentPlan = meter.getCreditPaymentPlan();
+            String debitPaymentMode = meter.getDebitPaymentMode();
+            String debitPaymentPlan = meter.getDebitPaymentPlan();
+            String creditPaymentMode = meter.getCreditPaymentMode();
+            String creditPaymentPlan = meter.getCreditPaymentPlan();
+
 
 //            String paymentType = meter.getPaymentType();
 
