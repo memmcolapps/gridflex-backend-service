@@ -425,6 +425,18 @@ public class MeterServiceImpl implements MeterService {
                 request.getMdMeterInfo().setOrgId(user.getOrgId());
                 request.getMdMeterInfo().setMeterStage(meterStage);
                 request.getMdMeterInfo().setCreatedBy(user.getId());
+                if(existingMeter.getMdMeterInfo() == null) {
+                    existingMeter.getMdMeterInfo().setCtRatioNum("N/A");
+                    existingMeter.getMdMeterInfo().setCtRatioDenom("N/A");
+                    existingMeter.getMdMeterInfo().setVoltRatioNum("N/A");
+                    existingMeter.getMdMeterInfo().setCtRatioDenom("N/A");
+                    existingMeter.getMdMeterInfo().setMultiplier("N/A");
+                    existingMeter.getMdMeterInfo().setMeterRating("N/A");
+                    existingMeter.getMdMeterInfo().setInitialReading("N/A");
+                    existingMeter.getMdMeterInfo().setDial("N/A");
+                    existingMeter.getMdMeterInfo().setLatitude("N/A");
+                    existingMeter.getMdMeterInfo().setLongitude("N/A");
+                }
                 MDDesc = buildMDMeterInfoChangeDescription(existingMeter.getMdMeterInfo(), request.getMdMeterInfo());
                 request.getMdMeterInfo().setDescription("Pending edited");
 
@@ -441,6 +453,13 @@ public class MeterServiceImpl implements MeterService {
                 request.getSmartMeterInfo().setOrgId(user.getOrgId());
                 request.getSmartMeterInfo().setMeterStage(meterStage);
                 request.getSmartMeterInfo().setCreatedBy(user.getId());
+
+                if(existingMeter.getSmartMeterInfo() == null){
+                    existingMeter.getSmartMeterInfo().setMeterModel("N/A");
+                    existingMeter.getSmartMeterInfo().setProtocol("N/A");
+                    existingMeter.getSmartMeterInfo().setAuthentication("N/A");
+                    existingMeter.getSmartMeterInfo().setPassword("N/A");
+                }
                 SmartDesc = buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeterInfo(), request.getSmartMeterInfo());
                 request.getSmartMeterInfo().setDescription("Pending edited");
                 int mdResult2 = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());
@@ -1712,15 +1731,21 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
             }
 
-            if(meterMapper.removeAssignedLocation(meter.getMeterId()) == 0){
-                throw new GlobalExceptionHandler.NotFoundException("Unassigned location failed");
+            if(meter.getMeterAssignLocation() != null){
+                if(meterMapper.removeAssignedLocation(meter.getMeterId()) == 0){
+                    throw new GlobalExceptionHandler.NotFoundException("Unassigned location failed");
+                }
             }
 
-            if(meterMapper.removePaymentMode(meter.getMeterId()) == 0){
-                throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
+
+            if(meter.getPaymentMode() != null){
+                if(meterMapper.removePaymentMode(meter.getMeterId()) == 0){
+                    throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
+                }
             }
 
             if(c < 1) {
+                System.out.print(">>>>>cus:: "+meter.getCustomerId());
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");

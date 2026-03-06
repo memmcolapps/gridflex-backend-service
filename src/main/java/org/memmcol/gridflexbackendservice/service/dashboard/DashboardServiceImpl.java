@@ -85,8 +85,18 @@ public class DashboardServiceImpl implements  DashboardService{
                 .count();
 
         long assigned = filteredMeters.stream()
-                .filter(m -> m.getCustomerId() != null || m.getDss() != null)
+                .filter(m -> m.getNodeId() != null && m.getDss() != null
+                        && (m.getMeterStage().equalsIgnoreCase("Assigned")
+                        || m.getMeterStage().equalsIgnoreCase("Pending-detached")
+                        || m.getMeterStage().equalsIgnoreCase("Pending-migrated")
+                        || m.getMeterStage().equalsIgnoreCase("Pending-edited"))
+                )
                 .count();
+
+//        'Assigned',
+//                'Pending-detached',
+//                'Pending-migrated',
+//                'Pending-edited'
 
         long deactivated = filteredMeters.stream()
                 .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))

@@ -493,8 +493,8 @@ public interface DebitCreditAdjustmentMapper {
     @Select("""
        SELECT *
           FROM credit_debit_payment
-          WHERE org_id = '119a7451-63a7-4bfb-95f6-75c1284d1da5'
-            AND credit_debit_adj_id = '1ab9a645-ed4a-4041-be2c-f6dae47c6b0b'
+          WHERE org_id = #{orgId}
+            AND credit_debit_adj_id = #{adjId}
             AND parent_id IS NULL
           ORDER BY balance DESC
           LIMIT 1;
