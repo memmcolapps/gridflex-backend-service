@@ -78,6 +78,9 @@ public class MeterView implements Serializable {
     private String creditPaymentMode;
     private String creditPaymentPlan;
 
+    // --- Status for debt/credit ---
+    private String adjustmentStatus;
+
 
     //---------manufacturer----------
     private String meterManufacturer;
@@ -520,4 +523,13 @@ public class MeterView implements Serializable {
     public void setPercentageRange(PercentageRange percentageRange) {
         this.percentageRange = percentageRange;
     }
+
+    public String getAdjustmentStatus() {
+        return adjustmentStatus;
+    }
+
+    public void setAdjustmentStatus(String adjustmentStatus) {
+        this.adjustmentStatus = adjustmentStatus;
+    }
+
 }

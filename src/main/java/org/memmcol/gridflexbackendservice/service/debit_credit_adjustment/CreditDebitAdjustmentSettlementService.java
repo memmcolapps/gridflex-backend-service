@@ -102,7 +102,7 @@ public class CreditDebitAdjustmentSettlementService {
      * Settle debts sequentially after token generation.
      * Updates the balance and inserts payment records for each debt processed.
      */
-    public void settleDebtsSequentially(UUID orgId, UUID meterId,
+    public void settleDebtsSequentially(UUID orgId, UUID meterId, UUID transactionId,
                                         List<SettledDebt> settledDebts) {
         if (settledDebts == null || settledDebts.isEmpty()) return;
 
@@ -148,10 +148,10 @@ public class CreditDebitAdjustmentSettlementService {
                 newStatus = matchingAdj.getStatus() == null ? STATUS_UNPAID : matchingAdj.getStatus();
             }
 
-            System.out.println("matchingAdj.getId():"+matchingAdj.getId());
-            System.out.println("orgId:"+orgId);
-            System.out.println("newBal:"+newBal);
-            System.out.println("newStatus:"+newStatus);
+            DebitCreditPayment debitCreditPayment = adjustmentMapper.getPaymentById(matchingAdj.getId(), orgId);
+            if (debitCreditPayment == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Debit adjustment payment not found");
+            }
 
             // update balance/status
             int respAdjust = adjustmentMapper.updateBalanceAndStatus(matchingAdj.getId(), orgId, newBal, newStatus);
@@ -161,13 +161,12 @@ public class CreditDebitAdjustmentSettlementService {
 
             // insert payment record
             DebitCreditPayment dcp = new DebitCreditPayment();
-//            dcp.setParentId(dcp.getId());
+            dcp.setParentId(debitCreditPayment.getId());
             dcp.setCreditDebitAdjId(matchingAdj.getId());
             dcp.setBalance(newBal);
-            dcp.setDebt(matchingAdj.getDebit());
+            dcp.setDebt(BigDecimal.ZERO);
             dcp.setOrgId(orgId);
-////            dcp.setPaymentMode("ONE-OFF");
-////            dcp.setTransId(transactionId);
+            dcp.setTransId(transactionId);
             dcp.setCredit(paid);
 
             int respAdjustPayment = paymentMapper.insertPayment(dcp);

@@ -19,6 +19,9 @@ public interface CreditDebitPaymentMapper {
             payment_method,
             org_id,
             transaction_id,
+            debt,
+            balance,
+            parent_id,
             created_at
         )
         VALUES
@@ -29,6 +32,9 @@ public interface CreditDebitPaymentMapper {
             #{paymentMode},
             #{orgId},
             #{transId},
+            #{debt},
+            #{balance},
+            #{parentId},
             now()
         )
     """)
