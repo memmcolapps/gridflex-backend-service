@@ -152,7 +152,9 @@ public interface VendMapper {
             "    d.amount_start_range, " +
             "    d.amount_end_range, " +
             "    m.created_at, " +
-            "    m.updated_at " +
+            "    m.updated_at, " +
+            "    m.meter_stage, " +
+            "    m.status " +
             "FROM vw_meter_summary m " +
             "LEFT JOIN debt_percentage d ON d.org_id = m.org_id " +
             "AND (m.debit_payment_mode = LOWER('percentage') OR credit_payment_mode = LOWER('percentage')) " +
@@ -194,7 +196,9 @@ public interface VendMapper {
             "    m.created_at, " +
             "    m.updated_at, " +
             "    m.debit_amount," +
-            "    m.credit_amount  ")
+            "    m.credit_amount,  "+
+            "    m.meter_stage, " +
+            "    m.status " )
     @Results({
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "orgId", column = "org_id"),
@@ -226,6 +230,8 @@ public interface VendMapper {
             @Result(property = "percentageRange.code", column = "code"),
             @Result(property = "percentageRange.amountStartRange", column = "amount_start_range"),
             @Result(property = "percentageRange.amountEndRange", column = "amount_end_range"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "status", column = "status"),
     })
     List<MeterView> getMeterInfo(String meterNumber, String accountNumber, UUID orgId);
 
@@ -304,7 +310,7 @@ public interface VendMapper {
     MeterView getMeterRecord(String meterNumber, String accountNumber, UUID orgId);
 
 
-    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+    @Select("SELECT m.*, c.*, t.id as tariff_id FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "LEFT JOIN tariffs t ON t.id = m.tariff " +
             "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
     @Results({
@@ -332,7 +338,8 @@ public interface VendMapper {
             @Result(property = "newTariffIndex", column = "new_tariff_index"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
-            @Result(property = "tariffInfo", column = "tariffInfo",
+            @Result(property = "tariff", column = "tariff_id"),
+            @Result(property = "tariffInfo", column = "tariff_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getTariff")),
 //            @Result(property = "customer", column = "customer_id",
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
@@ -354,7 +361,7 @@ public interface VendMapper {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "band_id", column = "band_id"),
-            @Result(property = "tariff_rate", column = "tariffRate"),
+            @Result(property = "tariff_rate", column = "tariff_rate"),
     })
     Tariff getTariff(UUID id);
 
