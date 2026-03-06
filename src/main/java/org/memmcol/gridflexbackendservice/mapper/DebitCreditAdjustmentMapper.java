@@ -132,6 +132,7 @@ public interface DebitCreditAdjustmentMapper {
     })
     List<LiabilityCause> getLiabilityCause(UUID orgId);
 
+
     @Select("""
             <script>
                 SELECT DISTINCT m.*,

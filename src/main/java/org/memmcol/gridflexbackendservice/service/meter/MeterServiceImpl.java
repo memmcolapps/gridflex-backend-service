@@ -1335,7 +1335,7 @@ public class MeterServiceImpl implements MeterService {
 
             meterById.setDss(null);
             meterById.setNodeId(parentNode);
-            meterById.setCustomerId(null);
+//            meterById.setCustomerId(null);
             meterById.setAccountNumber(null);
             meterById.setTariff(null);
             meterById.setCin(null);
@@ -1644,9 +1644,9 @@ public class MeterServiceImpl implements MeterService {
         }
 
         String customerId = meter.getCustomerId();
-
+        System.out.print(">>>>>cus1:: "+customerId);
         int c = customerMapper.totalCustomer(customerId);
-
+        System.out.print(">>>>>cus2:: "+c);
         meter.setCustomerId(customerId);
 
         if(!"Pending-detached".equalsIgnoreCase(stage)){
@@ -1744,7 +1744,7 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-            if(c < 1) {
+            if(c == 1) {
                 System.out.print(">>>>>cus:: "+meter.getCustomerId());
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {

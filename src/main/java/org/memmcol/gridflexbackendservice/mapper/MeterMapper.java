@@ -505,7 +505,7 @@ public interface MeterMapper {
             "meter_type = #{meterType}, " +
             "meter_stage = #{meterStage}, " +
             "status = #{status}, " +
-            "customer_id = #{customerId}, " +
+            "customer_id = NULL, " +
             "cin = #{cin}, " +
             "tariff = #{tariff}, " +
             "meter_number = #{meterNumber}, " +
