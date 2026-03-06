@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.vend.*;
@@ -499,4 +500,147 @@ public interface VendMapper {
             @Param("orgId") UUID orgId,
             @Param("type") String type
     );
+
+    @Select("""
+        SELECT dp.* 
+        FROM debt_percentage dp
+        JOIN vw_meter_summary vms ON vms.band_id = dp.band_id
+        WHERE vms.meter_id = #{meterId} 
+          AND vms.org_id = #{orgId}
+          AND #{amount} >= CAST(dp.amount_start_range AS DECIMAL)
+          AND #{amount} <= CAST(dp.amount_end_range AS DECIMAL)
+        LIMIT 1
+    """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "percentageId", column = "percentage_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "bandId", column = "band_id"),
+            @Result(property = "percentage", column = "percentage"),
+            @Result(property = "code", column = "code"),
+            @Result(property = "amountStartRange", column = "amount_start_range"),
+            @Result(property = "amountEndRange", column = "amount_end_range"),
+    })
+    PercentageRange findPercentageByRange(@Param("orgId") UUID orgId, @Param("meterId") UUID meterId, @Param("amount") BigDecimal amount);
+
+
+    @Select("SELECT " +
+            "    m.meter_id, " +
+            "    m.org_id, " +
+            "    m.meter_number," +
+            "    m.meter_category," +
+            "    m.old_sgc,  " +
+            "    m.new_sgc,  " +
+            "    m.old_krn,  " +
+            "    m.new_krn,  " +
+            "    m.vat,  " +
+            "    m.old_tariff_index, " +
+            "    m.new_tariff_index," +
+            "    m.meter_account_number, " +
+            "    m.tariff_rate, " +
+            "    m.tariff_name," +
+            "    m.liability_name, " +
+            "    m.adjustment_type, " +
+            "    m.customer_fullname, " +
+            "    m.customer_id, " +
+            "    m.address, " +
+            "    m.tariff_id, " +
+            "    m.debit_payment_mode, " +
+            "    m.debit_payment_plan, " +
+            "    m.credit_payment_mode, " +
+            "    m.credit_payment_plan, " +
+            "    m.balance_after_adjustment AS balance, " +
+            "    m.debit_amount AS total_debit, " +
+            "    m.credit_amount AS total_credit, " +
+            "    m.adjustment_status, " +
+            "    m.created_at, " +
+            "    m.updated_at, " +
+            "    m.meter_stage, " +
+            "    m.status " +
+            "FROM vw_meter_summary m " +
+            "LEFT JOIN credit_debit_adjustment cd ON cd.org_id = m.org_id " +
+            " AND cd.meter_id = m.meter_id " +
+            "WHERE m.org_id = #{orgId} " +
+            "AND (m.meter_number = #{meterNumber} " +
+            "OR m.meter_account_number = #{accountNumber}) " +
+            "GROUP BY " +
+            "    m.meter_id, " +
+            "    m.org_id, " +
+            "    m.meter_number," +
+            "    m.meter_category," +
+            "    m.meter_account_number, " +
+            "    m.old_sgc, " +
+            "    m.new_sgc, " +
+            "    m.old_krn, " +
+            "    m.new_krn, " +
+            "    m.vat, " +
+            "    m.tariff_id, " +
+            "    m.old_tariff_index, " +
+            "    m.new_tariff_index," +
+            "    m.tariff_rate, " +
+            "    m.tariff_name," +
+            "    m.debit_payment_mode, " +
+            "    m.debit_payment_plan, " +
+            "    m.credit_payment_mode, " +
+            "    m.credit_payment_plan, " +
+            "    m.adjustment_status, " +
+            "    m.customer_id, " +
+            "    m.address, " +
+            "    m.customer_fullname, " +
+            "    m.liability_name, " +
+            "    m.cda_created_at, " +
+            "    m.cda_updated_at," +
+            "    m.adjustment_type," +
+            "    m.balance_after_adjustment, " +
+            "    m.created_at, " +
+            "    m.updated_at, " +
+            "    m.debit_amount," +
+            "    m.credit_amount,  "+
+            "    m.meter_stage, " +
+            "    m.status " )
+    @Results({
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "customerFullname", column = "customer_fullname"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterAccountNumber", column = "meter_account_number"),
+            @Result(property = "tariffId", column = "tariff_id"),
+            @Result(property = "tariffRate", column = "tariff_rate"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "liabilityName", column = "liability_name"),
+            @Result(property = "balanceAfterAdjustment", column = "balance"),
+            @Result(property = "debitAmount", column = "total_debit"),
+            @Result(property = "creditAmount", column = "total_credit"),
+            @Result(property = "adjustmentType", column = "adjustment_type"),
+            @Result(property = "debitPaymentMode", column = "debit_payment_mode"),
+            @Result(property = "debitPaymentPlan", column = "debit_payment_plan"),
+            @Result(property = "creditPaymentMode", column = "credit_payment_mode"),
+            @Result(property = "creditPaymentPlan", column = "credit_payment_plan"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "percentageRange.percentage", column = "percentage"),
+            @Result(property = "percentageRange.code", column = "code"),
+            @Result(property = "percentageRange.amountStartRange", column = "amount_start_range"),
+            @Result(property = "percentageRange.amountEndRange", column = "amount_end_range"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "status", column = "status"),
+            @Result(property = "adjustmentStatus", column = "adjustment_status"),
+    })
+    List<MeterView> getMeterRec(String meterNumber, String accountNumber, UUID orgId);
+
+    @Select("SELECT COUNT(*) FROM credit_debit_payment cdp " +
+            "JOIN credit_debit_adjustment cda ON cda.id = cdp.credit_debit_adj_id " +
+            "WHERE cda.meter_id = #{meterId} " +
+            "AND EXTRACT(YEAR FROM cdp.created_at) = #{year} " +
+            "AND EXTRACT(MONTH FROM cdp.created_at) = #{month} " +
+            "AND cda.type = #{type}")
+    int countPaymentsThisMonth(@Param("meterId") UUID meterId, @Param("year") int year, @Param("month") int month, @Param("type") String type);
+
 }

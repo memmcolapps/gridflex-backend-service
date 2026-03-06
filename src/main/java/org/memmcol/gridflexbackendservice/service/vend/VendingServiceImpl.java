@@ -17,6 +17,7 @@ import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.AdjustmentComputationResult;
+import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
@@ -86,8 +87,12 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Initial amount is required");
             }
 
+            if (creditToken.getInitialAmount().compareTo(BigDecimal.ZERO) < 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Amount cannot be negative");
+            }
+
             // --- Get Meter Info ---
-            List<MeterView> meters = vendMapper.getMeterInfo(
+            List<MeterView> meters = vendMapper.getMeterRec(
                     creditToken.getMeterNumber(),
                     creditToken.getAccountNumber(),
                     user.getOrgId()
@@ -118,17 +123,24 @@ public class VendingServiceImpl implements VendingService {
 //            String creditPaymentPlan = meter.getCreditPaymentPlan();
 
             // --- Process Debits Sequentially ---
-            DebtPaymentResult debtResult = processDebtsSequentially(meters, creditToken.getInitialAmount());
+            DebtPaymentResult debtResult = processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
             
             if (debtResult.getErrorMessage() != null) {
                 throw new GlobalExceptionHandler.NotFoundException(debtResult.getErrorMessage());
+            }
+
+            // Validate minimum vendable amount when no unpaid debts
+            if (debtResult.getMaximumVendable() != null && debtResult.getMaximumVendable().compareTo(BigDecimal.ZERO) > 0) {
+                if (creditToken.getInitialAmount().compareTo(debtResult.getMaximumVendable()) < 0) {
+                    throw new GlobalExceptionHandler.NotFoundException("Minimum that can be vended is " + debtResult.getMaximumVendable().toPlainString());
+                }
             }
 
             BigDecimal debitToDeduct = debtResult.getTotalDeducted();
             BigDecimal amountAfterDebit = debtResult.getRemainingPayment();
 
             // --- Process Credits Sequentially ---
-            CreditPaymentResult creditResult = processCreditsSequentially(meters, null);
+            CreditPaymentResult creditResult = processCreditsSequentially(meters, null, user.getOrgId(), meter.getMeterId());
             BigDecimal creditUnitsToApply = creditResult.getTotalCreditUnits();
             BigDecimal finalPaymentAmount = amountAfterDebit;
 
@@ -193,9 +205,7 @@ public class VendingServiceImpl implements VendingService {
             request.setMeterType("STS6");
 
             // --- Persist Transaction ---
-//            UUID transactionId = UUID.randomUUID();
             Transaction transaction = new Transaction();
-//            transaction.setId(transactionId);
             transaction.setMeterId(meter.getMeterId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(netTender);
@@ -217,9 +227,10 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Credit token creation failed");
             }
 
+            UUID transactionId = transaction.getId();
+
             System.out.println("DebtPayments: " + debtResult.getDebtPayments());
             System.out.println("Size: " + (debtResult.getDebtPayments() != null ? debtResult.getDebtPayments().size() : 0));
-
 
             // --- Settle Debts After Token Generation ---
             if (debtResult.getDebtPayments() != null && !debtResult.getDebtPayments().isEmpty()) {
@@ -234,6 +245,7 @@ public class VendingServiceImpl implements VendingService {
                 adjustmentSettlementService.settleDebtsSequentially(
                         user.getOrgId(),
                         meter.getMeterId(),
+                        transactionId,
                         settledDebts
                 );
             }
@@ -443,17 +455,24 @@ public class VendingServiceImpl implements VendingService {
 //            BigDecimal totalCreditUnits = calculateTotalByType(meters,"credit");
 
             // --- Process Debits Sequentially ---
-            DebtPaymentResult debtResult = processDebtsSequentially(meters, creditToken.getInitialAmount());
+            DebtPaymentResult debtResult = processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
             
             if (debtResult.getErrorMessage() != null) {
                 throw new GlobalExceptionHandler.NotFoundException(debtResult.getErrorMessage());
+            }
+
+            // Validate minimum vendable amount when no unpaid debts
+            if (debtResult.getMaximumVendable() != null && debtResult.getMaximumVendable().compareTo(BigDecimal.ZERO) > 0) {
+                if (creditToken.getInitialAmount().compareTo(debtResult.getMaximumVendable()) < 0) {
+                    throw new GlobalExceptionHandler.NotFoundException("Minimum that can be vended is " + debtResult.getMaximumVendable().toPlainString());
+                }
             }
 
             BigDecimal debitToDeduct = debtResult.getTotalDeducted();
             BigDecimal amountAfterDebit = debtResult.getRemainingPayment();
 
             // --- Process Credits Sequentially ---
-            CreditPaymentResult creditResult = processCreditsSequentially(meters, null);
+            CreditPaymentResult creditResult = processCreditsSequentially(meters, null, user.getOrgId(), meter.getMeterId());
             BigDecimal creditUnitsToApply = creditResult.getTotalCreditUnits();
             BigDecimal finalPaymentAmount = amountAfterDebit;
 
@@ -707,12 +726,47 @@ public class VendingServiceImpl implements VendingService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private DebtPaymentResult processDebtsSequentially(List<MeterView> meters, BigDecimal paymentAmount) {
+    private boolean hasUnpaidDebts(List<MeterView> meters) {
+        return meters.stream()
+                .filter(m -> "debit".equalsIgnoreCase(m.getAdjustmentType()))
+                .anyMatch(m -> {
+                    BigDecimal balance = m.getBalanceAfterAdjustment();
+                    String status = m.getAdjustmentStatus();
+                    boolean hasBalance = balance != null && balance.compareTo(BigDecimal.ZERO) > 0;
+                    boolean isNotPaid = status == null || !"paid".equalsIgnoreCase(status);
+                    return hasBalance && isNotPaid;
+                });
+    }
+
+    private boolean hasUnpaidCredits(List<MeterView> meters) {
+        return meters.stream()
+                .filter(m -> "credit".equalsIgnoreCase(m.getAdjustmentType()))
+                .anyMatch(m -> {
+                    BigDecimal balance = m.getBalanceAfterAdjustment();
+                    String status = m.getAdjustmentStatus();
+                    boolean hasBalance = balance != null && balance.compareTo(BigDecimal.ZERO) > 0;
+                    boolean isNotPaid = status == null || !"paid".equalsIgnoreCase(status);
+                    return hasBalance && isNotPaid;
+                });
+    }
+
+    private DebtPaymentResult processDebtsSequentially(List<MeterView> meters, BigDecimal paymentAmount, UUID orgId, UUID meterId) {
         
         List<MeterView> debitMeters = meters.stream()
                 .filter(m -> "debit".equalsIgnoreCase(m.getAdjustmentType()))
                 .sorted(Comparator.comparing(MeterView::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
+
+        if (debitMeters.isEmpty() || !hasUnpaidDebts(meters)) {
+            return DebtPaymentResult.builder()
+                    .totalDeducted(BigDecimal.ZERO)
+                    .remainingPayment(paymentAmount != null ? paymentAmount : BigDecimal.ZERO)
+                    .errorMessage(null)
+                    .failedDebt(null)
+                    .maximumVendable(new BigDecimal("1000"))
+                    .debtPayments(new ArrayList<>())
+                    .build();
+        }
 
         BigDecimal remainingPayment = paymentAmount != null ? paymentAmount : BigDecimal.ZERO;
         BigDecimal totalDeducted = BigDecimal.ZERO;
@@ -721,13 +775,29 @@ public class VendingServiceImpl implements VendingService {
         BigDecimal maximumVendable = BigDecimal.ZERO;
         
         List<DebtPaymentResult.DebtPayment> debtPayments = new ArrayList<>();
+        
+        // Calculate percentage once before processing debts
+        BigDecimal percentageValue = BigDecimal.ZERO;
+        boolean hasPercentageDebt = debitMeters.stream()
+                .anyMatch(d -> "percentage".equalsIgnoreCase(d.getDebitPaymentMode()));
+        if (hasPercentageDebt) {
+            PercentageRange pr = vendMapper.findPercentageByRange(orgId, meterId, paymentAmount);
+            if (pr != null && pr.getPercentage() != null) {
+                try {
+                    percentageValue = new BigDecimal(pr.getPercentage());
+                    if (percentageValue.compareTo(new BigDecimal("100")) > 0) {
+                        percentageValue = new BigDecimal("100");
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
 
         for (MeterView debt : debitMeters) {
             if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
                 break;
             }
 
-            BigDecimal balance = debt.getBalanceAfterAdjustment() != null 
+            BigDecimal balance = debt.getBalanceAfterAdjustment() != null
                     ? debt.getBalanceAfterAdjustment() 
                     : BigDecimal.ZERO;
             
@@ -740,6 +810,14 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal deduction = BigDecimal.ZERO;
 
             if ("monthly".equalsIgnoreCase(paymentMode)) {
+                int currentYear = LocalDateTime.now().getYear();
+                int currentMonth = LocalDateTime.now().getMonthValue();
+                int paymentCount = vendMapper.countPaymentsThisMonth(meterId, currentYear, currentMonth, "debit");
+                
+                if (paymentCount > 0) {
+                    continue;
+                }
+
                 int months = 1;
                 try {
                     if (paymentPlan != null && !paymentPlan.isBlank()) {
@@ -747,36 +825,51 @@ public class VendingServiceImpl implements VendingService {
                     }
                 } catch (NumberFormatException ignored) {}
                 
-                BigDecimal expectedMonthly = balance.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
-                BigDecimal minimumRequired = expectedMonthly.add(new BigDecimal("1000"));
-                maximumVendable = minimumRequired;
+                BigDecimal debitAmt = debt.getDebitAmount() != null ? debt.getDebitAmount() : balance;
+                BigDecimal expectedMonthly = debitAmt.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
                 
-                if (remainingPayment.compareTo(minimumRequired) < 0) {
-                    errorMessage = "Minimum that can be vended is " + maximumVendable.toPlainString();
-                    failedDebt = debt;
-                    break;
+                BigDecimal minimumRequired;
+                
+                // Compare balance with expectedMonthly
+                if (balance.compareTo(expectedMonthly) < 0) {
+                    // Balance is NOT >= expectedMonthly installment
+                    // Minimum required = balance + 1000
+                    minimumRequired = balance.add(new BigDecimal("1000"));
+                    
+                    if (remainingPayment.compareTo(minimumRequired) < 0) {
+                        errorMessage = "Minimum that can be vended is " + minimumRequired.toPlainString();
+                        failedDebt = debt;
+                        break;
+                    }
+                    
+                    // Deduct the balance (not expectedMonthly)
+                    deduction = balance;
+                } else {
+                    // Balance is >= expectedMonthly installment
+                    minimumRequired = expectedMonthly.add(new BigDecimal("1000"));
+                    
+                    if (remainingPayment.compareTo(minimumRequired) < 0) {
+                        errorMessage = "Minimum that can be vended is " + minimumRequired.toPlainString();
+                        failedDebt = debt;
+                        break;
+                    }
+                    
+                    // Deduct expectedMonthly
+                    deduction = expectedMonthly;
                 }
                 
-                deduction = expectedMonthly;
+                maximumVendable = minimumRequired;
                 
             } else if ("percentage".equalsIgnoreCase(paymentMode)) {
-                BigDecimal percentage = BigDecimal.ZERO;
-                try {
-                    if (paymentPlan != null && !paymentPlan.isBlank()) {
-                        percentage = new BigDecimal(paymentPlan);
-                    }
-                } catch (NumberFormatException ignored) {}
-                
-                if (percentage.compareTo(BigDecimal.ZERO) > 0) {
-                    if (percentage.compareTo(new BigDecimal("100")) > 0) {
-                        percentage = new BigDecimal("100");
-                    }
-                    deduction = remainingPayment.multiply(percentage).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                // Use pre-calculated percentage (calculated once before the loop)
+                if (percentageValue.compareTo(BigDecimal.ZERO) > 0) {
+                    deduction = remainingPayment.multiply(percentageValue).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
                 }
                 
             } else {
-                // One-off mode - validate payment must be balance + 1000
-                BigDecimal minimumRequired = balance.add(new BigDecimal("1000"));
+                // One-off mode - validate payment must be debitAmount + 1000
+                BigDecimal debitAmt = debt.getDebitAmount() != null ? debt.getDebitAmount() : balance;
+                BigDecimal minimumRequired = debitAmt.add(new BigDecimal("1000"));
                 maximumVendable = minimumRequired;
                 
                 if (remainingPayment.compareTo(minimumRequired) < 0) {
@@ -785,7 +878,7 @@ public class VendingServiceImpl implements VendingService {
                     break;
                 }
                 
-                deduction = balance;
+                deduction = debitAmt;
             }
 
             if (deduction.compareTo(BigDecimal.ZERO) > 0) {
@@ -817,17 +910,40 @@ public class VendingServiceImpl implements VendingService {
                 .build();
     }
 
-    private CreditPaymentResult processCreditsSequentially(List<MeterView> meters, BigDecimal paymentAmount) {
+    private CreditPaymentResult processCreditsSequentially(List<MeterView> meters, BigDecimal paymentAmount, UUID orgId, UUID meterId) {
         List<MeterView> creditMeters = meters.stream()
                 .filter(m -> "credit".equalsIgnoreCase(m.getAdjustmentType()))
                 .sorted(Comparator.comparing(MeterView::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
 
+        if (creditMeters.isEmpty() || !hasUnpaidCredits(meters)) {
+            return CreditPaymentResult.builder()
+                    .totalCreditUnits(BigDecimal.ZERO)
+                    .remainingPayment(paymentAmount)
+                    .build();
+        }
+
         BigDecimal totalCreditUnits = BigDecimal.ZERO;
+        
+        // Calculate percentage once before processing credits
+        BigDecimal percentageValue = BigDecimal.ZERO;
+        boolean hasPercentageCredit = creditMeters.stream()
+                .anyMatch(c -> "percentage".equalsIgnoreCase(c.getCreditPaymentMode()));
+        if (hasPercentageCredit) {
+            PercentageRange pr = vendMapper.findPercentageByRange(orgId, meterId, paymentAmount);
+            if (pr != null && pr.getPercentage() != null) {
+                try {
+                    percentageValue = new BigDecimal(pr.getPercentage());
+                    if (percentageValue.compareTo(new BigDecimal("100")) > 0) {
+                        percentageValue = new BigDecimal("100");
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
 
         for (MeterView credit : creditMeters) {
-            BigDecimal balance = credit.getBalanceAfterAdjustment() != null 
-                    ? credit.getBalanceAfterAdjustment() 
+            BigDecimal balance = credit.getBalanceAfterAdjustment() != null
+                    ? credit.getBalanceAfterAdjustment()
                     : BigDecimal.ZERO;
             
             if (balance.compareTo(BigDecimal.ZERO) <= 0) {
@@ -839,6 +955,14 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal creditUnits = BigDecimal.ZERO;
 
             if ("monthly".equalsIgnoreCase(paymentMode)) {
+                int currentYear = LocalDateTime.now().getYear();
+                int currentMonth = LocalDateTime.now().getMonthValue();
+                int paymentCount = vendMapper.countPaymentsThisMonth(meterId, currentYear, currentMonth, "credit");
+                
+                if (paymentCount > 0) {
+                    continue;
+                }
+
                 int months = 1;
                 try {
                     if (paymentPlan != null && !paymentPlan.isBlank()) {
@@ -849,18 +973,9 @@ public class VendingServiceImpl implements VendingService {
                 creditUnits = balance.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
                 
             } else if ("percentage".equalsIgnoreCase(paymentMode)) {
-                BigDecimal percentage = BigDecimal.ZERO;
-                try {
-                    if (paymentPlan != null && !paymentPlan.isBlank()) {
-                        percentage = new BigDecimal(paymentPlan);
-                    }
-                } catch (NumberFormatException ignored) {}
-                
-                if (percentage.compareTo(BigDecimal.ZERO) > 0) {
-                    if (percentage.compareTo(new BigDecimal("100")) > 0) {
-                        percentage = new BigDecimal("100");
-                    }
-                    creditUnits = balance.multiply(percentage)
+                // Use pre-calculated percentage (calculated once before the loop)
+                if (percentageValue.compareTo(BigDecimal.ZERO) > 0) {
+                    creditUnits = balance.multiply(percentageValue)
                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
                 }
                 
