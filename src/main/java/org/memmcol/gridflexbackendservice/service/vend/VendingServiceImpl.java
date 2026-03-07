@@ -509,6 +509,7 @@ public class VendingServiceImpl implements VendingService {
 //            }
 
             // VAT
+
             BigDecimal netTender =
                     finalPaymentAmount.divide(vatMultiplier, 6, RoundingMode.HALF_UP);
 
@@ -544,12 +545,21 @@ public class VendingServiceImpl implements VendingService {
             creditToken.setFinalAmount(netTender);
 
             Map<String, Object> responseData = new HashMap<>();
-            responseData.put("data", creditToken);
+//            responseData.put("data", creditToken);
             responseData.put("totalDebitBalance", totalDebit);
             responseData.put("totalCreditUnits", totalCreditUnits);
             responseData.put("debitDeducted", debitToDeduct);
             responseData.put("creditUnitsApplied", creditUnitsToApply);
-            responseData.put("meter", meters);
+            responseData.put("meterNumber", creditToken.getMeterNumber());
+            responseData.put("costOfUnit", creditToken.getCostOfUnit());
+            responseData.put("vat", creditToken.getVat());
+            responseData.put("vatAmount", creditToken.getVatAmount());
+            responseData.put("unit", creditToken.getUnit());
+            responseData.put("finalAmount", creditToken.getFinalAmount());
+            responseData.put("initialAmount", creditToken.getInitialAmount());
+            responseData.put("creditPaymentMode", meter.getCreditPaymentMode());
+            responseData.put("debitPaymentMode", meter.getDebitPaymentMode())   ;
+//            responseData.put("meter", meters);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
