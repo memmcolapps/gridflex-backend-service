@@ -261,21 +261,23 @@ public class DashboardServiceImpl implements  DashboardService{
                     .count();
 
             // === Card Totals (filtered by selected/current year) ===
+            long transactionCount = filteredTransaction.size();
+
             BigDecimal transactionSum = filteredTransaction.stream()
                     .map(Transaction::getInitialAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+//
             BigDecimal unitCostSum = filteredTransaction.stream()
                     .map(Transaction::getUnitCost)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+//
             BigDecimal vatSum = filteredTransaction.stream()
                     .map(Transaction::getVatAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+//
             BigDecimal totalProfit = filteredTransaction.stream()
                     .filter(t -> "Successful".equalsIgnoreCase(t.getStatus()))
                     .map(Transaction::getFinalAmount)
@@ -291,21 +293,24 @@ public class DashboardServiceImpl implements  DashboardService{
                     })
                     .collect(Collectors.toList());
 
+            long previousTransactionCount = previousYearTransactions.size();
+
+
             BigDecimal previousTransactionSum = previousYearTransactions.stream()
                     .map(Transaction::getInitialAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+//
             BigDecimal previousUnitCostSum = previousYearTransactions.stream()
                     .map(Transaction::getUnitCost)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+//
             BigDecimal previousVatAmountSum = previousYearTransactions.stream()
                     .map(Transaction::getVatAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+//
             BigDecimal previousTotalProfit = previousYearTransactions.stream()
                     .filter(t -> "Successful".equalsIgnoreCase(t.getStatus()))
                     .map(Transaction::getFinalAmount)
@@ -387,6 +392,8 @@ public class DashboardServiceImpl implements  DashboardService{
             Map<String, Object> cardData = Map.of(
                     "transactionSum", transactionSum,
                     "previousTransactionSum", previousTransactionSum,
+                    "transactionCount", transactionCount,
+                    "previousTransactionCount", previousTransactionCount,
                     "unitCostSum", unitCostSum,
                     "previousUnitCostSum", previousUnitCostSum,
                     "vatAmountSum", vatSum,

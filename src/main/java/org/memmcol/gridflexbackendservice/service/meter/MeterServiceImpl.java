@@ -1644,9 +1644,9 @@ public class MeterServiceImpl implements MeterService {
         }
 
         String customerId = meter.getCustomerId();
-        System.out.print(">>>>>cus1:: "+customerId);
+
         int c = customerMapper.totalCustomer(customerId);
-        System.out.print(">>>>>cus2:: "+c);
+
         meter.setCustomerId(customerId);
 
         if(!"Pending-detached".equalsIgnoreCase(stage)){
@@ -1745,7 +1745,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             if(c == 1) {
-                System.out.print(">>>>>cus:: "+meter.getCustomerId());
+
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
@@ -2088,6 +2088,8 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+
+
     @Override
     public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
         try {
@@ -2121,9 +2123,29 @@ public class MeterServiceImpl implements MeterService {
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
+        Set<String> seenMeters = new HashSet<>();
 
         if (allocations == null || allocations.isEmpty()) {
             throw new GlobalExceptionHandler.NotFoundException("No records found in uploaded file");
+        }
+
+        Iterator<MeterRequest> fileIterator = allocations.iterator();
+
+        while (fileIterator.hasNext()) {
+
+            MeterRequest meter = fileIterator.next();
+
+            String meterNumber = Optional.ofNullable(meter.getMeterNumber()).orElse("").trim();
+
+            if (!seenMeters.add(meterNumber)) {
+                GenericResp resp = new GenericResp();
+                resp.setId(meterNumber);
+                resp.setMessage("Duplicate meter number in uploaded file");
+                resp.setData(meterNumber);
+                failedRecords.add(resp);
+                fileIterator.remove();
+                continue;
+            }
         }
 
         final int BATCH_SIZE = 500;
@@ -2144,20 +2166,6 @@ public class MeterServiceImpl implements MeterService {
                     .filter(id -> id != null && !id.trim().isEmpty())
                     .distinct()
                     .toList();
-
-//            if (meterNumbers.isEmpty() || regionIds.isEmpty()) {
-//                GenericResp resp = new GenericResp();
-//                resp.setId(meter.getMeterId().toString());
-//                resp.setMessage("Meter Approve failed: "+reason);
-//                resp.setData(meter.getMeterNumber());
-//
-//                failedRecords.add(resp);
-//                subBatch.forEach(req -> failedRecords.add(
-//                        String.format("%s [Region: %s] (Invalid meter/region)",
-//                                req.getMeterNumber(), req.getRegionId())
-//                ));
-//                continue;
-//            }
 
             if (meterNumbers.isEmpty()  || regionIds.isEmpty()) {
                 subBatch.forEach(req -> {
@@ -3140,6 +3148,12 @@ public class MeterServiceImpl implements MeterService {
             throw new IllegalArgumentException("Meter list cannot be empty");
         }
 
+        int totalRecords = meters.size();
+        int successCount = 0;
+
+        // ------------------------------------------
+        // Load Manufacturers
+        // ------------------------------------------
         List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
         Map<String, UUID> manufacturerNameToId = manufacturers.stream()
                 .collect(Collectors.toMap(
@@ -3154,6 +3168,59 @@ public class MeterServiceImpl implements MeterService {
             );
         }
 
+        //------------------------------------------------
+        // Validate duplicates INSIDE FILE
+        //------------------------------------------------
+
+        Set<String> seenMeters = new HashSet<>();
+        Set<String> seenSims = new HashSet<>();
+
+        Iterator<Meter> fileIterator = meters.iterator();
+
+        while (fileIterator.hasNext()) {
+
+            Meter meter = fileIterator.next();
+
+            String meterNumber = Optional.ofNullable(meter.getMeterNumber()).orElse("").trim();
+            String simNumber = Optional.ofNullable(meter.getSimNumber()).orElse("").trim();
+
+            if (!seenMeters.add(meterNumber)) {
+                GenericResp resp = new GenericResp();
+                resp.setId(meterNumber);
+                resp.setMessage("Duplicate meter number in uploaded file");
+                resp.setData(simNumber);
+                failedRecords.add(resp);
+                fileIterator.remove();
+                continue;
+            }
+
+            if (!simNumber.isEmpty() && !seenSims.add(simNumber)) {
+                GenericResp resp = new GenericResp();
+                resp.setId(meterNumber);
+                resp.setMessage("Duplicate SIM number in uploaded file");
+                resp.setData(simNumber);
+                failedRecords.add(resp);
+                fileIterator.remove();
+                continue;
+            }
+        }
+
+        // ------------------------------------------
+        // Extract MeterNumbers + SimNumbers
+        // ------------------------------------------
+
+        Set<String> meterNumbers = meters.stream()
+                .map(Meter::getMeterNumber)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        Set<String> simNumbers = meters.stream()
+                .map(Meter::getSimNumber)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
         // ---------------------------------------------------
         // Fetch Existing Meter Numbers (ONE DB CALL)
         // ---------------------------------------------------
@@ -3164,21 +3231,26 @@ public class MeterServiceImpl implements MeterService {
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
 
-        Set<String> existingMeterNumbers = new HashSet<>();
 
-        if (!allMeterNumbers.isEmpty()) {
+        // ------------------------------------------
+        // Fetch Existing
+        // ------------------------------------------
 
-            existingMeterNumbers =
-                    meterMapper.getMetersList(
-                                    new ArrayList<>(allMeterNumbers),
-                                    user.getOrgId()
-                            )
-                            .stream()
-                            .map(Meter::getMeterNumber)
-                            .collect(Collectors.toSet());
-        }
+        List<Meter> existingMeters =
+                meterMapper.getMetersList(
+                        new ArrayList<>(meterNumbers),
+//                        new ArrayList<>(simNumbers),
+                        user.getOrgId()
+                );
 
-        int successCount = 0;
+        Set<String> existingMeterNumbers = existingMeters.stream()
+                .map(Meter::getMeterNumber)
+                .collect(Collectors.toSet());
+
+        Set<String> existingSimNumbers = existingMeters.stream()
+                .map(Meter::getSimNumber)
+                .collect(Collectors.toSet());
+
 
         int batchSize = 500; // try 500–1000 for optimal JDBC performance
 
@@ -3190,36 +3262,60 @@ public class MeterServiceImpl implements MeterService {
             // -----------------------------------------------
             // Remove duplicates (already existing meters)
             // -----------------------------------------------
-            Iterator<Meter> duplicateIterator = batch.iterator();
+            Iterator<Meter> iterator = batch.iterator();
 
-            while (duplicateIterator.hasNext()) {
+            while (iterator.hasNext()) {
 
-                Meter meter = duplicateIterator.next();
+                Meter meter = iterator.next();
 
-                if (meter.getMeterNumber() == null ||
-                        meter.getMeterNumber().trim().isEmpty()) {
+                String meterNumber = meter.getMeterNumber();
+                String simNumber = meter.getSimNumber();
+                String manufacturer = meter.getMeterManufacturerName();
 
+                if (meterNumber == null || meterNumber.trim().isEmpty()) {
                     GenericResp resp = new GenericResp();
                     resp.setId(null);
                     resp.setMessage("Missing meter number");
                     resp.setData(null);
-
                     failedRecords.add(resp);
-                    duplicateIterator.remove();
+                    iterator.remove();
                     continue;
                 }
 
-                String meterNumber = meter.getMeterNumber().trim();
+                meterNumber = meterNumber.trim();
 
-                if (existingMeterNumbers.equals(meterNumber)) {
+                if (existingMeterNumbers.contains(meterNumber)) {
 
                     GenericResp resp = new GenericResp();
                     resp.setId(meterNumber);
                     resp.setMessage("Meter already exists");
                     resp.setData(meterNumber);
-
                     failedRecords.add(resp);
-                    duplicateIterator.remove();
+                    iterator.remove();
+                    continue;
+                }
+
+                if (simNumber != null && existingSimNumbers.contains(simNumber.trim())) {
+
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meterNumber);
+                    resp.setMessage("SIM number already exists");
+                    resp.setData(meterNumber);
+                    failedRecords.add(resp);
+                    iterator.remove();
+                    continue;
+                }
+
+                if (manufacturer == null ||
+                        !manufacturerNameToId.containsKey(manufacturer.trim().toLowerCase())) {
+
+                    GenericResp resp = new GenericResp();
+                    resp.setId(meterNumber);
+                    resp.setMessage("Manufacturer does not exist: " + manufacturer);
+                    resp.setData(manufacturer);
+                    failedRecords.add(resp);
+                    iterator.remove();
+//                    continue;
                 }
             }
 
@@ -3237,7 +3333,6 @@ public class MeterServiceImpl implements MeterService {
                 successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
             }
         }
-        final int totalRecords = meters.size();
 
         result.put("totalRecords", totalRecords);
         result.put("successCount", successCount);
@@ -3402,6 +3497,9 @@ public class MeterServiceImpl implements MeterService {
             }
 
             meter.setMeterManufacturer(manuId);
+
+            System.out.println("tariff1>>:"+meter.getOldTariffIndex());
+            System.out.println("tariff2>>:"+meter.getNewTariffIndex());
 
             String validationError = validateRequiredFields(meter);
 
@@ -3586,15 +3684,15 @@ public class MeterServiceImpl implements MeterService {
                 meter.setMeterManufacturerName(getStringCellValue(row.getCell(4)));
                 meter.setMeterType(getStringCellValue(row.getCell(5)));
 
-                meter.setOldSgc(getStringCellValue(row.getCell(7)));
-                meter.setNewSgc(getStringCellValue(row.getCell(8)));
-                meter.setOldKrn(getStringCellValue(row.getCell(9)));
-                meter.setNewKrn(getStringCellValue(row.getCell(10)));
+                meter.setOldSgc(getStringCellValue(row.getCell(6)));
+                meter.setNewSgc(getStringCellValue(row.getCell(7)));
+                meter.setOldKrn(getStringCellValue(row.getCell(8)));
+                meter.setNewKrn(getStringCellValue(row.getCell(9)));
 
-                meter.setOldTariffIndex(parseLongSafe(getStringCellValue(row.getCell(11))));
-                meter.setNewTariffIndex(parseLongSafe(getStringCellValue(row.getCell(12))));
+                meter.setOldTariffIndex(parseLongSafe(getStringCellValue(row.getCell(10))));
+                meter.setNewTariffIndex(parseLongSafe(getStringCellValue(row.getCell(11))));
 
-                boolean isSmart = Boolean.parseBoolean(getStringCellValue(row.getCell(6)));
+                boolean isSmart = Boolean.parseBoolean(getStringCellValue(row.getCell(12)));
                 meter.setSmartStatus(isSmart);
 
                 // Smart meter info
@@ -3770,7 +3868,6 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
     @Override
     public Map<String, Object> bulkVirtualAssign(MultipartFile file) throws IOException {
         try {
@@ -3809,12 +3906,52 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("No records found in uploaded file");
         }
 
+        // ---------------------------------------------------
+        // Prevent duplicate meter numbers inside uploaded file
+        // ---------------------------------------------------
+
+        Set<String> seenMeters = new HashSet<>();
+
+        Iterator<AssignMeterToCustomer> fileIterator = assign.iterator();
+
+        while (fileIterator.hasNext()) {
+
+            AssignMeterToCustomer req = fileIterator.next();
+
+            String meterNumber = req.getMeterNumber();
+//
+            if (meterNumber == null || meterNumber.trim().isEmpty()) {
+
+                GenericResp resp = new GenericResp();
+                resp.setId("");
+                resp.setMessage("Missing meter number");
+                resp.setData(null);
+
+                failedRecords.add(resp);
+                fileIterator.remove();
+                continue;
+            }
+
+            meterNumber = meterNumber.trim();
+
+            if (!seenMeters.add(meterNumber)) {
+
+                GenericResp resp = new GenericResp();
+                resp.setId(meterNumber);
+                resp.setMessage("Duplicate meter number in uploaded file");
+                resp.setData(meterNumber);
+
+                failedRecords.add(resp);
+                fileIterator.remove();
+            }
+        }
+
         final int BATCH_SIZE = 500;
 
         for (int i = 0; i < assign.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, assign.size());
-            List<AssignMeterToCustomer> subBatch = assign.subList(i, end);
-
+//            List<AssignMeterToCustomer> subBatch = assign.subList(i, end);
+            List<AssignMeterToCustomer> subBatch = new ArrayList<>(assign.subList(i, end));
             // Extract required lists
             List<String> meterNumbers = subBatch.stream()
                     .map(AssignMeterToCustomer::getMeterNumber)
@@ -3910,14 +4047,6 @@ public class MeterServiceImpl implements MeterService {
 
                 continue;
             }
-
-//            if (state.isEmpty() || city.isEmpty() || houseNo.isEmpty() || streetName.isEmpty()) {
-//                subBatch.forEach(req -> failedRecords.add(
-//                        String.format("%s [State: %s, city: %s, houseNo: %s, streetName: %s] (Invalid or missing data)",
-//                                req.getMeterNumber(), req.getState(), req.getCity(), req.getHouseNo(), req.getStreetName())
-//                ));
-//                continue;
-//            }
 
             // Fetch from DB
             List<Meter> meters = meterMapper.getUnassignMetersByMeterNumbers(meterNumbers, user.getOrgId());
@@ -4101,8 +4230,17 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+//        if (!failedRecords.isEmpty()) {
+//            throw new GlobalExceptionHandler.PartialFailureException(
+//                    failedRecords.size() + " of " + total + " Meters assigned failed",
+//                    result
+//            );
+//        }
+
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
+
+            return ResponseMap.response(
+                    "131",
                     failedRecords.size() + " of " + total + " Meters assigned failed",
                     result
             );
@@ -4484,8 +4622,8 @@ public class MeterServiceImpl implements MeterService {
 
             for (int i = 0; i < batch.size(); i += subBatchSize) {
                 int end = Math.min(i + subBatchSize, batch.size());
-                List<Meter> subBatch = batch.subList(i, end);
-
+//                List<Meter> subBatch = batch.subList(i, end);
+                List<Meter> subBatch = new ArrayList<>(batch.subList(i, end));
                 try {
                     successCount += assignBatchTransactional(subBatch, user,  locations, paymentModes);
                 } catch (Exception e) {
