@@ -37,8 +37,8 @@ public class GenericHandler {
 
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         exceptionErrorLogs.setDescription("Error occurred while trying to " + actionDescription);
-        exceptionErrorLogs.setError_message(exception.getMessage().trim());
-        exceptionErrorLogs.setError(exception.toString().trim());
+        exceptionErrorLogs.setError_message(exception.getMessage());
+        exceptionErrorLogs.setError(exception.toString());
 
         exceptionAuditRepository.save(exceptionErrorLogs);
     }

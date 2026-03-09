@@ -46,18 +46,13 @@ public class Transaction implements Serializable {
     private UUID userId;
     private String userFullname;
 
+    private String bhubName;
+
     // --- Credit/Debit Adjustment Info ---
     private List<DebitCreditAdjust> debitAdjustment;
     private List<DebitCreditAdjust> creditAdjustment;
     //---------------------------
-//    private BigDecimal debitAmount;
-//    private BigDecimal balanceAfterAdjustment;
-//    private String adjustmentType;
-//    private BigDecimal creditAmount;
 
-    // --- Liability Cause Info ---
-//    private String liabilityName;
-//    private String liabilityCode;
 
     // --- Metadata ---
     private Date createdAt;
@@ -322,6 +317,14 @@ public class Transaction implements Serializable {
 
     public void setCreditAdjustment(List<DebitCreditAdjust> creditAdjustment) {
         this.creditAdjustment = creditAdjustment;
+    }
+
+    public String getBhubName() {
+        return bhubName;
+    }
+
+    public void setBhubName(String bhubName) {
+        this.bhubName = bhubName;
     }
 }
 

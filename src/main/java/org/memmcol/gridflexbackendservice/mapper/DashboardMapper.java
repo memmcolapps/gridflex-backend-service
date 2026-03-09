@@ -90,10 +90,13 @@ public interface DashboardMapper {
     })
     List<Meter> getMeters(UUID orgId);
 
-    @Select("SELECT * FROM vw_vending_transactions_summary WHERE org_id = #{orgId}")
+    @Select("SELECT v.*, r.name FROM vw_vending_transactions_summary v " +
+            "LEFT JOIN region_bhub_service_centers r " +
+            "ON v.node_id = r.node_id WHERE v.org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "transaction_id"),
             @Result(property = "meterId", column = "meter_id"),
+//            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
@@ -113,11 +116,13 @@ public interface DashboardMapper {
             @Result(property = "receiptNo", column = "receipt_no"),
             @Result(property = "unitCost", column = "unit_cost"),
             @Result(property = "tokenType", column = "token_type"),
+            @Result(property = "tokenType", column = "token_type"),
 
             @Result(property = "tariffName", column = "tariff_name"),
             @Result(property = "tariffRate", column = "tariff_rate"),
             @Result(property = "bandName", column = "band_name"),
             @Result(property = "bandHour", column = "band_hour"),
+            @Result(property = "bhubName", column = "name"),
 
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),

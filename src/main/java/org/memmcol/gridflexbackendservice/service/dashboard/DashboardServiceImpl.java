@@ -213,6 +213,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     })
                     .collect(Collectors.toList());
 
+
             int total = filteredTransaction.size();
             if (total == 0) total = 1;
 
@@ -221,6 +222,29 @@ public class DashboardServiceImpl implements  DashboardService{
                     ? Integer.parseInt(year)
                     : ZonedDateTime.now().getYear();
             int previousYear = currentYear - 1;
+
+            // === BHUB Stats (Current Year) ===
+            Map<String, Map<String, Object>> currentYearBhubStats = filteredTransaction.stream()
+                    .filter(t -> t.getBhubName() != null)
+                    .collect(Collectors.groupingBy(
+                            Transaction::getBhubName,
+                            Collectors.collectingAndThen(Collectors.toList(), list -> {
+
+                                long transactionCount = list.size();
+
+                                BigDecimal totalAmount = list.stream()
+                                        .map(Transaction::getInitialAmount)
+                                        .filter(Objects::nonNull)
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                                Map<String, Object> stats = new HashMap<>();
+                                stats.put("transactionCount", transactionCount);
+                                stats.put("totalAmount", totalAmount);
+
+                                return stats;
+                            })
+                    ));
+
 
             // === Token counts ===
             long creditToken = filteredTransaction.stream()
@@ -272,17 +296,18 @@ public class DashboardServiceImpl implements  DashboardService{
                     .map(Transaction::getUnitCost)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+
 //
-            BigDecimal vatSum = filteredTransaction.stream()
-                    .map(Transaction::getVatAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-            BigDecimal totalProfit = filteredTransaction.stream()
-                    .filter(t -> "Successful".equalsIgnoreCase(t.getStatus()))
-                    .map(Transaction::getFinalAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+//            BigDecimal vatSum = filteredTransaction.stream()
+//                    .map(Transaction::getVatAmount)
+//                    .filter(Objects::nonNull)
+//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+////
+//            BigDecimal totalProfit = filteredTransaction.stream()
+//                    .filter(t -> "Successful".equalsIgnoreCase(t.getStatus()))
+//                    .map(Transaction::getFinalAmount)
+//                    .filter(Objects::nonNull)
+//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // === Compute previous year totals ===
             List<Transaction> previousYearTransactions = transactions.stream()
@@ -294,6 +319,28 @@ public class DashboardServiceImpl implements  DashboardService{
                     .collect(Collectors.toList());
 
             long previousTransactionCount = previousYearTransactions.size();
+
+            // === BHUB Stats (Previous Year) ===
+            Map<String, Map<String, Object>> previousYearBhubStats = previousYearTransactions.stream()
+                    .filter(t -> t.getBhubName() != null)
+                    .collect(Collectors.groupingBy(
+                            Transaction::getBhubName,
+                            Collectors.collectingAndThen(Collectors.toList(), list -> {
+
+                                long transactionBhubCount = list.size();
+
+                                BigDecimal totalAmount = list.stream()
+                                        .map(Transaction::getInitialAmount)
+                                        .filter(Objects::nonNull)
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                                Map<String, Object> stats = new HashMap<>();
+                                stats.put("transactionCount", transactionCount);
+                                stats.put("totalAmount", totalAmount);
+
+                                return stats;
+                            })
+                    ));
 
 
             BigDecimal previousTransactionSum = previousYearTransactions.stream()
@@ -362,6 +409,47 @@ public class DashboardServiceImpl implements  DashboardService{
                             )
                     ));
 
+
+            // === Find Top BHUB for Current Year ===
+            Map.Entry<String, Map<String, Object>> topCurrentBhubEntry =
+                    currentYearBhubStats.entrySet().stream()
+                            .max(Comparator.comparingLong(e ->
+                                    (Long) e.getValue().get("transactionCount")))
+                            .orElse(null);
+
+
+            // === Build Final BHUB Response ===
+            Map<String, Object> topBhub;
+
+            if (topCurrentBhubEntry != null) {
+
+                String bhubName = topCurrentBhubEntry.getKey();
+                Map<String, Object> currentStats = topCurrentBhubEntry.getValue();
+
+                Map<String, Object> previousStats = previousYearBhubStats.getOrDefault(
+                        bhubName,
+                        Map.of(
+                                "transactionCount", 0L,
+                                "totalAmount", BigDecimal.ZERO
+                        )
+                );
+
+                topBhub = new HashMap<>();
+                topBhub.put("bhubName", bhubName);
+                topBhub.put("transactionCount", currentStats.get("transactionCount"));
+                topBhub.put("previousTransactionCount", previousStats.get("transactionCount"));
+                topBhub.put("totalAmount", currentStats.get("totalAmount"));
+                topBhub.put("previousTotalAmount", previousStats.get("totalAmount"));
+
+            } else {
+                topBhub = new HashMap<>();
+                topBhub.put("bhubName", "N/A");
+                topBhub.put("transactionCount", 0L);
+                topBhub.put("previousTransactionCount", 0L);
+                topBhub.put("totalAmount", BigDecimal.ZERO);
+                topBhub.put("previousTotalAmount", BigDecimal.ZERO);
+            }
+
             List<Map<String, Object>> transactionOverMonths = new ArrayList<>();
             transactionByYearAndMonth.forEach((yr, monthMap) -> {
                 monthMap.forEach((mn, sums) -> {
@@ -396,10 +484,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     "previousTransactionCount", previousTransactionCount,
                     "unitCostSum", unitCostSum,
                     "previousUnitCostSum", previousUnitCostSum,
-                    "vatAmountSum", vatSum,
-                    "previousVatAmountSum", previousVatAmountSum,
-                    "totalProfit", totalProfit,
-                    "previousTotalProfit", previousTotalProfit
+                    "topBhub", topBhub
             );
 
             Map<String, Object> transactionStatus = Map.of(

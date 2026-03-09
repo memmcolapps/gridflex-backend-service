@@ -391,7 +391,8 @@ public class MeterServiceImpl implements MeterService {
 
                 request.setCin(request.getCin());
                 request.setAccountNumber(request.getAccountNumber());
-                request.setNodeId(feederLine.getNodeId());
+//                request.setNodeId(feederLine.getNodeId());
+                request.setFeeder(feederLine.getNodeId());
                 request.setDss(dss.getNodeId());
                 request.setMeterNumber(existingMeter.getMeterNumber());
                 request.setSimNumber(existingMeter.getSimNumber());
@@ -974,7 +975,8 @@ public class MeterServiceImpl implements MeterService {
                 );
             }
 
-            request.setNodeId(feederLine.getNodeId());
+//            request.setNodeId(feederLine.getNodeId());
+            request.setFeeder(feederLine.getNodeId());
             request.setDss(dss.getNodeId());
             request.setOrgId(user.getOrgId());
             request.setCreatedBy(user.getId());
@@ -1320,11 +1322,11 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meters detaching failed because meter is either unassigned, deactivated and virtual");
             }
 
-            // Validate feeder line
-            UUID parentNode = meterMapper.getFeederParentNode(meterById.getNodeId());
-            if (parentNode == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
-            }
+//            // Validate feeder line
+//            UUID parentNode = meterMapper.getFeederParentNode(meterById.getNodeId());
+//            if (parentNode == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
+//            }
 
             //set meter Id
             meterById.setMeterId(meterById.getId());
@@ -1334,7 +1336,7 @@ public class MeterServiceImpl implements MeterService {
             meterMapper.updateMeterCategory(um.getOrgId(), meterId, "Pending-detached", meterById.getUpdatedAt());
 
             meterById.setDss(null);
-            meterById.setNodeId(parentNode);
+            meterById.setFeeder(null);
 //            meterById.setCustomerId(null);
             meterById.setAccountNumber(null);
             meterById.setTariff(null);
@@ -2087,8 +2089,6 @@ public class MeterServiceImpl implements MeterService {
             throw new IOException("Bulk upload failed: " + e.getMessage());
         }
     }
-
-
 
     @Override
     public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
@@ -3919,7 +3919,7 @@ public class MeterServiceImpl implements MeterService {
             AssignMeterToCustomer req = fileIterator.next();
 
             String meterNumber = req.getMeterNumber();
-//
+
             if (meterNumber == null || meterNumber.trim().isEmpty()) {
 
                 GenericResp resp = new GenericResp();
@@ -4094,10 +4094,6 @@ public class MeterServiceImpl implements MeterService {
                     resp.setData(req.getMeterNumber());
 
                     failedRecords.add(resp);
-//                    failedRecords.add(String.format(
-//                            "%s (Meter not found, deactivated or in a pending state)",
-//                            req.getMeterNumber()
-//                    ));
                     continue;
                 }
 
@@ -4161,7 +4157,8 @@ public class MeterServiceImpl implements MeterService {
                 meter.setOrgId(user.getOrgId());
                 meter.setCin(req.getCin());
                 meter.setAccountNumber(generatedAccountNumber);
-                meter.setNodeId(feederId);
+//                meter.setNodeId(feederId);
+                meter.setFeeder(feederId);
                 meter.setDss(dssId);
                 meter.setCustomerId(customerId);
                 meter.setTariff(tariffId);
@@ -4641,7 +4638,7 @@ public class MeterServiceImpl implements MeterService {
         } catch (Exception e) {
             genericHandler.logIncidentReport("Bulk assign sub batch service failed");
             genericHandler.logAndSaveException(e, "Bulk assign sub batch meter");
-            throw new RuntimeException("Sub Batch allocation transaction failed. Rolled back.", e);
+            throw new RuntimeException("Sub Batch assign transaction failed. Rolled back.", e);
         }
 
     }

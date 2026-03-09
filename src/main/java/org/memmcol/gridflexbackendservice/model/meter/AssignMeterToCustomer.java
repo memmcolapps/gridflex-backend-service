@@ -27,6 +27,7 @@ public class AssignMeterToCustomer implements Serializable {
     private String dssAssetId;
     private String feederAssetId;
     private UUID dss;
+    private UUID feeder;
     private UUID nodeId;
     private String cin;
     private String accountNumber;
@@ -172,6 +173,14 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setDss(UUID dss) {
         this.dss = dss;
+    }
+
+    public UUID getFeeder() {
+        return feeder;
+    }
+
+    public void setFeeder(UUID feeder) {
+        this.feeder = feeder;
     }
 
     public UUID getNodeId() {
