@@ -545,7 +545,11 @@ public class VendingServiceImpl implements VendingService {
             creditToken.setFinalAmount(netTender);
 
             Map<String, Object> responseData = new HashMap<>();
-//            responseData.put("data", creditToken);
+            Map<String, Object> data = new HashMap<>();
+            data.put("customerName", meter.getCustomerFullname());
+            data.put("meterNumber", meter.getMeterNumber());
+            data.put("accountNo", meter.getMeterAccountNumber());
+            data.put("operator", user.getFirstname() +" "+ user.getLastname());
             responseData.put("totalDebitBalance", totalDebit);
             responseData.put("totalCreditUnits", totalCreditUnits);
             responseData.put("debitDeducted", debitToDeduct);
@@ -558,8 +562,8 @@ public class VendingServiceImpl implements VendingService {
             responseData.put("finalAmount", creditToken.getFinalAmount());
             responseData.put("initialAmount", creditToken.getInitialAmount());
             responseData.put("creditPaymentMode", meter.getCreditPaymentMode());
-            responseData.put("debitPaymentMode", meter.getDebitPaymentMode())   ;
-//            responseData.put("meter", meters);
+            responseData.put("debitPaymentMode", meter.getDebitPaymentMode());
+            responseData.put("data", data);
 
             return ResponseMap.response(
                     status.getSuccessCode(),

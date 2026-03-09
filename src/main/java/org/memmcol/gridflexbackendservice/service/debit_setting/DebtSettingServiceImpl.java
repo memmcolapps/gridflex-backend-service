@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.band.Band;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
@@ -735,27 +736,35 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         for (int i = 0; i < lcs.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, lcs.size());
-            List<LiabilityCause> batch = lcs.subList(i, end);
-
+            List<LiabilityCause> batch = new ArrayList<>(lcs.subList(i, end));
             // Collect all meter numbers in this subBatch
             List<String> lcNames = batch.stream()
                     .map(b -> b.getName().trim())
                     .filter(num -> !num.isEmpty())
                     .toList();
 
-//            if (lcNames.isEmpty()) {
-//                batch.forEach(req -> failedRecords.add(
-//                        String.format("%s (Invalid or missing data)",
-//                                req.getName())
-//                ));
-//                continue;
-//            }
-
             if (lcNames.isEmpty()) {
                 batch.forEach(req -> {
                     GenericResp resp = new GenericResp();
                     resp.setId("");
-                    resp.setMessage("Missing tariff name");
+                    resp.setMessage("Missing liability cause name");
+                    resp.setData(req.getName());
+
+                    failedRecords.add(resp);
+                });
+
+                continue;
+            }
+            List<String> lcCodes = batch.stream()
+                    .map(b -> b.getCode().trim())
+                    .filter(num -> !num.isEmpty())
+                    .toList();
+
+            if (lcCodes.isEmpty()) {
+                batch.forEach(req -> {
+                    GenericResp resp = new GenericResp();
+                    resp.setId("");
+                    resp.setMessage("Missing liability cause code");
                     resp.setData(req.getName());
 
                     failedRecords.add(resp);
@@ -813,7 +822,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         // If any failed → throw browser error
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
+            return ResponseMap.response(
+                    "131",
                     failedRecords.size() + " of " + total + " Liability cause approval failed",
                     result
             );
@@ -906,7 +916,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         for (int i = 0; i < batch.size(); i += subSize) {
             int end = Math.min(i + subSize, batch.size());
-            List<LiabilityCause> subList = batch.subList(i, end);
+//            List<LiabilityCause> subList = batch.subList(i, end);
+            List<LiabilityCause> subList = new ArrayList<>(batch.subList(i, end));
             try {
                 success += updateBatchTransactional(subList, user);
             } catch (Exception e) {
@@ -1059,8 +1070,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         for (int i = 0; i < prs.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, prs.size());
-            List<PercentageRange> batch = prs.subList(i, end);
-
+//            List<PercentageRange> batch = prs.subList(i, end);
+            List<PercentageRange> batch = new ArrayList<>(prs.subList(i, end));
             // Collect all meter numbers in this subBatch
             List<String> prCodes = batch.stream()
                     .map(b -> b.getCode().trim())
@@ -1138,9 +1149,17 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
-        // If any failed → throw browser error
+//        // If any failed → throw browser error
+//        if (!failedRecords.isEmpty()) {
+//            throw new GlobalExceptionHandler.PartialFailureException(
+//                    failedRecords.size() + " of " + total + " Percentage range approval failed",
+//                    result
+//            );
+//        }
+
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
+            return ResponseMap.response(
+                    "131",
                     failedRecords.size() + " of " + total + " Percentage range approval failed",
                     result
             );
@@ -1239,7 +1258,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         for (int i = 0; i < batch.size(); i += subSize) {
             int end = Math.min(i + subSize, batch.size());
-            List<PercentageRange> subList = batch.subList(i, end);
+//            List<PercentageRange> subList = batch.subList(i, end);
+            List<PercentageRange> subList = new ArrayList<>(batch.subList(i, end));
             try {
                 success += updatePrBatchTransactional(subList, user);
             } catch (Exception e) {
