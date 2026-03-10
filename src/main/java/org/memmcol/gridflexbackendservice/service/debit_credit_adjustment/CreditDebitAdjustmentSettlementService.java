@@ -38,17 +38,17 @@ public class CreditDebitAdjustmentSettlementService {
      * Called during vending. This only COMPUTES.
      * It does NOT write payment or update balances.
      */
-    public AdjustmentComputationResult computeAdjustmentImpact(UUID orgId, UUID meterId, BigDecimal initialAmount) {
-
-        List<CreditDebitAdjustment> active = adjustmentMapper.findActiveForUpdate(orgId, meterId);
-
-        PaymentMode paymentMode = paymentModeMapper.findActive(orgId, meterId);
-
-        AdjustmentComputationResult result = computationService.compute(active, paymentMode, initialAmount);
-        result.setMeterId(meterId);
-
-        return result;
-    }
+//    public AdjustmentComputationResult computeAdjustmentImpact(UUID orgId, UUID meterId, BigDecimal initialAmount) {
+//
+//        List<CreditDebitAdjustment> active = adjustmentMapper.findActiveForUpdate(orgId, meterId);
+//
+//        PaymentMode paymentMode = paymentModeMapper.findActive(orgId, meterId);
+//
+//        AdjustmentComputationResult result = computationService.compute(active, paymentMode, initialAmount);
+//        result.setMeterId(meterId);
+//
+//        return result;
+//    }
 
     /**
      * Called ONLY after token generation succeeds.
@@ -177,11 +177,99 @@ public class CreditDebitAdjustmentSettlementService {
     }
 
     /**
+     * Settle credits sequentially after token generation.
+     * Updates the balance and inserts payment records for each credit processed.
+     */
+    public void settleCreditsSequentially(UUID orgId, UUID meterId, UUID transactionId,
+                                         List<SettledCredit> settledCredits) {
+        if (settledCredits == null || settledCredits.isEmpty()) return;
+
+        // Get all active credit adjustments for this meter
+        List<CreditDebitAdjustment> activeCredits = adjustmentMapper.findActiveForUpdate(orgId, meterId)
+                .stream()
+                .filter(adj -> "credit".equalsIgnoreCase(adj.getType()))
+                .collect(java.util.stream.Collectors.toList());
+
+        for (SettledCredit credit : settledCredits) {
+            BigDecimal paid = credit.getAmountPaid();
+            if (paid == null || paid.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+            // Find matching adjustment based on balance
+            CreditDebitAdjustment matchingAdj = activeCredits.stream()
+                    .filter(adj -> adj.getBalance() != null && adj.getBalance().compareTo(credit.getBalanceBefore()) == 0)
+                    .findFirst()
+                    .orElse(null);
+
+            // If no exact match, try to find any unpaid adjustment
+            if (matchingAdj == null) {
+                matchingAdj = activeCredits.stream()
+                        .filter(adj -> "UNPAID".equalsIgnoreCase(adj.getStatus()) || "PARTIALLY_PAID".equalsIgnoreCase(adj.getStatus()))
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (matchingAdj == null) continue;
+
+            BigDecimal currentBal = matchingAdj.getBalance() == null ? BigDecimal.ZERO : matchingAdj.getBalance();
+            BigDecimal newBal = currentBal.subtract(paid);
+
+            if (newBal.compareTo(BigDecimal.ZERO) < 0) {
+                newBal = BigDecimal.ZERO;
+            }
+
+            String newStatus;
+            if (newBal.compareTo(BigDecimal.ZERO) == 0) {
+                newStatus = STATUS_PAID;
+            } else if (newBal.compareTo(currentBal) < 0) {
+                newStatus = STATUS_PARTIAL;
+            } else {
+                newStatus = matchingAdj.getStatus() == null ? STATUS_UNPAID : matchingAdj.getStatus();
+            }
+
+            DebitCreditPayment debitCreditPayment = adjustmentMapper.getPaymentById(matchingAdj.getId(), orgId);
+            if (debitCreditPayment == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Credit adjustment payment not found");
+            }
+
+            // update balance/status
+            int respAdjust = adjustmentMapper.updateBalanceAndStatus(matchingAdj.getId(), orgId, newBal, newStatus);
+            if(respAdjust == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Balance " + status.getUpdateFailureDesc());
+            }
+
+            // insert payment record
+            DebitCreditPayment dcp = new DebitCreditPayment();
+            dcp.setParentId(debitCreditPayment.getId());
+            dcp.setCreditDebitAdjId(matchingAdj.getId());
+            dcp.setBalance(newBal);
+            dcp.setCredit(BigDecimal.ZERO);
+            dcp.setDebt(paid);
+            dcp.setOrgId(orgId);
+            dcp.setTransId(transactionId);
+
+            int respAdjustPayment = paymentMapper.insertPayment(dcp);
+            if(respAdjustPayment == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Failed to pay credit adjustment");
+            }
+        }
+    }
+
+    /**
      * Helper class to hold settled debt information
      */
     @lombok.Data
     @lombok.Builder
     public static class SettledDebt {
+        private BigDecimal amountPaid;
+        private BigDecimal balanceBefore;
+    }
+
+    /**
+     * Helper class to hold settled credit information
+     */
+    @lombok.Data
+    @lombok.Builder
+    public static class SettledCredit {
         private BigDecimal amountPaid;
         private BigDecimal balanceBefore;
     }
