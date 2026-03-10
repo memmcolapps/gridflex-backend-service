@@ -24,8 +24,10 @@ public interface NodeMapper {
     Node isNodeExist(UUID parentNodeId, UUID orgId);
 
 
-    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, contact_person, address, status, voltage, latitude, longitude, type, description, parent_id, created_at, updated_at) " +
-            "VALUES (#{nodeId}, #{assetId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, #{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{parentId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, " +
+            "contact_person, address, status, voltage, latitude, longitude, type, description, parent_id, created_at, updated_at, bhub_id) " +
+            "VALUES (#{nodeId}, #{assetId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, " +
+            "#{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{parentId}, #{createdAt}, #{updatedAt}, #{bhubId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void createSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
@@ -218,14 +220,15 @@ public interface NodeMapper {
 
     @Select("""
             SELECT name, asset_id, type FROM substation_trans_feeder_lines
-            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
+            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line') 
+              AND parent_id = #{nodeId}
             """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "assetId", column = "asset_id")
     })
-    List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId);
+    List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId, UUID nodeId);
 
     @Select("""
             SELECT name, asset_id, type FROM substation_trans_feeder_lines
@@ -359,6 +362,24 @@ public interface NodeMapper {
     LIMIT 1
     """)
     Boolean existsByNameExcludingCurrentName(String name, UUID orgId, UUID nodeId);
+
+    @Select("""
+    SELECT * FROM vw_node_summary WHERE org_id = #{orgId} AND node_id = #{parentId}
+    """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "bhubId", column = "bhub_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "phoneNo", column = "phone_number"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "createdAt", column = "created_at"),
+    })
+    NodeSummary nodeSummary(UUID parentId, UUID orgId);
 
 //    @Select("""
 //    SELECT 1

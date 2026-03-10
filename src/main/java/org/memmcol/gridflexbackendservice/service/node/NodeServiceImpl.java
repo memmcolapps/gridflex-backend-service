@@ -6,10 +6,8 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
@@ -158,7 +156,8 @@ public class NodeServiceImpl implements NodeService {
 
     @Transactional
     @Override
-    public Map<String, Object> createSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request) {
+    public Map<String, Object> createSubStationFeederLineTransformerNode(
+            SubStationTransformerFeederLine request) {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
         try {
@@ -176,10 +175,10 @@ public class NodeServiceImpl implements NodeService {
             node.setParentId(request.getParentId());
 
             Node nd = nodeMapper.isNodeExist(request.getParentId(), um.getOrgId());
-
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");
             }
+
 
             SubStationTransformerFeederLine sub = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId(), request.getType());
             if(sub != null && sub.getType().equalsIgnoreCase(request.getType())
@@ -213,9 +212,21 @@ public class NodeServiceImpl implements NodeService {
                     case "substation":
                         throw new GlobalExceptionHandler.NotFoundException("Substation Name (" + request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
                     default:
-                        throw new GlobalExceptionHandler.NotFoundException("Node Name (" + request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
+                        throw new GlobalExceptionHandler.NotFoundException("Parameter type "+(type)+ " not supported");
+
+//                        throw new GlobalExceptionHandler.NotFoundException("Node Name (" + request.getName()+") " + status.getExistDesc() +" for a "+subTransFeeder.getType());
                 }
             }
+
+//            NodeSummary nodeSummary = nodeMapper.nodeSummary(request.getParentId(), um.getOrgId());
+//
+//            if(nodeSummary != null
+//                    && nodeSummary.getType().equalsIgnoreCase("Business hub")) {
+//                request.setBhubId(request.getParentId());
+//            } else {
+//                assert nodeSummary != null;
+//                request.setBhubId(nodeSummary.getBhubId());
+//            }
 
             nodeMapper.createNode(node);
 
@@ -633,10 +644,10 @@ public class NodeServiceImpl implements NodeService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getAllFeeder(){
+    public Map<String, Object> getAllFeeder(UUID nodeId){
         try {
             UserModel um = handleUserValidation();
-            List<SubStationTransformerFeederLine> result = nodeMapper.getAllFeeder(um.getOrgId());
+            List<SubStationTransformerFeederLine> result = nodeMapper.getAllFeeder(um.getOrgId(), nodeId);
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         } catch (Exception exception) {
