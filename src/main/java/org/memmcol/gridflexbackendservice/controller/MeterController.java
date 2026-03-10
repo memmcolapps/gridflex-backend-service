@@ -487,7 +487,10 @@ public class MeterController {
     public ResponseEntity<Map<String, Object>> bulkApproveMeter(@RequestBody List<MeterRequest> meterNumber) {
         try {
             Map<String, Object> result =  service.bulkApproval(meterNumber);
-
+            String code = (String) result.get("responsecode");
+            if ("131".equals(code)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+            }
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

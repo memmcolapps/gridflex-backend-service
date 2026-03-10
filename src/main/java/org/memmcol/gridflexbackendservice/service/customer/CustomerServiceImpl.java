@@ -102,6 +102,10 @@ public class CustomerServiceImpl implements CustomerService {
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
 
+            if(!request.getVat().equalsIgnoreCase("Not Paying") || !request.getVat().equalsIgnoreCase("Paying")){
+                throw new GlobalExceptionHandler.NotFoundException("Parameter type vat must be 'Paying' or 'Not Paying'");
+            }
+
 //            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
             String uniqueCustomerId = "C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             request.setCustomerId(uniqueCustomerId);
@@ -144,10 +148,9 @@ public class CustomerServiceImpl implements CustomerService {
 
             UserModel um = handleUserValidation();
 
-//            Customer email = customerMapper.findByEmail(request.getEmail(),um.getOrgId());
-//            if (email != null && email.getEmail().equalsIgnoreCase(request.getEmail())) {
-//                throw new GlobalExceptionHandler.NotFoundException("Email ("+request.getEmail()+") "+ status.getExistDesc()+" for a Customer");
-//            }
+            if(!request.getVat().equalsIgnoreCase("Not Paying") || !request.getVat().equalsIgnoreCase("Paying")){
+                throw new GlobalExceptionHandler.NotFoundException("Parameter type vat must be 'Paying' or 'Not Paying'");
+            }
 
             request.setOrgId(um.getOrgId());
             request.setEmail(

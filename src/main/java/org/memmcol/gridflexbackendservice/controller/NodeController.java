@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import org.apache.ibatis.annotations.Param;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.service.node.NodeService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
@@ -104,9 +105,11 @@ public class NodeController {
     }
 
     @GetMapping("/feeder")
-    public ResponseEntity<Map<String, Object>> getAllFeeder(){
+    public ResponseEntity<Map<String, Object>> getAllFeeder(
+            @RequestParam UUID nodeId
+    ){
         try {
-            Map<String, Object> result =  nodeService.getAllFeeder();
+            Map<String, Object> result =  nodeService.getAllFeeder(nodeId);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

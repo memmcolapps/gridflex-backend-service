@@ -908,6 +908,11 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
             }
 
+            RegionBhubServiceCenter regionBhubServiceCenter = meterMapper.verifyBhub(feederLine.getParentId(), user.getOrgId());
+            if (regionBhubServiceCenter == null){
+                throw new GlobalExceptionHandler.NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+            }
+
             if(!dss.getParentId().equals(feederLine.getNodeId())){
                 throw new GlobalExceptionHandler.NotFoundException("DSS ("+ request.getDssAssetId() +") " +
                         "provided does not belong to the feeder line ("+request.getFeederAssetId()+")");
@@ -2197,9 +2202,9 @@ public class MeterServiceImpl implements MeterService {
 
                 if (meter == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterNumber());
+                    resp.setId(req.getMeterNumber());
                     resp.setMessage("Meter Not found");
-                    resp.setData(meter.getMeterNumber());
+                    resp.setData(req.getMeterNumber());
 
                     failedRecords.add(resp);
                     continue;
@@ -2208,7 +2213,7 @@ public class MeterServiceImpl implements MeterService {
                 if (nodeId == null) {
                     GenericResp resp = new GenericResp();
                     resp.setId(meter.getMeterNumber());
-                    resp.setMessage("Meter Allocate failed: region not found in business hub");
+                    resp.setMessage("Meter allocate failed: region not found in business hub");
                     resp.setData(meter.getMeterNumber());
 
                     failedRecords.add(resp);
@@ -2246,7 +2251,8 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedRecords", failedRecords);
 
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
+            return ResponseMap.response(
+                    "131",
                     failedRecords.size() + " of " + total + " Meters allocate failed",
                     result
             );
@@ -2469,7 +2475,7 @@ public class MeterServiceImpl implements MeterService {
             // Record missing/invalid tariffs
             for (String name : missingNames) {
                 GenericResp resp = new GenericResp();
-                resp.setId("");
+                resp.setId(name);
                 resp.setMessage("Not found or not in pending state");
                 resp.setData(name);
                 failedRecords.add(resp);
@@ -2496,8 +2502,16 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedRecords", failedRecords);
 
         // If any failed → throw browser error
+//        if (!failedRecords.isEmpty()) {
+//            throw new GlobalExceptionHandler.PartialFailureException(
+//                    failedRecords.size() + " of " + total + " meters approval failed",
+//                    result
+//            );
+//        }
+
         if (!failedRecords.isEmpty()) {
-            throw new GlobalExceptionHandler.PartialFailureException(
+            return ResponseMap.response(
+                    "131",
                     failedRecords.size() + " of " + total + " meters approval failed",
                     result
             );
@@ -4054,8 +4068,15 @@ public class MeterServiceImpl implements MeterService {
                     .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
 
             List<Meter> cin = meterMapper.getMetersByCins(cins, user.getOrgId());
-            Map<String, Meter> cinMap = meters.stream()
-                    .collect(Collectors.toMap(Meter::getCin, m -> m));
+            Map<String, Meter> cinMap = cin.stream()
+                    .filter(m -> m.getCin() != null)
+                    .collect(Collectors.toMap(
+                            Meter::getCin,
+                            m -> m,
+                            (existing, replacement) -> existing
+                    ));
+//            Map<String, Meter> cinMap = meters.stream()
+//                    .collect(Collectors.toMap(Meter::getCin, m -> m));
 
             List<Tariff> tariff = meterMapper.getTariffByNames(tariffNames, user.getOrgId());
             Map<String, UUID> tariffMap = tariff.stream()
@@ -4065,13 +4086,28 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> customerIdMap = cId.stream()
                     .collect(Collectors.toMap(Customer::getCustomerId, Customer::getCustomerId));
 
+            System.out.println("dsss:: "+dssIds);
             List<SubStationTransformerFeederLine> dssAssetId = meterMapper.getDss(dssIds, user.getOrgId());
-            Map<String, UUID> dssIdMap = dssAssetId.stream()
-                    .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
-
+            Map<String, SubStationTransformerFeederLine> dssMap =
+                    dssAssetId.stream()
+                            .collect(Collectors.toMap(
+                                    SubStationTransformerFeederLine::getAssetId,
+                                    d -> d,
+                                    (existing, replacement) -> existing
+                            ));
+//
+            System.out.println("feder:: "+feederIds);
             List<SubStationTransformerFeederLine> feederAssetId = meterMapper.getFeeder(feederIds, user.getOrgId());
-            Map<String, UUID> feederIdMap = feederAssetId.stream()
-                    .collect(Collectors.toMap(SubStationTransformerFeederLine::getAssetId, SubStationTransformerFeederLine::getNodeId));
+            Map<String, SubStationTransformerFeederLine> feederMap =
+                    feederAssetId.stream()
+                            .collect(Collectors.toMap(
+                                    SubStationTransformerFeederLine::getAssetId,
+                                    f -> f,
+                                    (existing, replacement) -> existing
+                            ));
+
+
+//            RegionBhubServiceCenter regionBhubServiceCenter = meterMapper.verifyBhub(meters.getNodeId(), user.getOrgId());
 
             List<Meter> validAssign = new ArrayList<>();
 
@@ -4082,10 +4118,16 @@ public class MeterServiceImpl implements MeterService {
             for (AssignMeterToCustomer req : subBatch) {
                 Meter meter = meterMap.get(req.getMeterNumber());
                 Meter c = cinMap.get(req.getCin());
+                Meter businessHud = meterMap.get(req.getNodeId());
                 UUID tariffId = tariffMap.get(req.getTariffName());
                 String customerId = customerIdMap.get(req.getCustomerId());
-                UUID dssId = dssIdMap.get(req.getDssAssetId());
-                UUID feederId = feederIdMap.get(req.getFeederAssetId());
+                SubStationTransformerFeederLine dss = dssMap.get(req.getDssAssetId());
+                SubStationTransformerFeederLine feeder = feederMap.get(req.getFeederAssetId());
+
+                UUID dssId = dss != null ? dss.getNodeId() : null;
+                UUID feederId = feeder != null ? feeder.getNodeId() : null;
+//                UUID dssId = dssIdMap.get(req.getDssAssetId());
+//                UUID feederId = feederIdMap.get(req.getFeederAssetId());
 
                 if (meter == null) {
                     GenericResp resp = new GenericResp();
@@ -4097,7 +4139,7 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                if (cin != null) {
+                if (c != null) {
                     GenericResp resp = new GenericResp();
                     resp.setId(meter.getMeterId().toString());
                     resp.setMessage("CIN already exist");
@@ -4109,9 +4151,9 @@ public class MeterServiceImpl implements MeterService {
 
                 if (tariffId == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("Tariff not found, deactivated or have a pending state");
-                    resp.setData(req.getMeterNumber());
+                    resp.setData(req.getTariffName());
 
                     failedRecords.add(resp);
 //                    failedRecords.add(String.format("%s [Tariff: %s] (Tariff not found, deactivated or have a pending state)", req.getMeterNumber(), req.getTariffName()));
@@ -4120,7 +4162,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (customerId == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(customerId);
                     resp.setMessage("Customer not found or blocked");
                     resp.setData(req.getMeterNumber());
 
@@ -4149,6 +4191,49 @@ public class MeterServiceImpl implements MeterService {
                     failedRecords.add(resp);
 //                    failedRecords.add(String.format("%s [FeederAssetId: %s] (Feeder not found)", req.getMeterNumber(), req.getFeederAssetId()));
                     continue;
+                }
+
+                // Validate DSS belongs to Feeder
+                if (dss != null && feeder != null) {
+
+                    System.out.println(">>>>>>>>>>>>dss: "+dss.getParentId());
+                    System.out.println(">>>>>>>>>>>>feeder: "+feeder.getNodeId());
+
+                    if (!Objects.equals(dss.getParentId(), feeder.getNodeId())) {
+
+                        GenericResp resp = new GenericResp();
+                        resp.setId(req.getMeterNumber());
+                        resp.setMessage("DSS does not belong to the selected feeder");
+                        resp.setData(req.getMeterNumber());
+
+                        failedRecords.add(resp);
+                        continue;
+                    }
+                }
+
+                if (feeder != null && feeder.getParentId() == null) {
+
+                    GenericResp resp = new GenericResp();
+                    resp.setId(req.getMeterNumber());
+                    resp.setMessage("Feeder does not belong to any Business Hub");
+                    resp.setData(req.getMeterNumber());
+
+                    failedRecords.add(resp);
+                    continue;
+                }
+
+                if (feeder != null) {
+
+                    if (!Objects.equals(meter.getNodeId(), feeder.getParentId())) {
+
+                        GenericResp resp = new GenericResp();
+                        resp.setId(req.getMeterNumber());
+                        resp.setMessage("Feeder does not belong to any business hub meter is allocated");
+                        resp.setData(req.getMeterNumber());
+
+                        failedRecords.add(resp);
+                        continue;
+                    }
                 }
 
                 // Auto-generate unique account number
