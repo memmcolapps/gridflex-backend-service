@@ -432,7 +432,7 @@ public class MeterController {
     @GetMapping("/download/template/csv")
     public ResponseEntity<Resource> downloadCsvTemplate() throws IOException {
         String sampleRow = "0048675416677,SN64114711150,Prepaid,MD,memmcol,electricity,60101,69888,12345,54321, " +
-                "0,1, true, XME45633, 34231, R4532, 123456, 2341, 5432, 23098, 4567, 986, 121, 656, 1, 0.234562, 0.232133";
+                "1,1, true, XME45633, 34231, R4532, 123456, 2341, 5432, 23098, 4567, 986, 121, 656, 1, 0.234562, 0.232133";
 
         // Build CSV content in memory
         String csvContent = String.join(",", HEADERS) + "\n" + sampleRow;
@@ -462,7 +462,7 @@ public class MeterController {
 
             Object[] sampleData = {
                     "0048675416677","SN64114711150","Prepaid","MD","memmcol","electricity","60101","69888","12345","54321",
-                    0, 1, true, "XME45633", "34231", "R4532", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, "0.099321", "0.2345612"
+                    1, 1, true, "XME45633", "34231", "R4532", "123456", 2367, 6754, 90321, 78904, 32, 345, 651, 1, "0.099321", "0.2345612"
             };
 
             for (int i = 0; i < sampleData.length; i++) {
@@ -684,7 +684,11 @@ public class MeterController {
     public ResponseEntity<Map<String, Object>> bulkAllocateMeter(@RequestParam("file") MultipartFile file) {
         try {
             Map<String, Object> result =  service.bulkAllocate(file);
+            String code = (String) result.get("responsecode");
 
+            if ("131".equals(code)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+            }
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);
@@ -697,7 +701,11 @@ public class MeterController {
     public ResponseEntity<Map<String, Object>> bulkAssignMeter(@RequestParam("file") MultipartFile file) {
         try {
             Map<String, Object> result =  service.bulkAssign(file);
+            String code = (String) result.get("responsecode");
 
+            if ("131".equals(code)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+            }
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

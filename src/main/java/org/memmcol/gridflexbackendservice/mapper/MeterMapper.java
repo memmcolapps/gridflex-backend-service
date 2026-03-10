@@ -407,7 +407,7 @@ public interface MeterMapper {
 
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='accountNumber != null'> account_number = #{accountNumber}, </if>",
-            " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
+            " <if test='feeder != null'> feeder = #{feeder}, </if>",
             " <if test='dss != null'> dss = #{dss}, </if>",
             " <if test='cin != null'> cin = #{cin}, </if>",
             " <if test='tariff != null'> tariff = #{tariff}, </if>",
@@ -482,7 +482,7 @@ public interface MeterMapper {
             "SET ",
             "status = #{status}, ",
             "meter_stage = #{meterStage}, ",
-            "node_id = #{nodeId}, ",
+            "feeder = #{feeder}, ",
             "dss = #{dss}, ",
             "account_number = #{accountNumber}, ",
             "customer_id = #{customerId}, ",
@@ -505,7 +505,7 @@ public interface MeterMapper {
             "meter_type = #{meterType}, " +
             "meter_stage = #{meterStage}, " +
             "status = #{status}, " +
-            "customer_id = #{customerId}, " +
+            "customer_id = NULL, " +
             "cin = #{cin}, " +
             "tariff = #{tariff}, " +
             "meter_number = #{meterNumber}, " +
@@ -520,6 +520,7 @@ public interface MeterMapper {
             "updated_at = #{updatedAt}, " +
             "account_number = #{accountNumber}, " +
             "dss = #{dss}, " +
+            "feeder = #{feeder}, " +
             "node_id = #{nodeId} " +
             "WHERE org_id = #{orgId} AND id = #{meterId}")
     int meterApproval(Meter request);
@@ -1426,20 +1427,22 @@ public interface MeterMapper {
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, " +
             "meter_stage, status, customer_id, cin, tariff, meter_number, type, smart_status," +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, image, " +
-            "created_at, updated_at, created_by, description, meter_id, account_number, dss, node_id) " +
+            "created_at, updated_at, created_by, description, meter_id, account_number, dss, feeder, " +
+            "node_id) " +
             "VALUES (" +
             "#{orgId}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, " +
             "#{meterStage}, #{status}, #{customerId}, #{cin}, #{tariffId}, #{meterNumber}, " +
             "#{type}, #{smartStatus}, #{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, " +
-            "#{newTariffIndex}, #{image}, #{createdAt}, #{updatedAt},#{createdBy}, #{description}, #{meterId}, #{accountNumber}, #{dss}, #{nodeId})")
+            "#{newTariffIndex}, #{image}, #{createdAt}, #{updatedAt},#{createdBy}, #{description}, #{meterId}, " +
+            "#{accountNumber}, #{dss}, #{feeder}, #{nodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignedVersionMeterToCustomer(AssignMeterToCustomer request);
 
     @Insert("INSERT INTO meters_version (" +
-            "org_id, meter_category, meter_stage, status, customer_id, cin, dss, tariff, meter_number, type, fixed_energy, meter_type, " +
+            "org_id, meter_category, meter_stage, status, customer_id, cin, dss, feeder, tariff, meter_number, type, fixed_energy, meter_type, " +
             "created_at, updated_at, description, created_by, meter_id, account_number, node_id, smart_status, sim_number, meter_class) " +
             "VALUES (" +
-            "#{orgId},#{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{meterNumber}, " +
+            "#{orgId},#{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariffId}, #{meterNumber}, " +
             "#{type}, #{fixedEnergy}, #{meterType}, #{createdAt}, #{updatedAt}, #{description}, #{createdBy}, #{meterId}, #{accountNumber}, #{nodeId}," +
             "#{smartStatus}, #{simNumber}, #{meterClass})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -1447,10 +1450,10 @@ public interface MeterMapper {
 
 
     @Insert("INSERT INTO meters (" +
-            "org_id, meter_category, meter_stage, status, customer_id, cin, dss, tariff, meter_number, type, fixed_energy," +
+            "org_id, meter_category, meter_stage, status, customer_id, cin, dss, feeder, node_id, tariff, meter_number, type, fixed_energy," +
             "created_at, updated_at, account_number, node_id, smart_status, sim_number, meter_class, meter_type) " +
             "VALUES (" +
-            "#{orgId}, #{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{tariffId}, #{meterNumber}, " +
+            "#{orgId}, #{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{nodeId}, #{tariffId}, #{meterNumber}, " +
             "#{type}, #{fixedEnergy}, #{createdAt}, #{updatedAt}, #{accountNumber}, #{nodeId}, #{smartStatus}, #{simNumber}, " +
             "#{meterClass}, #{meterType})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -1657,7 +1660,7 @@ public interface MeterMapper {
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
             "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, ",
             "old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, ",
-            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, tariff",
+            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, feeder, tariff",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
@@ -1666,7 +1669,7 @@ public interface MeterMapper {
             "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
-            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.tariff}",
+            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.feeder}, #{m.tariff}",
             ")",
             "</foreach>",
             "</script>"
@@ -2271,7 +2274,7 @@ public interface MeterMapper {
 
     @Select({
             "<script>",
-            "SELECT c.node_id AS nodeId, c.asset_id AS assetId",
+            "SELECT c.feeder AS feeder, c.asset_id AS assetId",
             "FROM substation_trans_feeder_lines c",
             "WHERE c.org_id = #{orgId}",
             "AND c.asset_id IN",

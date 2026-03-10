@@ -462,14 +462,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             int page, int size, String customerId, String accountNumber,
             String customerName, String meterNumber, BigDecimal balance, String type) {
         try {
-            String db;
-            if("credit".equals(type) ){
-                db = credit;
-            } else if("debit".equalsIgnoreCase(type)){
-                db = debit;
-            } else {
-                throw new GlobalExceptionHandler.NotFoundException("Type parameter not found, use credit or debit instead");
-            }
+
             UserModel um = handleUserValidation();
 
             // Build a unique cache key

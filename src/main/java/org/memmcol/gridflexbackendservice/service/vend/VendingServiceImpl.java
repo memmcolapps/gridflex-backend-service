@@ -479,10 +479,11 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = meters.get(0);
 
-//            String debitPaymentMode = meter.getDebitPaymentMode();
-//            String debitPaymentPlan = meter.getDebitPaymentPlan();
-//            String creditPaymentMode = meter.getCreditPaymentMode();
-//            String creditPaymentPlan = meter.getCreditPaymentPlan();
+            String debitPaymentMode = meter.getDebitPaymentMode();
+            String debitPaymentPlan = meter.getDebitPaymentPlan();
+            String creditPaymentMode = meter.getCreditPaymentMode();
+            String creditPaymentPlan = meter.getCreditPaymentPlan();
+
 
 //            String paymentType = meter.getPaymentType();
 
@@ -525,7 +526,14 @@ public class VendingServiceImpl implements VendingService {
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
             BigDecimal finalNetTender = netTenderAfterDebit.add(creditDeducted);
 
+
             BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
+          
+            // VAT
+
+            BigDecimal netTender =
+                    finalPaymentAmount.divide(vatMultiplier, 6, RoundingMode.HALF_UP);
+
 
             if (tariffRate.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("Invalid tariff rate");
@@ -536,6 +544,13 @@ public class VendingServiceImpl implements VendingService {
                     finalNetTender.divide(tariffRate, 3, RoundingMode.HALF_UP);
 
             BigDecimal finalUnits = unitsFromTender;
+          
+            // Units from money
+
+            BigDecimal finalUnits = (netTender.add(creditUnitsToApply)).divide(tariffRate, 3, RoundingMode.HALF_UP);
+            // Add credit units
+//            BigDecimal finalUnits =
+//                    unitsFromTender.add(creditUnitsToApply);
 
             BigDecimal costPerUnit =
                     finalUnits.compareTo(BigDecimal.ZERO) > 0
@@ -559,12 +574,26 @@ public class VendingServiceImpl implements VendingService {
             creditToken.setFinalAmount(finalNetTender);
 
             Map<String, Object> responseData = new HashMap<>();
-            responseData.put("data", creditToken);
+            Map<String, Object> data = new HashMap<>();
+            data.put("customerName", meter.getCustomerFullname());
+            data.put("meterNumber", meter.getMeterNumber());
+            data.put("accountNo", meter.getMeterAccountNumber());
+            data.put("operator", user.getFirstname() +" "+ user.getLastname());
             responseData.put("totalDebitBalance", totalDebit);
             responseData.put("totalCreditUnits", totalCreditUnits);
             responseData.put("debitDeducted", debitToDeduct);
             responseData.put("creditDeducted", creditDeducted);
-            responseData.put("meter", meters);
+            responseData.put("creditUnitsApplied", creditUnitsToApply);
+            responseData.put("meterNumber", creditToken.getMeterNumber());
+            responseData.put("costOfUnit", creditToken.getCostOfUnit());
+            responseData.put("vat", creditToken.getVat());
+            responseData.put("vatAmount", creditToken.getVatAmount());
+            responseData.put("unit", creditToken.getUnit());
+            responseData.put("finalAmount", creditToken.getFinalAmount());
+            responseData.put("initialAmount", creditToken.getInitialAmount());
+            responseData.put("creditPaymentMode", meter.getCreditPaymentMode());
+            responseData.put("debitPaymentMode", meter.getDebitPaymentMode());
+            responseData.put("data", data);
 
             return ResponseMap.response(
                     status.getSuccessCode(),

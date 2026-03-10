@@ -40,6 +40,7 @@ public class Meter implements Serializable {
     private String type;
     private String fixedEnergy;
     private UUID dss;
+    private UUID feeder;
     private String meterCategory;
     private String meterClass;
     //    private String meterModel;
@@ -207,6 +208,14 @@ public class Meter implements Serializable {
 
     public void setDss(UUID dss) {
         this.dss = dss;
+    }
+
+    public UUID getFeeder() {
+        return feeder;
+    }
+
+    public void setFeeder(UUID feeder) {
+        this.feeder = feeder;
     }
 
     public String getMeterCategory() {
