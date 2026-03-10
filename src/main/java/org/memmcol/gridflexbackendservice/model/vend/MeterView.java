@@ -15,6 +15,7 @@ public class MeterView implements Serializable {
     // --- Core Transaction Info ---
     private UUID meterId;
     private UUID orgId;
+    private UUID creditDebitAdjId;
     private String customerId;
     private String customerFullname;
     private String address;
@@ -106,6 +107,14 @@ public class MeterView implements Serializable {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
+    }
+
+    public UUID getCreditDebitAdjId() {
+        return creditDebitAdjId;
+    }
+
+    public void setCreditDebitAdjId(UUID creditDebitAdjId) {
+        this.creditDebitAdjId = creditDebitAdjId;
     }
 
     public String getCustomerId() {

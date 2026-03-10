@@ -556,13 +556,14 @@ public interface VendMapper {
             "    m.created_at, " +
             "    m.updated_at, " +
             "    m.meter_stage, " +
-            "    m.status " +
+            "    m.status, " +
+            "    m.adjustment_id " +
             "FROM vw_meter_summary m " +
             "LEFT JOIN credit_debit_adjustment cd ON cd.org_id = m.org_id " +
             " AND cd.meter_id = m.meter_id " +
             "WHERE m.org_id = #{orgId} " +
             "AND (m.meter_number = #{meterNumber} " +
-            "OR m.meter_account_number = #{accountNumber}) " +
+            "OR m.meter_account_number = #{accountNumber} AND m.adjustment_status IN('PARTIALLY_PAID','UNPAID')) " +
             "GROUP BY " +
             "    m.meter_id, " +
             "    m.org_id, " +
@@ -597,10 +598,12 @@ public interface VendMapper {
             "    m.debit_amount," +
             "    m.credit_amount,  "+
             "    m.meter_stage, " +
-            "    m.status " )
+            "    m.status, " +
+            "    m.adjustment_id " )
     @Results({
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "orgId", column = "org_id"),
+            @Result(property = "creditDebitAdjId", column = "adjustment_id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "customerFullname", column = "customer_fullname"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -638,9 +641,11 @@ public interface VendMapper {
     @Select("SELECT COUNT(*) FROM credit_debit_payment cdp " +
             "JOIN credit_debit_adjustment cda ON cda.id = cdp.credit_debit_adj_id " +
             "WHERE cda.meter_id = #{meterId} " +
+            "AND cda.id = #{adjustmentId} " +
             "AND EXTRACT(YEAR FROM cdp.created_at) = #{year} " +
             "AND EXTRACT(MONTH FROM cdp.created_at) = #{month} " +
-            "AND cda.type = #{type}")
-    int countPaymentsThisMonth(@Param("meterId") UUID meterId, @Param("year") int year, @Param("month") int month, @Param("type") String type);
+            "AND cda.type = #{type} "
+    )
+    int countPaymentsThisMonth(@Param("meterId") UUID meterId, @Param("adjustmentId") UUID adjustmentId, @Param("year") int year, @Param("month") int month, @Param("type") String type);
 
 }

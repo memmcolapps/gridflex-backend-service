@@ -421,24 +421,24 @@ public interface DebitCreditAdjustmentMapper {
 //                                 @Param("debit") BigDecimal debit);
 
     @Select("""
-        SELECT
-            id,
-            meter_id,
-            liability_cause_id,
-            debit,
-            balance,
-            status,
-            type,
-            org_id,
-            created_at,
-            updated_at
-        FROM credit_debit_adjustment
-        WHERE org_id = #{orgId}
-          AND meter_id = #{meterId}
-          AND status IN ('UNPAID', 'PARTIALLY_PAID')
-          AND balance > 0
-        ORDER BY created_at ASC
-        FOR UPDATE
+    SELECT
+        id,
+        meter_id,
+        liability_cause_id,
+        debit,
+        balance,
+        status,
+        type,
+        org_id,
+        created_at,
+        updated_at
+    FROM credit_debit_adjustment
+    WHERE org_id = #{orgId}
+      AND meter_id = #{meterId}
+      AND status IN ('UNPAID', 'PARTIALLY_PAID')
+      AND balance > 0 
+    ORDER BY created_at ASC
+    FOR UPDATE
     """)
     @Results(id = "CreditDebitAdjustmentMap", value = {
             @Result(column = "id", property = "id"),
