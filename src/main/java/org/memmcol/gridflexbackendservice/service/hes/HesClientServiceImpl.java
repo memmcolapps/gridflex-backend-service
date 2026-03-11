@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,10 @@ public class HesClientServiceImpl implements HesService {
     @Qualifier("realtimeWebClient")
     @Autowired
     private WebClient webClient;
+
+    @Qualifier("dlmsWriteOpsClient")
+    @Autowired
+    private WebClient dlmsWriteOpsClient;
 
     @Autowired
     private GenericHandler genericHandler;
@@ -430,6 +435,83 @@ public class HesClientServiceImpl implements HesService {
         } catch (Exception e) {
             genericHandler.logIncidentReport("set schedule service failed");
             genericHandler.logAndSaveException(e, "set schedule");
+            throw e;
+        }
+    }
+
+    @Override
+    public Map<String, Object> setClock(String serial, LocalDateTime dateTime) {
+        String token = auth.getAccessToken();
+
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/setClock")
+                            .queryParam("serial", serial)
+                            .queryParam("dateTime", dateTime.format(formatter))
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set clock service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("set clock service failed");
+            genericHandler.logAndSaveException(e, "set clock service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("set clock service failed");
+            genericHandler.logAndSaveException(e, "set clock");
+            throw e;
+        }
+    }
+
+    @Override
+    public Map<String, Object> setCtpt(String serial,
+                                       long ctNumerator,
+                                       long ctDenominator,
+                                       long ptNumerator,
+                                       long ptDenominator) {
+        String token = auth.getAccessToken();
+
+        try {
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/setCtpt")
+                            .queryParam("serial", serial)
+                            .queryParam("ctNumerator", ctNumerator)
+                            .queryParam("ctDenominator", ctDenominator)
+                            .queryParam("ptNumerator", ptNumerator)
+                            .queryParam("ptDenominator", ptDenominator)
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set ctpt service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("set ctpt service failed");
+            genericHandler.logAndSaveException(e, "set ctpt service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("set ctpt service failed");
+            genericHandler.logAndSaveException(e, "set ctpt");
             throw e;
         }
     }

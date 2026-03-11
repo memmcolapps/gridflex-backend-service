@@ -13,24 +13,23 @@ public class WebClientConfig {
 
     @Bean
     @Qualifier("tokenGenWebClient")
-    public WebClient tokenGenWebClient(
-            @Value("${external.token-gen.base-url}") String baseUrl) {
+    public WebClient tokenGenWebClient( @Value("${external.token-gen.base-url}") String baseUrl ) {
 
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
+        return WebClient.builder().baseUrl(baseUrl).defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
     }
 
     @Bean
     @Qualifier("realtimeWebClient")
-    public WebClient realtimeWebClient(
-            @Value("${external.hes-realtime.base-url}") String baseUrl) {
+    public WebClient realtimeWebClient( @Value("${external.hes-realtime.base-url}") String baseUrl ) {
 
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
+        return WebClient.builder().baseUrl(baseUrl).defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+    }
+
+    @Bean
+    @Qualifier("dlmsWriteOpsClient")
+    public WebClient dlmsWriteOpsWebClient( @Value("${external.dlms-write-ops.base-url}") String baseUrl ) {
+
+        return WebClient.builder().baseUrl(baseUrl).defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
     }
 
 //    @Bean
