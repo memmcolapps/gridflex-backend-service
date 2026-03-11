@@ -1,8 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
 
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +21,14 @@ public interface HesService {
     Map<String, Object> scheduleData(int page, int size, String search);
 
     Map<String, Object> setSchedule(String profileType, String timeInterval, String unit);
+
+    Map<String, Object> setClock(String serial, LocalDateTime dateTime);
+
+    Map<String, Object> setCtpt(String serial,
+                                long ctNumerator,
+                                long ctDenominator,
+                                long ptNumerator,
+                                long ptDenominator);
 
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

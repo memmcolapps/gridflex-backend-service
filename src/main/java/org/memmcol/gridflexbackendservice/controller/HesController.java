@@ -187,6 +187,37 @@ public class HesController {
         }
     }
 
+    @PostMapping("/dlms/set-clock")
+    public ResponseEntity<?> setClock(
+            @RequestParam String serial,
+            @RequestParam
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime dateTime
+    ) {
+        try {
+            Map<String, Object> result = hesService.setClock(serial, dateTime);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/dlms/set-ctpt")
+    public ResponseEntity<?> setCtpt(
+            @RequestParam String serial,
+            @RequestParam long ctNumerator,
+            @RequestParam long ctDenominator,
+            @RequestParam long ptNumerator,
+            @RequestParam long ptDenominator
+    ) {
+        try {
+            Map<String, Object> result = hesService.setCtpt(serial, ctNumerator, ctDenominator, ptNumerator, ptDenominator);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 //    /**
 //     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
 //     */
