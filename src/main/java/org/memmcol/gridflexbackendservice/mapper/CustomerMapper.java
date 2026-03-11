@@ -233,7 +233,7 @@ public interface CustomerMapper {
             "  <foreach collection='batch' item='m'>",
             "    WHEN #{m.customerId} THEN 'Active'",
             "  </foreach>",
-            "END",
+            "END,",
             "  updated_at = CASE customer_id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.customerId} THEN CAST(#{m.updatedAt,jdbcType=TIMESTAMP} AS TIMESTAMPTZ)",

@@ -1233,6 +1233,9 @@ public interface MeterMapper {
     @Select("SELECT * FROM region_bhub_service_centers WHERE node_Id = #{nodeId} ")
     @Results({
             @Result(property = "regionId", column = "region_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
     })
     RegionBhubServiceCenter getNodeInfo(UUID nodeId);
 
@@ -2065,6 +2068,18 @@ public interface MeterMapper {
             "  tariff = CASE id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterId} THEN CAST(#{m.tariff} AS uuid)",
+            "    </foreach>",
+            "  END,",
+
+            "  customer_id = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.customerId}",
+            "    </foreach>",
+            "  END,",
+
+            "  image = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.image}",
             "    </foreach>",
             "  END,",
 
