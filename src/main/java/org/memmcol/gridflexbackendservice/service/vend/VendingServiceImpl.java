@@ -479,10 +479,10 @@ public class VendingServiceImpl implements VendingService {
 
             MeterView meter = meters.get(0);
 
-            String debitPaymentMode = meter.getDebitPaymentMode();
-            String debitPaymentPlan = meter.getDebitPaymentPlan();
-            String creditPaymentMode = meter.getCreditPaymentMode();
-            String creditPaymentPlan = meter.getCreditPaymentPlan();
+//            String debitPaymentMode = meter.getDebitPaymentMode();
+//            String debitPaymentPlan = meter.getDebitPaymentPlan();
+//            String creditPaymentMode = meter.getCreditPaymentMode();
+//            String creditPaymentPlan = meter.getCreditPaymentPlan();
 
 
 //            String paymentType = meter.getPaymentType();
@@ -526,15 +526,7 @@ public class VendingServiceImpl implements VendingService {
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
             BigDecimal finalNetTender = netTenderAfterDebit.add(creditDeducted);
 
-
             BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
-          
-            // VAT
-
-            BigDecimal netTender =
-                    finalPaymentAmount.divide(vatMultiplier, 6, RoundingMode.HALF_UP);
-
-
             if (tariffRate.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("Invalid tariff rate");
             }
@@ -544,13 +536,6 @@ public class VendingServiceImpl implements VendingService {
                     finalNetTender.divide(tariffRate, 3, RoundingMode.HALF_UP);
 
             BigDecimal finalUnits = unitsFromTender;
-          
-            // Units from money
-
-            BigDecimal finalUnits = (netTender.add(creditUnitsToApply)).divide(tariffRate, 3, RoundingMode.HALF_UP);
-            // Add credit units
-//            BigDecimal finalUnits =
-//                    unitsFromTender.add(creditUnitsToApply);
 
             BigDecimal costPerUnit =
                     finalUnits.compareTo(BigDecimal.ZERO) > 0
@@ -580,10 +565,10 @@ public class VendingServiceImpl implements VendingService {
             data.put("accountNo", meter.getMeterAccountNumber());
             data.put("operator", user.getFirstname() +" "+ user.getLastname());
             responseData.put("totalDebitBalance", totalDebit);
-            responseData.put("totalCreditUnits", totalCreditUnits);
+            responseData.put("totalCreditBalance", totalCreditUnits);
             responseData.put("debitDeducted", debitToDeduct);
             responseData.put("creditDeducted", creditDeducted);
-            responseData.put("creditUnitsApplied", creditUnitsToApply);
+//            responseData.put("creditUnitsApplied", creditUnitsToApply);
             responseData.put("meterNumber", creditToken.getMeterNumber());
             responseData.put("costOfUnit", creditToken.getCostOfUnit());
             responseData.put("vat", creditToken.getVat());
@@ -852,6 +837,10 @@ public class VendingServiceImpl implements VendingService {
             String paymentPlan = debt.getDebitPaymentPlan();
             BigDecimal deduction = BigDecimal.ZERO;
 
+            if ("no-payment".equalsIgnoreCase(paymentMode)) {
+                continue;
+            }
+
             if ("monthly".equalsIgnoreCase(paymentMode)) {
                 int currentYear = LocalDateTime.now().getYear();
                 int currentMonth = LocalDateTime.now().getMonthValue();
@@ -1014,6 +1003,10 @@ public class VendingServiceImpl implements VendingService {
             BigDecimal creditDeducted = BigDecimal.ZERO;
             BigDecimal creditUnits = BigDecimal.ZERO;
 
+            if ("no-payment".equalsIgnoreCase(paymentMode)) {
+                continue;
+            }
+
             if ("monthly".equalsIgnoreCase(paymentMode)) {
                 int currentYear = LocalDateTime.now().getYear();
                 int currentMonth = LocalDateTime.now().getMonthValue();
@@ -1030,24 +1023,33 @@ public class VendingServiceImpl implements VendingService {
                     }
                 } catch (NumberFormatException ignored) {}
                 
-                // Calculate credit as money: balance / months
-                creditDeducted = balance.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
+                BigDecimal creditAmt = credit.getDebitAmount() != null ? credit.getDebitAmount() : balance;
+                BigDecimal expectedMonthly = creditAmt.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
+                
+                if (balance.compareTo(expectedMonthly) < 0) {
+                    creditDeducted = balance;
+                } else {
+                    creditDeducted = expectedMonthly;
+                }
                 
             } else if ("percentage".equalsIgnoreCase(paymentMode)) {
-                // Calculate credit as money: balance × percentage / 100
+                BigDecimal creditAmt = credit.getDebitAmount() != null ? credit.getDebitAmount() : balance;
                 if (percentageValue.compareTo(BigDecimal.ZERO) > 0) {
-                    creditDeducted = balance.multiply(percentageValue)
+                    creditDeducted = creditAmt.multiply(percentageValue)
                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
                     
-                    // CAP: Don't exceed balance (no over-payment)
-                    if (creditDeducted.compareTo(balance) > 0) {
+                    if (balance.compareTo(creditDeducted) < 0) {
                         creditDeducted = balance;
                     }
                 }
                 
             } else {
-                // One-off mode - full balance
-                creditDeducted = balance;
+                BigDecimal creditAmt = credit.getDebitAmount() != null ? credit.getDebitAmount() : balance;
+                if (balance.compareTo(creditAmt) < 0) {
+                    creditDeducted = balance;
+                } else {
+                    creditDeducted = creditAmt;
+                }
             }
             
             // Calculate credit units for display (creditDeducted / tariffRate will be done in main flow)
