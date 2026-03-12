@@ -40,10 +40,10 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, meter_id, smart_status," +
-            "account_number, node_id, customer_id, cin, dss, tariff, reason) " +
+            "account_number, node_id, customer_id, cin, dss, feeder, tariff, reason) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{meterStage}, #{status}, #{type}, " +
             "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{meterId}, " +
-            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{tariff}, #{reason})")
+            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariff}, #{reason})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
 
@@ -138,6 +138,7 @@ public interface MeterMapper {
             @Result(property = "tariff", column = "tariff"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "fixedEnergy", column = "fixed_energy"),
@@ -2463,10 +2464,10 @@ public interface MeterMapper {
             "<script>",
             "UPDATE payment_mode AS pm",
             "SET ",
-            "  debit_payment_mode = pmv.debitpayment_mode,",
-            "  debit_payment_plan = pmv.debitpayment_plan,",
-            "  credit_payment_mode = pmv.debitpayment_mode,",
-            "  credit_payment_plan = pmv.debitpayment_plan,",
+            "  debit_payment_mode = pmv.debit_payment_mode,",
+            "  debit_payment_plan = pmv.debit_payment_plan,",
+            "  credit_payment_mode = pmv.credit_payment_mode,",
+            "  credit_payment_plan = pmv.credit_payment_plan,",
             "  updated_at = pmv.updated_at,",
             "  status = true",
             "FROM payment_mode_version AS pmv",
@@ -2482,6 +2483,82 @@ public interface MeterMapper {
     })
     void updatePaymentModeFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
 
+    @Update({
+            "<script>",
+            "UPDATE md_meters_info AS pm",
+            "SET ",
+            "  ct_ratio_num = pmv.ct_ratio_num,",
+            "  ct_ratio_denom = pmv.ct_ratio_denom,",
+            "  volt_ratio_num = pmv.volt_ratio_num,",
+            "  volt_ratio_denom = pmv.volt_ratio_denom,",
+            "  multiplier = pmv.multiplier,",
+            "  meter_rating = pmv.meter_rating,",
+            "  initial_reading = pmv.initial_reading,",
+            "  dial = pmv.dial,",
+            "  latitude = pmv.latitude,",
+            "  longitude = pmv.longitude",
+            "FROM md_meters_info_version AS pmv",
+            "WHERE pm.meter_id = pmv.meter_id",
+            "  AND pm.org_id = pmv.org_id",
+            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND pm.meter_id IN ",
+            "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+            "    #{meter.meterId}",
+            "  </foreach>",
+            "  AND pm.org_id = #{orgId}",
+            "</script>"
+    })
+    void updateMDMeterInfoFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+    @Update({
+            "<script>",
+            "UPDATE smart_meter_info AS pm",
+            "SET ",
+            "  meter_model = pmv.meter_model,",
+            "  protocol = pmv.protocol,",
+            "  authentication = pmv.authentication,",
+            "  password = pmv.password",
+            "FROM smart_meter_info_version AS pmv",
+            "WHERE pm.meter_id = pmv.meter_id",
+            "  AND pm.org_id = pmv.org_id",
+            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND pm.meter_id IN ",
+            "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+            "    #{meter.meterId}",
+            "  </foreach>",
+            "  AND pm.org_id = #{orgId}",
+            "</script>"
+    })
+    void updateSmartMeterInfoFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+
+//
+//    @Insert({
+//            "<script>",
+//            "INSERT INTO payment_mode (",
+//            " meter_id, org_id, debit_payment_mode, debit_payment_plan,",
+//            " credit_payment_mode, credit_payment_plan, created_at, updated_at, status",
+//            ")",
+//            "SELECT",
+//            " pmv.meter_id,",
+//            " pmv.org_id,",
+//            " pmv.debit_payment_mode,",
+//            " pmv.debit_payment_plan,",
+//            " pmv.credit_payment_mode,",
+//            " pmv.credit_payment_plan,",
+//            " NOW(),",
+//            " pmv.updated_at,",
+//            " true",
+//            "FROM payment_mode_version pmv",
+//            "WHERE pmv.meter_id IN",
+//            "<foreach collection='list' item='meter' open='(' separator=',' close=')'>",
+//            "#{meter.meterId}",
+//            "</foreach>",
+//            "AND pmv.org_id = #{orgId}",
+//            "</script>"
+//    })
+//    void insertPaymentModeFromVersion(@Param("list") List<Meter> meters,
+//                                      @Param("orgId") UUID orgId);
 
     @Delete({
             "<script>",
@@ -2679,6 +2756,54 @@ public interface MeterMapper {
             "</script>"
     })
     void updateDetachBatchMeters(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
+
+
+    @Update({
+            "<script>",
+            "UPDATE md_meters_info_version",
+            "SET ",
+            "  meter_stage = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN 'Approved'",
+            "    </foreach>",
+            "  END,",
+            "  approve_by = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.approveBy} AS UUID)",
+            "    </foreach>",
+            "  END ",
+            "WHERE meter_id IN ",
+            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
+            "    #{m.meterId}",
+            "  </foreach> ",
+            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "</script>"
+    })
+    void updateBulkMDMeterInfoVersion(@Param("list") List<Meter> meters);
+
+    @Update({
+            "<script>",
+            "UPDATE smart_meter_info_version",
+            "SET ",
+            "  meter_stage = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN 'Approved'",
+            "    </foreach>",
+            "  END,",
+            "  approve_by = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.approveBy} AS UUID)",
+            "    </foreach>",
+            "  END ",
+            "WHERE meter_id IN ",
+            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
+            "    #{m.meterId}",
+            "  </foreach> ",
+            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "</script>"
+    })
+    void updateBulkSmartMeterInfoVersion(@Param("list") List<Meter> meters);
+
 
     @Delete({
             "<script>",

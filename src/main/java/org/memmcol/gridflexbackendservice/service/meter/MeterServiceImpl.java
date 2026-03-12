@@ -337,6 +337,7 @@ public class MeterServiceImpl implements MeterService {
                 request.setCin(existingMeter.getCin());
                 request.setAccountNumber(existingMeter.getAccountNumber());
                 request.setTariff(existingMeter.getTariff());
+                request.setMeterManufacturer(existingMeter.getMeterManufacturer());
             }
 
             String MDDesc = "";
@@ -384,6 +385,11 @@ public class MeterServiceImpl implements MeterService {
                     throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
                 }
 
+                RegionBhubServiceCenter regionBhubServiceCenter = meterMapper.verifyBhub(feederLine.getParentId(), user.getOrgId());
+                if (regionBhubServiceCenter == null){
+                    throw new GlobalExceptionHandler.NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+                }
+
                 if(!dss.getParentId().equals(feederLine.getNodeId())){
                     throw new GlobalExceptionHandler.NotFoundException("DSS ("+ request.getAssetId() +") " +
                             "provided does not belong to the feeder line ("+request.getFeederAssetId()+")");
@@ -391,7 +397,7 @@ public class MeterServiceImpl implements MeterService {
 
                 request.setCin(request.getCin());
                 request.setAccountNumber(request.getAccountNumber());
-//                request.setNodeId(feederLine.getNodeId());
+                request.setNodeId(feederLine.getParentId());
                 request.setFeeder(feederLine.getNodeId());
                 request.setDss(dss.getNodeId());
                 request.setMeterNumber(existingMeter.getMeterNumber());
@@ -407,6 +413,7 @@ public class MeterServiceImpl implements MeterService {
                 request.setMeterClass(existingMeter.getMeterClass());
                 request.setMeterCategory(existingMeter.getMeterCategory());
                 request.setSmartStatus(existingMeter.getSmartStatus());
+                request.setMeterManufacturer(existingMeter.getMeterManufacturer());
 
                 Tariff tariff = tariffMapper.getApproveTariff(request.getTariff());
                 if(tariff == null){
@@ -557,6 +564,7 @@ public class MeterServiceImpl implements MeterService {
 
             // Fetch updated meter and log audit
             Meter updatedMeter = meterMapper.findByIdVersion(request.getId(), user.getOrgId());
+
             AuditLog auditLog = buildAuditLog(user, desc, meterName, updatedMeter, metadata, "");
             safeAuditService.saveAudit(auditLog);
 
@@ -1031,46 +1039,6 @@ public class MeterServiceImpl implements MeterService {
                 String creditPaymentMode = request.getCreditPaymentMode();
                 String debitPaymentPlan = request.getDebitPaymentPlan();
                 String debitPaymentMode = request.getDebitPaymentMode();
-
-                // Validate payment type
-//                if (paymentType == null || paymentType.isBlank()) {
-//                    throw new GlobalExceptionHandler.NotFoundException("Payment type field is required");
-//                }
-//
-//                if (!paymentType.equalsIgnoreCase("credit") &&
-//                        !paymentType.equalsIgnoreCase("debit")) {
-//
-//                    throw new GlobalExceptionHandler.NotFoundException(
-//                            "Payment type (" + paymentType + ") is not supported");
-//                }
-
-//                // Validate payment mode
-//                if (paymentMode == null || paymentMode.isBlank()) {
-//                    throw new GlobalExceptionHandler.NotFoundException("Payment mode field is required");
-//                }
-//
-//                if (paymentMode.equalsIgnoreCase("one-off") ||
-//                        paymentMode.equalsIgnoreCase("percentage")) {
-//
-//                    request.setPaymentPlan("");
-//
-//                } else if (paymentMode.equalsIgnoreCase("monthly")) {
-//
-//                    if (paymentPlan == null || paymentPlan.isBlank()) {
-//                        throw new GlobalExceptionHandler.NotFoundException("Payment monthly plan is required");
-//                    }
-//
-//                } else if (paymentMode.equalsIgnoreCase("non")) {
-//
-//                    request.setPaymentPlan("");
-//
-//                } else {
-//
-//                    throw new GlobalExceptionHandler.NotFoundException(
-//                            "Payment mode (" + paymentMode + ") is not supported");
-//                }
-                // Validate payment mode
-
 
                 if ((debitPaymentMode == null || creditPaymentMode.isBlank()) && (creditPaymentMode == null || creditPaymentMode.isBlank())) {
                     throw new GlobalExceptionHandler.NotFoundException("Payment mode is required");
@@ -2501,14 +2469,6 @@ public class MeterServiceImpl implements MeterService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
-        // If any failed → throw browser error
-//        if (!failedRecords.isEmpty()) {
-//            throw new GlobalExceptionHandler.PartialFailureException(
-//                    failedRecords.size() + " of " + total + " meters approval failed",
-//                    result
-//            );
-//        }
-
         if (!failedRecords.isEmpty()) {
             return ResponseMap.response(
                     "131",
@@ -2760,18 +2720,58 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void handleEditedMeters(List<Meter> editedMeters, UserModel user) {
-        // Example: treat edited like assigned
-        meterMapper.editAssignLocationFromVersion(editedMeters, user.getOrgId());
-        meterMapper.updateAssignLocationVersion(editedMeters);
+
+//        meterMapper.editAssignLocationFromVersion(editedMeters, user.getOrgId());
+//        meterMapper.updateAssignLocationVersion(editedMeters);
 
         List<Meter> prepaidMeters = editedMeters.stream()
                 .filter(m -> "Prepaid".equalsIgnoreCase(m.getMeterCategory()))
                 .toList();
 
-        if (!prepaidMeters.isEmpty()) {
+        if (prepaidMeters.isEmpty()) {
+            return;
+        }
+
+        List<Meter> locationToUpdate = prepaidMeters.stream()
+                .filter(m -> m.getMeterAssignLocation() != null)
+                .toList();
+
+        List<Meter> metersToUpdate = prepaidMeters.stream()
+                .filter(m -> m.getPaymentMode() != null)
+                .toList();
+
+        List<Meter> updateMDMeterInfo = prepaidMeters.stream()
+                .filter(m -> m.getMdMeterInfo() != null)
+                .toList();
+
+        List<Meter> updateSmartMeterInfo = prepaidMeters.stream()
+                .filter(m -> m.getSmartMeterInfo() != null)
+                .toList();
+
+        if(!updateMDMeterInfo.isEmpty()){
+            System.out.println("UPDATE missing MD meter info");
+            meterMapper.updateMDMeterInfoFromVersion(prepaidMeters, user.getOrgId());
+            meterMapper.updateBulkMDMeterInfoVersion(prepaidMeters);
+        }
+
+        if(!updateSmartMeterInfo.isEmpty()){
+            System.out.println("UPDATE missing smart meter info");
+            meterMapper.updateSmartMeterInfoFromVersion(prepaidMeters, user.getOrgId());
+            meterMapper.updateBulkSmartMeterInfoVersion(prepaidMeters);
+        }
+
+        if(!locationToUpdate.isEmpty()){
+            System.out.println("UPDATE missing location info");
+            meterMapper.editAssignLocationFromVersion(editedMeters, user.getOrgId());
+            meterMapper.updateAssignLocationVersion(editedMeters);
+        }
+
+        if (!metersToUpdate.isEmpty()) {
+            System.out.println("UPDATE missing payment_mode");
             meterMapper.updatePaymentModeFromVersion(prepaidMeters, user.getOrgId());
             meterMapper.updatePaymentModeVersion(prepaidMeters);
         }
+
     }
 
     private void handleAssignment(List<Meter> assignedMeters, UserModel user) {
