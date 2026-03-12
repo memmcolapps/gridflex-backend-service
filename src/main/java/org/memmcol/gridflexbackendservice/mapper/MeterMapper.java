@@ -1535,18 +1535,18 @@ public interface MeterMapper {
             "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status ) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, 'Pending-allocated', 'Active', #{meter.meterNumber}, " +
-            "#{meter.nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, fixed_energy," +
-            "meter_stage, status, meter_number, dss, feeder, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
+            "meter_stage, status, meter_number, node_id, dss, feeder, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
             "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status ) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, #{meter.fixedEnergy}, 'Pending-assigned', 'Active', #{meter.meterNumber}, " +
-            "#{meter.dss}, #{meter.feeder}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{nodeId}, #{meter.dss}, #{meter.feeder}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
