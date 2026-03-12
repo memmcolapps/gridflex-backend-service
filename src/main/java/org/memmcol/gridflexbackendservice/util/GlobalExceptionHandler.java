@@ -419,6 +419,17 @@ public class GlobalExceptionHandler {
 				));
 	}
 
+//	@ExceptionHandler(IOException.class)
+//	public ResponseEntity<?> handleIOException(IOException ex) {
+//
+//		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//				.body(ResponseMap.response(
+//						"500",
+//						"Bulk allocation failed: " + ex.getMessage(),
+//						null
+//				));
+//	}
+
 //
 //	@ExceptionHandler(ResourceNotFoundException.class)
 //	public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {

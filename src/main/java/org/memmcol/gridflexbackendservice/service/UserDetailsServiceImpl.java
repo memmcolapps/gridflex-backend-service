@@ -50,8 +50,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 		Map<String, Object> groupMap = new HashMap<>();
 		Map<String, Object> groupOrgmap = new HashMap<>();
+
 		groupOrgmap.put("orgId", userDTO.getId());
 		groupOrgmap.put("groupTitle", userDTO.getGroups().getGroupTitle());
+		groupOrgmap.put("userNodeId", userDTO.getNodeId());
+		groupOrgmap.put("nodeTitle", userDTO.getNodeInfo().getName());
+		groupOrgmap.put("nodeType", userDTO.getNodeInfo().getType());
+		groupOrgmap.put("nodeId", userDTO.getNodeInfo().getNodeId());
 		groupMap.put("group", groupOrgmap);
 
 		// Handle Permissions

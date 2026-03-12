@@ -3,6 +3,8 @@ package org.memmcol.gridflexbackendservice.mapper;
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.user.*;
 
 import java.time.LocalDateTime;
@@ -232,10 +234,20 @@ public interface AuthMapper {
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getOrganizationById")),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-//            @Result(property = "nodes", column = "{nodeId=node_id, orgId=org_id}",
-//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getNodeWithChildren"))
+            @Result(property = "nodeInfo", column = "node_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getNodeInfo"))
     })
     UserModel findAuthByUserEmail(String email);
+
+    @Select("SELECT * FROM vw_node_summary WHERE node_Id = #{nodeId} ")
+    @Results({
+            @Result(property = "regionId", column = "region_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+    NodeSummary getNodeInfo(UUID nodeId);
 
     @Select("""
     SELECT * FROM organizations WHERE id = #{orgId}

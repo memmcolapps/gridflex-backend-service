@@ -23,7 +23,7 @@ public interface NodeService {
 
     Map<String, Object> getFeederAndDssNode();
 
-    Map<String, Object> getAllFeeder(UUID bhubId);
+    Map<String, Object> getAllFeeder();
 
     Map<String, Object> getAllDss(String assetId);
 }
