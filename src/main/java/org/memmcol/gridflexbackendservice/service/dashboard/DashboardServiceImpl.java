@@ -395,6 +395,11 @@ public class DashboardServiceImpl implements  DashboardService{
                                                 .filter(Objects::nonNull)
                                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                                        BigDecimal unitSum = list.stream()
+                                                .map(Transaction::getUnit)
+                                                .filter(Objects::nonNull)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
                                         BigDecimal vatAmountSum = list.stream()
                                                 .map(Transaction::getVatAmount)
                                                 .filter(Objects::nonNull)
@@ -402,7 +407,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
                                         Map<String, BigDecimal> sums = new HashMap<>();
                                         sums.put("amountSum", amountSum);
-                                        sums.put("costUnitSum", costUnitSum);
+                                        sums.put("costUnitSum", costUnitSum.multiply(unitSum));
                                         sums.put("vatAmountSum", vatAmountSum);
                                         return sums;
                                     })
