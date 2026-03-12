@@ -632,7 +632,15 @@ public class NodeServiceImpl implements NodeService {
     public Map<String, Object> getBusinessHubByOrgId() {
         try {
             UserModel um = handleUserValidation();
-            List<RegionBhubServiceCenter> result = nodeMapper.getBhubByOrgId(um.getOrgId());
+            String nodeName = um.getNodeInfo().getName();
+            List<RegionBhubServiceCenter> result;
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("root")){
+                result = nodeMapper.getBhubByOrgId(um.getOrgId());
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         }catch (Exception exception) {
             log.error("Error occurred while fetching business hub [ACTION]: {}", exception.getMessage().trim(), exception);
@@ -644,10 +652,24 @@ public class NodeServiceImpl implements NodeService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getAllFeeder(UUID nodeId){
+    public Map<String, Object> getAllFeeder(){
         try {
             UserModel um = handleUserValidation();
-            List<SubStationTransformerFeederLine> result = nodeMapper.getAllFeeder(um.getOrgId(), nodeId);
+
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeName = um.getNodeInfo().getName();
+
+            List<NodeSummary> result;
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("root")){
+                result = nodeMapper.getAllRegionFeeder(um.getOrgId());
+            } else {
+                System.out.println("nodeId: "+nodeId);
+                System.out.println("nodeName: "+nodeName);
+                System.out.println("orgId: "+um.getOrgId());
+                result = nodeMapper.getFeedersUnderNode(um.getOrgId(), nodeId);
+//                throw new GlobalExceptionHandler.NotFoundException("User does not belong to any hierarchy");
+            }
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         } catch (Exception exception) {
