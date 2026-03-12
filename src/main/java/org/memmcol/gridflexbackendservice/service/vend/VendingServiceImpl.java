@@ -17,6 +17,7 @@ import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.AdjustmentComputationResult;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -41,6 +42,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
 import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
@@ -72,6 +74,8 @@ public class VendingServiceImpl implements VendingService {
     @Transactional
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
         UserModel user = handleUserValidation();
+
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
         try {
             // --- Input Validation ---
@@ -274,6 +278,10 @@ public class VendingServiceImpl implements VendingService {
                         settledCredits
                 );
             }
+            Transaction trans = vendMapper.getCreditTokenTransaction(transaction.getId(), user.getOrgId());
+
+            AuditLog auditLog = buildAuditLog(user, "credit token generated", "vend", trans, metadata, creditToken.getAccountNumber());
+            safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(status.getSuccessCode(),
                     "Credit token generated successfully",
@@ -281,6 +289,7 @@ public class VendingServiceImpl implements VendingService {
             );
 
         } catch (Exception ex) {
+            genericHandler.logIncidentReport("Creating credit token service failed");
             genericHandler.logAndSaveException(ex, "creating credit token");
             throw ex;
         }
@@ -587,6 +596,7 @@ public class VendingServiceImpl implements VendingService {
             );
 
         } catch (Exception ex) {
+            genericHandler.logIncidentReport("Calculate credit token service failed");
             genericHandler.logAndSaveException(ex, "calculate credit token");
             throw ex;
         }

@@ -293,7 +293,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 //
             BigDecimal unitCostSum = filteredTransaction.stream()
-                    .map(Transaction::getUnitCost)
+                    .map(Transaction::getUnit)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 

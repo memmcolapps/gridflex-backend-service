@@ -459,30 +459,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustments(
-            int page, int size, String customerId, String accountNumber,
-            String customerName, String meterNumber, BigDecimal balance, String type) {
+            int page, int size, String type, String search, DebitCreditAdjust debitCreditAdjust) {
         try {
 
             UserModel um = handleUserValidation();
-
-            // Build a unique cache key
-            StringBuilder cacheKeyBuilder = new StringBuilder("debitCreditAdjustments_"+um.getOrgId());
-            if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
-            if (accountNumber != null && !accountNumber.isEmpty()) cacheKeyBuilder.append("_accountNumber_").append(accountNumber);
-            if (customerName != null && !customerName.isEmpty()) cacheKeyBuilder.append("_customerName_").append(customerName);
-            if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
-            if (type != null && !type.isEmpty()) cacheKeyBuilder.append("_type_").append(type);
-            if (balance != null) cacheKeyBuilder.append("_balance_").append(balance);
-            cacheKeyBuilder.append("_page_").append(page);
-            cacheKeyBuilder.append("_size_").append(size);
-
-            String cacheKey = cacheKeyBuilder.toString();
-
-            // Return from cache if available
-//            Object cachedDebitCreditAdjustment = debitCreditCache.get(cacheKey);
-//            if (cachedDebitCreditAdjustment != null) {
-//                return ResponseMap.response(status.getSuccessCode(), "Cached " + db + status.getDesc(), cachedDebitCreditAdjustment);
-//            }
 
             List<Meter> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
@@ -496,26 +476,18 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
 
             List<Meter> filteredDebitCreditAdjustment =
-                    allDebitCreditAdjustment.stream().toList();
-//                            .filter(u ->
-//                                    // customerId filter (mandatory)
-//                                    u.getCustomerId() != null
-//                                            && customerId != null
-//                                            && u.getCustomerId().equalsIgnoreCase(customerId)
-//                            )
-//                            .filter(u ->
-//                                    // accountNumber filter (optional)
-//                                    accountNumber == null || accountNumber.isBlank()
-//                                            || (u.getAccountNumber() != null
-//                                            && u.getAccountNumber().equalsIgnoreCase(accountNumber))
-//                            )
-//                            .filter(u ->
-//                                    // accountNumber filter (optional)
-//                                    customerName == null || customerName.isBlank()
-//                                            || (u.getCustomer().getFirstname() != null
-//                                            && u.getCustomer().getFirstname().equalsIgnoreCase(customerName))
-//                            )
-//                            .collect(Collectors.toList());
+                    allDebitCreditAdjustment.stream()
+                            .filter(u ->
+                                    search == null || search.isBlank()
+                                            || (u.getAccountNumber() != null && u.getAccountNumber().toLowerCase().contains(search.toLowerCase()))
+                                            || (u.getCustomerId() != null && u.getCustomerId().toLowerCase().contains(search.toLowerCase()))
+                                            || (u.getMeterNumber() != null && u.getMeterNumber().toLowerCase().contains(search.toLowerCase()))
+                                            || (u.getCustomer() != null && (
+                                                    (u.getCustomer().getFirstname() != null && u.getCustomer().getFirstname().toLowerCase().contains(search.toLowerCase()))
+                                                    || (u.getCustomer().getLastname() != null && u.getCustomer().getLastname().toLowerCase().contains(search.toLowerCase()))
+                                            ))
+                            )
+                            .collect(Collectors.toList());
 
 
 
