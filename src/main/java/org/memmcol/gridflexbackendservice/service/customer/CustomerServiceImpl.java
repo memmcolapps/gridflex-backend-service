@@ -13,12 +13,15 @@ import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
+import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.MDMeterInfo;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -64,6 +67,9 @@ public class CustomerServiceImpl implements CustomerService {
     private CustomerMapper customerMapper;
 
     @Autowired
+    private NodeMapper nodeMapper;
+
+    @Autowired
     private ResponseProperties status;
 
     @Autowired
@@ -101,10 +107,17 @@ public class CustomerServiceImpl implements CustomerService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Business hub")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             if(!request.getVat().equalsIgnoreCase("Not Paying") || !request.getVat().equalsIgnoreCase("Paying")){
                 throw new GlobalExceptionHandler.NotFoundException("Parameter type vat must be 'Paying' or 'Not Paying'");
             }
+            resolveNodeHierarchy(request, nodeId, um.getOrgId());
 
 //            String uniqueCustomerId = "C" + Instant.now().toEpochMilli();
             String uniqueCustomerId = "C" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
@@ -135,6 +148,51 @@ public class CustomerServiceImpl implements CustomerService {
             genericHandler.logIncidentReport("Creating customer Service failed");
             genericHandler.logAndSaveException(exception, "creating customer");
             throw exception;
+        }
+    }
+
+    private void resolveNodeHierarchy(Customer request, UUID startNodeId, UUID orgId) {
+
+        UUID currentNodeId = startNodeId;
+        Set<UUID> visited = new HashSet<>();
+
+        while (currentNodeId != null) {
+
+            if (!visited.add(currentNodeId)) {
+                throw new IllegalStateException("Circular hierarchy detected");
+            }
+
+            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+            if (node == null) break;
+
+            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+
+            switch (type) {
+//                case "business hub":
+//                    System.out.println("bbbhhh:: "+node.getNodeId());
+//                    if(bhubId.equals(node.getNodeId())){
+//                        request.setNodeId(node.getNodeId());
+//                    } else {
+//                        throw new GlobalExceptionHandler
+//                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+//                    }
+//
+//                    break;
+//                case "service center":
+//                    request.setServiceCenter(node.getNodeId());
+//                    break;
+                case "region":
+                    request.setRegion(node.getNodeId());
+                    break;
+                case "business hub":
+                    request.setNodeId(node.getNodeId());
+                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+            }
+
+            currentNodeId = node.getParentId();
         }
     }
 

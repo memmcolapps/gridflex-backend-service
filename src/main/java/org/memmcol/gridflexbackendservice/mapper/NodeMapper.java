@@ -221,8 +221,9 @@ public interface NodeMapper {
     Boolean existsByRegionEmail(@Param("email") String email);
 
     @Select("""
-            SELECT * FROM region_bhub_service_centers 
-            WHERE org_id = #{id} AND UPPER(type) = UPPER('business hub')
+            SELECT * FROM vw_node_summary 
+            WHERE parent_id = #{regionNodeId} 
+              AND org_id = #{id} AND UPPER(type) = UPPER('business hub')
             """)
     @Results({
             @Result(property = "id", column = "id"),
@@ -233,7 +234,7 @@ public interface NodeMapper {
             @Result(property = "phoneNo", column = "phone_number"),
             @Result(property = "contactPerson", column = "contact_person"),
     })
-    List<RegionBhubServiceCenter> getBhubByOrgId(UUID id);
+    List<RegionBhubServiceCenter> getBhubByOrgId(UUID regionNodeId, UUID id);
 
     @Select("""
             SELECT * FROM substation_trans_feeder_lines
