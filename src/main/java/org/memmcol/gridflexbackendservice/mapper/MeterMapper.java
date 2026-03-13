@@ -127,7 +127,11 @@ public interface MeterMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertVirtualMDMeterInfo(MDMeterInfo request);
 
-    @Select("SELECT * FROM meters WHERE id = #{meterId} AND org_id = #{orgId}")
+    @Select("SELECT * FROM meters WHERE id = #{meterId} " +
+            "AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} " +
+            "OR m.dss = #{nodeId} OR m.service_center = #{nodeId} " +
+            "OR m.substation = #{nodeId})" +
+            "AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -137,6 +141,7 @@ public interface MeterMapper {
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "tariff", column = "tariff"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "meterStage", column = "meter_stage"),
@@ -177,7 +182,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
 
     })
-    Meter findById(UUID meterId, UUID orgId);
+    Meter findById(UUID meterId, UUID orgId, UUID nodeId);
 
     @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id}")
     @Results({
@@ -235,6 +240,7 @@ public interface MeterMapper {
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "meterStage", column = "meter_stage"),
@@ -300,6 +306,7 @@ public interface MeterMapper {
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "smartStatus", column = "smart_status"),
             @Result(property = "meterStage", column = "meter_stage"),
@@ -340,6 +347,7 @@ public interface MeterMapper {
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "smartStatus", column = "smart_status"),
@@ -600,6 +608,7 @@ public interface MeterMapper {
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -654,6 +663,7 @@ public interface MeterMapper {
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -709,6 +719,7 @@ public interface MeterMapper {
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -764,6 +775,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -840,6 +852,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -899,6 +912,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -971,6 +985,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1138,6 +1153,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1203,6 +1219,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1270,6 +1287,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1332,6 +1350,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1396,6 +1415,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1467,6 +1487,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1536,6 +1557,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -1600,6 +1622,7 @@ public interface MeterMapper {
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "simNumber", column = "sim_number"),
             @Result(property = "meterStage", column = "meter_stage"),
             @Result(property = "smartStatus", column = "smart_status"),
@@ -2101,6 +2124,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -2153,6 +2177,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -2196,6 +2221,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -2255,6 +2281,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -2298,6 +2325,7 @@ public interface MeterMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -3207,6 +3235,7 @@ public interface MeterMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),

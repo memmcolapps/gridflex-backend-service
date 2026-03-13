@@ -111,27 +111,33 @@ public class MeterServiceImpl implements MeterService {
             // --- Step 1: Context & Validation ---
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            String nodeName = user.getNodeInfo().getType();
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("root")) {
 
-            validateMeterRequest(request, user);
+                validateMeterRequest(request, user);
 
-            // --- Step 2: Insert Meter + Versions ---
-            int result1 = meterMapper.insertMeter(request);
-            request.setMeterId(request.getId());
-            int result2 = meterMapper.insertMeterVersion(request);
-            if (result1 == 0 || result2 == 0) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
-            }
-            if ("md".trim().equalsIgnoreCase(request.getMeterClass())) {
-                insertMDMeterInfo(request, user);
-            }
-            if (Boolean.TRUE.equals(request.getSmartStatus())) {
-                insertSmartMeterInfo(request, user);
-            }
+                // --- Step 2: Insert Meter + Versions ---
+                int result1 = meterMapper.insertMeter(request);
+                request.setMeterId(request.getId());
+                int result2 = meterMapper.insertMeterVersion(request);
+                if (result1 == 0 || result2 == 0) {
+                    throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
+                }
+                if ("md".trim().equalsIgnoreCase(request.getMeterClass())) {
+                    insertMDMeterInfo(request, user);
+                }
+                if (Boolean.TRUE.equals(request.getSmartStatus())) {
+                    insertSmartMeterInfo(request, user);
+                }
 
-            // --- Step 3: Fetch created meter & Audit ---
-            Meter newMeter = meterMapper.findByIdVersion(request.getId(), request.getOrgId());
-            AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
-            safeAuditService.saveAudit(auditLog);
+                // --- Step 3: Fetch created meter & Audit ---
+                Meter newMeter = meterMapper.findByIdVersion(request.getId(), request.getOrgId());
+                AuditLog auditLog = buildAuditLog(user, "Meter created", meterName, newMeter, metadata, "");
+                safeAuditService.saveAudit(auditLog);
+            } else {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getRegDesc(), "");
 
@@ -304,9 +310,10 @@ public class MeterServiceImpl implements MeterService {
             // Validate user and set organization ID
             UserModel user = handleUserValidation();
             request.setOrgId(user.getOrgId());
+            UUID nodeId = user.getNodeInfo().getNodeId();
 
             // Fetch existing meter and version
-            Meter existingMeter = meterMapper.findById(request.getId(), user.getOrgId());
+            Meter existingMeter = meterMapper.findById(request.getId(), user.getOrgId(), nodeId);
             if (existingMeter == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found");
             }
@@ -588,7 +595,7 @@ public class MeterServiceImpl implements MeterService {
             UserModel um = handleUserValidation();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
-            String nodeName = um.getNodeInfo().getName();
+            String nodeName = um.getNodeInfo().getType();
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
@@ -791,8 +798,8 @@ public class MeterServiceImpl implements MeterService {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
-
-            Meter meterById = meterMapper.findById(meterId, user.getOrgId());
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            Meter meterById = meterMapper.findById(meterId, user.getOrgId(),nodeId);
 
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
@@ -1210,8 +1217,9 @@ public class MeterServiceImpl implements MeterService {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
 
-            Meter meterById = meterMapper.findById(request.getMeterId(), user.getOrgId());
+            Meter meterById = meterMapper.findById(request.getMeterId(), user.getOrgId(), nodeId);
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
@@ -1342,9 +1350,9 @@ public class MeterServiceImpl implements MeterService {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
-
+            UUID nodeId = um.getNodeInfo().getNodeId();
             // verify if meter exist
-            Meter meterById = meterMapper.findById(meterId, um.getOrgId());
+            Meter meterById = meterMapper.findById(meterId, um.getOrgId(), nodeId);
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
@@ -1399,7 +1407,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // get recent meter record
-            Meter meter =  meterMapper.findById(meterId, um.getOrgId());
+            Meter meter =  meterMapper.findById(meterId, um.getOrgId(), nodeId);
 
             AuditLog auditLog = buildAuditLog(um, "Meter detached", meterName, meter, metadata, reason);
             safeAuditService.saveAudit(auditLog);
@@ -1422,9 +1430,9 @@ public class MeterServiceImpl implements MeterService {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
-
+            UUID nodeId = um.getNodeInfo().getNodeId();
             // verify if meter exist
-            Meter meterById = meterMapper.findById(request.getMeterId(), um.getOrgId());
+            Meter meterById = meterMapper.findById(request.getMeterId(), um.getOrgId(), nodeId);
             if(meterById == null) {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
             }
@@ -1524,7 +1532,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // get recent meter record
-            Meter meter = meterMapper.findById(request.getMeterId(), um.getOrgId());
+            Meter meter = meterMapper.findById(request.getMeterId(), um.getOrgId(), nodeId);
 
 //            handleAddCache(meter);
             AuditLog auditLog = buildAuditLog(um, desc, meterName, meter, metadata, "");
@@ -1549,6 +1557,7 @@ public class MeterServiceImpl implements MeterService {
             // --- Step 1: Validate request ---
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
 
             Meter meter = meterMapper.findByIdVersion(meterVersionId, user.getOrgId());
 
@@ -1568,7 +1577,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             // --- Step 3: Audit log ---
-            Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId());
+            Meter updatedMeter = meterMapper.findById(meter.getId(), user.getOrgId(), nodeId);
             user.setPassword(null); // hide password in logs
             AuditLog auditLog = buildAuditLog(user, "Meter "+ approveStatus+"ed", meterName, updatedMeter, metadata, "");
             safeAuditService.saveAudit(auditLog);
@@ -2042,7 +2051,7 @@ public class MeterServiceImpl implements MeterService {
             UserModel um = handleUserValidation();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
-            String nodeName = um.getNodeInfo().getName();
+            String nodeName = um.getNodeInfo().getType();
 
 //            List<NodeSummary> result;
             if(nodeName.equalsIgnoreCase("Region")
@@ -2185,7 +2194,7 @@ public class MeterServiceImpl implements MeterService {
             String filename = Optional.ofNullable(file.getOriginalFilename())
                     .orElseThrow(() -> new IOException("File has no name"));
 
-            String nodeName = user.getNodeInfo().getName();
+            String nodeName = user.getNodeInfo().getType();
             List<Meter> meters;
             if(nodeName.equalsIgnoreCase("Region")
                     || nodeName.equalsIgnoreCase("Root")) {
@@ -3192,7 +3201,7 @@ public class MeterServiceImpl implements MeterService {
         meterMapper.approveMeter(meter);
 
         //fetch meter from the database
-        Meter m = meterMapper.findById(meter.getMeterId(), user.getOrgId());
+        Meter m = meterMapper.findById(meter.getMeterId(), user.getOrgId(), user.getNodeInfo().getNodeId());
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Meter approved", meterName, m, metadata, "");
         safeAuditService.saveAudit(auditLog);
