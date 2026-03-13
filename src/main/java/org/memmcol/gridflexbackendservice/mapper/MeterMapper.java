@@ -132,9 +132,9 @@ public interface MeterMapper {
     void insertVirtualMDMeterInfo(MDMeterInfo request);
 
     @Select("SELECT * FROM meters WHERE id = #{meterId} " +
-            "AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} " +
-            "OR m.dss = #{nodeId} OR m.service_center = #{nodeId} " +
-            "OR m.substation = #{nodeId})" +
+            "AND (node_id = #{nodeId} OR feeder = #{nodeId} " +
+            "OR dss = #{nodeId} OR service_center = #{nodeId} " +
+            "OR substation = #{nodeId})" +
             "AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
@@ -412,8 +412,9 @@ public interface MeterMapper {
             " <if test='status != null'> status = #{status}, </if>",
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
-            " <if test='region != null'> node_id = #{region}, </if>",
-            " <if test='root != null'> node_id = #{root}, </if>",
+            " <if test='region != null'> region = #{region}, </if>",
+            " <if test='serviceCenter != null'> service_center = #{serviceCenter}, </if>",
+            " <if test='root != null'> root = #{root}, </if>",
             " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
             " updated_at = #{updatedAt}",
             "</set>",
@@ -430,6 +431,7 @@ public interface MeterMapper {
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='accountNumber != null'> account_number = #{accountNumber}, </if>",
             " <if test='feeder != null'> feeder = #{feeder}, </if>",
+            " <if test='substation != null'> substation = #{substation}, </if>",
             " <if test='dss != null'> dss = #{dss}, </if>",
             " <if test='cin != null'> cin = #{cin}, </if>",
             " <if test='tariff != null'> tariff = #{tariff}, </if>",
@@ -1841,22 +1843,24 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, meter_category, meter_stage, status, customer_id, cin, dss, feeder, tariff, meter_number, type, fixed_energy, meter_type, " +
-            "created_at, updated_at, description, created_by, meter_id, account_number, node_id, smart_status, sim_number, meter_class) " +
+            "created_at, updated_at, description, created_by, meter_id, account_number, node_id, smart_status, sim_number, meter_class," +
+            "root, region, substation, service_center) " +
             "VALUES (" +
             "#{orgId},#{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariffId}, #{meterNumber}, " +
             "#{type}, #{fixedEnergy}, #{meterType}, #{createdAt}, #{updatedAt}, #{description}, #{createdBy}, #{meterId}, #{accountNumber}, #{nodeId}," +
-            "#{smartStatus}, #{simNumber}, #{meterClass})")
+            "#{smartStatus}, #{simNumber}, #{meterClass}, #{root}, #{region}, #{substation}, #{serviceCenter})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignedVirtualVersionMeterToCustomer(AssignMeterToCustomer request);
 
 
     @Insert("INSERT INTO meters (" +
             "org_id, meter_category, meter_stage, status, customer_id, cin, dss, feeder, node_id, tariff, meter_number, type, fixed_energy," +
-            "created_at, updated_at, account_number, node_id, smart_status, sim_number, meter_class, meter_type) " +
+            "created_at, updated_at, account_number, node_id, smart_status, sim_number, meter_class, meter_type," +
+            "root, region, substation, service_center) " +
             "VALUES (" +
             "#{orgId}, #{meterCategory}, #{meterStage}, #{status}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{nodeId}, #{tariffId}, #{meterNumber}, " +
             "#{type}, #{fixedEnergy}, #{createdAt}, #{updatedAt}, #{accountNumber}, #{nodeId}, #{smartStatus}, #{simNumber}, " +
-            "#{meterClass}, #{meterType})")
+            "#{meterClass}, #{meterType}, #{root}, #{region}, #{substation}, #{serviceCenter})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertVirtualVersionMeterToCustomer(AssignMeterToCustomer request);
 
@@ -1923,11 +1927,11 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, fixed_energy," +
             "meter_stage, status, meter_number, node_id, dss, feeder, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
-            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status ) " +
+            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status, root}, region, substation, serviceCenter ) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, #{meter.fixedEnergy}, 'Pending-assigned', 'Active', #{meter.meterNumber}, " +
             "#{nodeId}, #{meter.dss}, #{meter.feeder}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
-            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus})")
+            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus}, #{root}, #{region}, #{substation}, #{serviceCenter})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int assignMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 
