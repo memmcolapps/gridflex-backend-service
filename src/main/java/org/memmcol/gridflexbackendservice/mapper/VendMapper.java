@@ -644,7 +644,7 @@ public interface VendMapper {
             "AND cda.id = #{adjustmentId} " +
             "AND EXTRACT(YEAR FROM cdp.created_at) = #{year} " +
             "AND EXTRACT(MONTH FROM cdp.created_at) = #{month} " +
-            "AND cda.type = #{type} "
+            "AND cda.type = #{type} AND cdp.parent_id IS NOT NULL"
     )
     int countPaymentsThisMonth(@Param("meterId") UUID meterId, @Param("adjustmentId") UUID adjustmentId, @Param("year") int year, @Param("month") int month, @Param("type") String type);
 

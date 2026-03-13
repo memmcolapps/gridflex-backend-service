@@ -6,6 +6,7 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -631,17 +632,21 @@ public class NodeServiceImpl implements NodeService {
     @Override
     public Map<String, Object> getBusinessHubByOrgId() {
         try {
-            UserModel um = handleUserValidation();
-            String nodeName = um.getNodeInfo().getType();
+
+            UserModel user = handleUserValidation();
+            String nodeType = user.getNodeInfo().getType();
+            UUID userRegionId = user.getNodeInfo().getNodeId();
+
             List<RegionBhubServiceCenter> result;
-            if(nodeName.equalsIgnoreCase("Region")
-                    || nodeName.equalsIgnoreCase("root")){
-                result = nodeMapper.getBhubByOrgId(um.getOrgId());
+
+            if(nodeType.equalsIgnoreCase("Region")) {
+                result = nodeMapper.getBhubByOrgId(userRegionId, user.getOrgId());
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
-            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), result);
+
         }catch (Exception exception) {
             log.error("Error occurred while fetching business hub [ACTION]: {}", exception.getMessage().trim(), exception);
             genericHandler.logIncidentReport("Fetching all business hub service failed");
@@ -715,6 +720,52 @@ public class NodeServiceImpl implements NodeService {
             throw exception;
         }
     }
+
+    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {
+
+        UUID currentNodeId = startNodeId;
+        Set<UUID> visited = new HashSet<>();
+
+        while (currentNodeId != null) {
+
+            if (!visited.add(currentNodeId)) {
+                throw new IllegalStateException("Circular hierarchy detected");
+            }
+
+            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+            if (node == null) break;
+
+            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+
+            switch (type) {
+//                case "business hub":
+//                    System.out.println("bbbhhh:: "+node.getNodeId());
+//                    if(bhubId.equals(node.getNodeId())){
+//                        request.setNodeId(node.getNodeId());
+//                    } else {
+//                        throw new GlobalExceptionHandler
+//                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+//                    }
+//
+//                    break;
+//                case "service center":
+//                    request.setServiceCenter(node.getNodeId());
+//                    break;
+                case "region":
+                    request.setRegion(node.getNodeId());
+                    break;
+//                case "substation":
+//                    request.setSubstation(node.getNodeId());
+//                    break;
+                case "root":
+                    request.setRoot(node.getNodeId());
+                    break;
+            }
+
+            currentNodeId = node.getParentId();
+        }
+    }
+
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();
