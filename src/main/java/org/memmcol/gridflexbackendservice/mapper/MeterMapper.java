@@ -234,7 +234,7 @@ public interface MeterMapper {
     @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} " +
             "AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} " +
             "OR m.dss = #{nodeId} OR m.service_center = #{nodeId} " +
-            "OR m.substation = #{nodeId}) " +
+            "OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId}) " +
             "AND (meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
@@ -972,7 +972,7 @@ public interface MeterMapper {
                     WHERE m.org_id = #{orgId}
                         AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                         OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                        OR m.substation = #{nodeId})
+                        OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
                       AND m.node_id IS NOT NULL
                       AND m.meter_stage IN (
                             'Assigned',
@@ -1140,7 +1140,7 @@ public interface MeterMapper {
                         AND m.node_id IS NOT NULL
                         AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                         OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                        OR m.substation = #{nodeId})
+                        OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
                          AND m.dss IS NOT NULL
                       AND m.meter_stage IN (
                             'Assigned',
@@ -1282,7 +1282,7 @@ public interface MeterMapper {
                         AND m.node_id IS NOT NULL
                         AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                         OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                        OR m.substation = #{substation})
+                        OR m.substation = #{substation} OR m.region = #{nodeId} OR m.root = #{nodeId})
                       AND m.type = 'VIRTUAL'
                     ORDER BY m.created_at DESC
                 
@@ -1411,7 +1411,7 @@ public interface MeterMapper {
                     WHERE m.org_id = #{orgId}
                     AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                     OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                    OR m.substation = #{nodeId})
+                    OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
                     ORDER BY m.created_at DESC
                 
                     <if test="size != 0">
@@ -1547,7 +1547,7 @@ public interface MeterMapper {
                     WHERE m.org_id = #{orgId} 
                       AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                             OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                            OR m.substation = #{nodeId})
+                            OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
                                               'Pending-assigned', 'Pending-detached', 'Pending-migrated')
@@ -2131,6 +2131,8 @@ public interface MeterMapper {
             "OR m.dss = #{nodeId}",
             "OR m.service_center = #{nodeId}",
             "OR m.substation = #{nodeId}",
+            "OR m.region = #{nodeId}",
+            "OR m.root = #{nodeId}",
             ")",
             "</script>"
     })
