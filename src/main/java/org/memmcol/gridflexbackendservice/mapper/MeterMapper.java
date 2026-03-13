@@ -23,27 +23,31 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meters " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, status, type, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage) " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage, " +
+            "region, root) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{status}, #{type}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{smartStatus}, #{meterStage})")
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{smartStatus}, #{meterStage}, " +
+            "#{region}, #{root})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeter(Meter request);
 
     @Insert("INSERT INTO meters " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, status, type, " +
-            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage) " +
+            "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage," +
+            "region, root) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{status}, #{type}, " +
-            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{smartStatus}, #{meterStage})")
+            "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{smartStatus}, #{meterStage}," +
+            "#{region}, #{root})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertSingleBatchMeter(Meter request);
 
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, meter_id, smart_status," +
-            "account_number, node_id, customer_id, cin, dss, feeder, tariff, reason) " +
+            "account_number, node_id, customer_id, cin, dss, feeder, tariff, reason, region, root) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{meterStage}, #{status}, #{type}, " +
             "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{meterId}, " +
-            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariff}, #{reason})")
+            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariff}, #{reason}, region, root)")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
 
@@ -227,8 +231,11 @@ public interface MeterMapper {
 //            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
 //            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
 //            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
-    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} " +
+            "AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} " +
+            "OR m.dss = #{nodeId} OR m.service_center = #{nodeId} " +
+            "OR m.substation = #{nodeId}) " +
+            "AND (meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
             @Result(property = "id", column = "id"),
@@ -272,7 +279,7 @@ public interface MeterMapper {
 //            @Result(property = "manufacturer", column = "meter_manufacturer",
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
     })
-    Meter findByIdVersion(UUID meterId, UUID orgId);
+    Meter findByIdVersion(UUID meterId, UUID orgId, UUID nodeId);
 
     @Select("SELECT * FROM credit_debit_adjustment_version WHERE new_meter_id = #{id} AND status = true")
     @Results({
@@ -405,6 +412,8 @@ public interface MeterMapper {
             " <if test='status != null'> status = #{status}, </if>",
             " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
             " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
+            " <if test='region != null'> node_id = #{region}, </if>",
+            " <if test='root != null'> node_id = #{root}, </if>",
             " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
             " updated_at = #{updatedAt}",
             "</set>",
@@ -1902,11 +1911,12 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type," +
             "meter_stage, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
-            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status ) " +
+            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status, region, root) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, 'Pending-allocated', 'Active', #{meter.meterNumber}, " +
             "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
-            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus})")
+            "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus}, " +
+            "#{meter.region}, #{meter.root})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
 
@@ -2038,7 +2048,7 @@ public interface MeterMapper {
             "INSERT INTO meters (",
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
             "meter_type, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, cin,",
-            "old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage",
+            "old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage, region, root",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
@@ -2046,7 +2056,7 @@ public interface MeterMapper {
             "#{m.meterManufacturer}, #{m.meterType}, #{m.status}, #{m.type}, ",
             "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, #{m.cin}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
-            "#{m.smartStatus}, #{m.meterStage}",
+            "#{m.smartStatus}, #{m.meterStage}, #{region}, #{root}",
             ")",
             "</foreach>",
             "</script>"
@@ -2060,7 +2070,7 @@ public interface MeterMapper {
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
             "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, ",
             "old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, ",
-            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, feeder, tariff",
+            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, feeder, tariff, region, root",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
@@ -2069,7 +2079,7 @@ public interface MeterMapper {
             "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
-            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.feeder}, #{m.tariff}",
+            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}",
             ")",
             "</foreach>",
             "</script>"
@@ -2116,6 +2126,12 @@ public interface MeterMapper {
             "OR m.status IN ('Pending-deactivated', 'Pending-activated')",
             ")",
             "AND m.org_id = #{orgId}",
+            "AND (m.node_id = #{nodeId}",
+            "OR m.feeder = #{nodeId}",
+            "OR m.dss = #{nodeId}",
+            "OR m.service_center = #{nodeId}",
+            "OR m.substation = #{nodeId}",
+            ")",
             "</script>"
     })
     @Results({
@@ -2156,7 +2172,7 @@ public interface MeterMapper {
             @Result(property = "debitCreditAdjustVersionInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentByIdVersion"))
     })
-    List<Meter> getMetersByVersionMeterNumbers(@Param("meterNumbers") List<String> meterNumbers, @Param("orgId") UUID orgId);
+    List<Meter> getMetersByVersionMeterNumbers(@Param("meterNumbers") List<String> meterNumbers, @Param("orgId") UUID orgId, UUID nodeId);
 
 
     @Select({
@@ -2402,6 +2418,24 @@ public interface MeterMapper {
             "  meter_number = CASE id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterId} THEN #{m.meterNumber}",
+            "    </foreach>",
+            "  END,",
+
+            "  region = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.region} AS uuid)",
+            "    </foreach>",
+            "  END,",
+
+            "  root = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.root} AS uuid)",
+            "    </foreach>",
+            "  END,",
+
+            "  substation = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.substation} AS uuid)",
             "    </foreach>",
             "  END,",
 
