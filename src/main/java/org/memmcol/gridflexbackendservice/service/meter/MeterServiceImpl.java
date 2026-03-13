@@ -1622,6 +1622,7 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
             UUID nodeId = user.getNodeInfo().getNodeId();
+            System.out.print(">>>node:  "+nodeId);
 
             Meter meter = meterMapper.findByIdVersion(meterVersionId, user.getOrgId(), nodeId);
 
@@ -2273,7 +2274,7 @@ public class MeterServiceImpl implements MeterService {
             } else {
                 throw new IOException("You do not have permission");
             }
-            resolveNodeHierarchy(meters.get(0), nodeId, user.getOrgId());
+//            resolveNodeHierarchy(meters.get(0), nodeId, user.getOrgId());
 
             return bulkInsertMeters(meters, user);
 
@@ -2284,6 +2285,337 @@ public class MeterServiceImpl implements MeterService {
             throw new IOException("Bulk upload failed: " + e.getMessage());
         }
     }
+//
+//    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {
+//
+//        UUID currentNodeId = startNodeId;
+//        Set<UUID> visited = new HashSet<>();
+//
+//        while (currentNodeId != null) {
+//
+//            if (!visited.add(currentNodeId)) {
+//                throw new IllegalStateException("Circular hierarchy detected");
+//            }
+//
+//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+//            if (node == null) break;
+//
+//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+//
+//            switch (type) {
+////                case "business hub":
+////                    System.out.println("bbbhhh:: "+node.getNodeId());
+////                    if(bhubId.equals(node.getNodeId())){
+////                        request.setNodeId(node.getNodeId());
+////                    } else {
+////                        throw new GlobalExceptionHandler
+////                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+////                    }
+////
+////                    break;
+////                case "service center":
+////                    request.setServiceCenter(node.getNodeId());
+////                    break;
+//                case "region":
+//                    request.setRegion(node.getNodeId());
+//                    break;
+////                case "substation":
+////                    request.setSubstation(node.getNodeId());
+////                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+//            }
+//
+//            currentNodeId = node.getParentId();
+//        }
+//    }
+//
+//    private void prepareMeters(
+//            List<Meter> batch,
+//            UserModel user,
+//            Map<String, UUID> manufacturerNameToId,
+//            List<GenericResp> failedRecords
+//    ) {
+//        Iterator<Meter> iterator = batch.iterator();
+//
+//        while (iterator.hasNext()) {
+//            Meter meter = iterator.next();
+//
+////            if(meter != null){
+////                GenericResp resp = new GenericResp();
+////                resp.setId(meter.getMeterNumber());
+////                resp.setMessage("Meter already exist");
+////                resp.setData(meter);
+////
+////                failedRecords.add(resp);
+////                iterator.remove();
+////                continue;
+////            }
+//
+//            // --- Validate and set Manufacturer ID ---
+//            String manuName = meter.getMeterManufacturerName();
+//            if (manuName == null || manuName.trim().isBlank()) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meter.getMeterNumber());
+//                resp.setMessage("Missing manufacturer name");
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            UUID manuId = manufacturerNameToId.get(manuName.trim().toLowerCase());
+//            if (manuId == null) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meter.getMeterNumber());
+//                resp.setMessage("Invalid manufacturer: "+manuName);
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+////                failedRecords.add(meter.getMeterNumber() + " (Invalid manufacturer: " + manuName + ")");
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            meter.setMeterManufacturer(manuId);
+//
+//            String validationError = validateRequiredFields(meter);
+//
+//            if (validationError != null) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(String.valueOf(meter.getMeterNumber()));
+//                resp.setMessage(validationError);
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            // --- Default Meter Fields ---
+//            meter.setOrgId(user.getOrgId());
+//            meter.setCreatedBy(user.getId());
+//            meter.setStatus("Active");
+//            meter.setMeterStage("Pending-created");
+//            meter.setType("NON-VIRTUAL");
+//            meter.setDescription("Newly Added");
+//        }
+//    }
+//public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
+//    Map<String, Object> result = new HashMap<>();
+//    List<GenericResp> failedRecords = new ArrayList<>();
+//
+//    if (meters == null || meters.isEmpty()) {
+//        throw new IllegalArgumentException("Meter list cannot be empty");
+//    }
+//
+//    int totalRecords = meters.size();
+//    int successCount = 0;
+//
+//    // ------------------------------------------
+//    // Load Manufacturers
+//    // ------------------------------------------
+//    List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
+//    Map<String, UUID> manufacturerNameToId = manufacturers.stream()
+//            .collect(Collectors.toMap(
+//                    m -> m.getName().trim().toLowerCase(),
+//                    Manufacturer::getId
+//            ));
+//
+//    if(manufacturerNameToId.isEmpty()) {
+//        throw new GlobalExceptionHandler.PartialFailureException(
+//                "Meters upload failed - manufacturer not found",
+//                result
+//        );
+//    }
+//
+//    //------------------------------------------------
+//    // Validate duplicates INSIDE FILE
+//    //------------------------------------------------
+//
+//    Set<String> seenMeters = new HashSet<>();
+//    Set<String> seenSims = new HashSet<>();
+//
+//    Iterator<Meter> fileIterator = meters.iterator();
+//
+//    while (fileIterator.hasNext()) {
+//
+//        Meter meter = fileIterator.next();
+//
+//        String meterNumber = Optional.ofNullable(meter.getMeterNumber()).orElse("").trim();
+//        String simNumber = Optional.ofNullable(meter.getSimNumber()).orElse("").trim();
+//
+//        if (!seenMeters.add(meterNumber)) {
+//            GenericResp resp = new GenericResp();
+//            resp.setId(meterNumber);
+//            resp.setMessage("Duplicate meter number in uploaded file");
+//            resp.setData(simNumber);
+//            failedRecords.add(resp);
+//            fileIterator.remove();
+//            continue;
+//        }
+//
+//        if (!simNumber.isEmpty() && !seenSims.add(simNumber)) {
+//            GenericResp resp = new GenericResp();
+//            resp.setId(meterNumber);
+//            resp.setMessage("Duplicate SIM number in uploaded file");
+//            resp.setData(simNumber);
+//            failedRecords.add(resp);
+//            fileIterator.remove();
+//            continue;
+//        }
+//    }
+//
+//    // ------------------------------------------
+//    // Extract MeterNumbers + SimNumbers
+//    // ------------------------------------------
+//
+//    Set<String> meterNumbers = meters.stream()
+//            .map(Meter::getMeterNumber)
+//            .filter(Objects::nonNull)
+//            .map(String::trim)
+//            .collect(Collectors.toSet());
+//
+//    Set<String> simNumbers = meters.stream()
+//            .map(Meter::getSimNumber)
+//            .filter(Objects::nonNull)
+//            .map(String::trim)
+//            .collect(Collectors.toSet());
+//
+//    // ---------------------------------------------------
+//    // Fetch Existing Meter Numbers (ONE DB CALL)
+//    // ---------------------------------------------------
+//    Set<String> allMeterNumbers = meters.stream()
+//            .map(Meter::getMeterNumber)
+//            .filter(Objects::nonNull)
+//            .map(String::trim)
+//            .filter(s -> !s.isEmpty())
+//            .collect(Collectors.toSet());
+//
+//
+//    // ------------------------------------------
+//    // Fetch Existing
+//    // ------------------------------------------
+//
+//    List<Meter> existingMeters =
+//            meterMapper.getMetersList(
+//                    new ArrayList<>(meterNumbers),
+////                        new ArrayList<>(simNumbers),
+//                    user.getOrgId()
+//            );
+//
+//    Set<String> existingMeterNumbers = existingMeters.stream()
+//            .map(Meter::getMeterNumber)
+//            .collect(Collectors.toSet());
+//
+//    Set<String> existingSimNumbers = existingMeters.stream()
+//            .map(Meter::getSimNumber)
+//            .collect(Collectors.toSet());
+//
+//
+//    int batchSize = 500; // try 500–1000 for optimal JDBC performance
+//
+//    for (int i = 0; i < meters.size(); i += batchSize) {
+//        int end = Math.min(i + batchSize, meters.size());
+////            List<Meter> batch = meters.subList(i, end);
+//        List<Meter> batch = new ArrayList<>(meters.subList(i, end));
+//
+//        // -----------------------------------------------
+//        // Remove duplicates (already existing meters)
+//        // -----------------------------------------------
+//        Iterator<Meter> iterator = batch.iterator();
+//
+//        while (iterator.hasNext()) {
+//
+//            Meter meter = iterator.next();
+//
+//            String meterNumber = meter.getMeterNumber();
+//            String simNumber = meter.getSimNumber();
+//            String manufacturer = meter.getMeterManufacturerName();
+//
+//            if (meterNumber == null || meterNumber.trim().isEmpty()) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(null);
+//                resp.setMessage("Missing meter number");
+//                resp.setData(null);
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            meterNumber = meterNumber.trim();
+//
+//            if (existingMeterNumbers.contains(meterNumber)) {
+//
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("Meter already exists");
+//                resp.setData(meterNumber);
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            if (simNumber != null && existingSimNumbers.contains(simNumber.trim())) {
+//
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("SIM number already exists");
+//                resp.setData(meterNumber);
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            if (manufacturer == null ||
+//                    !manufacturerNameToId.containsKey(manufacturer.trim().toLowerCase())) {
+//
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("Manufacturer does not exist: " + manufacturer);
+//                resp.setData(manufacturer);
+//                failedRecords.add(resp);
+//                iterator.remove();
+////                    continue;
+//            }
+//        }
+//
+//        if (batch.isEmpty()) {
+//            continue;
+//        }
+//
+//
+//        try {
+//            insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
+//            successCount += batch.size();
+//        } catch (Exception e) {
+//            log.warn("Batch {} failed — retrying sub batch upload", (i / batchSize) + 1);
+//            // Attempt smaller sub-batches to isolate failure
+//            successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
+//        }
+//    }
+//
+//    result.put("totalRecords", totalRecords);
+//    result.put("successCount", successCount);
+//    result.put("failedCount", failedRecords.size());
+//    result.put("failedRecords", failedRecords);
+//
+//    if (!failedRecords.isEmpty()) {
+//        return ResponseMap.response(
+//                "131",
+//                failedRecords.size() + " of " + totalRecords + " Meters upload failed",
+//                result
+//        );
+//    }
+//
+//    return ResponseMap.response(
+//            status.getSuccessCode(),
+//            successCount + " of " + totalRecords + " Meters uploaded successfully",
+//            result
+//    );
+//}
 
     @Override
     public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
@@ -3705,7 +4037,7 @@ public class MeterServiceImpl implements MeterService {
             List<GenericResp> failedRecords
     ) {
         Iterator<Meter> iterator = batch.iterator();
-
+        UUID nodeId = user.getNodeInfo().getNodeId();
         while (iterator.hasNext()) {
             Meter meter = iterator.next();
 
@@ -3760,6 +4092,8 @@ public class MeterServiceImpl implements MeterService {
                 iterator.remove();
                 continue;
             }
+
+            resolveNodeHierarchy(meter, nodeId, user.getOrgId());
 
             // --- Default Meter Fields ---
             meter.setOrgId(user.getOrgId());
