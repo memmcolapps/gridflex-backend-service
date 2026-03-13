@@ -632,7 +632,7 @@ public class NodeServiceImpl implements NodeService {
     public Map<String, Object> getBusinessHubByOrgId() {
         try {
             UserModel um = handleUserValidation();
-            String nodeName = um.getNodeInfo().getName();
+            String nodeName = um.getNodeInfo().getType();
             List<RegionBhubServiceCenter> result;
             if(nodeName.equalsIgnoreCase("Region")
                     || nodeName.equalsIgnoreCase("root")){
@@ -657,7 +657,7 @@ public class NodeServiceImpl implements NodeService {
             UserModel um = handleUserValidation();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
-            String nodeName = um.getNodeInfo().getName();
+            String nodeName = um.getNodeInfo().getType();
 
             List<NodeSummary> result;
             if(nodeName.equalsIgnoreCase("Region")
