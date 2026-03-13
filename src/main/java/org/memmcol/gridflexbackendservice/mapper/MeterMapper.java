@@ -2056,7 +2056,7 @@ public interface MeterMapper {
             "#{m.meterManufacturer}, #{m.meterType}, #{m.status}, #{m.type}, ",
             "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, #{m.cin}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
-            "#{m.smartStatus}, #{m.meterStage}, #{region}, #{root}",
+            "#{m.smartStatus}, #{m.meterStage}, #{m.region}, #{m.root}",
             ")",
             "</foreach>",
             "</script>"
@@ -2070,7 +2070,8 @@ public interface MeterMapper {
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
             "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, ",
             "old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, ",
-            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, feeder, tariff, region, root",
+            "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, feeder, tariff, " +
+            "region, root",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
@@ -2079,7 +2080,8 @@ public interface MeterMapper {
             "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
-            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, #{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}",
+            "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, " +
+             "#{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}",
             ")",
             "</foreach>",
             "</script>"
