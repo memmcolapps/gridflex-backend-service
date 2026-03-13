@@ -2803,6 +2803,7 @@ public class MeterServiceImpl implements MeterService {
             // Update main meter table
             meterMapper.updateBatchMeterAllocation(batch);
 
+//            System.out.println("node>>>: "+batch.get(0).getRegion());
             // Update version table (node_id + meter_stage)
             meterMapper.insertMeterVersions(batch);
 
@@ -3955,6 +3956,7 @@ public class MeterServiceImpl implements MeterService {
         for (Meter meter : batch) {
             meter.setMeterId(meter.getId()); // Copy generated ID
         }
+        System.out.println("node>>>: "+batch.get(0).getRegion());
         // Insert into meter_versions (replica)
         meterMapper.insertMeterVersions(batch);
 
@@ -4093,7 +4095,9 @@ public class MeterServiceImpl implements MeterService {
                 continue;
             }
 
-            resolveNodeHierarchy(meter, nodeId, user.getOrgId());
+            if(nodeId != null){
+                resolveNodeHierarchy(meter, nodeId, user.getOrgId());
+            }
 
             // --- Default Meter Fields ---
             meter.setOrgId(user.getOrgId());
