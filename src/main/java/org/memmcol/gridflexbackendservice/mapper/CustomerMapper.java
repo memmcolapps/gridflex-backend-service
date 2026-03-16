@@ -15,7 +15,8 @@ import java.util.UUID;
 public interface CustomerMapper {
     @Select("SELECT * FROM customers WHERE id = #{id} " +
             "AND org_id = #{orgId} AND (node_id = #{nodeId} " +
-            "OR service_center = #{nodeId} OR region = #{nodeId})")
+            "OR service_center = #{nodeId} OR region = #{nodeId} " +
+            "OR root = #{nodeId})")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -34,7 +35,8 @@ public interface CustomerMapper {
     Customer findById(UUID id, UUID orgId, UUID nodeId);
 
     @Select("SELECT * FROM customers WHERE id = #{id} " +
-            "AND (node_id = #{nodeId} OR region = #{nodeId} OR node_id = #{nodeId})")
+            "AND (node_id = #{nodeId} OR region = #{nodeId} " +
+            "OR node_id = #{nodeId} OR root = #{nodeId})")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -117,8 +119,8 @@ public interface CustomerMapper {
     @Select("SELECT node_id AS nodeId, parent_id AS parentId, asset_id AS assetId, name, type, created_at AS createdAt, updated_at AS updatedAt FROM substation_trans_feeder_lines WHERE node_id = #{id}")
     SubStationTransformerFeederLine getFeederDss(UUID id);
 
-    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, node_id, region, service_center) " +
-            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat}, #{nodeId}, #{region}, #{serviceCenter})")
+    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, node_id, region, service_center, root) " +
+            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat}, #{nodeId}, #{region}, #{serviceCenter}, #{root})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCustomer(Customer request);
 
@@ -126,12 +128,12 @@ public interface CustomerMapper {
             "<script>",
             "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, " +
                     "email, state, city, house_no, street_name, status, created_at, updated_at, " +
-                    "vat, node_id, region, service_center) ",
+                    "vat, node_id, region, service_center, root) ",
             "VALUES",
             "<foreach collection='customers' item='c' separator=','>",
             "(#{c.orgId}, #{c.firstname}, #{c.lastname}, #{c.customerId}, #{c.nin}, #{c.phoneNumber}, #{c.email}, " +
                     "#{c.state}, #{c.city}, #{c.houseNo}, #{c.streetName}, #{c.status}, #{c.createdAt}, #{c.updatedAt}, " +
-                    "#{c.vat}, #{c.nodeId}, #{c.region}, #{c.serviceCenter})",
+                    "#{c.vat}, #{c.nodeId}, #{c.region}, #{c.serviceCenter}, #{c.root})",
             "</foreach>",
             "</script>"
     })
@@ -151,7 +153,8 @@ public interface CustomerMapper {
     @Select("""
             <script>
                 SELECT * FROM customers WHERE org_id = #{orgId} 
-                AND (node_id = #{nodeId} OR region = #{nodeId} OR service_center = #{nodeId})
+                AND (node_id = #{nodeId} OR region = #{nodeId} 
+                    OR service_center = #{nodeId} OR root = #{nodeId})
                 ORDER BY created_at DESC
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page} * #{size}

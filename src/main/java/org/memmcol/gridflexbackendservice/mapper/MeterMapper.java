@@ -44,10 +44,10 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version " +
             "(org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, meter_stage, status, type, " +
             "old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, meter_id, smart_status," +
-            "account_number, node_id, customer_id, cin, dss, feeder, tariff, reason, region, root) " +
+            "account_number, node_id, customer_id, cin, dss, feeder, tariff, reason, region, root, service_center) " +
             "VALUES (#{orgId}, #{meterNumber}, #{simNumber}, #{meterCategory}, #{meterClass}, #{meterManufacturer}, #{meterType}, #{meterStage}, #{status}, #{type}, " +
             "#{oldSgc}, #{newSgc}, #{oldKrn}, #{newKrn}, #{oldTariffIndex}, #{newTariffIndex}, #{createdAt}, #{updatedAt}, #{createdBy}, #{description}, #{meterId}, " +
-            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariff}, #{reason}, region, root)")
+            "#{smartStatus}, #{accountNumber}, #{nodeId}, #{customerId}, #{cin}, #{dss}, #{feeder}, #{tariff}, #{reason}, #{region}, #{root}, #{serviceCenter})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMeterVersion(Meter request);
 
@@ -131,10 +131,13 @@ public interface MeterMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertVirtualMDMeterInfo(MDMeterInfo request);
 
+//    @Select("SELECT * FROM meters WHERE id = #{meterId} " +
+//            "AND (node_id = #{nodeId} OR feeder = #{nodeId} " +
+//            "OR dss = #{nodeId} OR service_center = #{nodeId}) " +
+//            "AND org_id = #{orgId}")
     @Select("SELECT * FROM meters WHERE id = #{meterId} " +
-            "AND (node_id = #{nodeId} OR feeder = #{nodeId} " +
-            "OR dss = #{nodeId} OR service_center = #{nodeId} " +
-            "OR substation = #{nodeId}) AND org_id = #{orgId}")
+            "AND (node_id = #{nodeId} OR service_center = #{nodeId}) " +
+            "AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -231,9 +234,7 @@ public interface MeterMapper {
 //            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
 //            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
     @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} " +
-            "AND (node_id = #{nodeId} OR feeder = #{nodeId} " +
-            "OR dss = #{nodeId} OR service_center = #{nodeId} " +
-            "OR substation = #{nodeId} OR region = #{nodeId} OR root = #{nodeId}) " +
+            "AND (node_id = #{nodeId} OR service_center = #{nodeId}) " +
             "AND (meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
@@ -1484,7 +1485,8 @@ public interface MeterMapper {
                     FROM meters_version m
                     LEFT JOIN customers c ON c.customer_id = m.customer_id
                     WHERE m.org_id = #{orgId}
-                    AND m.region = #{nodeId}
+                    AND m.region = #{nodeId} 
+                    AND m.root = #{nodeId}
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
                                               'Pending-assigned', 'Pending-detached', 'Pending-migrated')
@@ -1932,7 +1934,7 @@ public interface MeterMapper {
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, fixed_energy," +
             "meter_stage, status, meter_number, node_id, dss, feeder, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
-            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status, root}, region, substation, serviceCenter ) " +
+            "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status, root, region, substation, service_center ) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, #{meter.fixedEnergy}, 'Pending-assigned', 'Active', #{meter.meterNumber}, " +
             "#{nodeId}, #{meter.dss}, #{meter.feeder}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
@@ -2080,7 +2082,7 @@ public interface MeterMapper {
             "meter_type, meter_stage, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, ",
             "old_tariff_index, new_tariff_index, created_at, updated_at, created_by, description, ",
             "meter_id, smart_status, account_number, node_id, customer_id, cin, dss, feeder, tariff, " +
-            "region, root",
+            "region, root, substation, service_center",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
@@ -2090,7 +2092,7 @@ public interface MeterMapper {
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
             "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, " +
-             "#{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}",
+             "#{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}, #{substation}, #{serviceCenter}",
             ")",
             "</foreach>",
             "</script>"
