@@ -170,15 +170,19 @@ public class CustomerServiceImpl implements CustomerService {
 
             switch (type) {
                 case "service center":
+                    System.out.println(">>>>>>>>>>>>0");
                     request.setServiceCenter(node.getNodeId());
                     break;
                 case "region":
+                    System.out.println(">>>>>>>>>>>>1");
                     request.setRegion(node.getNodeId());
                     break;
                 case "business hub":
+                    System.out.println(">>>>>>>>>>>>2");
                     request.setNodeId(node.getNodeId());
                     break;
                 case "root":
+                    System.out.println(">>>>>>>>>>>>3");
                     request.setRoot(node.getNodeId());
                     break;
             }
@@ -406,19 +410,20 @@ public class CustomerServiceImpl implements CustomerService {
             // check if customer exist
             Customer isCustomer = customerMapper.findById(customerId, um.getOrgId(), nodeId);
             if (isCustomer == null){
-                throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException(
+                        customerName + " " + status.getExistDesc() + "or you do not have permission");
             }
 
-            if((!isCustomer.getNodeId().equals(nodeId)
-                    || !isCustomer.getRegion().equals(nodeId)
-                    || !isCustomer.getServiceCenter().equals(nodeId)
-                    || !isCustomer.getRoot().equals(nodeId))
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+//            if((!isCustomer.getNodeId().equals(nodeId)
+//                    || !isCustomer.getRegion().equals(nodeId)
+//                    || !isCustomer.getServiceCenter().equals(nodeId)
+//                    || !isCustomer.getRoot().equals(nodeId))
+//                    && !nodeType.equalsIgnoreCase("Business hub")
+//                    && !nodeType.equalsIgnoreCase("Service center")
+//                    && !nodeType.equalsIgnoreCase("Region")
+//                    && !nodeType.equalsIgnoreCase("Root")){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
             if(state.equalsIgnoreCase("active") || state.equalsIgnoreCase("inactive") || state.equalsIgnoreCase("block")){
                 int isStatus = customerMapper.changeStatus(customerId, capitalizeFirstLetter(state.toLowerCase()), um.getOrgId());

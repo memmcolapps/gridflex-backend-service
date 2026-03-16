@@ -19,9 +19,10 @@ public interface VendMapper {
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, #{InitialAmount}, #{FinalAmount}, #{customerId}, #{userId}, #{tariffId}, #{unit}," +
-            "#{unitCost}, #{vatAmount}, #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, #{kct1}, #{kct2})")
+            "#{unitCost}, #{vatAmount}, #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, #{kct1}, " +
+            "#{kct2}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createCreditToken(Transaction transaction);
 
@@ -401,29 +402,29 @@ public interface VendMapper {
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
             "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
-            "#{kct1}, #{kct2})")
+            "#{kct1}, #{kct2}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createKctToken(KctToken kctToken);
 
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, node_id) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
             "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
-            "#{kct1}, #{kct2})")
+            "#{kct1}, #{kct2}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createClearToken(ClearTamper clearTamper);
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
             "'0.00', '0.00', #{status}, #{receiptNumber}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
-            "#{kct1}, #{kct2})")
+            "#{kct1}, #{kct2}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createClearCredit(ClearCredit clearCredit);
 
@@ -438,10 +439,10 @@ public interface VendMapper {
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, #{unit}, " +
             "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
-            "#{kct1}, #{kct2})")
+            "#{kct1}, #{kct2}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createCompensationToken(KctToken kctToken);
 

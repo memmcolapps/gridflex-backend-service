@@ -192,7 +192,6 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-
     private void handlePayloadCheck(Meter request) {
 
         if(request.getMeterNumber() == null || request.getMeterNumber().isBlank()) {
@@ -4953,7 +4952,7 @@ public class MeterServiceImpl implements MeterService {
                 }
 
                 assert feeder != null;
-                resolveBulkNodeHierarchy(meter, feeder.getParentId(), user.getOrgId(), user.getNodes().getNodeInfo().getNodeId());
+                resolveBulkNodeHierarchy(meter, feeder.getParentId(), user.getOrgId(), user.getNodeId());
 
 
 //                if (feeder != null) {

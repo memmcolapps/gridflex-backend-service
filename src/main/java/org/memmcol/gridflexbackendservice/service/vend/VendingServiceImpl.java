@@ -20,6 +20,7 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.Adjustme
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -223,6 +224,7 @@ public class VendingServiceImpl implements VendingService {
 
             // --- Persist Transaction ---
             Transaction transaction = new Transaction();
+            transaction.setTxNodeId(nodeId);
             transaction.setMeterId(meter.getMeterId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(finalNetTender);
@@ -239,7 +241,7 @@ public class VendingServiceImpl implements VendingService {
             transaction.setKct2(generateDummyToken());
             transaction.setVatAmount(vatAmount);
 
-            int created = vendMapper.createCreditToken(transaction);
+                int created = vendMapper.createCreditToken(transaction);
             if (created == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Credit token creation failed");
             }
@@ -455,7 +457,8 @@ public class VendingServiceImpl implements VendingService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")) {
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -755,7 +758,7 @@ public class VendingServiceImpl implements VendingService {
 //            genericHandler.logAndSaveException(ex, "calculate credit token");
 //            throw ex;
 //        }
-//    }
+//
 
 
     private String generateReceiptNumber(String meterNumber) {
@@ -1127,7 +1130,8 @@ public class VendingServiceImpl implements VendingService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")) {
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -1179,6 +1183,7 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setKct1(generateDummyToken());
             kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
+            kctToken.setTxNodeId(nodeId);
             kctToken.setStatus("Successful");
             kctToken.setOrgId(user.getOrgId());
             kctToken.setCustomerId(meter.getCustomerId());
@@ -1222,7 +1227,8 @@ public class VendingServiceImpl implements VendingService {
            String nodeType = user.getNodeInfo().getType();
 
            if(!nodeType.equalsIgnoreCase("Business hub")
-                   && !nodeType.equalsIgnoreCase("Service center")) {
+                   && !nodeType.equalsIgnoreCase("Service center")
+                   && !nodeType.equalsIgnoreCase("Region")) {
                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
            }
 
@@ -1262,7 +1268,8 @@ public class VendingServiceImpl implements VendingService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")) {
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
             Meter meterResult = vendMapper.getMeter(
@@ -1314,6 +1321,7 @@ public class VendingServiceImpl implements VendingService {
             clearTamper.setTariffId(meter.getTariffId());
             clearTamper.setKct1(generateDummyToken());
             clearTamper.setKct2(generateDummyToken());
+            clearTamper.setTxNodeId(nodeId);
 
             int clear = vendMapper.createClearToken(clearTamper);
             if(clear == 0) {
@@ -1343,7 +1351,8 @@ public class VendingServiceImpl implements VendingService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")) {
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
             Meter meterResult = vendMapper.getMeter(
@@ -1398,6 +1407,7 @@ public class VendingServiceImpl implements VendingService {
             clearCredit.setTariffId(meter.getTariffId());
             clearCredit.setKct1(generateDummyToken());
             clearCredit.setKct2(generateDummyToken());
+            clearCredit.setTxNodeId(nodeId);
 
             int clear = vendMapper.createClearCredit(clearCredit);
             if(clear == 0) {
@@ -1428,7 +1438,8 @@ public class VendingServiceImpl implements VendingService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")) {
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -1480,6 +1491,7 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setTariffId(meter.getTariffId());
             kctToken.setKct1(generateDummyToken());
             kctToken.setKct2(generateDummyToken());
+            kctToken.setTxNodeId(nodeId);
 
             int clear = vendMapper.createCompensationToken(kctToken);
             if(clear == 0) {
@@ -1515,6 +1527,8 @@ public class VendingServiceImpl implements VendingService {
 //                && !nodeType.equalsIgnoreCase("Region")) {
 //            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
 //        }
+
+//        resolveBulkNodeHierarchy(Transaction );
 
         try {
             int offset = page * size;
@@ -1656,6 +1670,50 @@ public class VendingServiceImpl implements VendingService {
                 .substring(0, 12)
                 .toUpperCase();
     }
+
+//    private void resolveBulkNodeHierarchy(Meter request, UUID startNodeId, UUID orgId, UUID nodeId) {
+//
+//        UUID currentNodeId = startNodeId;
+//        Set<UUID> visited = new HashSet<>();
+//        boolean check = false;
+//
+//        while (currentNodeId != null) {
+//
+//            if (!visited.add(currentNodeId)) {
+//                throw new IllegalStateException("Circular hierarchy detected");
+//            }
+//
+//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+//            if (node == null) break;
+//
+//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+//
+//            switch (type) {
+//                case "business hub":
+//                    request.setNodeId(node.getNodeId());
+//                    break;
+//                case "service center":
+//                    request.setServiceCenter(node.getNodeId());
+//                    break;
+//                case "region":
+//                    request.setRegion(node.getNodeId());
+//                    break;
+//                case "substation":
+//                    request.setSubstation(node.getNodeId());
+//                    break;
+//                case "feeder line":
+//                    request.setSubstation(node.getNodeId());
+//                    break;
+//                case "dss":
+//                    request.setSubstation(node.getNodeId());
+//                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+//            }
+//            currentNodeId = node.getParentId();
+//        }
+//    }
 
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Transaction vend, Map<String, String> metadata, String reason) {
