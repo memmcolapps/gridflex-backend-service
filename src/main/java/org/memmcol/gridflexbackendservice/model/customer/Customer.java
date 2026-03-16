@@ -21,6 +21,7 @@ public class Customer implements Serializable {
     private UUID orgId;
     private UUID nodeId;
     private UUID region;
+    private UUID serviceCenter;
     private String firstname;
     private String lastname;
     private String customerId;

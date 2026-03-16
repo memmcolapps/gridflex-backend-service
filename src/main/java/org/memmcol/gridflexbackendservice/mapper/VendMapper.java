@@ -281,7 +281,7 @@ public interface VendMapper {
             "    m.credit_payment_plan, " +
             "    m.tariff_id " +
             "FROM vw_meter_summary m " +
-            "WHERE m.org_id = #{orgId} AND (node_id = #{nodeId} AND service_center = #{nodeId}) " +
+            "WHERE m.org_id = #{orgId} AND (node_id = #{nodeId} OR service_center = #{nodeId} OR m.region = #{nodeId}) " +
             "AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
             "GROUP BY " +
             "    m.meter_id, " +
@@ -343,7 +343,7 @@ public interface VendMapper {
     @Select("SELECT m.*, c.*, t.id as tariff_id FROM meters m " +
             "LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "LEFT JOIN tariffs t ON t.id = m.tariff " +
-            "WHERE m.org_id = #{orgId} AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId}) " +
+            "WHERE m.org_id = #{orgId} AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}) " +
             "AND (m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
     @Results({
             @Result(property = "id", column = "id"),
@@ -603,7 +603,7 @@ public interface VendMapper {
             "FROM vw_meter_summary m " +
             "LEFT JOIN credit_debit_adjustment cd ON cd.org_id = m.org_id " +
             " AND cd.meter_id = m.meter_id " +
-            " AND (m.service_center = #{nodeId} OR m.node_id = #{nodeId}) " +
+            " AND (m.service_center = #{nodeId} OR m.node_id = #{nodeId} OR m.region = #{nodeId}) " +
             "WHERE m.org_id = #{orgId} " +
             "AND (m.meter_number = #{meterNumber} " +
             "OR m.meter_account_number = #{accountNumber} AND m.adjustment_status IN('PARTIALLY_PAID','UNPAID')) " +

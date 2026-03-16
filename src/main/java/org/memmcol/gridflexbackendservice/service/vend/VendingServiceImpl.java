@@ -78,7 +78,8 @@ public class VendingServiceImpl implements VendingService {
         String nodeType = user.getNodeInfo().getType();
 
         if(!nodeType.equalsIgnoreCase("Business hub")
-                && !nodeType.equalsIgnoreCase("Service center")) {
+                && !nodeType.equalsIgnoreCase("Service center")
+                && !nodeType.equalsIgnoreCase("Region")) {
             throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
         }
 
