@@ -178,9 +178,9 @@ public class CustomerServiceImpl implements CustomerService {
                 case "business hub":
                     request.setNodeId(node.getNodeId());
                     break;
-//                case "root":
-//                    request.setRoot(node.getNodeId());
-//                    break;
+                case "root":
+                    request.setRoot(node.getNodeId());
+                    break;
             }
 
             currentNodeId = node.getParentId();
@@ -205,14 +205,15 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             if((!cust.getNodeId().equals(nodeId) || !cust.getRegion().equals(nodeId)
-                    || !cust.getServiceCenter().equals(nodeId))
+                    || !cust.getServiceCenter().equals(nodeId) || !cust.getRoot().equals(nodeId))
                     && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")){
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
-            if(!request.getVat().equalsIgnoreCase("Not Paying") || !request.getVat().equalsIgnoreCase("Paying")){
+            if(!request.getVat().equalsIgnoreCase("Not Paying") && !request.getVat().equalsIgnoreCase("Paying")){
                 throw new GlobalExceptionHandler.NotFoundException("Parameter type vat must be 'Paying' or 'Not Paying'");
             }
 
@@ -408,11 +409,14 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
             }
 
-            if((!isCustomer.getNodeId().equals(nodeId) || !isCustomer.getRegion().equals(nodeId)
-                    || !isCustomer.getServiceCenter().equals(nodeId))
+            if((!isCustomer.getNodeId().equals(nodeId)
+                    || !isCustomer.getRegion().equals(nodeId)
+                    || !isCustomer.getServiceCenter().equals(nodeId)
+                    || !isCustomer.getRoot().equals(nodeId))
                     && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")){
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
