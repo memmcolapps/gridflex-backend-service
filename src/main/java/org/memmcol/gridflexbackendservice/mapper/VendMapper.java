@@ -128,6 +128,12 @@ public interface VendMapper {
             "    m.old_krn,  " +
             "    m.new_krn,  " +
             "    m.vat,  " +
+            "    m.region,  " +
+            "    m.node_id,  " +
+            "    m.service_center,  " +
+            "    m.substation,  " +
+            "    m.feeder,  " +
+            "    m.dss,  " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
             "    m.meter_account_number, " +
@@ -172,6 +178,12 @@ public interface VendMapper {
             "    m.new_sgc, " +
             "    m.old_krn, " +
             "    m.new_krn, " +
+            "    m.region,  " +
+            "    m.node_id,  " +
+            "    m.service_center,  " +
+            "    m.substation,  " +
+            "    m.feeder,  " +
+            "    m.dss,  " +
             "    m.vat, " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
@@ -203,6 +215,8 @@ public interface VendMapper {
     @Results({
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "customerFullname", column = "customer_fullname"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -245,6 +259,12 @@ public interface VendMapper {
             "    m.new_sgc,  " +
             "    m.old_krn,  " +
             "    m.new_krn,  " +
+            "    m.region,  " +
+            "    m.node_id,  " +
+            "    m.service_center,  " +
+            "    m.substation,  " +
+            "    m.feeder,  " +
+            "    m.dss,  " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
             "    m.meter_account_number, " +
@@ -261,7 +281,8 @@ public interface VendMapper {
             "    m.credit_payment_plan, " +
             "    m.tariff_id " +
             "FROM vw_meter_summary m " +
-            "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
+            "WHERE m.org_id = #{orgId} AND (node_id = #{nodeId} AND service_center = #{nodeId}) " +
+            "AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
             "GROUP BY " +
             "    m.meter_id, " +
             "    m.org_id, " +
@@ -272,6 +293,12 @@ public interface VendMapper {
             "    m.new_sgc, " +
             "    m.old_krn, " +
             "    m.new_krn, " +
+            "    m.region,  " +
+            "    m.node_id,  " +
+            "    m.service_center,  " +
+            "    m.substation,  " +
+            "    m.feeder,  " +
+            "    m.dss,  " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
             "    m.tariff_rate, " +
@@ -290,6 +317,8 @@ public interface VendMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "customerFullname", column = "customer_fullname"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
@@ -308,18 +337,21 @@ public interface VendMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
     })
-    MeterView getMeterRecord(String meterNumber, String accountNumber, UUID orgId);
+    MeterView getMeterRecord(String meterNumber, String accountNumber, UUID orgId, UUID nodeId);
 
 
-    @Select("SELECT m.*, c.*, t.id as tariff_id FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+    @Select("SELECT m.*, c.*, t.id as tariff_id FROM meters m " +
+            "LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "LEFT JOIN tariffs t ON t.id = m.tariff " +
-            "WHERE m.org_id = #{orgId} AND (m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
+            "WHERE m.org_id = #{orgId} AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId}) " +
+            "AND (m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -356,7 +388,7 @@ public interface VendMapper {
 //                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter"))
 
     })
-    Meter getMeter(UUID orgId, String meterNumber, String accountNumber);
+    Meter getMeter(UUID orgId, String meterNumber, String accountNumber, UUID nodeId);
 
     @Select("SELECT * FROM tariffs WHERE id = #{id}")
     @Results({
@@ -417,7 +449,8 @@ public interface VendMapper {
                 <script>
                     SELECT *
                     FROM vw_vending_transactions_summary
-                    WHERE org_id = #{orgId}
+                    WHERE org_id = #{orgId} 
+                    AND (node_id = #{nodeId} OR service_center = #{nodeId} OR region = #{nodeId})
                     
                     <if test="meterNumber != null and meterNumber != ''">
                         AND meter_number ILIKE CONCAT('%', #{meterNumber}, '%')
@@ -445,6 +478,8 @@ public interface VendMapper {
     @Results({
             @Result(property = "transactionId", column = "transaction_id"),
             @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
             @Result(property = "userFullname", column = "user_Fullname"),
@@ -484,7 +519,8 @@ public interface VendMapper {
             @Param("tokenType") String tokenType,
             @Param("status") String status,
             @Param("limit") int limit,
-            @Param("offset") int offset
+            @Param("offset") int offset,
+            @Param("nodeId") UUID nodeId
     );
 
     @Select("""
@@ -534,6 +570,12 @@ public interface VendMapper {
             "    m.old_krn,  " +
             "    m.new_krn,  " +
             "    m.vat,  " +
+            "    m.region,  " +
+            "    m.node_id,  " +
+            "    m.service_center,  " +
+            "    m.substation,  " +
+            "    m.feeder,  " +
+            "    m.dss,  " +
             "    m.old_tariff_index, " +
             "    m.new_tariff_index," +
             "    m.meter_account_number, " +
@@ -561,6 +603,7 @@ public interface VendMapper {
             "FROM vw_meter_summary m " +
             "LEFT JOIN credit_debit_adjustment cd ON cd.org_id = m.org_id " +
             " AND cd.meter_id = m.meter_id " +
+            " AND (m.service_center = #{nodeId} OR m.node_id = #{nodeId}) " +
             "WHERE m.org_id = #{orgId} " +
             "AND (m.meter_number = #{meterNumber} " +
             "OR m.meter_account_number = #{accountNumber} AND m.adjustment_status IN('PARTIALLY_PAID','UNPAID')) " +
@@ -574,6 +617,12 @@ public interface VendMapper {
             "    m.new_sgc, " +
             "    m.old_krn, " +
             "    m.new_krn, " +
+            "    m.region,  " +
+            "    m.node_id,  " +
+            "    m.service_center,  " +
+            "    m.substation,  " +
+            "    m.feeder,  " +
+            "    m.dss,  " +
             "    m.vat, " +
             "    m.tariff_id, " +
             "    m.old_tariff_index, " +
@@ -604,6 +653,8 @@ public interface VendMapper {
             @Result(property = "meterId", column = "meter_id"),
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "creditDebitAdjId", column = "adjustment_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "customerFullname", column = "customer_fullname"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -636,7 +687,7 @@ public interface VendMapper {
             @Result(property = "status", column = "status"),
             @Result(property = "adjustmentStatus", column = "adjustment_status"),
     })
-    List<MeterView> getMeterRec(String meterNumber, String accountNumber, UUID orgId);
+    List<MeterView> getMeterRec(String meterNumber, String accountNumber, UUID orgId, UUID nodeId);
 
     @Select("SELECT COUNT(*) FROM credit_debit_payment cdp " +
             "JOIN credit_debit_adjustment cda ON cda.id = cdp.credit_debit_adj_id " +

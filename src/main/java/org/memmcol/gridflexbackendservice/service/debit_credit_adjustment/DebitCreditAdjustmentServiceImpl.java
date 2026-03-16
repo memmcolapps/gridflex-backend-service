@@ -80,6 +80,12 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             int result;
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0){
                 throw new GlobalExceptionHandler.NotFoundException("Amount must be greater than zero");
@@ -97,7 +103,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             Meter meter = mapper.getMeterById(request.getMeterId());
             if (meter == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Meter not found");
+                throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
+            }
+
+            if(!meter.getNodeId().equals(nodeId) || !meter.getServiceCenter().equals(nodeId)){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
             LiabilityCause liabilityCause = mapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
@@ -300,12 +310,27 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+//            if(!nodeType.equalsIgnoreCase("Business hub")
+//                    && !nodeType.equalsIgnoreCase("Service center")){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
+            Meter meter = mapper.getMeterById(meterId);
+            if (meter == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
+            }
+
+            if(!meter.getNodeId().equals(nodeId) || !meter.getServiceCenter().equals(nodeId)){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             DebitCreditAdjust debitCreditAdjust = mapper.getDebitAdjustmentByMeterIdAndLcId(
                     meterId, liabilityCauseId, um.getOrgId());
             if (debitCreditAdjust == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Debit Adjustment not found or no debt available");
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Debit Adjustment not found or no debt available");
             }
 
             if (debitCreditAdjust.getStatus().equalsIgnoreCase("PAID")) {

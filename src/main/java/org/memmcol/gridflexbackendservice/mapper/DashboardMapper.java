@@ -89,14 +89,22 @@ public interface DashboardMapper {
 
     })
     List<Meter> getMeters(UUID orgId);
-
-    @Select("SELECT v.*, r.name FROM vw_vending_transactions_summary v " +
-            "LEFT JOIN region_bhub_service_centers r " +
-            "ON v.node_id = r.node_id WHERE v.org_id = #{orgId}")
+////"AND (v.node_id = #{nodeId} OR v.service_center = #{nodeId} OR v.region = #{nodeId})")
+//    @Select("SELECT v.*, r.name FROM vw_vending_transactions_summary v " +
+//            "LEFT JOIN region_bhub_service_centers r " +
+//            "ON (v.node_id = r.node_id OR v.region = r.node_id OR v.service_center = r.node_id) WHERE v.org_id = #{orgId} ")
+    @Select("""
+        SELECT v.*, r.name
+        FROM vw_vending_transactions_summary v
+        LEFT JOIN region_bhub_service_centers r
+        ON r.node_id = COALESCE(v.node_id, v.service_center, v.region)
+        WHERE v.org_id = #{orgId}
+    """)
     @Results({
             @Result(property = "id", column = "transaction_id"),
             @Result(property = "meterId", column = "meter_id"),
-//            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "meterAccountNumber", column = "meter_account_number"),
