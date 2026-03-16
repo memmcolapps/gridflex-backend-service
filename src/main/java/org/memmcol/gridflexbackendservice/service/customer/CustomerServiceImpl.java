@@ -136,7 +136,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             UUID id = request.getId();
 
-            Customer customer = customerMapper.findById(id, um.getOrgId());
+            Customer customer = customerMapper.findById(id, um.getOrgId(), nodeId);
 //            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, desc, "", customerName, customer, metadata);
             safeAuditService.saveAudit(auditLog);
@@ -178,18 +178,18 @@ public class CustomerServiceImpl implements CustomerService {
 //                    }
 //
 //                    break;
-//                case "service center":
+                case "service center":
 //                    request.setServiceCenter(node.getNodeId());
-//                    break;
+                    break;
                 case "region":
                     request.setRegion(node.getNodeId());
                     break;
                 case "business hub":
                     request.setNodeId(node.getNodeId());
                     break;
-//                case "root":
+                case "root":
 //                    request.setRoot(node.getNodeId());
-//                    break;
+                    break;
             }
 
             currentNodeId = node.getParentId();
@@ -205,6 +205,17 @@ public class CustomerServiceImpl implements CustomerService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            Customer cust = customerMapper.verifyCustomer(request.getId());
+            if(cust == null){
+                throw new GlobalExceptionHandler.NotFoundException("Customer not found");
+            }
+
+            if(!cust.getNodeId().equals(nodeId) && !nodeType.equalsIgnoreCase("Business hub")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             if(!request.getVat().equalsIgnoreCase("Not Paying") || !request.getVat().equalsIgnoreCase("Paying")){
                 throw new GlobalExceptionHandler.NotFoundException("Parameter type vat must be 'Paying' or 'Not Paying'");
@@ -217,7 +228,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             // Insert into customer
             customerMapper.updateCustomer(request);
-            Customer customer = customerMapper.findById(request.getId(), um.getOrgId());
+            Customer customer = customerMapper.findById(request.getId(), um.getOrgId(), nodeId);
 
 //            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, "Edited customer", "", customerName, customer, metadata);
@@ -262,6 +273,8 @@ public class CustomerServiceImpl implements CustomerService {
         try {
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("customers_"+um.getOrgId());
@@ -284,7 +297,9 @@ public class CustomerServiceImpl implements CustomerService {
 //                return ResponseMap.response(status.getSuccessCode(), "Cached Customers " + status.getDesc(), cachedCustomer);
 //            }
 
-            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), page, size);
+            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), page, size, nodeId);
+
+
 
             // Apply filtering
             Stream<Customer> userStream = customers.stream();
@@ -353,6 +368,8 @@ public class CustomerServiceImpl implements CustomerService {
         try {
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
 
 //            Object cachedUser = customerCache.get(id.toString()+"_"+um.getOrgId());
 
@@ -360,7 +377,7 @@ public class CustomerServiceImpl implements CustomerService {
 //                return ResponseMap.response(status.getSuccessCode(), "Cached " + customerName + " " + status.getDesc(), cachedUser);
 //            }
             // check if customer exist
-            Customer isCustomer = customerMapper.findById(id, um.getOrgId());
+            Customer isCustomer = customerMapper.findById(id, um.getOrgId(), nodeId);
             if (isCustomer == null){
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getNotFoundDesc());
             }
@@ -383,9 +400,15 @@ public class CustomerServiceImpl implements CustomerService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Business hub")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             // check if customer exist
-            Customer isCustomer = customerMapper.findById(customerId, um.getOrgId());
+            Customer isCustomer = customerMapper.findById(customerId, um.getOrgId(), nodeId);
             if (isCustomer == null){
                 throw new GlobalExceptionHandler.NotFoundException(customerName + " " + status.getExistDesc());
             }
@@ -400,7 +423,7 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new MissingServletRequestParameterException("Required request parameter '%s' is not present", state);
             }
 
-            Customer customer = customerMapper.findById(customerId, um.getOrgId());
+            Customer customer = customerMapper.findById(customerId, um.getOrgId(), nodeId);
 
 //            handleAddCache(customer);
             AuditLog auditLog = buildAuditLog(um, desc, reason, customerName, customer, metadata);
@@ -421,6 +444,12 @@ public class CustomerServiceImpl implements CustomerService {
         try {
             UserModel user = handleUserValidation();
             String filename = file.getOriginalFilename();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Business hub")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             if (filename == null || filename.trim().isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file must have a valid name.");
@@ -565,7 +594,7 @@ public void insertBatchTransactional(
             List<Customer> batch,
             UserModel user,
             List<GenericResp> failedRecords) {
-
+        UUID nodeId = user.getNodeInfo().getNodeId();
         Iterator<Customer> iterator = batch.iterator();
 
         while (iterator.hasNext()) {
@@ -633,6 +662,9 @@ public void insertBatchTransactional(
 
                 iterator.remove();
                 continue;
+            }
+            if(nodeId != null){
+                resolveNodeHierarchy(customer, nodeId, user.getOrgId());
             }
 
             customer.setOrgId(user.getOrgId());
@@ -737,7 +769,7 @@ public void insertBatchTransactional(
         customerMapper.insertCustomer(customer);
 
         // --- Step 4: Audit logging ---
-        Customer customer1 = customerMapper.findById(customer.getId(), user.getOrgId());
+        Customer customer1 = customerMapper.findById(customer.getId(), user.getOrgId(), user.getNodeInfo().getNodeId());
         AuditLog auditLog = buildAuditLog(user, "Customer created", "", customerName, customer1, metadata);
         safeAuditService.saveAudit(auditLog);
 

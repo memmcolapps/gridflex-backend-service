@@ -74,6 +74,13 @@ public class VendingServiceImpl implements VendingService {
     @Transactional
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
         UserModel user = handleUserValidation();
+        UUID nodeId = user.getNodeInfo().getNodeId();
+        String nodeType = user.getNodeInfo().getType();
+
+        if(!nodeType.equalsIgnoreCase("Business hub")
+                && !nodeType.equalsIgnoreCase("Service center")) {
+            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+        }
 
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
@@ -99,7 +106,8 @@ public class VendingServiceImpl implements VendingService {
             List<MeterView> meters = vendMapper.getMeterRec(
                     creditToken.getMeterNumber(),
                     creditToken.getAccountNumber(),
-                    user.getOrgId()
+                    user.getOrgId(),
+                    nodeId
             );
 
             if (meters.isEmpty()) {
@@ -115,10 +123,6 @@ public class VendingServiceImpl implements VendingService {
             }
 
             MeterView meter = meters.get(0);
-
-            System.out.println("getMeterCategory: "+meter.getMeterCategory());
-            System.out.println("getMeterStage: "+meter.getMeterStage());
-            System.out.println("getStatus: "+meter.getStatus());
 
             // --- Meter Validation ---
             if (!"Prepaid".equalsIgnoreCase(meter.getMeterCategory())
@@ -445,10 +449,14 @@ public class VendingServiceImpl implements VendingService {
     public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
 
         try {
+            UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
 
-//            if (creditToken.getMeterNumber() == null || creditToken.getMeterNumber().isBlank()) {
-//                throw new GlobalExceptionHandler.NotFoundException("Meter number is required");
-//            }
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             if (creditToken.getMeterNumber() != null && creditToken.getMeterNumber().trim().isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter number is required");
@@ -466,12 +474,12 @@ public class VendingServiceImpl implements VendingService {
             if (creditToken.getInitialAmount().compareTo(BigDecimal.ZERO) < 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Amount cannot be negative");
             }
-            UserModel user = handleUserValidation();
 
             List<MeterView> meters = vendMapper.getMeterRec(
                     creditToken.getMeterNumber(),
                     creditToken.getAccountNumber(),
-                    user.getOrgId()
+                    user.getOrgId(),
+                    nodeId
             );
 
             if (meters.isEmpty()) {
@@ -1108,18 +1116,24 @@ public class VendingServiceImpl implements VendingService {
     }
 
 
-//    private BigDecimal calculateVatAmount(BigDecimal netBalance, BigDecimal vatRate) {
-//        return netBalance.multiply(vatRate).setScale(2, RoundingMode.HALF_UP);
-//    }
-
     @Transactional
     @Override
     public Map<String, Object> createKctToken(KctToken kctToken) {
         try{
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
 
-            Meter meterResult = vendMapper.getMeter(user.getOrgId(), kctToken.getMeterNumber(), kctToken.getAccountNumber());
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
+            Meter meterResult = vendMapper.getMeter(
+                    user.getOrgId(), kctToken.getMeterNumber(),
+                    kctToken.getAccountNumber(), nodeId);
+
             if (meterResult == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
             }
@@ -1139,7 +1153,8 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
 
-            MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
+            MeterView meter = vendMapper.getMeterRecord(
+                    kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId(), nodeId);
 
             TokenGenRequest request = new TokenGenRequest();
             request.setMeterNo(meter.getMeterNumber());
@@ -1202,7 +1217,17 @@ public class VendingServiceImpl implements VendingService {
                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
            }
 
-           MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
+           UUID nodeId = user.getNodeInfo().getNodeId();
+           String nodeType = user.getNodeInfo().getType();
+
+           if(!nodeType.equalsIgnoreCase("Business hub")
+                   && !nodeType.equalsIgnoreCase("Service center")) {
+               throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+           }
+
+           MeterView meter = vendMapper.getMeterRecord(
+                   kctToken.getMeterNumber(), kctToken.getAccountNumber(),
+                   user.getOrgId(), nodeId);
 
            System.out.println("oldSgc: "+meter.getOldSgc());
 
@@ -1232,8 +1257,15 @@ public class VendingServiceImpl implements VendingService {
         try{
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
 
-            Meter meterResult = vendMapper.getMeter(user.getOrgId(), clearTamper.getMeterNumber(), clearTamper.getAccountNumber());
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+            Meter meterResult = vendMapper.getMeter(
+                    user.getOrgId(), clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), nodeId);
             if (meterResult == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
             }
@@ -1253,7 +1285,9 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
 
-            MeterView meter = vendMapper.getMeterRecord(clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), user.getOrgId());
+            MeterView meter = vendMapper.getMeterRecord(
+                    clearTamper.getMeterNumber(), clearTamper.getAccountNumber(),
+                    user.getOrgId(), nodeId);
 
             TokenGenRequest request = new TokenGenRequest();
             request.setMeterNo(meter.getMeterNumber());
@@ -1304,8 +1338,16 @@ public class VendingServiceImpl implements VendingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
 
-            Meter meterResult = vendMapper.getMeter(user.getOrgId(), clearCredit.getMeterNumber(), clearCredit.getAccountNumber());
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+            Meter meterResult = vendMapper.getMeter(
+                    user.getOrgId(), clearCredit.getMeterNumber(),
+                    clearCredit.getAccountNumber(), nodeId);
             if (meterResult == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
             }
@@ -1325,7 +1367,9 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
 
-            MeterView meter = vendMapper.getMeterRecord(clearCredit.getMeterNumber(), clearCredit.getAccountNumber(), user.getOrgId());
+            MeterView meter = vendMapper.getMeterRecord(
+                    clearCredit.getMeterNumber(), clearCredit.getAccountNumber(),
+                    user.getOrgId(), nodeId);
 
 
 
@@ -1379,8 +1423,17 @@ public class VendingServiceImpl implements VendingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
 
-            Meter meterResult = vendMapper.getMeter(user.getOrgId(), kctToken.getMeterNumber(), kctToken.getAccountNumber());
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
+            Meter meterResult = vendMapper.getMeter(
+                    user.getOrgId(), kctToken.getMeterNumber(),
+                    kctToken.getAccountNumber(), nodeId);
             if (meterResult == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
             }
@@ -1400,7 +1453,7 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
             }
 
-            MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId());
+            MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId(), nodeId);
 
             TokenGenRequest request = new TokenGenRequest();
             request.setMeterNo(meter.getMeterNumber());
@@ -1453,11 +1506,19 @@ public class VendingServiceImpl implements VendingService {
                                            int page, int size) {
         UserModel user = handleUserValidation();
         UUID uId = user.getOrgId();
+        UUID nodeId = user.getNodeInfo().getNodeId();
+        String nodeType = user.getNodeInfo().getType();
+
+//        if(!nodeType.equalsIgnoreCase("Business hub")
+//                && !nodeType.equalsIgnoreCase("Service center")
+//                && !nodeType.equalsIgnoreCase("Region")) {
+//            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//        }
 
         try {
             int offset = page * size;
             List<Transaction> allReadings = vendMapper.getAllToken(
-                    uId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size
+                    uId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size, nodeId
             );
 
             int totalCount = allReadings.size();
@@ -1499,6 +1560,15 @@ public class VendingServiceImpl implements VendingService {
 
         try {
             UserModel user = handleUserValidation();
+            UUID uId = user.getOrgId();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
             Transaction transaction = vendMapper.getCreditTokenTransaction(id, user.getOrgId());//getVendingReceipt(id, tokenType);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(out);

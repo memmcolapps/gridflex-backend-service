@@ -16,6 +16,9 @@ public class Transaction implements Serializable {
     private UUID id;
     private UUID transactionId;
     private UUID orgId;
+    private UUID region;
+    private UUID serviceCenter;
+    private UUID nodeId;
     private String customerId;
     private String customerFullname;
     private String address;
@@ -85,6 +88,30 @@ public class Transaction implements Serializable {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
+    }
+
+    public UUID getRegion() {
+        return region;
+    }
+
+    public void setRegion(UUID region) {
+        this.region = region;
+    }
+
+    public UUID getServiceCenter() {
+        return serviceCenter;
+    }
+
+    public void setServiceCenter(UUID serviceCenter) {
+        this.serviceCenter = serviceCenter;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
     }
 
     public String getCustomerId() {

@@ -1276,11 +1276,11 @@ public class MeterServiceImpl implements MeterService {
                     if (creditPaymentPlan == null || creditPaymentPlan.isBlank()) {
                         throw new GlobalExceptionHandler.NotFoundException("Credit payment monthly plan is required");
                     }
-                } else if (creditPaymentMode.equalsIgnoreCase("no payment")) {
+                } else if (creditPaymentMode.equalsIgnoreCase("no-payment")) {
 
                     request.setCreditPaymentPlan("");
 
-                } else if (debitPaymentMode.equalsIgnoreCase("no payment")) {
+                } else if (debitPaymentMode.equalsIgnoreCase("no-payment")) {
 
                     request.setDebitPaymentPlan("");
 
@@ -1613,9 +1613,9 @@ public class MeterServiceImpl implements MeterService {
                 } else if(request.getCreditPaymentMode().equalsIgnoreCase("monthly") &&
                         request.getCreditPaymentPlan() == null || request.getCreditPaymentPlan().isBlank()) {
                     throw new GlobalExceptionHandler.NotFoundException("Credit Payment monthly plan is required");
-                } else if(request.getDebitPaymentMode().equalsIgnoreCase("no payment")) {
+                } else if(request.getDebitPaymentMode().equalsIgnoreCase("no-payment")) {
                     request.setDebitPaymentPlan("");
-                } else if(request.getCreditPaymentMode().equalsIgnoreCase("no payment")) {
+                } else if(request.getCreditPaymentMode().equalsIgnoreCase("no-payment")) {
                     request.setCreditPaymentPlan("");
                 }
                 else {
