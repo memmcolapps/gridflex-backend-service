@@ -136,7 +136,8 @@ public interface MeterMapper {
 //            "OR dss = #{nodeId} OR service_center = #{nodeId}) " +
 //            "AND org_id = #{orgId}")
     @Select("SELECT * FROM meters WHERE id = #{meterId} " +
-            "AND (node_id = #{nodeId} OR service_center = #{nodeId}) " +
+            "AND (node_id = #{nodeId} OR service_center = #{nodeId} " +
+            "OR region = #{nodeId} OR root = #{nodeId}) " +
             "AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
@@ -1485,8 +1486,7 @@ public interface MeterMapper {
                     FROM meters_version m
                     LEFT JOIN customers c ON c.customer_id = m.customer_id
                     WHERE m.org_id = #{orgId}
-                    AND m.region = #{nodeId} 
-                    AND m.root = #{nodeId}
+                    AND (m.region = #{nodeId} OR m.root = #{nodeId})
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
                                               'Pending-assigned', 'Pending-detached', 'Pending-migrated')
@@ -1556,7 +1556,7 @@ public interface MeterMapper {
                     WHERE m.org_id = #{orgId} 
                       AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                             OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                            OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
+                            OR m.substation = #{nodeId})
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
                                               'Pending-assigned', 'Pending-detached', 'Pending-migrated')
