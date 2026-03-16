@@ -22,13 +22,5 @@ public interface HesService {
 
     Map<String, Object> setSchedule(String profileType, String timeInterval, String unit);
 
-    Map<String, Object> setClock(String serial, LocalDateTime dateTime);
-
-    Map<String, Object> setCtpt(String serial,
-                                long ctNumerator,
-                                long ctDenominator,
-                                long ptNumerator,
-                                long ptDenominator);
-
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

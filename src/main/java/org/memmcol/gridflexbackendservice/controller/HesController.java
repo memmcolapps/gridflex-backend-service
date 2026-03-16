@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import org.apache.ibatis.annotations.Update;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
+import org.memmcol.gridflexbackendservice.service.hes.DlmsService;
 import org.memmcol.gridflexbackendservice.service.hes.HesService;
 import org.memmcol.gridflexbackendservice.service.hes.HesServiceConsumer;
 import org.memmcol.gridflexbackendservice.service.hes.TenantMeterEmitterService;
@@ -26,6 +27,9 @@ public class HesController {
 
     @Autowired
     private HesService hesService;
+
+    @Autowired
+    private DlmsService dlmsService;
 
     @Autowired
     private TenantMeterEmitterService emitterService;
@@ -195,7 +199,7 @@ public class HesController {
             LocalDateTime dateTime
     ) {
         try {
-            Map<String, Object> result = hesService.setClock(serial, dateTime);
+            Map<String, Object> result = dlmsService.setClock(serial, dateTime);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -211,7 +215,34 @@ public class HesController {
             @RequestParam long ptDenominator
     ) {
         try {
-            Map<String, Object> result = hesService.setCtpt(serial, ctNumerator, ctDenominator, ptNumerator, ptDenominator);
+            Map<String, Object> result = dlmsService.setCtpt(serial, ctNumerator, ctDenominator, ptNumerator, ptDenominator);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/dlms/set-apn")
+    public ResponseEntity<?> setApn(
+            @RequestParam String serial,
+            @RequestParam String apn
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setApn(serial, apn);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/dlms/set-ip-port")
+    public ResponseEntity<?> setIpPort(
+            @RequestParam String serial,
+            @RequestParam String ip,
+            @RequestParam int port
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setIpPort(serial, ip, port);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
