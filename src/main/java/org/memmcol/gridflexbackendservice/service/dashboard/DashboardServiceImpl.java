@@ -84,14 +84,14 @@ public class DashboardServiceImpl implements  DashboardService{
         long allocated = filteredMeters.stream()
                 .filter(m -> m.getNodeId() != null && (m.getNodeId().equals(nodeId)
                         || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
-                        || m.getFeeder() == nodeId || m.getDss() == nodeId))
+                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId)
                 .count();
 
         long assigned = filteredMeters.stream()
                 .filter(m -> m.getNodeId() != null && m.getDss() != null
                         && (m.getNodeId() == nodeId || m.getRegion() == nodeId
                         || m.getServiceCenter() == nodeId || m.getFeeder() == nodeId
-                        || m.getDss() == nodeId)
+                        || m.getDss() == nodeId) || m.getRoot() == nodeId
                         && (m.getMeterStage().equalsIgnoreCase("Assigned")
                         || m.getMeterStage().equalsIgnoreCase("Pending-detached")
                         || m.getMeterStage().equalsIgnoreCase("Pending-migrated")
@@ -102,7 +102,7 @@ public class DashboardServiceImpl implements  DashboardService{
         long deactivated = filteredMeters.stream()
                 .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()) && (m.getNodeId().equals(nodeId)
                         || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
-                        || m.getFeeder() == nodeId || m.getDss() == nodeId))
+                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId)
                 .count();
 
         // Calculate percentages
