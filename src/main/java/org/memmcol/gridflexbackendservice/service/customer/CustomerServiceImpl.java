@@ -110,7 +110,8 @@ public class CustomerServiceImpl implements CustomerService {
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Business hub")
+            if(!nodeType.equalsIgnoreCase("root")
+                    && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
@@ -460,6 +461,7 @@ public class CustomerServiceImpl implements CustomerService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("root")
                     && !nodeType.equalsIgnoreCase("Service center")
             ){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
