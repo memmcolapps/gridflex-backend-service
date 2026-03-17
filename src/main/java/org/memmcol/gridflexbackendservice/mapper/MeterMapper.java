@@ -1079,7 +1079,7 @@ public interface MeterMapper {
                             'Assigned',
                             'Pending-detached',
                             'Pending-migrated',
-                            'Pending-edited'
+                            'Assign-edited'
                       )
                       AND m.type != 'VIRTUAL'
                     ORDER BY m.created_at DESC
@@ -1490,7 +1490,7 @@ public interface MeterMapper {
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
                                               'Pending-assigned', 'Pending-detached', 'Pending-migrated')
-                            OR m.status IN ('Pending-deactivated', 'Pending-activated')
+                            OR m.status IN ('Pending-deactivated', 'Pending-activated', 'Assign-edited')
                           )
                     ORDER BY m.created_at DESC
                     
@@ -1730,7 +1730,8 @@ public interface MeterMapper {
 
 
     @Select("SELECT * FROM meter_assign_locations_version WHERE meter_id = #{meterId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated'," +
+            "'Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -1757,7 +1758,8 @@ public interface MeterMapper {
     PaymentMode getPaymentMode(UUID meterId);
 
     @Select("SELECT * FROM payment_mode_version WHERE meter_id = #{meterId} AND  " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated') ")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned'," +
+            "'Pending-detached','Pending-migrated', 'Assign-edited') ")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -1878,6 +1880,10 @@ public interface MeterMapper {
     @Insert("INSERT INTO meter_assign_locations_version (org_id, meter_id, state, city, house_no, street_name, created_at, updated_at, meter_stage, description, created_by) " +
             "VALUES (#{orgId}, #{meterId}, #{state}, #{city}, #{houseNo}, #{streetName}, #{createdAt}, #{updatedAt}, #{meterStage}, #{description}, #{createdBy})")
     int assignVerMeterToLocation(MeterAssignLocation request);
+
+    @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
+            "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
+    int assignPaymentModeVer(PaymentMode request);
 
     @Insert("INSERT INTO payment_mode_version (org_id, meter_id, credit_payment_mode, credit_payment_plan, debit_payment_mode, debit_payment_plan, created_at, updated_at, status, meter_stage, created_by, description)" +
             "VALUES(#{orgId}, #{meterId}, #{creditPaymentMode}, #{creditPaymentPlan}, #{debitPaymentMode}, #{debitPaymentPlan}, #{createdAt}, #{updatedAt}, true, #{meterStage}, #{createdBy}, #{description})")
@@ -2059,7 +2065,8 @@ public interface MeterMapper {
             "INSERT INTO meters (",
             "org_id, meter_number, sim_number, meter_category, meter_class, meter_manufacturer, ",
             "meter_type, status, type, old_sgc, new_sgc, old_krn, new_krn, fixed_energy, cin,",
-            "old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage, region, root",
+            "old_tariff_index, new_tariff_index, created_at, updated_at, smart_status, meter_stage, " +
+                    "region, root, substation, service_center",
             ") VALUES ",
             "<foreach collection='meters' item='m' separator=','>",
             "(",
@@ -2067,7 +2074,7 @@ public interface MeterMapper {
             "#{m.meterManufacturer}, #{m.meterType}, #{m.status}, #{m.type}, ",
             "#{m.oldSgc}, #{m.newSgc}, #{m.oldKrn}, #{m.newKrn}, #{m.fixedEnergy}, #{m.cin}, ",
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
-            "#{m.smartStatus}, #{m.meterStage}, #{m.region}, #{m.root}",
+            "#{m.smartStatus}, #{m.meterStage}, #{m.region}, #{m.root}, #{m.substation}, #{m.serviceCenter}",
             ")",
             "</foreach>",
             "</script>"
@@ -2092,7 +2099,7 @@ public interface MeterMapper {
             "#{m.oldTariffIndex}, #{m.newTariffIndex}, #{m.createdAt}, #{m.updatedAt}, ",
             "#{m.createdBy}, #{m.description}, #{m.id}, #{m.smartStatus}, ",
             "#{m.accountNumber}, #{m.nodeId}, #{m.customerId}, #{m.cin}, #{m.dss}, " +
-             "#{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}, #{substation}, #{serviceCenter}",
+             "#{m.feeder}, #{m.tariff}, #{m.region}, #{m.root}, #{m.substation}, #{m.serviceCenter}",
             ")",
             "</foreach>",
             "</script>"
@@ -2813,7 +2820,7 @@ public interface MeterMapper {
     @Insert({
             "<script>",
             "INSERT INTO payment_mode_version (",
-            "org_id, meter_id, debit_payment_mode, debit_payment_plan, credit_payment_mode, credit_payment_plan,, ",
+            "org_id, meter_id, debit_payment_mode, debit_payment_plan, credit_payment_mode, credit_payment_plan, ",
             "created_at, updated_at, status, meter_stage, created_by, description",
             ") VALUES ",
             "<foreach collection='paymentModes' item='item' separator=','>",
