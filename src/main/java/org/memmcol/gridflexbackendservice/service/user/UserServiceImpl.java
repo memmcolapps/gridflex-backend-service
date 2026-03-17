@@ -128,6 +128,17 @@ public class UserServiceImpl implements  UserService {
             UserModel um = handleUserValidation();
 
             UserModel operator = request.getUser();
+
+            List<ModuleWithSubModules> module = um.getGroups().getModules();
+
+            boolean hasUserManagementAccess = module.stream()
+                    .anyMatch(m -> m.getName().equalsIgnoreCase("user management")
+                            && Boolean.TRUE.equals(m.getAccess()));
+
+            if (hasUserManagementAccess && operator.getId().equals(um.getId())) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("You cannot update your own group");
+            }
+
 //            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             UserModel users = userMapper.findById(operator.getId(), um.getOrgId());
