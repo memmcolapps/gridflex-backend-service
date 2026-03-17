@@ -421,7 +421,11 @@ public class  SecurityConfig {
 						basePath + "/hes/service/communication/range/report",
 						basePath + "/hes/service/meter-status/stream",
 						basePath + "/hes/service/stream",
-						basePath + "/hes/service/data/schedule"
+						basePath + "/hes/service/data/schedule",
+						basePath + "/hes/service/dlms/set-clock",
+						basePath + "/hes/service/dlms/set-ctpt",
+						basePath + "/hes/service/dlms/set-apn",
+						basePath + "/hes/service/dlms/set-ip-port"
 				)
 				.access((context, authSupplier) -> {
 					Authentication authentication =  context.get();

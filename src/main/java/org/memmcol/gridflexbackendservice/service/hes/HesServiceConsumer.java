@@ -43,7 +43,7 @@ public class HesServiceConsumer {
 //        this.meterMapper = meterMapper;
 //    }
 
-//    @PostConstruct
+    @PostConstruct
     public void startDefaultStream() {
         System.out.println("### Starting consumption of external SSE stream...");
         Flux<MeterStreamEvent> flux = webClient.get()
