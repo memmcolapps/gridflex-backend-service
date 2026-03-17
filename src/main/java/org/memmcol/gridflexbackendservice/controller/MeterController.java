@@ -174,23 +174,23 @@ public class MeterController {
         }
     }
 
-    @GetMapping("/single")
-    public ResponseEntity<?> getSingleMeter(
-            @RequestParam(value = "meterId", required = false) UUID meterId,
-            @RequestParam(value = "meterNumber", required = false) String meterNumber,
-            @RequestParam(value = "accountNumber", required = false) String accountNumber,
-            @RequestParam(value = "meterVersionId", required = false) UUID meterVersionId,
-            @RequestParam(value = "versionMeterNumber", required = false) String versionMeterNumber,
-            @RequestParam(value = "cin", required = false) String cin
-
-    ) {
-        try {
-            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber, meterVersionId, versionMeterNumber, cin);
-            return ResponseEntity.ok(result);
-        } catch (SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @GetMapping("/single")
+//    public ResponseEntity<?> getSingleMeter(
+//            @RequestParam(value = "meterId", required = false) UUID meterId,
+//            @RequestParam(value = "meterNumber", required = false) String meterNumber,
+//            @RequestParam(value = "accountNumber", required = false) String accountNumber,
+//            @RequestParam(value = "meterVersionId", required = false) UUID meterVersionId,
+//            @RequestParam(value = "versionMeterNumber", required = false) String versionMeterNumber,
+//            @RequestParam(value = "cin", required = false) String cin
+//
+//    ) {
+//        try {
+//            Map<String, Object> result = service.getSingleMeter(meterId, meterNumber, accountNumber, meterVersionId, versionMeterNumber, cin);
+//            return ResponseEntity.ok(result);
+//        } catch (SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     @PatchMapping("/change-state")
     public ResponseEntity<Map<String, Object>> changeStatus(

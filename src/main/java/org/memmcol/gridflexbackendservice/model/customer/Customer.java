@@ -19,6 +19,10 @@ public class Customer implements Serializable {
     @Id
     private UUID id;
     private UUID orgId;
+    private UUID nodeId;
+    private UUID region;
+    private UUID root;
+    private UUID serviceCenter;
     private String firstname;
     private String lastname;
     private String customerId;
@@ -58,6 +62,38 @@ public class Customer implements Serializable {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public UUID getRegion() {
+        return region;
+    }
+
+    public void setRegion(UUID region) {
+        this.region = region;
+    }
+
+    public UUID getRoot() {
+        return root;
+    }
+
+    public void setRoot(UUID root) {
+        this.root = root;
+    }
+
+    public UUID getServiceCenter() {
+        return serviceCenter;
+    }
+
+    public void setServiceCenter(UUID serviceCenter) {
+        this.serviceCenter = serviceCenter;
     }
 
     public String getFirstname() {

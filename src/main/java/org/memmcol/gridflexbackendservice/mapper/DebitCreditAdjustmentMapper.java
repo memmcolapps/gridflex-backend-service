@@ -79,7 +79,7 @@ public interface DebitCreditAdjustmentMapper {
     })
     DebitCreditAdjust getDebitAdjustmentByStatus(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM meters WHERE id = #{meterId}")
+    @Select("SELECT * FROM meters WHERE id = #{meterId} AND meter_stage = 'Assigned' ")
     Meter getMeterById(UUID meterId);
 
     @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} AND org_id = #{orgId} AND approve_status = 'Approved'")
@@ -139,8 +139,8 @@ public interface DebitCreditAdjustmentMapper {
                 SUM(SUM(c.balance)) OVER (PARTITION BY m.id) AS outstanding_balance
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
                 WHERE c.org_id = #{orgId}
-                AND UPPER(c.type) = 'CREDIT'
-                GROUP BY m.id
+                 AND UPPER(c.type) = 'CREDIT'
+             GROUP BY m.id
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page}  * #{size}
                 </if>
@@ -169,6 +169,8 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "phoneNumber", column = "phone_number"),
+            @Result(property = "firstname", column = "first_name"),
+            @Result(property = "lastname", column = "last_name"),
             @Result(property = "houseNo", column = "house_no"),
             @Result(property = "streetName", column = "street_name"),
             @Result(property = "meterAssigned", column = "meter_assigned"),
@@ -203,7 +205,7 @@ public interface DebitCreditAdjustmentMapper {
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
                 WHERE c.org_id = #{orgId}
                 AND UPPER(c.type) = 'DEBIT'
-                GROUP BY m.id
+            GROUP BY m.id
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page}  * #{size}
                 </if>

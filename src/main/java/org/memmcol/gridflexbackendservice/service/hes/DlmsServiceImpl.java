@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -145,20 +146,20 @@ public class DlmsServiceImpl implements DlmsService {
     @Override
     public Map<String, Object> setIpPort(String serial, String ip, int port) {
         String token = auth.getAccessToken();
-
+        String ipPorts = ip+":"+port;
         try {
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/setIpPort")
                             .queryParam("serial", serial)
-                            .queryParam("ip", ip)
-                            .queryParam("port", port)
+                            .queryParam("ipPorts", ipPorts)
                             .build())
                     .headers(h -> h.setBearerAuth(token))
                     .retrieve()
                     .onStatus(HttpStatusCode::isError,
                             clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("set ip port service error: " + body))
+                                    // ✅ Change .map() to .flatMap() here
+                                    .flatMap(body -> Mono.error(new RuntimeException("set ip port service error: " + body)))
                     )
                     .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                     .block();

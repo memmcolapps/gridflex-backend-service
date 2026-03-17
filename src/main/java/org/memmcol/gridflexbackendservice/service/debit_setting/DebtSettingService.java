@@ -3,7 +3,9 @@ package org.memmcol.gridflexbackendservice.service.debit_setting;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,4 +38,8 @@ public interface DebtSettingService {
     Map<String, Object> bulkApproveLiabilityCause(List<LiabilityCause> lc);
 
     Map<String, Object> bulkApprovePercentageRange(List<PercentageRange> pr);
+
+    Map<String, Object> bulkPercentageRange(MultipartFile file) throws IOException;;
+
+    Map<String, Object> bulkLiabilityCause(MultipartFile file) throws IOException;;
 }
