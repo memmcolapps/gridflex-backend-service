@@ -293,7 +293,8 @@ public interface MeterMapper {
 //            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
     @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} " +
             "AND (node_id = #{nodeId} OR service_center = #{nodeId}) " +
-            "AND (meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+            "AND (meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', " +
+            "'Pending-detached', 'Pending-migrated', 'Assign-edited') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
             @Result(property = "id", column = "id"),
@@ -345,9 +346,8 @@ public interface MeterMapper {
             "OR root = #{nodeId}) " +
             "AND (meter_stage IN " +
             "('Pending-created','Pending-edited','Pending-allocated', " +
-            "'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
-            "OR status IN " +
-            "('Pending-deactivated', 'Pending-activated')) ")
+            "'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited') " +
+            "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -413,7 +413,8 @@ public interface MeterMapper {
     DebitCreditAdjustVersion getDebitAdjustmentByOldVersion(UUID id);
 
     @Select("SELECT * FROM meters_version WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
-            "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+            "(meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', " +
+            "'Pending-detached', 'Pending-migrated', 'Assign-edited') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
     @Results({
             @Result(property = "id", column = "id"),
@@ -671,12 +672,12 @@ public interface MeterMapper {
     int removePaymentMode(UUID meterId);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int updateMDMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int updateSmartMeterInfoVersion(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update({
@@ -697,17 +698,19 @@ public interface MeterMapper {
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', " +
+            "'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int approveMDMeterInfoVersion(MDMeterInfo request);
 
     @Update("UPDATE meter_assign_locations_version SET meter_stage = 'Aprroved', approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', " +
+            "'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int approveMeterAssignLocationVersion(MeterAssignLocation meterAssignLocation);
 
     @Update("UPDATE payment_mode_version SET status = #{status}, meter_stage = 'Approved', approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE org_id = #{orgId} AND meter_id = #{meterId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int approvePrepaidMeterVersion(PaymentMode paymentMode);
 
     @Update("UPDATE payment_mode SET status = #{status}, credit_payment_mode = #{creditPaymentMode}, credit_payment_plan = #{creditPaymentPlan}, " +
@@ -965,8 +968,10 @@ public interface MeterMapper {
 
 
     @Select("SELECT * FROM meters_version m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
-            "WHERE m.meter_stage IN ('Pending-created', 'Pending-edited','Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
-            "AND m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber}) AND m.status IN ('Pending-deactivated', 'Pending-activated')")
+            "WHERE m.meter_stage IN ('Pending-created', 'Pending-edited','Pending-allocated', 'Pending-assigned', " +
+            "'Pending-detached', 'Pending-migrated', 'Assign-edited') " +
+            "AND m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber}) " +
+            "AND m.status IN ('Pending-deactivated', 'Pending-activated')")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -1114,7 +1119,8 @@ public interface MeterMapper {
                             'Unassigned',
                             'Pending-assigned',
                             'Pending-edited',
-                            'Pending-detached'
+                            'Pending-detached',
+                            'Assign-edited'
                       )
                     ORDER BY m.created_at DESC
                     
@@ -1187,7 +1193,8 @@ public interface MeterMapper {
                             'Unassigned',
                             'Pending-assigned',
                             'Pending-edited',
-                            'Pending-detached'
+                            'Pending-detached',
+                            'Assign-edited'
                       )
                     ORDER BY m.created_at DESC
                     
@@ -1694,8 +1701,9 @@ public interface MeterMapper {
                     AND (m.region = #{nodeId} OR m.root = #{nodeId})
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
-                                              'Pending-assigned', 'Pending-detached', 'Pending-migrated')
-                            OR m.status IN ('Pending-deactivated', 'Pending-activated', 'Assign-edited')
+                                              'Pending-assigned', 'Pending-detached', 'Pending-migrated', 
+                                                'Assign-edited')
+                            OR m.status IN ('Pending-deactivated', 'Pending-activated')
                           )
                     ORDER BY m.created_at DESC
                     
@@ -1992,7 +2000,8 @@ public interface MeterMapper {
     MDMeterInfo getMDMeterInfo(UUID meterId);
 
     @Select("SELECT * FROM md_meters_info_version WHERE meter_id = #{meterId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated'," +
+            "'Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -2009,7 +2018,8 @@ public interface MeterMapper {
     MDMeterInfo getMDMeterInfoVersion(UUID meterId);
 
     @Select("SELECT * FROM smart_meter_info_version WHERE meter_id = #{meterId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated'," +
+            "'Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -2156,26 +2166,27 @@ public interface MeterMapper {
 
     @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy}, updated_at = #{updatedAt} " +
             "WHERE meter_number = #{meterNumber} AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
+            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' OR meter_stage = 'Assign-edited' " +
             "OR status = 'Pending-deactivated' OR status = 'Pending-activated')")
     int approvedMeterVersion(String meterStage, String status, UUID approveBy, LocalDateTime updatedAt, String meterNumber);
 
     @Update("UPDATE meters_version SET meter_stage = #{meterStage}, status = #{status}, approve_by = #{approveBy} WHERE meter_number = #{meterNumber} " +
             "AND (meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
             "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
+            "OR meter_stage = 'Assign-edited'" +
             "OR status = 'Pending-deactivated' OR status = 'Pending-activated')")
     int rejectedMeterVersion(String meterStage, String meterNumber, LocalDateTime updatedAt, UUID approveBy, String status);
 
     @Delete("DELETE FROM meters WHERE meter_number = #{meterNumber} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-assigned')")
+            "meter_stage IN ('Pending-created','Pending-assigned', 'Assign-edited')")
     int removeMeter(String meterNumber, UUID orgId);
 
     @Update("UPDATE meter_assign_locations_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')")
     int updateMeterAssignedLocation(String meterStage, UUID meterId, UUID orgId, LocalDateTime updatedAt, UUID approveBy);
 
     @Update("UPDATE payment_mode_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')")
     int removePaymentModeInfo(String meterStage, UUID meterId, UUID orgId, UUID approveBy);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{meterId}")
@@ -2183,16 +2194,16 @@ public interface MeterMapper {
     int updateMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status);
 
     @Update("UPDATE md_meters_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
-            "WHERE meter_id = #{meterId} AND meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated','Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "WHERE meter_id = #{meterId} AND meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated','Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int updateMDMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status, UUID approveBy);
 
     @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
-            "WHERE meter_id = #{meterId} AND meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated')")
+            "WHERE meter_id = #{meterId} AND meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated', 'Pending-assigned', 'Pending-detached', 'Pending-migrated', 'Assign-edited')")
     int updateSmartMeter(String meterStage, UUID meterId, LocalDateTime updatedAt, String status, UUID approveBy);
 
     @Update("UPDATE smart_meter_info_version SET meter_stage = #{meterStage}, approve_by = #{approveBy} " +
             "WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')")
+            "meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')")
     int approveSmartMeterInfoVersion(SmartMeterInfo smartMeterInfo);
 
     @Update("UPDATE meters SET meter_stage = #{meterStage}, status = #{status}, updated_at = #{updatedAt} WHERE id = #{id}")
@@ -2347,7 +2358,8 @@ public interface MeterMapper {
             "#{meterNumber}",
             "</foreach>",
             "AND (",
-            "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned', 'Pending-edited', 'Pending-migrated', 'Pending-detached')",
+            "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned', " +
+                    "'Pending-edited', 'Pending-migrated', 'Pending-detached', 'Assign-edited')",
             "OR m.status IN ('Pending-deactivated', 'Pending-activated')",
             ")",
             "AND m.org_id = #{orgId}",
@@ -2628,7 +2640,7 @@ public interface MeterMapper {
             "    #{m.meterId}",
             "  </foreach>",
             "  AND org_id = #{batch[0].orgId}",
-            "  AND (meter_stage ILIKE 'Pending%' OR status ILIKE 'Pending%')",
+            "  AND (meter_stage ILIKE 'Pending%' OR meter_stage ILIKE '%Assign-edited' OR status ILIKE 'Pending%')",
             "</script>"
     })
     void updateBatchVersionMeters(@Param("batch") List<Meter> batch);
@@ -2732,7 +2744,7 @@ public interface MeterMapper {
             "    #{m.meterId}",
             "  </foreach>",
             "  AND org_id = #{batch[0].orgId}",
-            "  AND (meter_stage ILIKE '%Pending%' OR status ILIKE 'Pending%')",
+            "  AND (meter_stage ILIKE '%Pending%' OR meter_stage ILIKE '%Assign-edited' OR status ILIKE 'Pending%')",
             "</script>"
     })
     void updateBatchMeters(@Param("batch") List<Meter> batch);
@@ -2744,7 +2756,7 @@ public interface MeterMapper {
             "UPDATE md_meters_info_version",
             "SET approve_by = #{m.approveBy},",
             "    meter_stage = #{m.meterStage}",
-            "WHERE meter_id = #{m.meterId} AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')",
+            "WHERE meter_id = #{m.meterId} AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')",
             "</foreach>",
             "</script>"
     })
@@ -2757,7 +2769,9 @@ public interface MeterMapper {
             "UPDATE smart_meter_info_version",
             "SET approve_by = #{s.approveBy},",
             "    meter_stage = #{s.meterStage}",
-            "WHERE meter_id = #{s.meterId} AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated')",
+            "WHERE meter_id = #{s.meterId} " +
+                    "AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated'," +
+                    "'Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited')",
             "</foreach>",
             "</script>"
     })
@@ -2869,7 +2883,8 @@ public interface MeterMapper {
             "  approve_by = #{approveBy}, ",
             "  updated_at = NOW() ",
             "WHERE org_id = #{orgId} ",
-            "  AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated','Pending-assigned','Pending-detached','Pending-migrated') ",
+            "  AND meter_stage IN ('Pending-created','Pending-edited','Pending-allocated'," +
+                    "'Pending-assigned','Pending-detached','Pending-migrated', 'Assign-edited') ",
             "  AND meter_id IN ",
             "  <foreach collection='meterIds' item='id' open='(' separator=',' close=')'>",
             "    #{id}",
@@ -3066,7 +3081,7 @@ public interface MeterMapper {
             "FROM meter_assign_locations_version AS malv",
             "WHERE mal.meter_id = malv.meter_id",
             "  AND mal.org_id = malv.org_id",
-            "  AND malv.meter_stage LIKE 'Pending%'",
+            "  AND (malv.meter_stage LIKE 'Pending%' OR malv.meter_stage = 'Assign-edited')",
             "  AND mal.meter_id IN ",
             "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
             "    #{meter.meterId}",
@@ -3091,7 +3106,7 @@ public interface MeterMapper {
             "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
             "    #{meter.meterId}",
             "  </foreach> ",
-            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND (pmv.meter_stage ILIKE 'Pending%' OR pmv.meter_stage = 'Assign-edited')",
             "</script>"
     })
     void copyPaymentModeFromVersion(@Param("list") List<Meter> meters, @Param("orgId") UUID orgId);
@@ -3110,7 +3125,7 @@ public interface MeterMapper {
             "FROM payment_mode_version AS pmv",
             "WHERE pm.meter_id = pmv.meter_id",
             "  AND pm.org_id = pmv.org_id",
-            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND (pmv.meter_stage ILIKE 'Pending%' OR pmv.meter_stage = 'Assign-edited')",
             "  AND pm.meter_id IN ",
             "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
             "    #{meter.meterId}",
@@ -3137,7 +3152,7 @@ public interface MeterMapper {
             "FROM md_meters_info_version AS pmv",
             "WHERE pm.meter_id = pmv.meter_id",
             "  AND pm.org_id = pmv.org_id",
-            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND pmv.meter_stage ILIKE 'Pending%' OR pmv.meter_stage = 'Assign-edited'",
             "  AND pm.meter_id IN ",
             "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
             "    #{meter.meterId}",
@@ -3158,7 +3173,7 @@ public interface MeterMapper {
             "FROM smart_meter_info_version AS pmv",
             "WHERE pm.meter_id = pmv.meter_id",
             "  AND pm.org_id = pmv.org_id",
-            "  AND pmv.meter_stage ILIKE 'Pending%'",
+            "  AND pmv.meter_stage ILIKE 'Pending%' OR pmv.meter_stage = 'Assign-edited'",
             "  AND pm.meter_id IN ",
             "  <foreach collection='list' item='meter' open='(' separator=',' close=')'>",
             "    #{meter.meterId}",
@@ -3233,7 +3248,7 @@ public interface MeterMapper {
             "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
             "    #{m.meterId}",
             "  </foreach> ",
-            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "  AND org_id = #{list[0].orgId} AND (meter_stage ILIKE 'Pending%' OR meter_stage = 'Assign-edited')",
             "</script>"
     })
     void updateAssignLocationVersion(@Param("list") List<Meter> meters);
@@ -3266,7 +3281,7 @@ public interface MeterMapper {
             "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
             "    #{m.meterId}",
             "  </foreach> ",
-            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "  AND org_id = #{list[0].orgId} AND (meter_stage ILIKE 'Pending%' OR meter_stage = 'Assign-edited')",
             "</script>"
     })
     void updatePaymentModeVersion(@Param("list") List<Meter> meters);
@@ -3413,7 +3428,7 @@ public interface MeterMapper {
             "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
             "    #{m.meterId}",
             "  </foreach> ",
-            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "  AND org_id = #{list[0].orgId} AND (meter_stage ILIKE 'Pending%' OR meter_stage = 'Assign-edited')",
             "</script>"
     })
     void updateBulkMDMeterInfoVersion(@Param("list") List<Meter> meters);
@@ -3436,7 +3451,7 @@ public interface MeterMapper {
             "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
             "    #{m.meterId}",
             "  </foreach> ",
-            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "  AND org_id = #{list[0].orgId} AND (meter_stage ILIKE 'Pending%' OR meter_stage = 'Assign-edited')",
             "</script>"
     })
     void updateBulkSmartMeterInfoVersion(@Param("list") List<Meter> meters);

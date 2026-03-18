@@ -81,7 +81,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
         // Calculate summary stats
         long inventory = filteredMeters.stream()
-                .filter(m -> m.getNodeId() == null || m.getRegion().equals(nodeId))
+                .filter(m -> m.getNodeId() == null)
                 .count();
 
         long allocated = filteredMeters.stream()
