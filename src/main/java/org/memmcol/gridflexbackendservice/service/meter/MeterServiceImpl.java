@@ -394,14 +394,13 @@ public class MeterServiceImpl implements MeterService {
             String MDDesc = "";
             String SmartDesc = "";
             String MeterDesc = "";
-            String meterStage= "Pending-edited";
+            String meterStage = "Pending-edited";
             // Prepare meter update data
             request.setType("NON-VIRTUAL");
             request.setStatus("Active");
             MeterDesc = buildChangeDescription(existingMeter, request);
             request.setDescription("Meter edited");
             request.setCreatedBy(user.getId());
-
 
             request.setOrgId(user.getOrgId());
             request.setMeterId(existingMeter.getMeterId());
@@ -415,6 +414,8 @@ public class MeterServiceImpl implements MeterService {
                 meterStage = "Assign-edited";
             }
 
+            request.setMeterStage(meterStage);
+            System.out.println("meter stage: "+request.getMeterStage());
             int res = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
             result = meterMapper.insertMeterVersion(request);
             if (result == 0 || res == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
@@ -643,6 +644,8 @@ public class MeterServiceImpl implements MeterService {
             request.setAccountNumber(request.getAccountNumber());
             request.setRoot(existingMeter.getRoot());
             request.setRegion(existingMeter.getRegion());
+            request.setServiceCenter(existingMeter.getServiceCenter());
+            request.setSubstation(existingMeter.getSubstation());
             request.setNodeId(feederLine.getParentId());
             request.setFeeder(feederLine.getNodeId());
             request.setDss(dss.getNodeId());
@@ -684,7 +687,8 @@ public class MeterServiceImpl implements MeterService {
             if (isManufacturer == null){
                 throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
             }
-
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
             request.setMeterStage("Pending-edited");
             request.setNodeId(existingMeter.getNodeId());
             request.setDss(existingMeter.getDss());
@@ -707,6 +711,8 @@ public class MeterServiceImpl implements MeterService {
             if (isManufacturer == null){
                 throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
             }
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
             request.setMeterStage("Pending-edited");
             request.setNodeId(existingMeter.getNodeId());
             request.setDss(existingMeter.getDss());
@@ -1893,7 +1899,8 @@ public class MeterServiceImpl implements MeterService {
             meter.setStatus("Active");
 
         // === Handle Pending-edited ===
-        } else if (stage.equalsIgnoreCase("Pending-edited")) {
+        } else if (stage.equalsIgnoreCase("Pending-edited")
+                || stage.equalsIgnoreCase("Assign-edited")) {
             if (meter.getCustomerId() == null && meter.getNodeId() != null) {
                 meter.setMeterStage("Unassigned");
                 meter.setStatus("Active");
@@ -1944,7 +1951,8 @@ public class MeterServiceImpl implements MeterService {
                 }
             } else {
 
-                if ("Pending-edited".equalsIgnoreCase(stage)) {
+                if ("Pending-edited".equalsIgnoreCase(stage)
+                        || "Assign-edited".equalsIgnoreCase(stage)) {
 
                     if (meter.getCustomerId() != null) {
 
@@ -3283,10 +3291,11 @@ public class MeterServiceImpl implements MeterService {
             } else if ("Pending-detached".equalsIgnoreCase(meter.getMeterStage())) {
                 meter.setStatus("Active");
             } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getCustomerId() != null) {
-//                meter.setMeterStage("Assigned");
                 meter.setStatus("Active");
-            } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() != null && meter.getCustomerId() == null) {
-//                meter.setMeterStage("Unassigned");
+            } else if ("Assign-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getCustomerId() != null) {
+                meter.setStatus("Active");
+            }
+            else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() != null && meter.getCustomerId() == null) {
                 meter.setStatus("Active");
             } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() == null && meter.getCustomerId() == null) {
 //                meter.setMeterStage("Created");
@@ -3405,7 +3414,8 @@ public class MeterServiceImpl implements MeterService {
 
             // Handle "Pending-edited" dynamically
             List<Meter> approvedEditedMeters = batch.stream()
-                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage()))
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage())
+                            || "Assign-edited".equalsIgnoreCase(m.getMeterStage()))
                     .peek(m -> {
                         if (m.getCustomerId() != null) {
                             m.setMeterStage("Assigned");
