@@ -291,7 +291,7 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("Meter manufacturer not found");
         }
 
-        Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null, request.getSimNumber());
+        Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null, request.getSimNumber(), user.getNodeInfo().getNodeId());
         if (existing != null) {
             throw new GlobalExceptionHandler.NotFoundException("Meter Number ("+existing.getMeterNumber()+" or Sim Number "+existing.getSimNumber()+") "+status.getExistDesc());
         }
@@ -985,7 +985,7 @@ public class MeterServiceImpl implements MeterService {
 
             int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter" + (state ? " activated " : " deactivated ")+ "failed");
-            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
+            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "",nodeId);
             user.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, reason);
@@ -1057,6 +1057,11 @@ public class MeterServiceImpl implements MeterService {
                     && !nodeType.equalsIgnoreCase("Root")){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
+
+            if(!isCustomer.getNodeId().equals(nodeId) && !isCustomer.getServiceCenter().equals(nodeId)){
+                throw new GlobalExceptionHandler.NotFoundException("Customer do not belong to "+nodeType+" business hub");
+            }
+
             List<Tariff> allTariffs = tariffMapper.GetTariffs(um.getOrgId());
 
             Map<String, Object> response = new HashMap<>();
@@ -1086,14 +1091,11 @@ public class MeterServiceImpl implements MeterService {
 
             Meter meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
 //            boolean meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
-            if(meterStatus == null) throw new GlobalExceptionHandler.NotFoundException("Meter not found or not allocated");
+            if(meterStatus == null) throw new GlobalExceptionHandler.NotFoundException("Meter "+status.getNotFoundDesc());
 
-            if(!nodeId.equals(meterStatus.getNodeId())
-                    || !nodeId.equals(meterStatus.getRoot())
-                    || !nodeId.equals(meterStatus.getServiceCenter())
-                    && (!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Service center"))){
+            if((!nodeId.equals(meterStatus.getNodeId()) && !nodeType.equalsIgnoreCase("Business hub"))
+//                    || (!nodeId.equals(meterStatus.getRoot()) && !nodeType.equalsIgnoreCase("Root"))
+                    && (!nodeId.equals(meterStatus.getServiceCenter()) && !nodeType.equalsIgnoreCase("Service center"))) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
             // Validate DSS
@@ -1123,7 +1125,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
             }
 
-            Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
+            Customer customer = meterMapper.getByCustomerId(request.getCustomerId(), meterStatus.getRegion(), user.getOrgId());
             if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
 
             request.setOrgId(user.getOrgId());
@@ -1132,7 +1134,7 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMeterClass() == null) {
 
                 // Validate main meter record
-                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber());
+                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber(), nodeId);
                 if (mainMeter == null) {
                     throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
                 }
@@ -1422,7 +1424,7 @@ public class MeterServiceImpl implements MeterService {
             // Deactivate old meter
             int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter deactivated failed");
-            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
+            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "", nodeId);
             user.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter deactivated by replacement");
@@ -1451,7 +1453,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
             }
 
-            Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
+            Customer customer = meterMapper.getByCustomerId(request.getCustomerId(), meterById.getRegion(), user.getOrgId());
             if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
 
             request.setOrgId(user.getOrgId());
@@ -1464,7 +1466,7 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMeterClass() == null) {
 
                 // Validate main meter record
-                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber());
+                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber(), nodeId);
                 if (mainMeter == null) {
                     throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
                 }
@@ -1768,23 +1770,17 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
-            Meter meter = meterMapper.findByIdVersion(meterVersionId, user.getOrgId(), nodeId);
+            Meter meter = meterMapper.findByIdApproveVersion(meterVersionId, user.getOrgId(), nodeId);
 
             if (meter == null) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc()+"or You do not have permission");
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc()+" or No permission");
             }
-            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
-                    && (!nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root"))){
-                throw new GlobalExceptionHandler.NotFoundException(
-                        "You do not have permission to approve created meter");
-            }
-//
-//            if(!meter.getMeterStage().equalsIgnoreCase("Pending-created")
-//                    && (!nodeType.equalsIgnoreCase("Business hub")
-//                    && !nodeType.equalsIgnoreCase("Service center")
+
+//            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
+//                    && (!nodeType.equalsIgnoreCase("Region")
 //                    && !nodeType.equalsIgnoreCase("Root"))){
-//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//                throw new GlobalExceptionHandler.NotFoundException(
+//                        "You do not have permission to approve created meter");
 //            }
 
             prepareMeterForApproval(meter, user, meterVersionId);
@@ -2276,9 +2272,9 @@ public class MeterServiceImpl implements MeterService {
             String nodeName = um.getNodeInfo().getType();
 
 
-            Meter verifyMeter = meterMapper.getMeter(um.getOrgId(), null, meterNumber, null, null, "");
+            Meter verifyMeter = meterMapper.getMeterAlloc(um.getOrgId(), null, meterNumber, null, null, "", nodeId);
             if(verifyMeter == null){
-                throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc() +"or No Permission");
             }
 
             if (verifyMeter.getMeterStage().contains("Pending") || verifyMeter.getStatus().contains("Pending")) {
@@ -2287,21 +2283,17 @@ public class MeterServiceImpl implements MeterService {
 
             if((!nodeName.equalsIgnoreCase("Region")
                     && !nodeId.equals(verifyMeter.getRegion()))
-                    || (!nodeName.equalsIgnoreCase("Root")
-                    && !nodeId.equals(verifyMeter.getRoot()))){
+                    && (!nodeName.equalsIgnoreCase("Root")
+                    && !nodeId.equals(verifyMeter.getRoot()))) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
-
-//            // verify if node (organization id) exist
-//            RegionBhubServiceCenter node = nodeMapper.verifyNode(regionId, um.getOrgId());
-//            if(node == null){
-//                throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
-//            }
             // Fetch starting node using regionId
             NodeSummary node = nodeMapper.verifyNode(regionId, um.getOrgId());
             if (node == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
             }
+
+//            resolveNodeHierarchyById(verifyMeter, node.getNodeId(), um.getOrgId());
 //            UUID currentNodeId = node.getNodeId();
 //
 //            Set<UUID> visited = new HashSet<>();
@@ -2359,6 +2351,7 @@ public class MeterServiceImpl implements MeterService {
 
             String desc = meterNumber + " meter allocated to " + regionId;
 
+            System.out.println("region: "+verifyMeter.getRegion());
             //Allocate meter
             int result;
             result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated");
@@ -2387,6 +2380,50 @@ public class MeterServiceImpl implements MeterService {
             throw exception;
         }
     }
+
+//    private void resolveNodeHierarchyById(Meter request, UUID startNodeId, UUID orgId) {
+//
+//        UUID currentNodeId = startNodeId;
+//        Set<UUID> visited = new HashSet<>();
+//
+//        while (currentNodeId != null) {
+//
+//            if (!visited.add(currentNodeId)) {
+//                throw new IllegalStateException("Circular hierarchy detected");
+//            }
+//
+//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+//            if (node == null) break;
+//
+//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+//
+//            switch (type) {
+//                case "business hub":
+//                        request.setNodeId(node.getNodeId());
+//                    break;
+//                case "service center":
+//                    request.setServiceCenter(node.getNodeId());
+//                    break;
+//                case "region":
+//                    if(!request.getRegionInfo().getNodeId().equals(node.getNodeId())){
+//                        throw new GlobalExceptionHandler
+//                                .NotFoundException("Meter does not belong to this region");
+//
+//                    }
+//                    request.setRegion(node.getNodeId());
+//                    break;
+//                case "substation":
+//                    request.setSubstation(node.getNodeId());
+//                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+//            }
+//
+//            currentNodeId = node.getParentId();
+//        }
+//    }
+
 
     @Async("bulkUploadExecutor")
     public CompletableFuture<Integer> insertSingleAsync(
@@ -2420,8 +2457,7 @@ public class MeterServiceImpl implements MeterService {
             String nodeName = user.getNodeInfo().getType();
             UUID nodeId = user.getNodeInfo().getNodeId();
             List<Meter> meters;
-            if(nodeName.equalsIgnoreCase("Region")
-                    || nodeName.equalsIgnoreCase("Root")) {
+            if(nodeName.equalsIgnoreCase("Region")) {
                 if (filename.endsWith(".csv")) {
                     meters = processCsv(file.getInputStream(), user);
                 } else if (filename.endsWith(".xlsx")) {
@@ -2786,8 +2822,7 @@ public class MeterServiceImpl implements MeterService {
 
             String nodeName = user.getNodeInfo().getType();
             List<MeterRequest> meters;
-            if(nodeName.equalsIgnoreCase("Region")
-                    || nodeName.equalsIgnoreCase("Root")){
+            if(nodeName.equalsIgnoreCase("Region")){
 
                 if (filename.endsWith(".csv")) {
                     meters = processAllocateCsv(file.getInputStream());
@@ -2796,7 +2831,6 @@ public class MeterServiceImpl implements MeterService {
                 } else {
                     throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
                 }
-
             } else {
                 throw new IOException("You do not have permission");
             }
@@ -2873,7 +2907,7 @@ public class MeterServiceImpl implements MeterService {
                 continue;
             }
             // Fetch meters
-            List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId());
+            List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId(), user.getNodeInfo().getNodeId());
             Map<String, Meter> meterMap = meters.stream()
                     .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
 
@@ -2927,7 +2961,7 @@ public class MeterServiceImpl implements MeterService {
                 successCount += allocated;
             } catch (Exception e) {
                 log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-                successCount += allocateSubBatchTransactional(validAllocations, user, failedRecords);
+//                successCount += allocateSubBatchTransactional(validAllocations, user, failedRecords);
             }
         }
 
@@ -3125,19 +3159,6 @@ public class MeterServiceImpl implements MeterService {
                     && !nodeType.equalsIgnoreCase("Service center"))){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
-
-//            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
-//                    && (!nodeType.equalsIgnoreCase("Region")
-//                    && !nodeType.equalsIgnoreCase("Root"))){
-//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//            }
-//
-//            if(!meter.getMeterStage().equalsIgnoreCase("Pending-created")
-//                    && (!nodeType.equalsIgnoreCase("Business hub")
-//                    && !nodeType.equalsIgnoreCase("Service center")
-//                    && !nodeType.equalsIgnoreCase("Root"))){
-//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//            }
 
             if (meters == null || meters.isEmpty()) {
                 throw new GlobalExceptionHandler.NotFoundException("No records found in file");

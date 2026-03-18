@@ -95,7 +95,7 @@ public class DashboardServiceImpl implements  DashboardService{
                         && (m.getMeterStage().equalsIgnoreCase("Assigned")
                         || m.getMeterStage().equalsIgnoreCase("Pending-detached")
                         || m.getMeterStage().equalsIgnoreCase("Pending-migrated")
-                        || m.getMeterStage().equalsIgnoreCase("Pending-edited"))
+                        || m.getMeterStage().equalsIgnoreCase("Assign-edited"))
                 )
                 .count();
 
