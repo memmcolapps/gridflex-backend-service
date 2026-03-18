@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.hes.Event;
 import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.Transaction;
@@ -76,9 +77,11 @@ public class DashboardServiceImpl implements  DashboardService{
             total = 1;
         }
 
+//        resolveNodeHierarchy(meters.get());
+
         // Calculate summary stats
         long inventory = filteredMeters.stream()
-                .filter(m -> m.getNodeId() == null)
+                .filter(m -> m.getNodeId() == null || m.getRegion().equals(nodeId))
                 .count();
 
         long allocated = filteredMeters.stream()
@@ -193,6 +196,51 @@ public class DashboardServiceImpl implements  DashboardService{
         throw exception;
     }
 }
+
+//    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {
+//
+//        UUID currentNodeId = startNodeId;
+//        Set<UUID> visited = new HashSet<>();
+//
+//        while (currentNodeId != null) {
+//
+//            if (!visited.add(currentNodeId)) {
+//                throw new IllegalStateException("Circular hierarchy detected");
+//            }
+//
+//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+//            if (node == null) break;
+//
+//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+//
+//            switch (type) {
+////                case "business hub":
+////                    System.out.println("bbbhhh:: "+node.getNodeId());
+////                    if(bhubId.equals(node.getNodeId())){
+////                        request.setNodeId(node.getNodeId());
+////                    } else {
+////                        throw new GlobalExceptionHandler
+////                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+////                    }
+////
+////                    break;
+//                case "service center":
+//                    request.setServiceCenter(node.getNodeId());
+//                    break;
+//                case "region":
+//                    request.setRegion(node.getNodeId());
+//                    break;
+////                case "substation":
+////                    request.setSubstation(node.getNodeId());
+////                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+//            }
+//
+//            currentNodeId = node.getParentId();
+//        }
+//    }
 
     @Transactional(readOnly = true)
     @Override
