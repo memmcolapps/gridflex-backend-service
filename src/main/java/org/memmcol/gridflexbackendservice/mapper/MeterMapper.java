@@ -946,6 +946,22 @@ public interface MeterMapper {
     Meter getVersionMeter(UUID orgId, UUID meterId, String meterNumber, String cin);
 
 
+    @Select("SELECT * FROM customers WHERE customer_id = #{customerId} ")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "phoneNumber", column = "phone_number"),
+            @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "streetName", column = "street_name"),
+            @Result(property = "meterAssigned", column = "meter_assigned"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+    })
+        //share
+    Customer getByCustomerId(String customerId);
+
     @Select("SELECT * FROM customers WHERE customer_id = #{customerId} " +
             "AND region = #{nodeId} AND org_id = #{orgId}")
     @Results({
@@ -961,7 +977,7 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
     })
         //share
-    Customer getByCustomerId(String customerId, UUID nodeId, UUID orgId);
+    Customer getByCustomer(String customerId, UUID nodeId, UUID orgId);
 
 
     //    @Select("""
@@ -1270,7 +1286,8 @@ public interface MeterMapper {
                         AND m.node_id IS NOT NULL
                         AND (m.node_id = #{nodeId} OR m.feeder = #{nodeId} 
                         OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
-                        OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
+                        OR m.substation = #{nodeId} OR m.region = #{nodeId} 
+                        OR m.root = #{nodeId})
                          AND m.dss IS NOT NULL
                       AND m.meter_stage IN (
                             'Assigned',

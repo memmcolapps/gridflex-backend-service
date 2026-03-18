@@ -1125,7 +1125,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
             }
 
-            Customer customer = meterMapper.getByCustomerId(request.getCustomerId(), meterStatus.getRegion(), user.getOrgId());
+            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterStatus.getRegion(), user.getOrgId());
             if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
 
             request.setOrgId(user.getOrgId());
@@ -1453,7 +1453,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
             }
 
-            Customer customer = meterMapper.getByCustomerId(request.getCustomerId(), meterById.getRegion(), user.getOrgId());
+            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterById.getRegion(), user.getOrgId());
             if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
 
             request.setOrgId(user.getOrgId());
