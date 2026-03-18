@@ -641,6 +641,8 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterStage("Assign-edited");
             request.setCin(request.getCin());
             request.setAccountNumber(request.getAccountNumber());
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
             request.setNodeId(feederLine.getParentId());
             request.setFeeder(feederLine.getNodeId());
             request.setDss(dss.getNodeId());
@@ -865,57 +867,58 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-//    @Transactional(readOnly = true)
-//    @Override
-//    public Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber, String cin) {
-//        try {
-//            Meter meter = null;
-//            UserModel um = handleUserValidation();
-//
-//            if (meterId == null && meterNumber == null && accountNumber == null && meterVersionId == null && versionMeterNumber == null) {
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("At least one of meterId, meterNumber, or accountNumber must be provided.");
+    @Transactional(readOnly = true)
+    @Override
+    public Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber, String cin) {
+        try {
+            Meter meter = null;
+            UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+
+            if (meterId == null && meterNumber == null && accountNumber == null && meterVersionId == null && versionMeterNumber == null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException("At least one of meterId, meterNumber, or accountNumber must be provided.");
+            }
+
+//            Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
+
+//            if (cachedUser != null) {
+//                return ResponseMap.response(status.getSuccessCode(), "Cached " + meterName + " " + status.getDesc(), cachedUser);
 //            }
-//
-////            Object cachedUser = meterCache.get(meterId.toString()+"_"+um.getOrgId());
-//
-////            if (cachedUser != null) {
-////                return ResponseMap.response(status.getSuccessCode(), "Cached " + meterName + " " + status.getDesc(), cachedUser);
-////            }
-//
-//            if(meterNumber != null){
-//                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
-//            }
-//
-//            if(accountNumber != null){
-//                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
-//            }
-//
-//            if(meterId != null){
-//                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
-//            }
-//
-//            if(cin != null){
-//                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
-//            }
-//
-//            if(versionMeterNumber != null){
-//                meter = meterMapper.getVersionMeter(um.getOrgId(), meterVersionId, versionMeterNumber, cin);
-//            }
-//
-//            if(meterVersionId != null){
-//                meter = meterMapper.getVersionMeter(um.getOrgId(), meterVersionId, versionMeterNumber, cin);
-//            }
-//
-////            handleAddCache(meter);
-//
-//            return ResponseMap.response(status.getSuccessCode(),  meterName + " " + status.getDesc(), meter);
-//        } catch (Exception exception) {
-//            log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
-//            genericHandler.logIncidentReport("Editing meter service failed");
-//            genericHandler.logAndSaveException(exception, "fetching meter");
-//            throw exception;
-//        }
-//    }
+
+            if(meterNumber != null){
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin.trim(), "", nodeId);
+            }
+
+            if(accountNumber != null){
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin.trim(), "", nodeId);
+            }
+
+            if(meterId != null){
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin.trim(), "", nodeId);
+            }
+
+            if(cin != null){
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin.trim(), "", nodeId);
+            }
+
+            if(versionMeterNumber != null){
+                meter = meterMapper.getVersionMeter(um.getOrgId(), meterVersionId, versionMeterNumber, cin);
+            }
+
+            if(meterVersionId != null){
+                meter = meterMapper.getVersionMeter(um.getOrgId(), meterVersionId, versionMeterNumber, cin);
+            }
+
+//            handleAddCache(meter);
+
+            return ResponseMap.response(status.getSuccessCode(),  meterName + " " + status.getDesc(), meter);
+        } catch (Exception exception) {
+            log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Editing meter service failed");
+            genericHandler.logAndSaveException(exception, "fetching meter");
+            throw exception;
+        }
+    }
 
     @Transactional
     @Override
@@ -1275,7 +1278,7 @@ public class MeterServiceImpl implements MeterService {
 
         // Assign meter to customer
         request.setDescription("Meter Assigned");
-        request.setMeterStage("Pending-assigned");
+        request.setMeterStage("Assign-edited");
         request.setStatus("Active");
         int customerAssignResult;
         int customerAssignResult1;
