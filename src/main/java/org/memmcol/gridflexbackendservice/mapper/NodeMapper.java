@@ -169,6 +169,23 @@ public interface NodeMapper {
     NodeSummary getNodeByNodeId(@Param("nodeId") UUID nodeId,
                                 @Param("orgId") UUID orgId);
 
+//    @Select("""
+//        SELECT id, type, region_id, asset_id,node_id, parent_id, org_id
+//        FROM vw_node_summary
+//        WHERE node_id = #{nodeId}
+//        AND org_id = #{orgId}
+//        """)
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "type", column = "type"),
+//            @Result(property = "regionId", column = "region_id"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "orgId", column = "org_id")
+//    })
+//    NodeSummary getNodeByNodeIdAlloc(@Param("nodeId") UUID nodeId,
+//                                @Param("orgId") UUID orgId);
+
     @Select("SELECT * FROM region_bhub_service_centers " +
             "WHERE region_id = #{regionId} AND org_id = #{orgId} AND type = #{type}")
     @Results({

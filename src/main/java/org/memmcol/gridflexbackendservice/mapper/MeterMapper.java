@@ -282,6 +282,59 @@ public interface MeterMapper {
     })
     Meter findByIdVersion(UUID meterId, UUID orgId, UUID nodeId);
 
+
+    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} " +
+            "AND (node_id = #{nodeId} OR service_center = #{nodeId} OR region = #{nodeId} " +
+            "OR root = #{nodeId}) " +
+            "AND (meter_stage IN " +
+            "('Pending-created','Pending-edited','Pending-allocated', " +
+            "'Pending-assigned', 'Pending-detached', 'Pending-migrated') " +
+            "OR status IN " +
+            "('Pending-deactivated', 'Pending-activated')) ")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "serviceCenter", column = "service_center"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "customer", column = "customer_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+            @Result(property = "meterAssignLocation", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocationVersion")),
+            @Result(property = "mdMeterInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfoVersion")),
+            @Result(property = "paymentMode", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentModeVersion")),
+            @Result(property = "smartMeterInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeterVersion")),
+            @Result(property = "debitCreditAdjustVersionInfo", column = "meter_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentByIdVersion"))
+
+//            @Result(property = "manufacturer", column = "meter_manufacturer",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer"))
+    })
+    Meter findByIdApproveVersion(UUID meterId, UUID orgId, UUID nodeId);
+
     @Select("SELECT * FROM credit_debit_adjustment_version WHERE new_meter_id = #{id} AND status = true")
     @Results({
             @Result(column = "id", property = "id"),
@@ -613,7 +666,8 @@ public interface MeterMapper {
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} " +
-            "OR m.sim_number = #{simNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})")
+            "OR m.sim_number = #{simNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})" +
+            "AND (m.node_id = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId} OR m.service_center = #{nodeId}) ")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
@@ -654,6 +708,8 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "regionInfo", column = "region",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "nodeInfo", column = "node_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
@@ -664,7 +720,74 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
 
     })
-    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber, String cin, String simNumber);
+    Meter getMeter(UUID orgId, UUID meterId, String meterNumber, String accountNumber, String cin, String simNumber, UUID nodeId);
+
+    @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
+            "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} " +
+            "OR m.sim_number = #{simNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})" +
+            "AND m.region = #{nodeId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "region", column = "region"),
+            @Result(property = "root", column = "root"),
+            @Result(property = "serviceCenter", column = "service_center"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "accountNumber", column = "account_number"),
+            @Result(property = "meterManufacturer", column = "meter_manufacturer"),
+            @Result(property = "simNumber", column = "sim_number"),
+            @Result(property = "smartStatus", column = "smart_status"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meterCategory", column = "meter_category"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "oldSgc", column = "old_sgc"),
+            @Result(property = "newSgc", column = "new_sgc"),
+            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
+            @Result(property = "oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "customer", column = "customer_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
+            @Result(property = "meterAssignLocation", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterAssignLocation")),
+            @Result(property = "mdMeterInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMDMeterInfo")),
+            @Result(property = "paymentMode", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getPaymentMode")),
+            @Result(property = "manufacturer", column = "meter_manufacturer",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getMeterManufacturer")),
+            @Result(property = "smartMeterInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
+            @Result(property = "regionInfo", column = "region",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
+            @Result(property = "nodeInfo", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
+            @Result(property = "feederInfo", column = "feeder",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "DssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "debitCreditAdjustInfo", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
+
+    })
+    Meter getMeterAlloc(UUID orgId,
+                        UUID meterId,
+                        String meterNumber,
+                        String accountNumber,
+                        String cin,
+                        String simNumber,
+                        UUID nodeId);
+//
 
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "WHERE m.org_id = #{orgId} AND (m.account_number = #{accountNumber} OR m.cin = #{cin}) " +
@@ -823,7 +946,8 @@ public interface MeterMapper {
     Meter getVersionMeter(UUID orgId, UUID meterId, String meterNumber, String cin);
 
 
-    @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
+    @Select("SELECT * FROM customers WHERE customer_id = #{customerId} " +
+            "AND region = #{nodeId} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -837,7 +961,7 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
     })
         //share
-    Customer getByCustomerId(String customerId);
+    Customer getByCustomerId(String customerId, UUID nodeId, UUID orgId);
 
 
     //    @Select("""
@@ -1152,7 +1276,8 @@ public interface MeterMapper {
                             'Assigned',
                             'Pending-detached',
                             'Pending-migrated',
-                            'Pending-edited'
+                            'Pending-edited',
+                            'Assign-edited'
                       )
                       AND m.type != 'VIRTUAL'
                     ORDER BY m.created_at DESC
@@ -2147,10 +2272,7 @@ public interface MeterMapper {
             ")",
             "AND m.org_id = #{orgId}",
             "AND (m.node_id = #{nodeId}",
-            "OR m.feeder = #{nodeId}",
-            "OR m.dss = #{nodeId}",
             "OR m.service_center = #{nodeId}",
-            "OR m.substation = #{nodeId}",
             "OR m.region = #{nodeId}",
             "OR m.root = #{nodeId}",
             ")",
@@ -2206,6 +2328,7 @@ public interface MeterMapper {
             "</foreach>",
             "AND (m.meter_stage IN ('Created'))",
             "AND m.org_id = #{orgId}",
+            "AND m.region = #{nodeId}",
             "ORDER BY m.created_at DESC",
             "</script>"
     })
@@ -2239,7 +2362,10 @@ public interface MeterMapper {
             @Result(property = "smartMeterInfo", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
     })
-    List<Meter> getMetersByMeterNumbers(@Param("meterNumbers") List<String> meterNumbers, @Param("orgId") UUID orgId);
+    List<Meter> getMetersByMeterNumbers(
+            @Param("meterNumbers") List<String> meterNumbers,
+            @Param("orgId") UUID orgId,
+            @Param("nodeId") UUID nodeId);
 
 
     @Select({
@@ -3333,7 +3459,9 @@ public interface MeterMapper {
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
     })
-    Meter hasAssignedMeter(@Param("orgId") UUID orgId, @Param("meterNumber") String meterNumber);
+    Meter hasAssignedMeter(
+            @Param("orgId") UUID orgId,
+            @Param("meterNumber") String meterNumber);
 
     @Update("UPDATE credit_debit_adjustment SET meter_id = #{newMeterId} WHERE meter_id = #{oldMeterId} AND org_id = #{orgId}")
     int updateDebitCreditAdj(UUID oldMeterId, UUID newMeterId, UUID orgId);
