@@ -88,7 +88,7 @@ public interface CustomerMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getMeterManufacturer")),
             @Result(property = "smartMeterInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getSmartMeter")),
-            @Result(property = "feederInfo", column = "node_id",
+            @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getFeederDss")),
             @Result(property = "DssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getFeederDss")),
