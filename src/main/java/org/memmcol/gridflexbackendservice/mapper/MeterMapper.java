@@ -645,7 +645,7 @@ public interface MeterMapper {
             "meter_type = #{meterType}, " +
             "meter_stage = #{meterStage}, " +
             "status = #{status}, " +
-            "customer_id = NULL, " +
+            "customer_id = #{customerId}, " +
             "cin = #{cin}, " +
             "tariff = #{tariff}, " +
             "meter_number = #{meterNumber}, " +
@@ -658,7 +658,7 @@ public interface MeterMapper {
             "old_tariff_index = #{oldTariffIndex}, " +
             "new_tariff_index = #{newTariffIndex}, " +
             "updated_at = #{updatedAt}, " +
-            "account_number = #{accountNumber}, " +
+            "account_number = NULL, " +
             "dss = #{dss}, " +
             "feeder = #{feeder}, " +
             "node_id = #{nodeId} " +
@@ -1031,7 +1031,7 @@ public interface MeterMapper {
     Customer getByCustomerId(String customerId);
 
     @Select("SELECT * FROM customers WHERE customer_id = #{customerId} " +
-            "AND region = #{nodeId} AND org_id = #{orgId}")
+            "AND region = #{region} AND node_id = #{nodeId} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -1045,7 +1045,7 @@ public interface MeterMapper {
             @Result(property = "updatedAt", column = "updated_at"),
     })
         //share
-    Customer getByCustomer(String customerId, UUID nodeId, UUID orgId);
+    Customer getByCustomer(String customerId, UUID region, UUID orgId, UUID nodeId);
 
 
     //    @Select("""

@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.time.format.TextStyle;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
@@ -76,37 +77,96 @@ public class DashboardServiceImpl implements  DashboardService{
         if (total == 0) {
             total = 1;
         }
+        // -----------------------------------------
+        // NODE FILTER HELPER
+        // -----------------------------------------
+        Predicate<Meter> belongsToNode = m ->
+                Objects.equals(m.getNodeId(), nodeId) ||
+                        Objects.equals(m.getRegion(), nodeId) ||
+                        Objects.equals(m.getServiceCenter(), nodeId) ||
+                        Objects.equals(m.getFeeder(), nodeId) ||
+                        Objects.equals(m.getDss(), nodeId) ||
+                        Objects.equals(m.getRoot(), nodeId);
 
-//        resolveNodeHierarchy(meters.get());
+        // -----------------------------------------
+        // COUNTS
+        // -----------------------------------------
 
-        // Calculate summary stats
         long inventory = filteredMeters.stream()
                 .filter(m -> m.getNodeId() == null)
                 .count();
 
         long allocated = filteredMeters.stream()
-                .filter(m -> m.getNodeId() != null && (m.getNodeId().equals(nodeId)
-                        || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
-                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId)
+                .filter(m ->
+                        m.getNodeId() != null &&
+                                "Unassigned".equalsIgnoreCase(m.getMeterStage()) &&
+                                belongsToNode.test(m)
+                )
                 .count();
 
         long assigned = filteredMeters.stream()
-                .filter(m -> m.getNodeId() != null && m.getDss() != null
-                        || (m.getNodeId() == nodeId || m.getRegion() == nodeId
-                        || m.getServiceCenter() == nodeId || m.getFeeder() == nodeId
-                        || m.getDss() == nodeId) || m.getRoot() == nodeId
-                        || (m.getMeterStage().equalsIgnoreCase("Assigned")
-                        || m.getMeterStage().equalsIgnoreCase("Pending-detached")
-                        || m.getMeterStage().equalsIgnoreCase("Pending-migrated")
-                        || m.getMeterStage().equalsIgnoreCase("Assign-edited"))
+                .filter(m ->
+                        m.getNodeId() != null &&
+                                m.getDss() != null &&
+                                (
+                                        "Assigned".equalsIgnoreCase(m.getMeterStage()) ||
+                                                "Pending-detached".equalsIgnoreCase(m.getMeterStage()) ||
+                                                "Pending-migrated".equalsIgnoreCase(m.getMeterStage()) ||
+                                                "Assign-edited".equalsIgnoreCase(m.getMeterStage())
+                                ) &&
+                                belongsToNode.test(m)
                 )
                 .count();
 
         long deactivated = filteredMeters.stream()
-                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()) && (m.getNodeId().equals(nodeId)
-                        || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
-                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId)
+                .filter(m ->
+                        "Deactivated".equalsIgnoreCase(m.getStatus()) &&
+                                belongsToNode.test(m)
+                )
                 .count();
+
+////        resolveNodeHierarchy(meters.get());
+//
+//        // Calculate summary stats
+//        long inventory = filteredMeters.stream()
+//                .filter(m -> m.getNodeId() == null)
+//                .count();
+//
+//        long allocated = filteredMeters.stream()
+//                .filter(m -> m.getNodeId() != null && m.getMeterStage().equalsIgnoreCase("Unassigned") && (m.getNodeId().equals(nodeId)
+//                        || (m.getRegion() == nodeId || m.getServiceCenter() == nodeId
+//                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId))
+//                .count();
+//
+//
+//        long assigned = filteredMeters.stream()
+//                .filter(m ->
+//                        (m.getNodeId() != null &&
+//                                m.getDss() != null &&
+//                                (
+//                                        m.getMeterStage().equalsIgnoreCase("Assigned") ||
+//                                        m.getMeterStage().equalsIgnoreCase("Pending-detached") ||
+//                                        m.getMeterStage().equalsIgnoreCase("Pending-migrated") ||
+//                                        m.getMeterStage().equalsIgnoreCase("Assign-edited")
+//                                )
+//                        )
+//                                &&
+//                                (
+//                                        nodeId.equals(m.getNodeId()) ||
+//                                        nodeId.equals(m.getRegion()) ||
+//                                        nodeId.equals(m.getServiceCenter()) ||
+//                                        nodeId.equals(m.getFeeder()) ||
+//                                        nodeId.equals(m.getDss()) ||
+//                                        nodeId.equals(m.getRoot())
+//                                )
+//                )
+//                .count();
+//
+//        long deactivated = filteredMeters.stream()
+//                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()) && (m.getNodeId().equals(nodeId)
+//                        || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
+//                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId)
+//                .count();
 
         // Calculate percentages
         double inventoryPercent = (inventory * 100.0) / total;
@@ -195,6 +255,7 @@ public class DashboardServiceImpl implements  DashboardService{
         genericHandler.logAndSaveException(exception, "fetch data management dashboard");
         throw exception;
     }
+
 }
 
 //    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {

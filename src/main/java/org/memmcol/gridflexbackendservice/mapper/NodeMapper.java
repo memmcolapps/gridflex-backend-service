@@ -25,9 +25,10 @@ public interface NodeMapper {
 
 
     @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, " +
-            "contact_person, address, status, voltage, latitude, longitude, type, description, parent_id, created_at, updated_at, bhub_id) " +
+            "contact_person, address, status, voltage, latitude, longitude, type, description, parent_id, created_at, updated_at) " +
             "VALUES (#{nodeId}, #{assetId}, #{orgId}, #{name}, #{serialNo}, #{phoneNo}, #{email}, " +
-            "#{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, #{description}, #{parentId}, #{createdAt}, #{updatedAt}, #{bhubId})")
+            "#{contactPerson}, #{address}, #{status}, #{voltage}, #{latitude}, #{longitude}, #{type}, " +
+            "#{description}, #{parentId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void createSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
