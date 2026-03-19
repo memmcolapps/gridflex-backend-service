@@ -385,7 +385,7 @@ public class MeterServiceImpl implements MeterService {
                     || nodeType.equalsIgnoreCase("Business hub")
 //                    || nodeType.equalsIgnoreCase("Region")
                     || nodeType.equalsIgnoreCase("Service center");
-            if(existingMeter.getMeterStage().equalsIgnoreCase("Allocated")){
+            if(existingMeter.getMeterStage().equalsIgnoreCase("Unassigned")){
                 handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
             }
 
@@ -540,10 +540,11 @@ public class MeterServiceImpl implements MeterService {
             request.getSmartMeterInfo().setCreatedBy(user.getId());
 
             if(existingMeter.getSmartMeterInfo() == null){
-                existingMeter.getSmartMeterInfo().setMeterModel("N/A");
-                existingMeter.getSmartMeterInfo().setProtocol("N/A");
-                existingMeter.getSmartMeterInfo().setAuthentication("N/A");
-                existingMeter.getSmartMeterInfo().setPassword("N/A");
+                SmartMeterInfo smart = new SmartMeterInfo();
+                smart.setMeterModel(request.getSmartMeterInfo().getMeterModel());
+                smart.setProtocol(request.getSmartMeterInfo().getProtocol());
+                smart.setAuthentication(request.getSmartMeterInfo().getAuthentication());
+                smart.setPassword(request.getSmartMeterInfo().getPassword());
             }
             SmartDesc = buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeterInfo(), request.getSmartMeterInfo());
             request.getSmartMeterInfo().setDescription("Pending edited");
@@ -567,16 +568,20 @@ public class MeterServiceImpl implements MeterService {
             request.getMdMeterInfo().setMeterStage(meterStage);
             request.getMdMeterInfo().setCreatedBy(user.getId());
             if(existingMeter.getMdMeterInfo() == null) {
-                existingMeter.getMdMeterInfo().setCtRatioNum("N/A");
-                existingMeter.getMdMeterInfo().setCtRatioDenom("N/A");
-                existingMeter.getMdMeterInfo().setVoltRatioNum("N/A");
-                existingMeter.getMdMeterInfo().setCtRatioDenom("N/A");
-                existingMeter.getMdMeterInfo().setMultiplier("N/A");
-                existingMeter.getMdMeterInfo().setMeterRating("N/A");
-                existingMeter.getMdMeterInfo().setInitialReading("N/A");
-                existingMeter.getMdMeterInfo().setDial("N/A");
-                existingMeter.getMdMeterInfo().setLatitude("N/A");
-                existingMeter.getMdMeterInfo().setLongitude("N/A");
+                MDMeterInfo md = new MDMeterInfo();
+
+                md.setCtRatioNum(request.getMdMeterInfo().getCtRatioNum());
+                md.setCtRatioDenom(request.getMdMeterInfo().getCtRatioDenom());
+                md.setVoltRatioNum(request.getMdMeterInfo().getVoltRatioNum());
+                md.setVoltRatioDenom(request.getMdMeterInfo().getVoltRatioDenom());
+                md.setMultiplier(request.getMdMeterInfo().getMultiplier());
+                md.setMeterRating(request.getMdMeterInfo().getMeterRating());
+                md.setInitialReading(request.getMdMeterInfo().getInitialReading());
+                md.setDial(request.getMdMeterInfo().getDial());
+                md.setLatitude(request.getMdMeterInfo().getLatitude());
+                md.setLongitude(request.getMdMeterInfo().getLongitude());
+
+                existingMeter.setMdMeterInfo(md);
             }
             MDDesc = buildMDMeterInfoChangeDescription(existingMeter.getMdMeterInfo(), request.getMdMeterInfo());
             request.getMdMeterInfo().setDescription("Pending edited");
@@ -1146,18 +1151,20 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
             }
 
-            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterStatus.getRegion(), user.getOrgId());
-            if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
+            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterStatus.getRegion(), user.getOrgId(), meterStatus.getNodeId());
+            if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found or does not belong to this region/business hub");
 
             request.setOrgId(user.getOrgId());
             request.setCreatedBy(user.getId());
 
             if(request.getMeterClass() == null) {
 
+                System.out.println("meter number: "+meterStatus.getMeterNumber());
+                System.out.println("nodeId: "+nodeId);
                 // Validate main meter record
                 Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber(), nodeId);
                 if (mainMeter == null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc()+"or user does not belong to the business meter is allocated");
                 }
 
                 if (mainMeter.getMeterStage().contains("Pending") || mainMeter.getStatus().contains("Pending")) {
@@ -1258,7 +1265,6 @@ public class MeterServiceImpl implements MeterService {
                         throw new GlobalExceptionHandler
                                 .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
                     }
-
                     break;
                 case "service center":
                     request.setServiceCenter(node.getNodeId());
@@ -1296,7 +1302,7 @@ public class MeterServiceImpl implements MeterService {
 
         // Assign meter to customer
         request.setDescription("Meter Assigned");
-        request.setMeterStage("Assign-edited");
+        request.setMeterStage("Pending-assigned");
         request.setStatus("Active");
         int customerAssignResult;
         int customerAssignResult1;
@@ -1405,6 +1411,7 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> continueAssignMeter(AssignMeterToCustomer request, MultipartFile image) {
         int result;
@@ -1474,7 +1481,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
             }
 
-            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterById.getRegion(), user.getOrgId());
+            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterById.getRegion(), user.getOrgId(), meterById.getNodeId());
             if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
 
             request.setOrgId(user.getOrgId());
@@ -1611,7 +1618,7 @@ public class MeterServiceImpl implements MeterService {
             meterById.setSubstation(null);
             meterById.setDss(null);
             meterById.setFeeder(null);
-//            meterById.setCustomerId(null);
+            meterById.setCustomerId(null);
             meterById.setAccountNumber(null);
             meterById.setTariff(null);
             meterById.setCin(null);
@@ -1953,6 +1960,7 @@ public class MeterServiceImpl implements MeterService {
         if(!"Pending-detached".equalsIgnoreCase(stage)){
 
             if("Pending-assigned".equalsIgnoreCase(stage)) {
+
                 if (meterMapper.approvePendingMeter(meter) == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
