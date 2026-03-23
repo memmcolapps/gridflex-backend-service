@@ -39,10 +39,6 @@ public class Meter implements Serializable {
     private UUID tariff;
     private String type;
     private String fixedEnergy;
-    private UUID root;
-    private UUID region;
-    private UUID serviceCenter;
-    private UUID substation;
     private UUID dss;
     private UUID feeder;
     private String meterCategory;
@@ -204,38 +200,6 @@ public class Meter implements Serializable {
 
     public void setFixedEnergy(String fixedEnergy) {
         this.fixedEnergy = fixedEnergy;
-    }
-
-    public UUID getRoot() {
-        return root;
-    }
-
-    public void setRoot(UUID root) {
-        this.root = root;
-    }
-
-    public UUID getRegion() {
-        return region;
-    }
-
-    public void setRegion(UUID region) {
-        this.region = region;
-    }
-
-    public UUID getSubstation() {
-        return substation;
-    }
-
-    public void setSubstation(UUID substation) {
-        this.substation = substation;
-    }
-
-    public UUID getServiceCenter() {
-        return serviceCenter;
-    }
-
-    public void setServiceCenter(UUID serviceCenter) {
-        this.serviceCenter = serviceCenter;
     }
 
     public UUID getDss() {

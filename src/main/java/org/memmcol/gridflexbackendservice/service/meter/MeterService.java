@@ -19,7 +19,7 @@ public interface MeterService {
     Map<String, Object> getAllMeters(int page, int size, String meterNumber, String simNo, String manufacturer, String meterStage,
                                      String meterClass, String category, String status, String createdAt, String customerId, String type);
 
-//    Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber, String cin);
+    Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber, String cin);
 
     Map<String, Object> changeStatus(UUID meterId, Boolean status, String reason) throws MissingServletRequestParameterException;
 

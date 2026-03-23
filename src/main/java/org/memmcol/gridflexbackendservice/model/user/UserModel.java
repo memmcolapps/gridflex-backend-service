@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.node.Node;
-import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
-import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
@@ -52,8 +50,6 @@ public class UserModel implements Serializable {
     private Organization business;
 
     private Node nodes;
-
-    private NodeSummary nodeInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -200,13 +196,5 @@ public class UserModel implements Serializable {
 
     public void setUnit(String unit) {
         this.unit = unit;
-    }
-
-    public NodeSummary getNodeInfo() {
-        return nodeInfo;
-    }
-
-    public void setNodeInfo(NodeSummary nodeInfo) {
-        this.nodeInfo = nodeInfo;
     }
 }

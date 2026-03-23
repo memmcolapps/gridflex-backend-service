@@ -30,7 +30,6 @@ public class KctToken implements Serializable {
     private String receiptNo;
     private String token;
     private BigDecimal unit;
-    private UUID txNodeId;
 
     private String accountNumber;
     private String meterNumber;
@@ -250,12 +249,12 @@ public class KctToken implements Serializable {
     public void setAllow(Boolean allow) {
         this.allow = allow;
     }
-
-    public UUID getTxNodeId() {
-        return txNodeId;
-    }
-
-    public void setTxNodeId(UUID txNodeId) {
-        this.txNodeId = txNodeId;
-    }
+//
+//    public Boolean getAllowKrn() {
+//        return allowKrn;
+//    }
+//
+//    public void setAllowKrn(Boolean allowKrn) {
+//        this.allowKrn = allowKrn;
+//    }
 }

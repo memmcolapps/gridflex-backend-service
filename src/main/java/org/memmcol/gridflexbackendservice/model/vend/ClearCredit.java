@@ -27,7 +27,6 @@ public class ClearCredit implements Serializable {
     private String token;
     private String kct1;
     private String kct2;
-    private UUID txNodeId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -174,13 +173,5 @@ public class ClearCredit implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public UUID getTxNodeId() {
-        return txNodeId;
-    }
-
-    public void setTxNodeId(UUID txNodeId) {
-        this.txNodeId = txNodeId;
     }
 }
