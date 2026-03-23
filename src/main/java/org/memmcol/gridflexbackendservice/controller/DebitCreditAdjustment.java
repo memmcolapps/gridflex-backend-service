@@ -45,16 +45,13 @@ public class DebitCreditAdjustment {
 
     @GetMapping("/all")
     public ResponseEntity<?> getDebitAdjustments(
-            @RequestParam(value = "type", required = true, defaultValue = "debit") String type,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "0") int size,
-            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
-            @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
-            @RequestParam(value = "customerName", required = false, defaultValue = "") String customerName,
-            @RequestParam(value = "MeterNumber", required = false, defaultValue = "") String MeterNumber,
-            @RequestParam(value = "balance", required = false, defaultValue = "") BigDecimal balance) {
+            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "search", required = false) String search,
+            @ModelAttribute DebitCreditAdjust debitCreditAdjust) {
         try {
-            Map<String, Object> result = service.getDebitAdjustments(page, size, customerId, accountNumber, customerName, MeterNumber, balance, type);
+            Map<String, Object> result = service.getDebitAdjustments(page, size, type, search, debitCreditAdjust);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

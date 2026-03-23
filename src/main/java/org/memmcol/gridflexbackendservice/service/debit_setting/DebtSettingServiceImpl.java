@@ -3,6 +3,12 @@ package org.memmcol.gridflexbackendservice.service.debit_setting;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
@@ -11,6 +17,10 @@ import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
+import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
+import org.memmcol.gridflexbackendservice.model.meter.MDMeterInfo;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
@@ -30,7 +40,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -72,6 +87,8 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     private String lc = "Liability Cause";
 
     private String pr = "Percentage Range";
+    @Autowired
+    private BandMapper bandMapper;
 
     public DebtSettingServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
         this.debtCache = hazelcastInstance.getMap("debtCache");
@@ -1370,6 +1387,310 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             AuditLog auditLog = buildAuditLog(user, desc, lc, m, metadata);
             safeAuditService.saveAudit(auditLog);
         }
+    }
+
+    @Override
+    public Map<String, Object> bulkPercentageRange(MultipartFile file) throws IOException {
+        UserModel user = handleUserValidation();
+        try {
+        // Determine file type
+        String filename = Optional.ofNullable(file.getOriginalFilename())
+                .orElseThrow(() -> new IOException("File has no name"));
+
+        List<PercentageRange> percentageRanges;
+        if (filename.endsWith(".csv")) {
+            percentageRanges = processPercentageCsv(file.getInputStream(), user);
+        } else if (filename.endsWith(".xlsx")) {
+            percentageRanges = processPercentageExcel(file.getInputStream(), user);
+        } else {
+            throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+        }
+
+        Map<String, Object> result = bulkInsertPercentageRange(percentageRanges, user);
+
+        return result;
+
+    } catch (Exception e) {
+        log.error("Error in bulk upload: {}", e.getMessage(), e);
+        genericHandler.logIncidentReport("Bulk upload service failed");
+        genericHandler.logAndSaveException(e, "Bulk upload meter");
+        throw new IOException("Bulk upload failed: " + e.getMessage());
+    }
+    }
+
+    public static List<PercentageRange> processPercentageExcel(InputStream inputStream, UserModel user) throws IOException {
+        List<PercentageRange> percentages = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                PercentageRange pr = new PercentageRange();
+
+                pr.setPercentage(getStringCellValue(row.getCell(0)));
+                pr.setCode(getStringCellValue(row.getCell(1)));
+                pr.setAmountStartRange(getStringCellValue(row.getCell(3)));
+                pr.setAmountEndRange(getStringCellValue(row.getCell(4)));
+
+                percentages.add(pr);
+            }
+        }
+        return percentages;
+    }
+
+    public static List<PercentageRange> processPercentageCsv(InputStream inputStream, UserModel user) throws IOException {
+        List<PercentageRange> percentageRanges = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                PercentageRange pr = new PercentageRange();
+                pr.setPercentage(record.get("Percentage".trim()));
+                pr.setCode(record.get("Code".trim().trim()));
+                pr.setAmountStartRange(record.get("Amount Start Range".trim()));
+                pr.setAmountEndRange(record.get("Amount End Range".trim()));
+
+                percentageRanges.add(pr);
+            }
+        }
+        return percentageRanges;
+    }
+
+
+    private Map<String, Object> bulkInsertPercentageRange(List<PercentageRange> percentageRanges, UserModel user) {
+        return Map.of();
+//        Map<String, Object> result = new HashMap<>();
+//        List<GenericResp> failedRecords = new ArrayList<>();
+//
+//        if (percentageRanges == null || percentageRanges.isEmpty()) {
+//            throw new IllegalArgumentException("Percentage range list cannot be empty");
+//        }
+//
+//        int totalRecords = percentageRanges.size();
+//        int successCount = 0;
+//
+//        // ------------------------------------------
+//        // Load Manufacturers
+//        // ------------------------------------------
+//        List<Band> bands = bandMapper.fetchBands(user.getOrgId());
+//        Map<String, UUID> manufacturerNameToId = bands.stream()
+//                .collect(Collectors.toMap(
+//                        m -> m.getName().trim().toLowerCase(),
+//                        Band::getId
+//                ));
+//
+//        if(manufacturerNameToId.isEmpty()) {
+//            throw new GlobalExceptionHandler.PartialFailureException(
+//                    "Meters upload failed - manufacturer not found",
+//                    result
+//            );
+//        }
+//
+//        //------------------------------------------------
+//        // Validate duplicates INSIDE FILE
+//        //------------------------------------------------
+//
+//        Set<String> seenMeters = new HashSet<>();
+//        Set<String> seenSims = new HashSet<>();
+//
+//        Iterator<PercentageRange> fileIterator = percentageRanges.iterator();
+//
+//        while (fileIterator.hasNext()) {
+//
+//            PercentageRange pr = fileIterator.next();
+//
+//            String percentage = Optional.ofNullable(pr.getPercentage()).orElse("").trim();
+//            String code = Optional.ofNullable(pr.getCode()).orElse("").trim();
+//            String amountStartRange = Optional.ofNullable(pr.getAmountStartRange()).orElse("").trim();
+//            String amountEndRange = Optional.ofNullable(pr.getAmountEndRange()).orElse("").trim();
+//
+//            if (!seenMeters.add(percentage)) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(code);
+//                resp.setMessage("Duplicate percentage in uploaded file");
+//                resp.setData(percentage);
+//                failedRecords.add(resp);
+//                fileIterator.remove();
+//                continue;
+//            }
+//
+//            if (!code.isEmpty() && !seenSims.add(code)) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(code);
+//                resp.setMessage("Duplicate code in uploaded file");
+//                resp.setData(code);
+//                failedRecords.add(resp);
+//                fileIterator.remove();
+//                continue;
+//            }
+//        }
+//
+//        // ------------------------------------------
+//        // Extract MeterNumbers + SimNumbers
+//        // ------------------------------------------
+//
+//        Set<String> meterNumbers = meters.stream()
+//                .map(Meter::getMeterNumber)
+//                .filter(Objects::nonNull)
+//                .map(String::trim)
+//                .collect(Collectors.toSet());
+//
+//        Set<String> simNumbers = meters.stream()
+//                .map(Meter::getSimNumber)
+//                .filter(Objects::nonNull)
+//                .map(String::trim)
+//                .collect(Collectors.toSet());
+//
+//        // ---------------------------------------------------
+//        // Fetch Existing Meter Numbers (ONE DB CALL)
+//        // ---------------------------------------------------
+//        Set<String> allMeterNumbers = meters.stream()
+//                .map(Meter::getMeterNumber)
+//                .filter(Objects::nonNull)
+//                .map(String::trim)
+//                .filter(s -> !s.isEmpty())
+//                .collect(Collectors.toSet());
+//
+//
+//        // ------------------------------------------
+//        // Fetch Existing
+//        // ------------------------------------------
+//
+//        List<Meter> existingMeters =
+//                meterMapper.getMetersList(
+//                        new ArrayList<>(meterNumbers),
+////                        new ArrayList<>(simNumbers),
+//                        user.getOrgId()
+//                );
+//
+//        Set<String> existingMeterNumbers = existingMeters.stream()
+//                .map(Meter::getMeterNumber)
+//                .collect(Collectors.toSet());
+//
+//        Set<String> existingSimNumbers = existingMeters.stream()
+//                .map(Meter::getSimNumber)
+//                .collect(Collectors.toSet());
+//
+//
+//        int batchSize = 500; // try 500–1000 for optimal JDBC performance
+//
+//        for (int i = 0; i < meters.size(); i += batchSize) {
+//            int end = Math.min(i + batchSize, meters.size());
+////            List<Meter> batch = meters.subList(i, end);
+//            List<Meter> batch = new ArrayList<>(meters.subList(i, end));
+//
+//            // -----------------------------------------------
+//            // Remove duplicates (already existing meters)
+//            // -----------------------------------------------
+//            Iterator<Meter> iterator = batch.iterator();
+//
+//            while (iterator.hasNext()) {
+//
+//                Meter meter = iterator.next();
+//
+//                String meterNumber = meter.getMeterNumber();
+//                String simNumber = meter.getSimNumber();
+//                String manufacturer = meter.getMeterManufacturerName();
+//
+//                if (meterNumber == null || meterNumber.trim().isEmpty()) {
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId(null);
+//                    resp.setMessage("Missing meter number");
+//                    resp.setData(null);
+//                    failedRecords.add(resp);
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                meterNumber = meterNumber.trim();
+//
+//                if (existingMeterNumbers.contains(meterNumber)) {
+//
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId(meterNumber);
+//                    resp.setMessage("Meter already exists");
+//                    resp.setData(meterNumber);
+//                    failedRecords.add(resp);
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (simNumber != null && existingSimNumbers.contains(simNumber.trim())) {
+//
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId(meterNumber);
+//                    resp.setMessage("SIM number already exists");
+//                    resp.setData(meterNumber);
+//                    failedRecords.add(resp);
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (manufacturer == null ||
+//                        !manufacturerNameToId.containsKey(manufacturer.trim().toLowerCase())) {
+//
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId(meterNumber);
+//                    resp.setMessage("Manufacturer does not exist: " + manufacturer);
+//                    resp.setData(manufacturer);
+//                    failedRecords.add(resp);
+//                    iterator.remove();
+////                    continue;
+//                }
+//            }
+//
+//            if (batch.isEmpty()) {
+//                continue;
+//            }
+//
+//
+//            try {
+//                insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
+//                successCount += batch.size();
+//            } catch (Exception e) {
+//                log.warn("Batch {} failed — retrying sub batch upload", (i / batchSize) + 1);
+//                // Attempt smaller sub-batches to isolate failure
+//                successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
+//            }
+//        }
+//
+//        result.put("totalRecords", totalRecords);
+//        result.put("successCount", successCount);
+//        result.put("failedCount", failedRecords.size());
+//        result.put("failedRecords", failedRecords);
+//
+//        if (!failedRecords.isEmpty()) {
+//            return ResponseMap.response(
+//                    "131",
+//                    failedRecords.size() + " of " + totalRecords + " Meters upload failed",
+//                    result
+//            );
+//        }
+//
+//        return ResponseMap.response(
+//                status.getSuccessCode(),
+//                successCount + " of " + totalRecords + " Meters uploaded successfully",
+//                result
+//        );
+    }
+
+    @Override
+    public Map<String, Object> bulkLiabilityCause(MultipartFile file) throws IOException {
+        return Map.of();
+    }
+
+    private static String getStringCellValue(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
     }
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {

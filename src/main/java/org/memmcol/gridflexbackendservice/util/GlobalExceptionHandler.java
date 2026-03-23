@@ -407,6 +407,29 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ex.getStatusCode()).body(errorMessage);
 	}
 
+	@ExceptionHandler(org.mybatis.spring.MyBatisSystemException.class)
+	public ResponseEntity<?> handleMyBatisSystemException(
+			org.mybatis.spring.MyBatisSystemException ex) {
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ResponseMap.response(
+						"132",
+						ex.getMostSpecificCause().getMessage(),
+						""
+				));
+	}
+
+//	@ExceptionHandler(IOException.class)
+//	public ResponseEntity<?> handleIOException(IOException ex) {
+//
+//		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//				.body(ResponseMap.response(
+//						"500",
+//						"Bulk allocation failed: " + ex.getMessage(),
+//						null
+//				));
+//	}
+
 //
 //	@ExceptionHandler(ResourceNotFoundException.class)
 //	public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {

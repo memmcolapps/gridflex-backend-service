@@ -29,6 +29,10 @@ public class AssignMeterToCustomer implements Serializable {
     private UUID dss;
     private UUID feeder;
     private UUID nodeId;
+    private UUID root;
+    private UUID region;
+    private UUID serviceCenter;
+    private UUID substation;
     private String cin;
     private String accountNumber;
     private String meterClass;
@@ -189,6 +193,38 @@ public class AssignMeterToCustomer implements Serializable {
 
     public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
+    }
+
+    public UUID getRoot() {
+        return root;
+    }
+
+    public void setRoot(UUID root) {
+        this.root = root;
+    }
+
+    public UUID getRegion() {
+        return region;
+    }
+
+    public void setRegion(UUID region) {
+        this.region = region;
+    }
+
+    public UUID getServiceCenter() {
+        return serviceCenter;
+    }
+
+    public void setServiceCenter(UUID serviceCenter) {
+        this.serviceCenter = serviceCenter;
+    }
+
+    public UUID getSubstation() {
+        return substation;
+    }
+
+    public void setSubstation(UUID substation) {
+        this.substation = substation;
     }
 
     public String getCin() {

@@ -15,6 +15,12 @@ public class MeterView implements Serializable {
     // --- Core Transaction Info ---
     private UUID meterId;
     private UUID orgId;
+    private UUID region;
+    private UUID nodeId;
+    private UUID serviceCenter;
+    private UUID substation;
+    private UUID feeder;
+    private UUID dss;
     private UUID creditDebitAdjId;
     private String customerId;
     private String customerFullname;
@@ -107,6 +113,54 @@ public class MeterView implements Serializable {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
+    }
+
+    public UUID getRegion() {
+        return region;
+    }
+
+    public void setRegion(UUID region) {
+        this.region = region;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public UUID getServiceCenter() {
+        return serviceCenter;
+    }
+
+    public void setServiceCenter(UUID serviceCenter) {
+        this.serviceCenter = serviceCenter;
+    }
+
+    public UUID getSubstation() {
+        return substation;
+    }
+
+    public void setSubstation(UUID substation) {
+        this.substation = substation;
+    }
+
+    public UUID getFeeder() {
+        return feeder;
+    }
+
+    public void setFeeder(UUID feeder) {
+        this.feeder = feeder;
+    }
+
+    public UUID getDss() {
+        return dss;
+    }
+
+    public void setDss(UUID dss) {
+        this.dss = dss;
     }
 
     public UUID getCreditDebitAdjId() {
