@@ -50,8 +50,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -110,6 +109,13 @@ public class MeterServiceImpl implements MeterService {
             // --- Step 1: Context & Validation ---
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             validateMeterRequest(request, user);
 
@@ -241,7 +247,7 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("Meter manufacturer not found");
         }
 
-        Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null, request.getSimNumber());
+        Meter existing = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber().trim(), null, null, request.getSimNumber(), user.getNodeInfo().getNodeId());
         if (existing != null) {
             throw new GlobalExceptionHandler.NotFoundException("Meter Number ("+existing.getMeterNumber()+" or Sim Number "+existing.getSimNumber()+") "+status.getExistDesc());
         }
@@ -304,6 +310,13 @@ public class MeterServiceImpl implements MeterService {
             UserModel user = handleUserValidation();
             request.setOrgId(user.getOrgId());
 
+            if((!nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center"))){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
             // Fetch existing meter and version
             Meter existingMeter = meterMapper.findById(request.getId(), user.getOrgId());
             if (existingMeter == null) {
@@ -318,40 +331,29 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException(existingMeter.getMeterNumber()+ " is deactivated and cannot be edited");
             }
 
-            // check if operator exist
-            if(!existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
-                Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
-
-                if(meter != null && !meter.getId().equals(existingMeter.getId())) {
-                    throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
-                }
-
-                Manufacturer isManufacturer = meterMapper.findManufacturerById(
-                        request.getMeterManufacturer(), user.getOrgId());
-                if (isManufacturer == null){
-                    throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
-                }
-
-                request.setNodeId(existingMeter.getNodeId());
-                request.setDss(existingMeter.getDss());
-                request.setCin(existingMeter.getCin());
-                request.setAccountNumber(existingMeter.getAccountNumber());
-                request.setTariff(existingMeter.getTariff());
+            if(existingMeter.getMeterStage().equalsIgnoreCase("Created")) {
+                handleCreatedMeter(existingMeter, nodeType, request, user);
             }
+
+            boolean b = nodeType.equalsIgnoreCase("Root")
+                    || nodeType.equalsIgnoreCase("Business hub")
+//                    || nodeType.equalsIgnoreCase("Region")
+                    || nodeType.equalsIgnoreCase("Service center");
+            if(existingMeter.getMeterStage().equalsIgnoreCase("Unassigned")){
+                handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
+            }
+
 
             String MDDesc = "";
             String SmartDesc = "";
             String MeterDesc = "";
             String meterStage = "Pending-edited";
-
             // Prepare meter update data
             request.setType("NON-VIRTUAL");
             request.setStatus("Active");
-            request.setMeterStage(meterStage);
             MeterDesc = buildChangeDescription(existingMeter, request);
             request.setDescription("Meter edited");
             request.setCreatedBy(user.getId());
-
 
             request.setOrgId(user.getOrgId());
             request.setMeterId(existingMeter.getMeterId());
@@ -359,6 +361,36 @@ public class MeterServiceImpl implements MeterService {
             request.setCustomerId(existingMeter.getCustomerId());
             request.setMeterId(existingMeter.getId());
 
+            if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
+                handleAssignedMeter(existingMeter, nodeType, request, user);
+                meterStage = "Assign-edited";
+            }
+
+            request.setMeterStage(meterStage);
+            int res = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
+            result = meterMapper.insertMeterVersion(request);
+            if (result == 0 || res == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
+
+            // Handle MD meter-specific logic
+            if (request.getMdMeterInfo() != null
+                    && request.getMeterClass().equalsIgnoreCase("md")){
+                MDDesc = handleMDMeterInfo(request, nodeType, existingMeter, user, meterStage);
+            }
+
+
+            // Handle smart meter-specific logic
+            if (request.getSmartMeterInfo() != null && request.getSmartStatus()){
+                SmartDesc = handleSmartMeterInfo(request, nodeType, existingMeter, user, meterStage);
+            }
+
+            if(request.getPaymentMode() != null
+                    && "Prepaid".equalsIgnoreCase(request.getMeterCategory())
+                    && existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
+                handlePaymentMode(request, nodeType, existingMeter, user, meterStage);
+            }
+
+
+            String desc = MeterDesc + "," + MDDesc + ","+ SmartDesc;
 
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
 
@@ -378,42 +410,160 @@ public class MeterServiceImpl implements MeterService {
                     throw new GlobalExceptionHandler.NotFoundException("DSS " + status.getNotFoundDesc());
                 }
 
-                // Validate feeder line
-                SubStationTransformerFeederLine feederLine = meterMapper.verifyFeeder(request.getFeederAssetId(), user.getOrgId());
-                if (feederLine == null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
-                }
 
-                if(!dss.getParentId().equals(feederLine.getNodeId())){
-                    throw new GlobalExceptionHandler.NotFoundException("DSS ("+ request.getAssetId() +") " +
-                            "provided does not belong to the feeder line ("+request.getFeederAssetId()+")");
-                }
+    private void handleAssignedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user) {
+        if(!nodeType.equalsIgnoreCase("Root")
+                && !nodeType.equalsIgnoreCase("Region")
+                && !nodeType.equalsIgnoreCase("Business hub")
+                 && !nodeType.equalsIgnoreCase("Service center")){
+            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+        }
+            Meter m = meterMapper.getMeterDuplicateCin(
+                    user.getOrgId(),
+                    request.getAccountNumber(),
+                    request.getCin());
 
-                request.setCin(request.getCin());
-                request.setAccountNumber(request.getAccountNumber());
-//                request.setNodeId(feederLine.getNodeId());
-                request.setFeeder(feederLine.getNodeId());
-                request.setDss(dss.getNodeId());
-                request.setMeterNumber(existingMeter.getMeterNumber());
-                request.setSimNumber(existingMeter.getSimNumber());
-                request.setMeterManufacturer(existingMeter.getMeterManufacturer());
-                request.setOldTariffIndex(existingMeter.getOldTariffIndex());
-                request.setNewTariffIndex(existingMeter.getNewTariffIndex());
-                request.setNewKrn(existingMeter.getNewKrn());
-                request.setOldKrn(existingMeter.getOldKrn());
-                request.setNewSgc(existingMeter.getNewSgc());
-                request.setOldSgc(existingMeter.getOldSgc());
-                request.setMeterType(existingMeter.getMeterType());
-                request.setMeterClass(existingMeter.getMeterClass());
-                request.setMeterCategory(existingMeter.getMeterCategory());
-                request.setSmartStatus(existingMeter.getSmartStatus());
-
-                Tariff tariff = tariffMapper.getApproveTariff(request.getTariff());
-                if(tariff == null){
-                    throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
-                }
-                request.setTariff(tariff.getId());
+            if(m != null && !m.getId().equals(existingMeter.getId())){
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Cin or account number is already assigned to this meter " +
+                                "("+ m.getMeterNumber()+")");
             }
+            // Validate DSS
+            SubStationTransformerFeederLine dss = meterMapper.verifyDss(request.getDssAssetId(), user.getOrgId());
+            if (dss == null) {
+                throw new GlobalExceptionHandler.NotFoundException("DSS " + status.getNotFoundDesc());
+            }
+
+            // Validate feeder line
+            SubStationTransformerFeederLine feederLine = meterMapper.verifyFeeder(request.getFeederAssetId(), user.getOrgId());
+            if (feederLine == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Feeder line " + status.getNotFoundDesc());
+            }
+
+            resolveBulkNodeHierarchy(existingMeter, feederLine.getParentId(), user.getOrgId(), existingMeter.getNodeId());
+
+//            RegionBhubServiceCenter regionBhubServiceCenter = meterMapper.verifyBhub(feederLine.getParentId(), user.getOrgId());
+//            if (regionBhubServiceCenter == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+//            }
+
+            if(!dss.getParentId().equals(feederLine.getNodeId())){
+                throw new GlobalExceptionHandler.NotFoundException("DSS ("+ request.getAssetId() +") " +
+                        "provided does not belong to the feeder line ("+request.getFeederAssetId()+")");
+            }
+
+            request.setMeterStage("Assign-edited");
+            request.setCin(request.getCin());
+            request.setAccountNumber(request.getAccountNumber());
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
+            request.setServiceCenter(existingMeter.getServiceCenter());
+            request.setSubstation(existingMeter.getSubstation());
+            request.setNodeId(feederLine.getParentId());
+            request.setFeeder(feederLine.getNodeId());
+            request.setDss(dss.getNodeId());
+            request.setMeterNumber(existingMeter.getMeterNumber());
+            request.setSimNumber(existingMeter.getSimNumber());
+            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
+            request.setOldTariffIndex(existingMeter.getOldTariffIndex());
+            request.setNewTariffIndex(existingMeter.getNewTariffIndex());
+            request.setNewKrn(existingMeter.getNewKrn());
+            request.setOldKrn(existingMeter.getOldKrn());
+            request.setNewSgc(existingMeter.getNewSgc());
+            request.setOldSgc(existingMeter.getOldSgc());
+            request.setMeterType(existingMeter.getMeterType());
+            request.setMeterClass(existingMeter.getMeterClass());
+            request.setMeterCategory(existingMeter.getMeterCategory());
+            request.setSmartStatus(existingMeter.getSmartStatus());
+            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
+
+            Tariff tariff = tariffMapper.getApproveTariff(request.getTariff());
+            if(tariff == null){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
+            }
+            request.setTariff(tariff.getId());
+    }
+
+
+    private String handleSmartMeterInfo(Meter request, String nodeType, Meter existingMeter, UserModel user, String meterStage) {
+        String SmartDesc = "";
+        if (nodeType.equalsIgnoreCase("Region")
+                || nodeType.equalsIgnoreCase("Root")
+                || nodeType.equalsIgnoreCase("Business hub")) {
+            UUID meterId = request.getId();
+            request.getSmartMeterInfo().setMeterId(meterId);
+            request.getSmartMeterInfo().setOrgId(user.getOrgId());
+            request.getSmartMeterInfo().setMeterStage(meterStage);
+            request.getSmartMeterInfo().setCreatedBy(user.getId());
+
+            if(existingMeter.getSmartMeterInfo() == null){
+                SmartMeterInfo smart = new SmartMeterInfo();
+                smart.setMeterModel(request.getSmartMeterInfo().getMeterModel());
+                smart.setProtocol(request.getSmartMeterInfo().getProtocol());
+                smart.setAuthentication(request.getSmartMeterInfo().getAuthentication());
+                smart.setPassword(request.getSmartMeterInfo().getPassword());
+            }
+            SmartDesc = buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeterInfo(), request.getSmartMeterInfo());
+            request.getSmartMeterInfo().setDescription("Pending edited");
+            int mdResult2 = meterMapper.insertSmartMeterInfoVersion(request.getSmartMeterInfo());
+            if (mdResult2 == 0) {
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " MD data " + status.getUpdateFailureDesc());
+            }
+        }
+        return SmartDesc;
+    }
+
+    private String handleMDMeterInfo(Meter request, String nodeType, Meter existingMeter, UserModel user, String meterStage) {
+        String MDDesc = "";
+        if (nodeType.equalsIgnoreCase("Business hub")
+                || nodeType.equalsIgnoreCase("Root")
+                || nodeType.equalsIgnoreCase("Region")
+        ) {
+            UUID meterId = request.getId();
+            request.getMdMeterInfo().setMeterId(meterId);
+            request.getMdMeterInfo().setOrgId(user.getOrgId());
+            request.getMdMeterInfo().setMeterStage(meterStage);
+            request.getMdMeterInfo().setCreatedBy(user.getId());
+            if(existingMeter.getMdMeterInfo() == null) {
+                MDMeterInfo md = new MDMeterInfo();
+
+                md.setCtRatioNum(request.getMdMeterInfo().getCtRatioNum());
+                md.setCtRatioDenom(request.getMdMeterInfo().getCtRatioDenom());
+                md.setVoltRatioNum(request.getMdMeterInfo().getVoltRatioNum());
+                md.setVoltRatioDenom(request.getMdMeterInfo().getVoltRatioDenom());
+                md.setMultiplier(request.getMdMeterInfo().getMultiplier());
+                md.setMeterRating(request.getMdMeterInfo().getMeterRating());
+                md.setInitialReading(request.getMdMeterInfo().getInitialReading());
+                md.setDial(request.getMdMeterInfo().getDial());
+                md.setLatitude(request.getMdMeterInfo().getLatitude());
+                md.setLongitude(request.getMdMeterInfo().getLongitude());
+
+                existingMeter.setMdMeterInfo(md);
+            }
+            MDDesc = buildMDMeterInfoChangeDescription(existingMeter.getMdMeterInfo(), request.getMdMeterInfo());
+            request.getMdMeterInfo().setDescription("Pending edited");
+
+            int mdResult2 = meterMapper.insertMDMeterInfoVersion(request.getMdMeterInfo());
+            if (mdResult2 == 0) {
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " MD data " + status.getUpdateFailureDesc());
+            }
+        }
+        return MDDesc;
+    }
+
+    private void handlePaymentMode(Meter request, String nodeType, Meter existingMeter, UserModel user, String meterStage) {
+        if (nodeType.equalsIgnoreCase("Region")
+                || nodeType.equalsIgnoreCase("Root")
+                || nodeType.equalsIgnoreCase("Business hub")
+        ) {
+            UUID meterId = request.getId();
+            var payment = request.getPaymentMode();
+
+            payment.setMeterId(meterId);
+            payment.setOrgId(user.getOrgId());
+            payment.setCreatedBy(user.getId());
+            payment.setDescription("Pending edited");
+            payment.setMeterStage(meterStage);
 
             int res = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
             result = meterMapper.insertMeterVersion(request);
@@ -513,37 +663,15 @@ public class MeterServiceImpl implements MeterService {
 
                 } else if (creditPaymentMode.equalsIgnoreCase("monthly")) {
 
-                    if (creditPaymentPlan == null || creditPaymentPlan.isBlank()) {
-                        throw new GlobalExceptionHandler.NotFoundException("Credit payment monthly plan is required");
-                    }
-                } else if (creditPaymentMode.equalsIgnoreCase("non")) {
-
-                    payment.setCreditPaymentPlan("");
-
-                } else if (debitPaymentMode.equalsIgnoreCase("non")) {
-
-                    payment.setDebitPaymentPlan("");
-
-                }
-                else {
-                    throw new GlobalExceptionHandler.NotFoundException("Payment mode is not supported");
-                }
-
-                payment.setStatus(true);
-
-                int resp = meterMapper.assignPaymentModeWhenMigrationToPrepaid(payment);
-                if (resp == 0) {
-                    throw new GlobalExceptionHandler.NotFoundException(
-                            meterName + " Payment mode " + status.getUpdateFailureDesc());
-                }
-
-                if(request.getMeterAssignLocation() != null){
-                    var location =  request.getMeterAssignLocation();
-                    location.setMeterId(meterId);
-                    location.setOrgId(user.getOrgId());
-                    location.setCreatedBy(user.getId());
-                    location.setDescription("Pending edited");
-                    location.setMeterStage(meterStage);
+    private void handleAllocatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user, UUID nodeId) {
+        if(!nodeType.equalsIgnoreCase("Root")
+//                && !nodeType.equalsIgnoreCase("Region")
+                && !nodeType.equalsIgnoreCase("Business hub")
+                && !nodeType.equalsIgnoreCase("Service center")){
+            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+        }
+        // check if operator exist
+            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
 
                     int locationAssignResult = meterMapper.assignVerMeterToLocation(location);
 
@@ -552,21 +680,42 @@ public class MeterServiceImpl implements MeterService {
                     }
                 }
             }
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
+            request.setMeterStage("Pending-edited");
+            request.setNodeId(existingMeter.getNodeId());
+            request.setDss(existingMeter.getDss());
+            request.setCin(existingMeter.getCin());
+            request.setAccountNumber(existingMeter.getAccountNumber());
+            request.setTariff(existingMeter.getTariff());
+            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
+    }
 
-            String desc = MeterDesc + "," + MDDesc + ","+ SmartDesc;
-
-            // Fetch updated meter and log audit
-            Meter updatedMeter = meterMapper.findByIdVersion(request.getId(), user.getOrgId());
-            AuditLog auditLog = buildAuditLog(user, desc, meterName, updatedMeter, metadata, "");
-            safeAuditService.saveAudit(auditLog);
-
-            return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getUpdateDesc(), "");
-        } catch (Exception ex) {
-            log.error("Error updating meter: {}", ex.getMessage(), ex);
-            genericHandler.logIncidentReport("Editing meter service failed");
-            genericHandler.logAndSaveException(ex, "editing meter");
-            throw ex;
+    private void handleCreatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user) {
+        if(!nodeType.equalsIgnoreCase("Root")
+                && !nodeType.equalsIgnoreCase("Region")){
+            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
         }
+            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
+
+            if(meter != null && !meter.getId().equals(existingMeter.getId())) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
+            }
+
+            Manufacturer isManufacturer = meterMapper.findManufacturerById(
+                    request.getMeterManufacturer(), user.getOrgId());
+            if (isManufacturer == null){
+                throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
+            }
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
+            request.setMeterStage("Pending-edited");
+            request.setNodeId(existingMeter.getNodeId());
+            request.setDss(existingMeter.getDss());
+            request.setCin(existingMeter.getCin());
+            request.setAccountNumber(existingMeter.getAccountNumber());
+            request.setTariff(existingMeter.getTariff());
+            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
     }
 
     @Transactional(readOnly = true)
@@ -705,6 +854,7 @@ public class MeterServiceImpl implements MeterService {
         try {
             Meter meter = null;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
 
             if (meterId == null && meterNumber == null && accountNumber == null && meterVersionId == null && versionMeterNumber == null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException("At least one of meterId, meterNumber, or accountNumber must be provided.");
@@ -717,19 +867,19 @@ public class MeterServiceImpl implements MeterService {
 //            }
 
             if(meterNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin.trim(), "", nodeId);
             }
 
             if(accountNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin.trim(), "", nodeId);
             }
 
             if(meterId != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin.trim(), "", nodeId);
             }
 
             if(cin != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "");
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin.trim(), "", nodeId);
             }
 
             if(versionMeterNumber != null){
@@ -808,7 +958,7 @@ public class MeterServiceImpl implements MeterService {
 
             int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter" + (state ? " activated " : " deactivated ")+ "failed");
-            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
+            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "",nodeId);
             user.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, reason);
@@ -868,6 +1018,21 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Customer is either not found");
             }
 
+            if((!isCustomer.getNodeId().equals(nodeId)
+                    || !isCustomer.getRegion().equals(nodeId)
+                    || !isCustomer.getServiceCenter().equals(nodeId)
+                    || !isCustomer.getRoot().equals(nodeId))
+                    && !nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
+            if(!isCustomer.getNodeId().equals(nodeId) && !isCustomer.getServiceCenter().equals(nodeId)){
+                throw new GlobalExceptionHandler.NotFoundException("Customer do not belong to "+nodeType+" business hub");
+            }
+
             List<Tariff> allTariffs = tariffMapper.GetTariffs(um.getOrgId());
 
             Map<String, Object> response = new HashMap<>();
@@ -893,9 +1058,15 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
-            boolean meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
-            if(meterStatus) throw new GlobalExceptionHandler.NotFoundException("Meter ("+ request.getMeterNumber() +") already assigned to a customer");
+            Meter meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
+//            boolean meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
+            if(meterStatus == null) throw new GlobalExceptionHandler.NotFoundException("Meter "+status.getNotFoundDesc());
 
+            if((!nodeId.equals(meterStatus.getNodeId()) && !nodeType.equalsIgnoreCase("Business hub"))
+//                    || (!nodeId.equals(meterStatus.getRoot()) && !nodeType.equalsIgnoreCase("Root"))
+                    && (!nodeId.equals(meterStatus.getServiceCenter()) && !nodeType.equalsIgnoreCase("Service center"))) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
             // Validate DSS
             SubStationTransformerFeederLine dss = meterMapper.verifyDss(request.getDssAssetId(), user.getOrgId());
             if (dss == null) {
@@ -923,18 +1094,20 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated");
             }
 
-            Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
-            if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
+            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterStatus.getRegion(), user.getOrgId(), meterStatus.getNodeId());
+            if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found or does not belong to this region/business hub");
 
             request.setOrgId(user.getOrgId());
             request.setCreatedBy(user.getId());
 
             if(request.getMeterClass() == null) {
 
+                System.out.println("meter number: "+meterStatus.getMeterNumber());
+                System.out.println("nodeId: "+nodeId);
                 // Validate main meter record
-                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber());
+                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber(), nodeId);
                 if (mainMeter == null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
+                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc()+"or user does not belong to the business meter is allocated");
                 }
 
                 if (mainMeter.getMeterStage().contains("Pending") || mainMeter.getStatus().contains("Pending")) {
@@ -1001,6 +1174,66 @@ public class MeterServiceImpl implements MeterService {
             genericHandler.logIncidentReport("Assigning meter service failed");
             genericHandler.logAndSaveException(exception, "assigning meter");
             throw exception;
+        }
+    }
+
+    /**
+     * Resolve hierarchy upward from the starting node (feeder)
+     */
+    private void resolveHierarchy(AssignMeterToCustomer request, UUID startNodeId, UUID orgId, UUID bhubId, UUID region, UUID root) {
+
+        UUID currentNodeId = startNodeId;
+        Set<UUID> visited = new HashSet<>();
+
+        while (currentNodeId != null) {
+
+            if (!visited.add(currentNodeId)) {
+                throw new IllegalStateException("Circular hierarchy detected");
+            }
+
+            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+            if (node == null) break;
+
+            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+
+            switch (type) {
+                case "business hub":
+                    if(bhubId.equals(node.getNodeId())){
+                        request.setNodeId(node.getNodeId());
+                    } else {
+                        throw new GlobalExceptionHandler
+                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+                    }
+                    break;
+                case "service center":
+                    request.setServiceCenter(node.getNodeId());
+                    break;
+                case "region":
+                    if(!region.equals(node.getNodeId())){
+                        throw new GlobalExceptionHandler.NotFoundException(
+                                "Meter does not belong to this region"
+                        );
+                    } else {
+                        request.setRegion(node.getNodeId());
+                    }
+
+                    break;
+                case "substation":
+                    request.setSubstation(node.getNodeId());
+                    break;
+                case "root":
+                    if(!root.equals(node.getNodeId())){
+                        throw new GlobalExceptionHandler.NotFoundException(
+                                "Meter does not belong to this root"
+                        );
+                    } else {
+                        request.setRoot(node.getNodeId());
+                    }
+
+                    break;
+            }
+
+            currentNodeId = node.getParentId();
         }
     }
 
@@ -1157,6 +1390,7 @@ public class MeterServiceImpl implements MeterService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> continueAssignMeter(AssignMeterToCustomer request, MultipartFile image) {
         int result;
@@ -1175,6 +1409,15 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Meter have a pending state that needs to be cleared");
             }
 
+            if(!nodeId.equals(meterById.getNodeId())
+                    || !nodeId.equals(meterById.getRoot())
+                    || !nodeId.equals(meterById.getServiceCenter())
+                    && (!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Service center"))){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
             meterById.setStatus("Deactivated");
             meterById.setCreatedBy(user.getId());
             meterById.setMeterId(meterById.getId());
@@ -1186,7 +1429,7 @@ public class MeterServiceImpl implements MeterService {
             // Deactivate old meter
             int u = meterMapper.updateMeter(meterById.getMeterStage(), meterById.getId(), meterById.getUpdatedAt(), meterById.getStatus());
             if(u == 0) throw new GlobalExceptionHandler.NotFoundException("Meter deactivated failed");
-            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "");
+            Meter meter = meterMapper.getMeter(user.getOrgId(), meterById.getMeterId(), null, null, null, "", nodeId);
             user.setPassword("");
 //            handleAddCache(newTariff);
             AuditLog auditLog = buildAuditLog(user, changeDescription, meterName, meter, metadata, "Meter deactivated by replacement");
@@ -1215,7 +1458,7 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Tariff is either not found, not approved or deactivated" );
             }
 
-            Customer customer = meterMapper.getByCustomerId(request.getCustomerId());
+            Customer customer = meterMapper.getByCustomer(request.getCustomerId(), meterById.getRegion(), user.getOrgId(), meterById.getNodeId());
             if(customer == null) throw new GlobalExceptionHandler.NotFoundException("Customer not found");
 
             request.setOrgId(user.getOrgId());
@@ -1228,7 +1471,7 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMeterClass() == null) {
 
                 // Validate main meter record
-                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber());
+                Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber(), nodeId);
                 if (mainMeter == null) {
                     throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
                 }
@@ -1297,6 +1540,13 @@ public class MeterServiceImpl implements MeterService {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+            if((!nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center"))){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             // verify if meter exist
             Meter meterById = meterMapper.findById(meterId, um.getOrgId());
@@ -1342,7 +1592,7 @@ public class MeterServiceImpl implements MeterService {
 
             meterById.setDss(null);
             meterById.setFeeder(null);
-//            meterById.setCustomerId(null);
+            meterById.setCustomerId(null);
             meterById.setAccountNumber(null);
             meterById.setTariff(null);
             meterById.setCin(null);
@@ -1505,11 +1755,25 @@ public class MeterServiceImpl implements MeterService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
 
-            Meter meter = meterMapper.findByIdVersion(meterVersionId, user.getOrgId());
+            if((!nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center"))){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
+            Meter meter = meterMapper.findByIdApproveVersion(meterVersionId, user.getOrgId(), nodeId);
 
             if (meter == null) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc());
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc()+" or No permission");
             }
+
+//            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
+//                    && (!nodeType.equalsIgnoreCase("Region")
+//                    && !nodeType.equalsIgnoreCase("Root"))){
+//                throw new GlobalExceptionHandler.NotFoundException(
+//                        "You do not have permission to approve created meter");
+//            }
 
             prepareMeterForApproval(meter, user, meterVersionId);
 
@@ -1618,7 +1882,8 @@ public class MeterServiceImpl implements MeterService {
             meter.setStatus("Active");
 
         // === Handle Pending-edited ===
-        } else if (stage.equalsIgnoreCase("Pending-edited")) {
+        } else if (stage.equalsIgnoreCase("Pending-edited")
+                || stage.equalsIgnoreCase("Assign-edited")) {
             if (meter.getCustomerId() == null && meter.getNodeId() != null) {
                 meter.setMeterStage("Unassigned");
                 meter.setStatus("Active");
@@ -1659,6 +1924,7 @@ public class MeterServiceImpl implements MeterService {
         if(!"Pending-detached".equalsIgnoreCase(stage)){
 
             if("Pending-assigned".equalsIgnoreCase(stage)) {
+
                 if (meterMapper.approvePendingMeter(meter) == 0) {
                     throw new GlobalExceptionHandler.NotFoundException(meterName + " " + approveStatus + "d " + status.getUpdateFailureDesc());
                 }
@@ -1669,7 +1935,8 @@ public class MeterServiceImpl implements MeterService {
                 }
             } else {
 
-                if ("Pending-edited".equalsIgnoreCase(stage)) {
+                if ("Pending-edited".equalsIgnoreCase(stage)
+                        || "Assign-edited".equalsIgnoreCase(stage)) {
 
                     if (meter.getCustomerId() != null) {
 
@@ -1996,6 +2263,558 @@ public class MeterServiceImpl implements MeterService {
 
             UserModel um = handleUserValidation();
 
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeName = um.getNodeInfo().getType();
+
+
+            Meter verifyMeter = meterMapper.getMeterAlloc(um.getOrgId(), null, meterNumber, null, null, "", nodeId);
+            if(verifyMeter == null){
+                throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc() +"or No Permission");
+            }
+
+            if (verifyMeter.getMeterStage().contains("Pending") || verifyMeter.getStatus().contains("Pending")) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter has a pending record that needs to be cleared");
+            }
+
+            if((!nodeName.equalsIgnoreCase("Region")
+                    && !nodeId.equals(verifyMeter.getRegion()))
+                    && (!nodeName.equalsIgnoreCase("Root")
+                    && !nodeId.equals(verifyMeter.getRoot()))) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+            // Fetch starting node using regionId
+            NodeSummary node = nodeMapper.verifyNode(regionId, um.getOrgId());
+            if (node == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
+            }
+
+//            resolveNodeHierarchyById(verifyMeter, node.getNodeId(), um.getOrgId());
+//            UUID currentNodeId = node.getNodeId();
+//
+//            Set<UUID> visited = new HashSet<>();
+//
+//            while (currentNodeId != null) {
+//
+//                if (!visited.add(currentNodeId)) {
+//                    throw new IllegalStateException("Circular hierarchy detected");
+//                }
+//
+//                NodeSummary currentNode = nodeMapper.getNodeByNodeId(currentNodeId, um.getOrgId());
+//
+//                if (currentNode  == null) {
+//                    break;
+//                }
+//
+//                String type = currentNode.getType() == null ? "" : currentNode.getType().toLowerCase();
+//
+//                switch (type) {
+//
+//                    case "region":
+//                        verifyMeter.setRegion(currentNode.getNodeId());
+//                        break;
+//
+//                    case "service center":
+//                        verifyMeter.setServiceCenter(currentNode.getNodeId());
+//                        break;
+//
+//                    case "business hub":
+//                        verifyMeter.setNodeId(currentNode.getNodeId());
+//                        break;
+//
+//                    case "feeder line":
+//                        verifyMeter.setFeeder(currentNode.getNodeId());
+//                        break;
+//
+//                    case "dss":
+//                        verifyMeter.setDss(currentNode.getNodeId());
+//                        break;
+//
+//                    case "substation":
+//                        verifyMeter.setSubstation(currentNode.getNodeId());
+//                        break;
+//
+//                    case "root":
+//                        verifyMeter.setRoot(currentNode.getNodeId());
+//                        break;
+//                }
+//
+//                currentNodeId = currentNode.getParentId();
+//            }
+
+            verifyMeter.setCreatedAt(LocalDateTime.now());
+            verifyMeter.setUpdatedAt(LocalDateTime.now());
+
+            String desc = meterNumber + " meter allocated to " + regionId;
+
+            System.out.println("region: "+verifyMeter.getRegion());
+            //Allocate meter
+            int result;
+            result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated");
+            if(result == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
+            }
+
+            result = meterMapper.updateMeter("Pending-allocated", verifyMeter.getId(), verifyMeter.getUpdatedAt(), verifyMeter.getStatus());
+            if(result == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
+            }
+
+            //fetch meter from the database
+            Meter meter = meterMapper.getVersionMeter(um.getOrgId(), null, meterNumber, null);
+//            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
+            //save to audit (mongodb)
+            AuditLog auditLog = buildAuditLog(um, desc, meterName, meter, metadata, "");
+            safeAuditService.saveAudit(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), meterName + " allocated successfully" , "");
+
+        } catch (Exception exception) {
+            log.error("Error filtering / fetching meters: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Allocating meter service failed");
+            genericHandler.logAndSaveException(exception, "allocating meter");
+            throw exception;
+        }
+    }
+
+//    private void resolveNodeHierarchyById(Meter request, UUID startNodeId, UUID orgId) {
+//
+//        UUID currentNodeId = startNodeId;
+//        Set<UUID> visited = new HashSet<>();
+//
+//        while (currentNodeId != null) {
+//
+//            if (!visited.add(currentNodeId)) {
+//                throw new IllegalStateException("Circular hierarchy detected");
+//            }
+//
+//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+//            if (node == null) break;
+//
+//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+//
+//            switch (type) {
+//                case "business hub":
+//                        request.setNodeId(node.getNodeId());
+//                    break;
+//                case "service center":
+//                    request.setServiceCenter(node.getNodeId());
+//                    break;
+//                case "region":
+//                    if(!request.getRegionInfo().getNodeId().equals(node.getNodeId())){
+//                        throw new GlobalExceptionHandler
+//                                .NotFoundException("Meter does not belong to this region");
+//
+//                    }
+//                    request.setRegion(node.getNodeId());
+//                    break;
+//                case "substation":
+//                    request.setSubstation(node.getNodeId());
+//                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+//            }
+//
+//            currentNodeId = node.getParentId();
+//        }
+//    }
+
+
+    @Async("bulkUploadExecutor")
+    public CompletableFuture<Integer> insertSingleAsync(
+            Meter meter, UserModel user, List<GenericResp> failedRecords) {
+        try {
+            insertSingleTransactional(meter, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            GenericResp resp = new GenericResp();
+            resp.setId(meter.getMeterId().toString());
+            resp.setMessage("Meter Allocate failed: "+reason);
+            resp.setData(meter.getMeterNumber());
+
+            failedRecords.add(resp);
+//            failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+            log.warn("Async single insert failed for {}: {}", meter.getMeterNumber(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+    @Override
+    public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+        try {
+            UserModel user = handleUserValidation();
+
+            // Determine file type
+            String filename = Optional.ofNullable(file.getOriginalFilename())
+                    .orElseThrow(() -> new IOException("File has no name"));
+
+            String nodeName = user.getNodeInfo().getType();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            List<Meter> meters;
+            if(nodeName.equalsIgnoreCase("Region")) {
+                if (filename.endsWith(".csv")) {
+                    meters = processCsv(file.getInputStream(), user);
+                } else if (filename.endsWith(".xlsx")) {
+                    meters = processExcel(file.getInputStream(), user);
+                } else {
+                    throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+                }
+            } else {
+                throw new IOException("You do not have permission");
+            }
+//            resolveNodeHierarchy(meters.get(0), nodeId, user.getOrgId());
+
+            return bulkInsertMeters(meters, user);
+
+        } catch (Exception e) {
+            log.error("Error in bulk upload: {}", e.getMessage(), e);
+            genericHandler.logIncidentReport("Bulk upload service failed");
+            genericHandler.logAndSaveException(e, "Bulk upload meter");
+            throw new IOException("Bulk upload failed: " + e.getMessage());
+        }
+    }
+//
+//    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {
+//
+//        UUID currentNodeId = startNodeId;
+//        Set<UUID> visited = new HashSet<>();
+//
+//        while (currentNodeId != null) {
+//
+//            if (!visited.add(currentNodeId)) {
+//                throw new IllegalStateException("Circular hierarchy detected");
+//            }
+//
+//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+//            if (node == null) break;
+//
+//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+//
+//            switch (type) {
+////                case "business hub":
+////                    System.out.println("bbbhhh:: "+node.getNodeId());
+////                    if(bhubId.equals(node.getNodeId())){
+////                        request.setNodeId(node.getNodeId());
+////                    } else {
+////                        throw new GlobalExceptionHandler
+////                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+////                    }
+////
+////                    break;
+////                case "service center":
+////                    request.setServiceCenter(node.getNodeId());
+////                    break;
+//                case "region":
+//                    request.setRegion(node.getNodeId());
+//                    break;
+////                case "substation":
+////                    request.setSubstation(node.getNodeId());
+////                    break;
+//                case "root":
+//                    request.setRoot(node.getNodeId());
+//                    break;
+//            }
+//
+//            currentNodeId = node.getParentId();
+//        }
+//    }
+//
+//    private void prepareMeters(
+//            List<Meter> batch,
+//            UserModel user,
+//            Map<String, UUID> manufacturerNameToId,
+//            List<GenericResp> failedRecords
+//    ) {
+//        Iterator<Meter> iterator = batch.iterator();
+//
+//        while (iterator.hasNext()) {
+//            Meter meter = iterator.next();
+//
+////            if(meter != null){
+////                GenericResp resp = new GenericResp();
+////                resp.setId(meter.getMeterNumber());
+////                resp.setMessage("Meter already exist");
+////                resp.setData(meter);
+////
+////                failedRecords.add(resp);
+////                iterator.remove();
+////                continue;
+////            }
+//
+//            // --- Validate and set Manufacturer ID ---
+//            String manuName = meter.getMeterManufacturerName();
+//            if (manuName == null || manuName.trim().isBlank()) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meter.getMeterNumber());
+//                resp.setMessage("Missing manufacturer name");
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            UUID manuId = manufacturerNameToId.get(manuName.trim().toLowerCase());
+//            if (manuId == null) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meter.getMeterNumber());
+//                resp.setMessage("Invalid manufacturer: "+manuName);
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+////                failedRecords.add(meter.getMeterNumber() + " (Invalid manufacturer: " + manuName + ")");
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            meter.setMeterManufacturer(manuId);
+//
+//            String validationError = validateRequiredFields(meter);
+//
+//            if (validationError != null) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(String.valueOf(meter.getMeterNumber()));
+//                resp.setMessage(validationError);
+//                resp.setData(meter.getMeterNumber());
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            // --- Default Meter Fields ---
+//            meter.setOrgId(user.getOrgId());
+//            meter.setCreatedBy(user.getId());
+//            meter.setStatus("Active");
+//            meter.setMeterStage("Pending-created");
+//            meter.setType("NON-VIRTUAL");
+//            meter.setDescription("Newly Added");
+//        }
+//    }
+//public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
+//    Map<String, Object> result = new HashMap<>();
+//    List<GenericResp> failedRecords = new ArrayList<>();
+//
+//    if (meters == null || meters.isEmpty()) {
+//        throw new IllegalArgumentException("Meter list cannot be empty");
+//    }
+//
+//    int totalRecords = meters.size();
+//    int successCount = 0;
+//
+//    // ------------------------------------------
+//    // Load Manufacturers
+//    // ------------------------------------------
+//    List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
+//    Map<String, UUID> manufacturerNameToId = manufacturers.stream()
+//            .collect(Collectors.toMap(
+//                    m -> m.getName().trim().toLowerCase(),
+//                    Manufacturer::getId
+//            ));
+//
+//    if(manufacturerNameToId.isEmpty()) {
+//        throw new GlobalExceptionHandler.PartialFailureException(
+//                "Meters upload failed - manufacturer not found",
+//                result
+//        );
+//    }
+//
+//    //------------------------------------------------
+//    // Validate duplicates INSIDE FILE
+//    //------------------------------------------------
+//
+//    Set<String> seenMeters = new HashSet<>();
+//    Set<String> seenSims = new HashSet<>();
+//
+//    Iterator<Meter> fileIterator = meters.iterator();
+//
+//    while (fileIterator.hasNext()) {
+//
+//        Meter meter = fileIterator.next();
+//
+//        String meterNumber = Optional.ofNullable(meter.getMeterNumber()).orElse("").trim();
+//        String simNumber = Optional.ofNullable(meter.getSimNumber()).orElse("").trim();
+//
+//        if (!seenMeters.add(meterNumber)) {
+//            GenericResp resp = new GenericResp();
+//            resp.setId(meterNumber);
+//            resp.setMessage("Duplicate meter number in uploaded file");
+//            resp.setData(simNumber);
+//            failedRecords.add(resp);
+//            fileIterator.remove();
+//            continue;
+//        }
+//
+//        if (!simNumber.isEmpty() && !seenSims.add(simNumber)) {
+//            GenericResp resp = new GenericResp();
+//            resp.setId(meterNumber);
+//            resp.setMessage("Duplicate SIM number in uploaded file");
+//            resp.setData(simNumber);
+//            failedRecords.add(resp);
+//            fileIterator.remove();
+//            continue;
+//        }
+//    }
+//
+//    // ------------------------------------------
+//    // Extract MeterNumbers + SimNumbers
+//    // ------------------------------------------
+//
+//    Set<String> meterNumbers = meters.stream()
+//            .map(Meter::getMeterNumber)
+//            .filter(Objects::nonNull)
+//            .map(String::trim)
+//            .collect(Collectors.toSet());
+//
+//    Set<String> simNumbers = meters.stream()
+//            .map(Meter::getSimNumber)
+//            .filter(Objects::nonNull)
+//            .map(String::trim)
+//            .collect(Collectors.toSet());
+//
+//    // ---------------------------------------------------
+//    // Fetch Existing Meter Numbers (ONE DB CALL)
+//    // ---------------------------------------------------
+//    Set<String> allMeterNumbers = meters.stream()
+//            .map(Meter::getMeterNumber)
+//            .filter(Objects::nonNull)
+//            .map(String::trim)
+//            .filter(s -> !s.isEmpty())
+//            .collect(Collectors.toSet());
+//
+//
+//    // ------------------------------------------
+//    // Fetch Existing
+//    // ------------------------------------------
+//
+//    List<Meter> existingMeters =
+//            meterMapper.getMetersList(
+//                    new ArrayList<>(meterNumbers),
+////                        new ArrayList<>(simNumbers),
+//                    user.getOrgId()
+//            );
+//
+//    Set<String> existingMeterNumbers = existingMeters.stream()
+//            .map(Meter::getMeterNumber)
+//            .collect(Collectors.toSet());
+//
+//    Set<String> existingSimNumbers = existingMeters.stream()
+//            .map(Meter::getSimNumber)
+//            .collect(Collectors.toSet());
+//
+//
+//    int batchSize = 500; // try 500–1000 for optimal JDBC performance
+//
+//    for (int i = 0; i < meters.size(); i += batchSize) {
+//        int end = Math.min(i + batchSize, meters.size());
+////            List<Meter> batch = meters.subList(i, end);
+//        List<Meter> batch = new ArrayList<>(meters.subList(i, end));
+//
+//        // -----------------------------------------------
+//        // Remove duplicates (already existing meters)
+//        // -----------------------------------------------
+//        Iterator<Meter> iterator = batch.iterator();
+//
+//        while (iterator.hasNext()) {
+//
+//            Meter meter = iterator.next();
+//
+//            String meterNumber = meter.getMeterNumber();
+//            String simNumber = meter.getSimNumber();
+//            String manufacturer = meter.getMeterManufacturerName();
+//
+//            if (meterNumber == null || meterNumber.trim().isEmpty()) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(null);
+//                resp.setMessage("Missing meter number");
+//                resp.setData(null);
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            meterNumber = meterNumber.trim();
+//
+//            if (existingMeterNumbers.contains(meterNumber)) {
+//
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("Meter already exists");
+//                resp.setData(meterNumber);
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            if (simNumber != null && existingSimNumbers.contains(simNumber.trim())) {
+//
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("SIM number already exists");
+//                resp.setData(meterNumber);
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            if (manufacturer == null ||
+//                    !manufacturerNameToId.containsKey(manufacturer.trim().toLowerCase())) {
+//
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("Manufacturer does not exist: " + manufacturer);
+//                resp.setData(manufacturer);
+//                failedRecords.add(resp);
+//                iterator.remove();
+////                    continue;
+//            }
+//        }
+//
+//        if (batch.isEmpty()) {
+//            continue;
+//        }
+//
+//
+//        try {
+//            insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
+//            successCount += batch.size();
+//        } catch (Exception e) {
+//            log.warn("Batch {} failed — retrying sub batch upload", (i / batchSize) + 1);
+//            // Attempt smaller sub-batches to isolate failure
+//            successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
+//        }
+//    }
+//
+//    result.put("totalRecords", totalRecords);
+//    result.put("successCount", successCount);
+//    result.put("failedCount", failedRecords.size());
+//    result.put("failedRecords", failedRecords);
+//
+//    if (!failedRecords.isEmpty()) {
+//        return ResponseMap.response(
+//                "131",
+//                failedRecords.size() + " of " + totalRecords + " Meters upload failed",
+//                result
+//        );
+//    }
+//
+//    return ResponseMap.response(
+//            status.getSuccessCode(),
+//            successCount + " of " + totalRecords + " Meters uploaded successfully",
+//            result
+//    );
+//}
+
+    @Transactional
+    @Override
+    public Map<String, Object> allocateMeter(String meterNumber, String regionId) {
+        try {
+            // Gather client metadata
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+            UserModel um = handleUserValidation();
+
             Meter verifyMeter = meterMapper.getMeter(um.getOrgId(), null, meterNumber, null, null, "");
             if(verifyMeter == null){
                 throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc());
@@ -2074,41 +2893,17 @@ public class MeterServiceImpl implements MeterService {
             String filename = Optional.ofNullable(file.getOriginalFilename())
                     .orElseThrow(() -> new IOException("File has no name"));
 
-            List<Meter> meters;
-            if (filename.endsWith(".csv")) {
-                meters = processCsv(file.getInputStream(), user);
-            } else if (filename.endsWith(".xlsx")) {
-                meters = processExcel(file.getInputStream(), user);
-            } else {
-                throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
-            }
-
-            Map<String, Object> result = bulkInsertMeters(meters, user);
-
-            return result;
-
-        } catch (Exception e) {
-            log.error("Error in bulk upload: {}", e.getMessage(), e);
-            genericHandler.logIncidentReport("Bulk upload service failed");
-            genericHandler.logAndSaveException(e, "Bulk upload meter");
-            throw new IOException("Bulk upload failed: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
-        try {
-            UserModel user = handleUserValidation();
-
-            // Determine file type
-            String filename = Optional.ofNullable(file.getOriginalFilename())
-                    .orElseThrow(() -> new IOException("File has no name"));
-
+            String nodeName = user.getNodeInfo().getType();
             List<MeterRequest> meters;
-            if (filename.endsWith(".csv")) {
-                meters = processAllocateCsv(file.getInputStream());
-            } else if (filename.endsWith(".xlsx")) {
-                meters = processAllocateExcel(file.getInputStream());
+            if(nodeName.equalsIgnoreCase("Region")){
+
+                if (filename.endsWith(".csv")) {
+                    meters = processAllocateCsv(file.getInputStream());
+                } else if (filename.endsWith(".xlsx")) {
+                    meters = processAllocateExcel(file.getInputStream());
+                } else {
+                    throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+                }
             } else {
                 throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
             }
@@ -2185,7 +2980,7 @@ public class MeterServiceImpl implements MeterService {
                 continue;
             }
             // Fetch meters
-            List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId());
+            List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId(), user.getNodeInfo().getNodeId());
             Map<String, Meter> meterMap = meters.stream()
                     .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
 
@@ -2239,7 +3034,7 @@ public class MeterServiceImpl implements MeterService {
                 successCount += allocated;
             } catch (Exception e) {
                 log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-                successCount += allocateSubBatchTransactional(validAllocations, user, failedRecords);
+//                successCount += allocateSubBatchTransactional(validAllocations, user, failedRecords);
             }
         }
 
@@ -2427,10 +3222,15 @@ public class MeterServiceImpl implements MeterService {
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
+        int total;
+        String nodeType = user.getNodeInfo().getType();
 
-        if (meters == null || meters.isEmpty()) {
-            throw new GlobalExceptionHandler.NotFoundException("No records found in file");
-        }
+            if((!nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center"))){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
         final int BATCH_SIZE = 500; // Tune as needed for performance
 
@@ -2555,10 +3355,11 @@ public class MeterServiceImpl implements MeterService {
             } else if ("Pending-detached".equalsIgnoreCase(meter.getMeterStage())) {
                 meter.setStatus("Active");
             } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getCustomerId() != null) {
-//                meter.setMeterStage("Assigned");
                 meter.setStatus("Active");
-            } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() != null && meter.getCustomerId() == null) {
-//                meter.setMeterStage("Unassigned");
+            } else if ("Assign-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getCustomerId() != null) {
+                meter.setStatus("Active");
+            }
+            else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() != null && meter.getCustomerId() == null) {
                 meter.setStatus("Active");
             } else if ("Pending-edited".equalsIgnoreCase(meter.getMeterStage()) && meter.getNodeId() == null && meter.getCustomerId() == null) {
 //                meter.setMeterStage("Created");
@@ -2568,12 +3369,11 @@ public class MeterServiceImpl implements MeterService {
 //                meter.setMeterStage("Created");
                 meter.setStatus("Pending-activated");
             }else if ("Pending-deactivated".equalsIgnoreCase(meter.getStatus())) {
-                System.out.println("------------> here <---------------------");
                 meter.setStatus("Pending-deactivated");
             }
             else {
                 GenericResp resp = new GenericResp();
-                resp.setId(meter.getMeterId().toString());
+                resp.setId(meter.getMeterNumber());
                 resp.setMessage("Meter is not in a pending state");
                 resp.setData(meter.getMeterNumber());
 
@@ -2590,6 +3390,17 @@ public class MeterServiceImpl implements MeterService {
                 meter.getSmartMeterInfo().setApproveBy(user.getId());
                 meter.getSmartMeterInfo().setMeterId(meter.getMeterId());
                 meter.getSmartMeterInfo().setOrgId(user.getOrgId());
+            }
+            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
+                    && (!user.getNodeInfo().getType().equalsIgnoreCase("Region")
+                    && !user.getNodeInfo().getType().equalsIgnoreCase("Root"))){
+                GenericResp resp = new GenericResp();
+                resp.setId(meter.getMeterNumber());
+                resp.setMessage("You do not have permission to approve created meter");
+                resp.setData(meter.getMeterNumber());
+
+                failedRecords.add(resp);
+
             }
         }
     }
@@ -2667,7 +3478,8 @@ public class MeterServiceImpl implements MeterService {
 
             // Handle "Pending-edited" dynamically
             List<Meter> approvedEditedMeters = batch.stream()
-                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage()))
+                    .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage())
+                            || "Assign-edited".equalsIgnoreCase(m.getMeterStage()))
                     .peek(m -> {
                         if (m.getCustomerId() != null) {
                             m.setMeterStage("Assigned");
@@ -4222,7 +5034,8 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                if (feeder != null) {
+                assert feeder != null;
+                resolveBulkNodeHierarchy(meter, feeder.getParentId(), user.getOrgId(), meter.getNodeId());
 
                     if (!Objects.equals(meter.getNodeId(), feeder.getParentId())) {
 
@@ -4276,7 +5089,8 @@ public class MeterServiceImpl implements MeterService {
 
                 // === Payment info only for PREPAID meters ===
                 if ("PREPAID".equalsIgnoreCase(meter.getMeterCategory())) {
-                    PaymentMode payment = new PaymentMode();
+//                    PaymentMode payment = new PaymentMode();
+                    PaymentMode payment = meter.getPaymentMode();
                     payment.setOrgId(user.getOrgId());
                     payment.setMeterId(meter.getId());
                     payment.setCreatedBy(user.getId());
@@ -4301,7 +5115,7 @@ public class MeterServiceImpl implements MeterService {
                 successCount += assigned;
             } catch (Exception e) {
                 log.warn("Batch {} failed — retrying smaller sub-batches: {}", (i / BATCH_SIZE) + 1, e.getMessage());
-                successCount += assignSubBatchTransactional(validAssign, user, failedRecords, validAssignLocation, validAssignPayment);
+//                successCount += assignSubBatchTransactional(validAssign, user, failedRecords, validAssignLocation, validAssignPayment);
             }
         }
 
@@ -4334,6 +5148,66 @@ public class MeterServiceImpl implements MeterService {
                 result
         );
     }
+
+    private void resolveBulkNodeHierarchy(Meter request, UUID startNodeId, UUID orgId, UUID nodeId) {
+
+        UUID currentNodeId = startNodeId;
+        Set<UUID> visited = new HashSet<>();
+        boolean check = false;
+
+        while (currentNodeId != null) {
+
+            if (!visited.add(currentNodeId)) {
+                throw new IllegalStateException("Circular hierarchy detected");
+            }
+
+            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
+            if (node == null) break;
+
+            String type = node.getType() == null ? "" : node.getType().toLowerCase();
+
+            switch (type) {
+                case "business hub":
+                    if (nodeId.equals(node.getNodeId())) {
+                        System.out.print(">>>>>>>>>>>>222222222");
+                        request.setNodeId(node.getNodeId());
+                    } else if (check) {
+                        System.out.print(">>>>>66666666666622");
+                        request.setNodeId(node.getNodeId());
+                    } else {
+                        System.out.print("0000000000000000000");
+                        throw new GlobalExceptionHandler
+                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
+                    }
+                    break;
+                case "service center":
+                    if (nodeId.equals(node.getNodeId())) {
+                        request.setNodeId(node.getNodeId());
+                        check = true;
+                    } else {
+                        request.setServiceCenter(node.getNodeId());
+                    }
+                    break;
+                case "region":
+                    request.setRegion(node.getNodeId());
+                    break;
+                case "substation":
+                    request.setSubstation(node.getNodeId());
+                    break;
+                case "feeder line":
+                    request.setSubstation(node.getNodeId());
+                    break;
+                case "dss":
+                    request.setSubstation(node.getNodeId());
+                    break;
+                case "root":
+                    request.setRoot(node.getNodeId());
+                    break;
+            }
+                currentNodeId = node.getParentId();
+        }
+    }
+
 
     public Map<String, Object> bulkAssignVirtualMeters(List<AssignMeterToCustomer> assign, UserModel user) {
         Map<String, Object> result = new HashMap<>();
@@ -4683,6 +5557,9 @@ public class MeterServiceImpl implements MeterService {
             // === Step 3: Bulk insert location assignments ===
             meterMapper.insertAssignLocation(locations);
 
+            // === Step 3: Bulk insert payment mode ===
+            meterMapper.insertAssignPayment(paymentModes);
+
             // Audit allocations
             auditBatch(batch, user, "Virtual Meter Assigned");
 
@@ -4783,7 +5660,97 @@ public class MeterServiceImpl implements MeterService {
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
 
-    public int assignSinglesFallback(List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
+
+//    public int assignSinglesFallback(
+//            List<Meter> batch,
+//            UserModel user,
+//            List<GenericResp> failedRecords,
+//            List<MeterAssignLocation> locations,
+//            List<PaymentMode> paymentModes
+//    ) {
+//
+//        int THREAD_POOL_SIZE = 10; // tune based on server capacity
+//        int TIMEOUT_SECONDS = 5;
+//
+//        ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+//
+//        List<Future<Boolean>> futures = new ArrayList<>();
+//
+//        for (Meter meter : batch) {
+//
+//            Future<Boolean> future = executor.submit(() -> {
+//                try {
+//                    log.debug("Fallback assign for meter: {}", meter.getMeterNumber());
+//
+//                    // IMPORTANT: avoid Mongo/logging inside this method if possible
+//                    assignSingleTransactional(meter, user, locations, paymentModes);
+//
+//                    return true;
+//
+//                } catch (Exception e) {
+//
+//                    String reason = extractErrorMessage(e);
+//
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId(
+//                            meter.getMeterId() != null
+//                                    ? meter.getMeterId().toString()
+//                                    : meter.getMeterNumber()
+//                    );
+//                    resp.setMessage("Meter assign failed: " + reason);
+//                    resp.setData(meter.getMeterNumber());
+//
+//                    // Thread-safe add
+//                    synchronized (failedRecords) {
+//                        failedRecords.add(resp);
+//                    }
+//
+//                    log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
+//
+//                    return false;
+//                }
+//            });
+//
+//            futures.add(future);
+//        }
+//
+//        int successCount = 0;
+//
+//        for (Future<Boolean> future : futures) {
+//            try {
+//                Boolean result = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+//                if (Boolean.TRUE.equals(result)) {
+//                    successCount++;
+//                }
+//            } catch (TimeoutException e) {
+//                future.cancel(true);
+//                log.error("Meter assignment timed out");
+//            } catch (Exception e) {
+//                log.error("Unexpected error during fallback execution: {}", e.getMessage());
+//            }
+//        }
+//
+//        executor.shutdown();
+//
+//        try {
+//            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+//                executor.shutdownNow();
+//            }
+//        } catch (InterruptedException e) {
+//            executor.shutdownNow();
+//            Thread.currentThread().interrupt();
+//        }
+//
+//        log.info("Fallback completed: {} success, {} failed",
+//                successCount, failedRecords.size());
+//
+//        return successCount;
+//    }
+
+
+
+    public int assignSinglesFallback(
+            List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
         int successCount = 0;
 
         for (Meter meter : batch) {
@@ -4794,7 +5761,7 @@ public class MeterServiceImpl implements MeterService {
             } catch (Exception e) {
                 String reason = extractErrorMessage(e);
                 GenericResp resp = new GenericResp();
-                resp.setId(meter.getMeterId().toString());
+                resp.setId(meter.getMeterNumber());
                 resp.setMessage("Meter assign failed: "+reason);
                 resp.setData(meter.getMeterNumber());
 
@@ -4892,11 +5859,13 @@ public class MeterServiceImpl implements MeterService {
     public void assignSingleTransactional(Meter meter, UserModel user) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
-        meterMapper.updateMeter(meter.getDescription(), meter.getId(), meter.getUpdatedAt(), meter.getStatus());
+        meterMapper.updateMeter(meter.getMeterStage(), meter.getId(), meter.getUpdatedAt(), meter.getStatus());
         meter.setMeterId(meter.getId());
         meterMapper.assignMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Assigned");
 
         meterMapper.assignVerMeterToLocation(meter.getMeterAssignLocation());
+
+        meterMapper.assignPaymentModeVer(meter.getPaymentMode());
 
         //fetch meter from the database
         Meter m = meterMapper.getVersionMeter(user.getOrgId(), null, meter.getMeterNumber(), null);

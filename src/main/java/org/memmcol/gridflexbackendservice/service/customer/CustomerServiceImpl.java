@@ -225,6 +225,13 @@ public class CustomerServiceImpl implements CustomerService {
 //            if (cachedCustomer != null) {
 //                return ResponseMap.response(status.getSuccessCode(), "Cached Customers " + status.getDesc(), cachedCustomer);
 //            }
+//            if(nodeType.equalsIgnoreCase("Service center")){
+                Customer customer = new Customer();
+                resolveNodeHierarchy(customer, nodeId, um.getOrgId());
+
+//            }
+
+            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), page, size, nodeId);
 
             List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), page, size);
 
@@ -363,6 +370,13 @@ public class CustomerServiceImpl implements CustomerService {
         try {
             UserModel user = handleUserValidation();
             String filename = file.getOriginalFilename();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Business hub")
+             && !nodeType.equalsIgnoreCase("Service center")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             if (filename == null || filename.trim().isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file must have a valid name.");

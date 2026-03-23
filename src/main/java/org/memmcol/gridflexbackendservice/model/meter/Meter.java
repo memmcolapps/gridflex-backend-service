@@ -71,6 +71,7 @@ public class Meter implements Serializable {
     private Manufacturer manufacturer;
     private SmartMeterInfo smartMeterInfo;
     private Meter oldMeterInfo;
+    private RegionBhubServiceCenter regionInfo;
     private RegionBhubServiceCenter nodeInfo;
     private SubStationTransformerFeederLine FeederInfo;
     private SubStationTransformerFeederLine DssInfo;
@@ -432,6 +433,14 @@ public class Meter implements Serializable {
 
     public void setOldMeterInfo(Meter oldMeterInfo) {
         this.oldMeterInfo = oldMeterInfo;
+    }
+
+    public RegionBhubServiceCenter getRegionInfo() {
+        return regionInfo;
+    }
+
+    public void setRegionInfo(RegionBhubServiceCenter regionInfo) {
+        this.regionInfo = regionInfo;
     }
 
     public RegionBhubServiceCenter getNodeInfo() {
