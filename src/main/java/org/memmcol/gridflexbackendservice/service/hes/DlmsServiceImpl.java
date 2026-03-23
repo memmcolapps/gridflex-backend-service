@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.hes;
 
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
+import org.memmcol.gridflexbackendservice.model.hes.DlmsBulkRequest;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,13 +10,9 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -34,20 +31,20 @@ public class DlmsServiceImpl implements DlmsService {
     @Autowired
     private HesAuthServiceImpl auth;
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Override
-    public Map<String, Object> setClock(List<String> serials, LocalDateTime dateTime) {
+    public Map<String, Object> setClock(DlmsBulkRequest.SetClockRequest request) {
         String token = auth.getAccessToken();
         Map<String, Object> bulkResponse = new HashMap<>();
 
-        for (String serial : serials) {
+        for (String serial : request.getSerials()) {
             try {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
                 Map<String, Object> resp = dlmsWriteOpsClient.post()
                         .uri(uriBuilder -> uriBuilder
                                 .path("/setClock")
                                 .queryParam("serial", serial)
-                                .queryParam("dateTime", dateTime.format(formatter))
+                                .queryParam("dateTime", request.getDateTime().format(DATE_TIME_FORMATTER))
                                 .build())
                         .headers(h -> h.setBearerAuth(token))
                         .retrieve()
@@ -70,24 +67,20 @@ public class DlmsServiceImpl implements DlmsService {
     }
 
     @Override
-    public Map<String, Object> setCtpt(List<String> serials,
-                                       long ctNumerator,
-                                       long ctDenominator,
-                                       long ptNumerator,
-                                       long ptDenominator) {
+    public Map<String, Object> setCtpt(DlmsBulkRequest.SetCtptRequest request) {
         String token = auth.getAccessToken();
         Map<String, Object> bulkResponse = new HashMap<>();
 
-        for (String serial : serials) {
+        for (String serial : request.getSerials()) {
             try {
                 Map<String, Object> resp = dlmsWriteOpsClient.post()
                         .uri(uriBuilder -> uriBuilder
                                 .path("/setCtpt")
                                 .queryParam("serial", serial)
-                                .queryParam("ctNumerator", ctNumerator)
-                                .queryParam("ctDenominator", ctDenominator)
-                                .queryParam("ptNumerator", ptNumerator)
-                                .queryParam("ptDenominator", ptDenominator)
+                                .queryParam("ctNumerator", request.getCtNumerator())
+                                .queryParam("ctDenominator", request.getCtDenominator())
+                                .queryParam("ptNumerator", request.getPtNumerator())
+                                .queryParam("ptDenominator", request.getPtDenominator())
                                 .build())
                         .headers(h -> h.setBearerAuth(token))
                         .retrieve()
@@ -110,17 +103,17 @@ public class DlmsServiceImpl implements DlmsService {
     }
 
     @Override
-    public Map<String, Object> setApn(List<String> serials, String apn) {
+    public Map<String, Object> setApn(DlmsBulkRequest.SetApnRequest request) {
         String token = auth.getAccessToken();
         Map<String, Object> bulkResponse = new HashMap<>();
 
-        for (String serial : serials) {
+        for (String serial : request.getSerials()) {
             try {
                 Map<String, Object> resp = dlmsWriteOpsClient.post()
                         .uri(uriBuilder -> uriBuilder
                                 .path("/setApn")
                                 .queryParam("serial", serial)
-                                .queryParam("apn", apn)
+                                .queryParam("apn", request.getApn())
                                 .build())
                         .headers(h -> h.setBearerAuth(token))
                         .retrieve()
@@ -143,18 +136,18 @@ public class DlmsServiceImpl implements DlmsService {
     }
 
     @Override
-    public Map<String, Object> setIpPort(List<String> serials, String ip, int port) {
+    public Map<String, Object> setIpPort(DlmsBulkRequest.SetIpPortRequest request) {
         String token = auth.getAccessToken();
         Map<String, Object> bulkResponse = new HashMap<>();
 
-        for (String serial : serials) {
+        for (String serial : request.getSerials()) {
             try {
                 Map<String, Object> resp = dlmsWriteOpsClient.post()
                         .uri(uriBuilder -> uriBuilder
                                 .path("/setIpPort")
                                 .queryParam("serial", serial)
-                                .queryParam("ip", ip)
-                                .queryParam("port", port)
+                                .queryParam("ip", request.getIp())
+                                .queryParam("port", request.getPort())
                                 .build())
                         .headers(h -> h.setBearerAuth(token))
                         .retrieve()

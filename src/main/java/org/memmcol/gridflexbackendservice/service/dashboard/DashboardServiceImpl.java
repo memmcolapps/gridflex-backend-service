@@ -51,7 +51,6 @@ public class DashboardServiceImpl implements  DashboardService{
     public Map<String, Object> dataManagementDashboard(String band, String year, String meterCategory) {
     try {
         UserModel um = handleUserValidation();
-        UUID nodeId = um.getNodeInfo().getNodeId();
 
         List<Meter> meters = dashboardMapper.getMeters(um.getOrgId());
 
@@ -82,16 +81,11 @@ public class DashboardServiceImpl implements  DashboardService{
                 .count();
 
         long allocated = filteredMeters.stream()
-                .filter(m -> m.getNodeId() != null && (m.getNodeId().equals(nodeId)
-                        || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
-                        || m.getFeeder() == nodeId || m.getDss() == nodeId))
+                .filter(m -> m.getNodeId() != null)
                 .count();
 
         long assigned = filteredMeters.stream()
                 .filter(m -> m.getNodeId() != null && m.getDss() != null
-                        && (m.getNodeId() == nodeId || m.getRegion() == nodeId
-                        || m.getServiceCenter() == nodeId || m.getFeeder() == nodeId
-                        || m.getDss() == nodeId)
                         && (m.getMeterStage().equalsIgnoreCase("Assigned")
                         || m.getMeterStage().equalsIgnoreCase("Pending-detached")
                         || m.getMeterStage().equalsIgnoreCase("Pending-migrated")
@@ -99,11 +93,16 @@ public class DashboardServiceImpl implements  DashboardService{
                 )
                 .count();
 
+//        'Assigned',
+//                'Pending-detached',
+//                'Pending-migrated',
+//                'Pending-edited'
+
         long deactivated = filteredMeters.stream()
-                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()) && (m.getNodeId().equals(nodeId)
-                        || m.getRegion() == nodeId || m.getServiceCenter() == nodeId
-                        || m.getFeeder() == nodeId || m.getDss() == nodeId))
+                .filter(m -> "Deactivated".equalsIgnoreCase(m.getStatus()))
                 .count();
+
+//        long inventory = created + pending_allocated;
 
         // Calculate percentages
         double inventoryPercent = (inventory * 100.0) / total;
@@ -199,10 +198,6 @@ public class DashboardServiceImpl implements  DashboardService{
     public Map<String, Object> vendingDashboard(String band, String year, String meterClass) {
         try {
             UserModel um = handleUserValidation();
-//            UUID uId = um.getOrgId();
-//            UUID nodeId = um.getNodeInfo().getNodeId();
-//            String nodeType = um.getNodeInfo().getType();
-
             List<Transaction> transactions = dashboardMapper.getVendingTransaction(um.getOrgId());
 
             // === Filter transactions ===
@@ -298,7 +293,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 //
             BigDecimal unitCostSum = filteredTransaction.stream()
-                    .map(Transaction::getUnit)
+                    .map(Transaction::getUnitCost)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -400,11 +395,6 @@ public class DashboardServiceImpl implements  DashboardService{
                                                 .filter(Objects::nonNull)
                                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                                        BigDecimal unitSum = list.stream()
-                                                .map(Transaction::getUnit)
-                                                .filter(Objects::nonNull)
-                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
                                         BigDecimal vatAmountSum = list.stream()
                                                 .map(Transaction::getVatAmount)
                                                 .filter(Objects::nonNull)
@@ -412,7 +402,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
                                         Map<String, BigDecimal> sums = new HashMap<>();
                                         sums.put("amountSum", amountSum);
-                                        sums.put("costUnitSum", costUnitSum.multiply(unitSum));
+                                        sums.put("costUnitSum", costUnitSum);
                                         sums.put("vatAmountSum", vatAmountSum);
                                         return sums;
                                     })

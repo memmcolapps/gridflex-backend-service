@@ -92,16 +92,16 @@ public class CustomerController {
         }
     }
 
-//    @GetMapping("/single")
-//    public ResponseEntity<?> singleCustomer(
-//            @RequestParam(value = "id", required = true) UUID id) {
-//        try {
-//            Map<String, Object> result = service.singleCustomer(id);
-//            return ResponseEntity.ok(result);
-//        } catch (GlobalExceptionHandler.SQLServerException e) {
-//            return handleException(e);
-//        }
-//    }
+    @GetMapping("/single")
+    public ResponseEntity<?> singleCustomer(
+            @RequestParam(value = "id", required = true) UUID id) {
+        try {
+            Map<String, Object> result = service.singleCustomer(id);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
 
     @PatchMapping("/change-state")
     public ResponseEntity<?> changeState(@RequestParam UUID customerId, @RequestParam String status, @RequestParam String reason){
