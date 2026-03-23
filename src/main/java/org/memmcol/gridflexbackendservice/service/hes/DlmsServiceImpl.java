@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -33,148 +35,144 @@ public class DlmsServiceImpl implements DlmsService {
     private HesAuthServiceImpl auth;
 
     @Override
-    public Map<String, Object> setClock(String serial, LocalDateTime dateTime) {
+    public Map<String, Object> setClock(List<String> serials, LocalDateTime dateTime) {
         String token = auth.getAccessToken();
+        Map<String, Object> bulkResponse = new HashMap<>();
 
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        for (String serial : serials) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-            Map<String, Object> resp = dlmsWriteOpsClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/setClock")
-                            .queryParam("serial", serial)
-                            .queryParam("dateTime", dateTime.format(formatter))
-                            .build())
-                    .headers(h -> h.setBearerAuth(token))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("set clock service error: " + body))
-                    )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
+                Map<String, Object> resp = dlmsWriteOpsClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/setClock")
+                                .queryParam("serial", serial)
+                                .queryParam("dateTime", dateTime.format(formatter))
+                                .build())
+                        .headers(h -> h.setBearerAuth(token))
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError,
+                                clientResponse -> clientResponse.bodyToMono(String.class)
+                                        .map(body -> new RuntimeException("set clock service error: " + body))
+                        )
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+                bulkResponse.put(serial, resp);
 
-        } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set clock service failed");
-            genericHandler.logAndSaveException(e, "set clock service");
-            throw e;
-
-        } catch (Exception e) {
-            genericHandler.logIncidentReport("set clock service failed");
-            genericHandler.logAndSaveException(e, "set clock");
-            throw e;
+            } catch (Exception e) {
+                genericHandler.logAndSaveException(e, "set clock for serial " + serial);
+                bulkResponse.put(serial, "Error: " + e.getMessage());
+            }
         }
+
+        return ResponseMap.response(status.getSuccessCode(), status.getDesc(), bulkResponse);
     }
 
     @Override
-    public Map<String, Object> setCtpt(String serial,
+    public Map<String, Object> setCtpt(List<String> serials,
                                        long ctNumerator,
                                        long ctDenominator,
                                        long ptNumerator,
                                        long ptDenominator) {
         String token = auth.getAccessToken();
+        Map<String, Object> bulkResponse = new HashMap<>();
 
-        try {
-            Map<String, Object> resp = dlmsWriteOpsClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/setCtpt")
-                            .queryParam("serial", serial)
-                            .queryParam("ctNumerator", ctNumerator)
-                            .queryParam("ctDenominator", ctDenominator)
-                            .queryParam("ptNumerator", ptNumerator)
-                            .queryParam("ptDenominator", ptDenominator)
-                            .build())
-                    .headers(h -> h.setBearerAuth(token))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("set ctpt service error: " + body))
-                    )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
+        for (String serial : serials) {
+            try {
+                Map<String, Object> resp = dlmsWriteOpsClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/setCtpt")
+                                .queryParam("serial", serial)
+                                .queryParam("ctNumerator", ctNumerator)
+                                .queryParam("ctDenominator", ctDenominator)
+                                .queryParam("ptNumerator", ptNumerator)
+                                .queryParam("ptDenominator", ptDenominator)
+                                .build())
+                        .headers(h -> h.setBearerAuth(token))
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError,
+                                clientResponse -> clientResponse.bodyToMono(String.class)
+                                        .map(body -> new RuntimeException("set ctpt service error: " + body))
+                        )
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+                bulkResponse.put(serial, resp);
 
-        } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set ctpt service failed");
-            genericHandler.logAndSaveException(e, "set ctpt service");
-            throw e;
-
-        } catch (Exception e) {
-            genericHandler.logIncidentReport("set ctpt service failed");
-            genericHandler.logAndSaveException(e, "set ctpt");
-            throw e;
+            } catch (Exception e) {
+                genericHandler.logAndSaveException(e, "set ctpt for serial " + serial);
+                bulkResponse.put(serial, "Error: " + e.getMessage());
+            }
         }
+
+        return ResponseMap.response(status.getSuccessCode(), status.getDesc(), bulkResponse);
     }
 
     @Override
-    public Map<String, Object> setApn(String serial, String apn) {
+    public Map<String, Object> setApn(List<String> serials, String apn) {
         String token = auth.getAccessToken();
+        Map<String, Object> bulkResponse = new HashMap<>();
 
-        try {
-            Map<String, Object> resp = dlmsWriteOpsClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/setApn")
-                            .queryParam("serial", serial)
-                            .queryParam("apn", apn)
-                            .build())
-                    .headers(h -> h.setBearerAuth(token))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("set apn service error: " + body))
-                    )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
+        for (String serial : serials) {
+            try {
+                Map<String, Object> resp = dlmsWriteOpsClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/setApn")
+                                .queryParam("serial", serial)
+                                .queryParam("apn", apn)
+                                .build())
+                        .headers(h -> h.setBearerAuth(token))
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError,
+                                clientResponse -> clientResponse.bodyToMono(String.class)
+                                        .map(body -> new RuntimeException("set apn service error: " + body))
+                        )
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+                bulkResponse.put(serial, resp);
 
-        } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set apn service failed");
-            genericHandler.logAndSaveException(e, "set apn service");
-            throw e;
-
-        } catch (Exception e) {
-            genericHandler.logIncidentReport("set apn service failed");
-            genericHandler.logAndSaveException(e, "set apn");
-            throw e;
+            } catch (Exception e) {
+                genericHandler.logAndSaveException(e, "set apn for serial " + serial);
+                bulkResponse.put(serial, "Error: " + e.getMessage());
+            }
         }
+
+        return ResponseMap.response(status.getSuccessCode(), status.getDesc(), bulkResponse);
     }
 
     @Override
-    public Map<String, Object> setIpPort(String serial, String ip, int port) {
+    public Map<String, Object> setIpPort(List<String> serials, String ip, int port) {
         String token = auth.getAccessToken();
-        String ipPorts = ip+":"+port;
-        try {
-            Map<String, Object> resp = dlmsWriteOpsClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/setIpPort")
-                            .queryParam("serial", serial)
-                            .queryParam("ipPorts", ipPorts)
-                            .build())
-                    .headers(h -> h.setBearerAuth(token))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    // ✅ Change .map() to .flatMap() here
-                                    .flatMap(body -> Mono.error(new RuntimeException("set ip port service error: " + body)))
-                    )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
+        Map<String, Object> bulkResponse = new HashMap<>();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+        for (String serial : serials) {
+            try {
+                Map<String, Object> resp = dlmsWriteOpsClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/setIpPort")
+                                .queryParam("serial", serial)
+                                .queryParam("ip", ip)
+                                .queryParam("port", port)
+                                .build())
+                        .headers(h -> h.setBearerAuth(token))
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError,
+                                clientResponse -> clientResponse.bodyToMono(String.class)
+                                        .map(body -> new RuntimeException("set ip port service error: " + body))
+                        )
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
 
-        } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set ip port service failed");
-            genericHandler.logAndSaveException(e, "set ip port service");
-            throw e;
+                bulkResponse.put(serial, resp);
 
-        } catch (Exception e) {
-            genericHandler.logIncidentReport("set ip port service failed");
-            genericHandler.logAndSaveException(e, "set ip port");
-            throw e;
+            } catch (Exception e) {
+                genericHandler.logAndSaveException(e, "set ip port for serial " + serial);
+                bulkResponse.put(serial, "Error: " + e.getMessage());
+            }
         }
+
+        return ResponseMap.response(status.getSuccessCode(), status.getDesc(), bulkResponse);
     }
 }
