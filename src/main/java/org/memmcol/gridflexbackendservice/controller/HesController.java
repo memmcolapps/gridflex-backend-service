@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 import org.apache.ibatis.annotations.Update;
+import org.memmcol.gridflexbackendservice.model.hes.DlmsBulkRequest;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
 import org.memmcol.gridflexbackendservice.service.hes.DlmsService;
 import org.memmcol.gridflexbackendservice.service.hes.HesService;
@@ -192,14 +193,9 @@ public class HesController {
     }
 
     @PostMapping("/dlms/set-clock")
-    public ResponseEntity<?> setClock(
-            @RequestParam List<String> serials,
-            @RequestParam
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime dateTime
-    ) {
+    public ResponseEntity<?> setClock(@RequestBody DlmsBulkRequest.SetClockRequest request) {
         try {
-            Map<String, Object> result = dlmsService.setClock(serials, dateTime);
+            Map<String, Object> result = dlmsService.setClock(request);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -207,15 +203,9 @@ public class HesController {
     }
 
     @PostMapping("/dlms/set-ctpt")
-    public ResponseEntity<?> setCtpt(
-            @RequestParam List<String> serials,
-            @RequestParam long ctNumerator,
-            @RequestParam long ctDenominator,
-            @RequestParam long ptNumerator,
-            @RequestParam long ptDenominator
-    ) {
+    public ResponseEntity<?> setCtpt(@RequestBody DlmsBulkRequest.SetCtptRequest request) {
         try {
-            Map<String, Object> result = dlmsService.setCtpt(serials, ctNumerator, ctDenominator, ptNumerator, ptDenominator);
+            Map<String, Object> result = dlmsService.setCtpt(request);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -223,12 +213,9 @@ public class HesController {
     }
 
     @PostMapping("/dlms/set-apn")
-    public ResponseEntity<?> setApn(
-            @RequestParam List<String> serials,
-            @RequestParam String apn
-    ) {
+    public ResponseEntity<?> setApn(@RequestBody DlmsBulkRequest.SetApnRequest request) {
         try {
-            Map<String, Object> result = dlmsService.setApn(serials, apn);
+            Map<String, Object> result = dlmsService.setApn(request);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -236,13 +223,9 @@ public class HesController {
     }
 
     @PostMapping("/dlms/set-ip-port")
-    public ResponseEntity<?> setIpPort(
-            @RequestParam List<String> serials,
-            @RequestParam String ip,
-            @RequestParam int port
-    ) {
+    public ResponseEntity<?> setIpPort(@RequestBody DlmsBulkRequest.SetIpPortRequest request) {
         try {
-            Map<String, Object> result = dlmsService.setIpPort(serials, ip, port);
+            Map<String, Object> result = dlmsService.setIpPort(request);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

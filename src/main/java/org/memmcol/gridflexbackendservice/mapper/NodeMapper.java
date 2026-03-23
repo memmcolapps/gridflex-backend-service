@@ -126,23 +126,8 @@ public interface NodeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void updateSubStationTransformerFeederLine(SubStationTransformerFeederLine request);
 
-//    @Select("SELECT * FROM region_bhub_service_centers " +
-//            "WHERE region_id = #{regionId} AND UPPER(type) = UPPER('business hub') " +
-//            "AND org_id = #{orgId} LIMIT 1")
-//    @Results({
-//            @Result(property = "id", column = "id"),
-//            @Result(property = "type", column = "type"),
-//            @Result(property = "regionId", column = "region_id"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "parentId", column = "parent_id"),
-//            @Result(property = "orgId", column = "org_id")
-//    })
-//    RegionBhubServiceCenter verifyNode(String regionId, UUID orgId);
-
-    @Select("SELECT * FROM vw_node_summary " +
-            "WHERE region_id = #{regionId} " +
-            "AND UPPER(type) = UPPER('business hub') " +
-            "AND org_id = #{orgId} LIMIT 1")
+    @Select("SELECT * FROM region_bhub_service_centers " +
+            "WHERE region_id = #{regionId} AND org_id = #{orgId} LIMIT 1")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "type", column = "type"),
@@ -151,24 +136,7 @@ public interface NodeMapper {
             @Result(property = "parentId", column = "parent_id"),
             @Result(property = "orgId", column = "org_id")
     })
-    NodeSummary verifyNode(String regionId, UUID orgId);
-
-    @Select("""
-        SELECT id, type, region_id, asset_id,node_id, parent_id, org_id
-        FROM vw_node_summary
-        WHERE node_id = #{nodeId}
-        AND org_id = #{orgId}
-        """)
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "type", column = "type"),
-            @Result(property = "regionId", column = "region_id"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "parentId", column = "parent_id"),
-            @Result(property = "orgId", column = "org_id")
-    })
-    NodeSummary getNodeByNodeId(@Param("nodeId") UUID nodeId,
-                                @Param("orgId") UUID orgId);
+    RegionBhubServiceCenter verifyNode(String regionId, UUID orgId);
 
 //    @Select("""
 //        SELECT id, type, region_id, asset_id,node_id, parent_id, org_id
@@ -239,9 +207,8 @@ public interface NodeMapper {
     Boolean existsByRegionEmail(@Param("email") String email);
 
     @Select("""
-            SELECT * FROM vw_node_summary 
-            WHERE parent_id = #{regionNodeId} 
-              AND org_id = #{id} AND UPPER(type) = UPPER('business hub')
+            SELECT * FROM region_bhub_service_centers
+            WHERE org_id = #{id} AND UPPER(type) = UPPER('business hub')
             """)
     @Results({
             @Result(property = "id", column = "id"),
@@ -252,7 +219,7 @@ public interface NodeMapper {
             @Result(property = "phoneNo", column = "phone_number"),
             @Result(property = "contactPerson", column = "contact_person"),
     })
-    List<RegionBhubServiceCenter> getBhubByOrgId(UUID regionNodeId, UUID id);
+    List<RegionBhubServiceCenter> getBhubByOrgId(UUID id);
 
     @Select("""
             SELECT * FROM substation_trans_feeder_lines
@@ -269,60 +236,17 @@ public interface NodeMapper {
     })
     List<SubStationTransformerFeederLine> getFeederDss(UUID orgId);
 
-//    @Select("""
-//            SELECT name, asset_id, type FROM substation_trans_feeder_lines
-//            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
-//              AND parent_id = #{nodeId}
-//            """)
-//    @Results({
-//            @Result(property = "id", column = "id"),
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "assetId", column = "asset_id")
-//    })
-//    List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId, UUID nodeId);
-
     @Select("""
-        WITH RECURSIVE node_tree AS (
-            SELECT node_id, parent_id, type, name, asset_id, org_id
-            FROM vw_node_summary
-            WHERE node_id = #{nodeId}
-              AND org_id = #{orgId}
-        
-            UNION ALL
-        
-            SELECT v.node_id, v.parent_id, v.type, v.name, v.asset_id, v.org_id
-            FROM vw_node_summary v
-            INNER JOIN node_tree nt
-                ON v.parent_id = nt.node_id
-            WHERE v.org_id = #{orgId}
-        )
-        SELECT *
-        FROM node_tree
-        WHERE LOWER(type) = 'feeder line'
-    """)
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "assetId", column = "asset_id"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
-    })
-    List<NodeSummary> getFeedersUnderNode(UUID orgId, UUID nodeId);
-
-    @Select("""
-            SELECT node_id, parent_id, type, name, asset_id, org_id FROM vw_node_summary
-            WHERE org_id = #{orgId} AND parent_id = #{nodeId}
+            SELECT name, asset_id, type FROM substation_trans_feeder_lines
+            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
+              AND parent_id = #{nodeId}
             """)
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
-            @Result(property = "assetId", column = "asset_id"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "assetId", column = "asset_id")
     })
-    List<NodeSummary> getAllRegionFeeder(UUID orgId);
+    List<SubStationTransformerFeederLine> getAllFeeder(UUID orgId, UUID nodeId);
 
     @Select("""
             SELECT name, asset_id, type FROM substation_trans_feeder_lines

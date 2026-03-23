@@ -463,8 +463,8 @@ public class BandServiceImpl implements BandService {
 
         for (int i = 0; i < bands.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, bands.size());
-//            List<Band> batch = bands.subList(i, end);
-            List<Band> batch = new ArrayList<>(bands.subList(i, end));
+            List<Band> batch = bands.subList(i, end);
+
             // Collect all meter numbers in this subBatch
             List<String> bandNames = batch.stream()
                     .map(b -> b.getName().trim())
@@ -549,8 +549,7 @@ public class BandServiceImpl implements BandService {
 
         // If any failed → throw browser error
         if (!failedRecords.isEmpty()) {
-            return ResponseMap.response(
-                    "131",
+            throw new GlobalExceptionHandler.PartialFailureException(
                     failedRecords.size() + " of " + total + " bands approval failed",
                     result
             );
@@ -623,8 +622,7 @@ public class BandServiceImpl implements BandService {
 
         for (int i = 0; i < batch.size(); i += subSize) {
             int end = Math.min(i + subSize, batch.size());
-//            List<Band> subList = batch.subList(i, end);
-            List<Band> subList = new ArrayList<>(batch.subList(i, end));
+            List<Band> subList = batch.subList(i, end);
             try {
                 success += updateBatchTransactional(subList, user);
             } catch (Exception e) {

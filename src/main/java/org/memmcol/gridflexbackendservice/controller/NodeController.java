@@ -105,9 +105,11 @@ public class NodeController {
     }
 
     @GetMapping("/feeder")
-    public ResponseEntity<Map<String, Object>> getAllFeeder(){
+    public ResponseEntity<Map<String, Object>> getAllFeeder(
+            @RequestParam UUID nodeId
+    ){
         try {
-            Map<String, Object> result =  nodeService.getAllFeeder();
+            Map<String, Object> result =  nodeService.getAllFeeder(nodeId);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

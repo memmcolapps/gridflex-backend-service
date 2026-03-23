@@ -30,7 +30,6 @@ public class ClearTamper implements Serializable {
     private UUID userId;
     private String receiptNo;
     private UUID tariffId;
-    private UUID txNodeId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -209,13 +208,5 @@ public class ClearTamper implements Serializable {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
-    }
-
-    public UUID getTxNodeId() {
-        return txNodeId;
-    }
-
-    public void setTxNodeId(UUID txNodeId) {
-        this.txNodeId = txNodeId;
     }
 }
