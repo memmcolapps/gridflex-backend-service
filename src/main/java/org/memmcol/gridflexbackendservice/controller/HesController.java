@@ -193,13 +193,13 @@ public class HesController {
 
     @PostMapping("/dlms/set-clock")
     public ResponseEntity<?> setClock(
-            @RequestParam String serial,
+            @RequestParam List<String> serials,
             @RequestParam
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
             LocalDateTime dateTime
     ) {
         try {
-            Map<String, Object> result = dlmsService.setClock(serial, dateTime);
+            Map<String, Object> result = dlmsService.setClock(serials, dateTime);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -208,14 +208,14 @@ public class HesController {
 
     @PostMapping("/dlms/set-ctpt")
     public ResponseEntity<?> setCtpt(
-            @RequestParam String serial,
+            @RequestParam List<String> serials,
             @RequestParam long ctNumerator,
             @RequestParam long ctDenominator,
             @RequestParam long ptNumerator,
             @RequestParam long ptDenominator
     ) {
         try {
-            Map<String, Object> result = dlmsService.setCtpt(serial, ctNumerator, ctDenominator, ptNumerator, ptDenominator);
+            Map<String, Object> result = dlmsService.setCtpt(serials, ctNumerator, ctDenominator, ptNumerator, ptDenominator);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -224,11 +224,11 @@ public class HesController {
 
     @PostMapping("/dlms/set-apn")
     public ResponseEntity<?> setApn(
-            @RequestParam String serial,
+            @RequestParam List<String> serials,
             @RequestParam String apn
     ) {
         try {
-            Map<String, Object> result = dlmsService.setApn(serial, apn);
+            Map<String, Object> result = dlmsService.setApn(serials, apn);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -237,12 +237,12 @@ public class HesController {
 
     @PostMapping("/dlms/set-ip-port")
     public ResponseEntity<?> setIpPort(
-            @RequestParam String serial,
+            @RequestParam List<String> serials,
             @RequestParam String ip,
             @RequestParam int port
     ) {
         try {
-            Map<String, Object> result = dlmsService.setIpPort(serial, ip, port);
+            Map<String, Object> result = dlmsService.setIpPort(serials, ip, port);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
