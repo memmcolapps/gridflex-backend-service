@@ -17,7 +17,7 @@ public interface CustomerService {
 
     Map<String, Object> allCustomers(int page, int size, String firstname, String lastname, String accountNumber, String assignedStatus, String customerId);
 
-//    Map<String, Object> singleCustomer(UUID id);
+    Map<String, Object> singleCustomer(UUID id);
 
     Map<String, Object> changeState(UUID customerId, String status, String reason) throws MissingServletRequestParameterException;
 

@@ -556,9 +556,7 @@ public class TariffServiceImpl implements TariffService {
 
         for (int i = 0; i < tariffs.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, tariffs.size());
-//            List<Tariff> batch = tariffs.subList(i, end);
-
-            List<Tariff> batch = new ArrayList<>(tariffs.subList(i, end));
+            List<Tariff> batch = tariffs.subList(i, end);
 
             // Collect all meter numbers in this subBatch
             List<String> tariffNames = batch.stream()
@@ -566,6 +564,13 @@ public class TariffServiceImpl implements TariffService {
                     .filter(num -> !num.isEmpty())
                     .toList();
 
+//            if (tariffNames.isEmpty()) {
+//                batch.forEach(req -> failedRecords.add(
+//                        String.format("%s (Invalid or missing data)",
+//                                req.getName())
+//                ));
+//                continue;
+//            }
             if (tariffNames.isEmpty()) {
                 batch.forEach(req -> {
                     GenericResp resp = new GenericResp();
@@ -626,9 +631,9 @@ public class TariffServiceImpl implements TariffService {
         result.put("failedCount", failedRecords.size());
         result.put("failedRecords", failedRecords);
 
+        // If any failed → throw browser error
         if (!failedRecords.isEmpty()) {
-            return ResponseMap.response(
-                    "131",
+            throw new GlobalExceptionHandler.PartialFailureException(
                     failedRecords.size() + " of " + total + " tariffs approval failed",
                     result
             );
@@ -700,8 +705,7 @@ public class TariffServiceImpl implements TariffService {
 
         for (int i = 0; i < batch.size(); i += subSize) {
             int end = Math.min(i + subSize, batch.size());
-//            List<Tariff> subList = batch.subList(i, end);
-            List<Tariff> subList = new ArrayList<>(batch.subList(i, end));
+            List<Tariff> subList = batch.subList(i, end);
             try {
                 success += updateBatchTransactional(subList, user);
             } catch (Exception e) {

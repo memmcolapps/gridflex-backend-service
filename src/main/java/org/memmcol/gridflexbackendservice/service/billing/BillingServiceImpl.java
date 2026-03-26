@@ -490,7 +490,7 @@ public class BillingServiceImpl implements BillingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
 
-            Meter meter = meterMapper.findById(meterId, um.getOrgId(), um.getNodeInfo().getNodeId());
+            Meter meter = meterMapper.findById(meterId, um.getOrgId());
 
             MeterReadingSheet reading = readingMetersMapper.findReading(meterId, date);
             System.out.println("newReading: "+reading.getCurrentReading());
@@ -663,7 +663,7 @@ public class BillingServiceImpl implements BillingService {
             for (MeterReadingSheet payload : payloads) {
 
                 /* ---------------- Meter Lookup ---------------- */
-                Meter meter = meterMapper.findById(payload.getMeterId(), orgId, operatorAction.getNodeInfo().getNodeId());
+                Meter meter = meterMapper.findById(payload.getMeterId(), orgId);
 
                 if (meter == null) {
                     log.warn("Meter not found: {}", payload.getMeterNumber());

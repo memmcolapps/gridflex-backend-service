@@ -13,44 +13,42 @@ import java.util.UUID;
 
 @Mapper
 public interface CustomerMapper {
-    @Select("SELECT * FROM customers WHERE id = #{id} " +
-            "AND org_id = #{orgId} AND (node_id = #{nodeId} " +
-            "OR service_center = #{nodeId} OR region = #{nodeId} " +
-            "OR root = #{nodeId})")
+    @Select("SELECT * FROM customers WHERE id = #{id} AND org_id = #{orgId}")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "serviceCenter", column = "service_center"),
-            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "phoneNumber", column = "phone_number"),
             @Result(property = "streetName", column = "street_name"),
             @Result(property = "houseNo", column = "house_no"),
-            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "meterAssigned", column = "meter_assigned"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "meter", column = "customer_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getByCustomerId"))
     })
-    Customer findById(UUID id, UUID orgId, UUID nodeId);
+    Customer findById(UUID id, UUID orgId);
 
-    @Select("SELECT * FROM customers WHERE id = #{id} " +
-            "AND (node_id = #{nodeId} OR region = #{nodeId} " +
-            "OR node_id = #{nodeId} OR root = #{nodeId})")
-    @Results({
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "serviceCenter", column = "service_center"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "phoneNumber", column = "phone_number"),
-            @Result(property = "streetName", column = "street_name"),
-            @Result(property = "houseNo", column = "house_no"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "meterAssigned", column = "meter_assigned"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at"),
-    })
-    Customer verifyCustomer(UUID id, UUID nodeId);
+//    @Select("SELECT * FROM meters WHERE customer_id = #{customerId}")
+//    @Results({
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "simNumber", column = "sim_number"),
+//            @Result(property = "feederLine", column = "feeder_line"),
+//            @Result(property = "meterCategory", column = "meter_category"),
+//            @Result(property = "meterClass", column = "meter_class"),
+//            @Result(property = "meterType", column = "meter_type"),
+//            @Result(property = "meterStage", column = "meter_stage"),
+//            @Result(property = "ctRatioNum", column = "ct_ratio_num"),
+//            @Result(property = "ctRatioDenom", column = "ct_ratio_denom"),
+//            @Result(property = "voltRatioNum", column = "volt_ratio_num"),
+//            @Result(property = "voltRatioDeno", column = "volt_ratio_deno"),
+//            @Result(property = "meterRating", column = "meter_rating"),
+//            @Result(property = "initialReading", column = "initial_reading"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//            @Result(property = "updatedAt", column = "updated_at")
+//    })
+//    List<Meter> getByCustomerId(String customerId);
 
 
     @Select("SELECT * FROM meters WHERE customer_id = #{customerId} ORDER BY created_at DESC")
@@ -59,7 +57,6 @@ public interface CustomerMapper {
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
             @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "meterManufacturer", column = "meter_manufacturer"),
@@ -119,21 +116,17 @@ public interface CustomerMapper {
     @Select("SELECT node_id AS nodeId, parent_id AS parentId, asset_id AS assetId, name, type, created_at AS createdAt, updated_at AS updatedAt FROM substation_trans_feeder_lines WHERE node_id = #{id}")
     SubStationTransformerFeederLine getFeederDss(UUID id);
 
-    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat, node_id, region, service_center, root) " +
-            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat}, #{nodeId}, #{region}, #{serviceCenter}, #{root})")
+    @Insert("INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) " +
+            "VALUES (#{orgId}, #{firstname}, #{lastname}, #{customerId}, #{nin}, #{phoneNumber}, #{email}, #{state}, #{city}, #{houseNo}, #{streetName}, #{status}, #{createdAt}, #{updatedAt}, #{vat})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCustomer(Customer request);
 
     @Insert({
             "<script>",
-            "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, " +
-                    "email, state, city, house_no, street_name, status, created_at, updated_at, " +
-                    "vat, node_id, region, service_center, root) ",
+            "INSERT INTO customers (org_id, firstname, lastname, customer_id, nin, phone_number, email, state, city, house_no, street_name, status, created_at, updated_at, vat) ",
             "VALUES",
             "<foreach collection='customers' item='c' separator=','>",
-            "(#{c.orgId}, #{c.firstname}, #{c.lastname}, #{c.customerId}, #{c.nin}, #{c.phoneNumber}, #{c.email}, " +
-                    "#{c.state}, #{c.city}, #{c.houseNo}, #{c.streetName}, #{c.status}, #{c.createdAt}, #{c.updatedAt}, " +
-                    "#{c.vat}, #{c.nodeId}, #{c.region}, #{c.serviceCenter}, #{c.root})",
+            "(#{c.orgId}, #{c.firstname}, #{c.lastname}, #{c.customerId}, #{c.nin}, #{c.phoneNumber}, #{c.email}, #{c.state}, #{c.city}, #{c.houseNo}, #{c.streetName}, #{c.status}, #{c.createdAt}, #{c.updatedAt}, #{c.vat})",
             "</foreach>",
             "</script>"
     })
@@ -153,8 +146,6 @@ public interface CustomerMapper {
     @Select("""
             <script>
                 SELECT * FROM customers WHERE org_id = #{orgId} 
-                AND (node_id = #{nodeId} OR region = #{nodeId} 
-                    OR service_center = #{nodeId} OR root = #{nodeId})
                 ORDER BY created_at DESC
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page} * #{size}
@@ -164,8 +155,6 @@ public interface CustomerMapper {
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),
-            @Result(property = "serviceCenter", column = "service_center"),
-            @Result(property = "nodeId", column = "node_id"),
             @Result(property = "phoneNumber", column = "phone_number"),
             @Result(property = "streetName", column = "street_name"),
             @Result(property = "houseNo", column = "house_no"),
@@ -176,7 +165,7 @@ public interface CustomerMapper {
             @Result(property = "meter", column = "customer_id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getByCustomerId"))
     })
-    List<Customer> findAllCustomers(UUID orgId, int page, int size, UUID nodeId);
+    List<Customer> findAllCustomers(UUID orgId, int page, int size);
 
     @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId}")
     @Results({
@@ -262,4 +251,17 @@ public interface CustomerMapper {
     @Select("SELECT COUNT(*) FROM customers WHERE customer_id = #{customerId}")
     int totalCustomer(String customerId);
 
+//    @Select("SELECT * FROM customers WHERE phone_number = #{phoneNumber} AND org_id = #{orgId}")
+//    @Results({
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "customerId", column = "customer_id"),
+//            @Result(property = "phoneNumber", column = "phone_number"),
+//            @Result(property = "streetName", column = "street_name"),
+//            @Result(property = "houseNo", column = "house_no"),
+////            @Result(property = "meterNumber", column = "meter_number"),
+//            @Result(property = "meterAssigned", column = "meter_assigned"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at"),
+//    })
+//    Customer findByPhoneNo(String phoneNumber, UUID orgId);
 }
