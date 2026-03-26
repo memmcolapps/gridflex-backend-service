@@ -75,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
 
 	}
 
+	// TODO
 	public Map<String, Object> logout() {
 		try {
 			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);

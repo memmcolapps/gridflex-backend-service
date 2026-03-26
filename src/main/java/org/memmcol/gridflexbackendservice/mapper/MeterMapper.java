@@ -1062,7 +1062,6 @@ public interface MeterMapper {
                         AND m.region = #{nodeId}
                         AND m.node_id IS NULL
                     ORDER BY m.created_at DESC
-               
                     <if test="size != 0">
                         LIMIT #{size} OFFSET #{page} * #{size}
                     </if>

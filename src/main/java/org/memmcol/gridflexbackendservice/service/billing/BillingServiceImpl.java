@@ -71,6 +71,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Transactional
     @Override
+    // TODO
     public Map<String, Object> getGenerateMeterReading(String assetId, String type, String meterClass) {
         UserModel operatorAction = handleUserValidation();
         UUID orgId = operatorAction.getOrgId();

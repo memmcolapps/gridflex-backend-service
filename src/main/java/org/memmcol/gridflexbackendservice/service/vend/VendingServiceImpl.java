@@ -73,6 +73,7 @@ public class VendingServiceImpl implements VendingService {
     private CreditDebitAdjustmentSettlementService adjustmentSettlementService;
 
     @Transactional
+    // TODO
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
         UserModel user = handleUserValidation();
         UUID nodeId = user.getNodeInfo().getNodeId();
@@ -225,6 +226,10 @@ public class VendingServiceImpl implements VendingService {
             // --- Persist Transaction ---
             Transaction transaction = new Transaction();
             transaction.setTxNodeId(nodeId);
+            transaction.setCustomerFullname(meter.getCustomerFullname());
+            transaction.setMeterNumber(meter.getMeterNumber());
+            transaction.setMeterAccountNumber(meter.getMeterAccountNumber());
+            transaction.setUserFullname(user.getFirstname()+' '+user.getLastname());
             transaction.setMeterId(meter.getMeterId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(finalNetTender);
@@ -241,15 +246,12 @@ public class VendingServiceImpl implements VendingService {
             transaction.setKct2(generateDummyToken());
             transaction.setVatAmount(vatAmount);
 
-                int created = vendMapper.createCreditToken(transaction);
+            int created = vendMapper.createCreditToken(transaction);
             if (created == 0) {
                 throw new GlobalExceptionHandler.NotFoundException("Credit token creation failed");
             }
 
             UUID transactionId = transaction.getId();
-
-            System.out.println("DebtPayments: " + debtResult.getDebtPayments());
-            System.out.println("Size: " + (debtResult.getDebtPayments() != null ? debtResult.getDebtPayments().size() : 0));
 
             // --- Settle Debts After Token Generation ---
             if (debtResult.getDebtPayments() != null && !debtResult.getDebtPayments().isEmpty()) {

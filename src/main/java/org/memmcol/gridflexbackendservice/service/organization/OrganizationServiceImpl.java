@@ -61,6 +61,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Transactional(readOnly = true)
     @Override
+    // TODO
     public Map<String, Object> getOrganizationById(UUID id) {
         try {
             String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();

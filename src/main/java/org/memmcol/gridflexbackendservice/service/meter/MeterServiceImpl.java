@@ -98,6 +98,7 @@ public class MeterServiceImpl implements MeterService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    // TODO
     public Map<String, Object> createMeter(Meter request) {
         try {
 
@@ -109,7 +110,8 @@ public class MeterServiceImpl implements MeterService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")){
+//                    && !nodeType.equalsIgnoreCase("Root")
+            ){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -162,7 +164,6 @@ public class MeterServiceImpl implements MeterService {
             if (node == null) break;
 
             String type = node.getType() == null ? "" : node.getType().toLowerCase();
-
             switch (type) {
 //                case "business hub":
 //                    System.out.println("bbbhhh:: "+node.getNodeId());
@@ -187,7 +188,6 @@ public class MeterServiceImpl implements MeterService {
                     request.setRoot(node.getNodeId());
                     break;
             }
-
             currentNodeId = node.getParentId();
         }
     }
@@ -410,6 +410,7 @@ public class MeterServiceImpl implements MeterService {
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
                 handleAssignedMeter(existingMeter, nodeType, request, user);
                 meterStage = "Assign-edited";
+                request.setDescription(meterStage);
             }
 
             request.setMeterStage(meterStage);
