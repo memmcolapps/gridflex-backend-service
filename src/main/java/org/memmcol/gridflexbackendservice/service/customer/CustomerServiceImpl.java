@@ -486,7 +486,8 @@ public class CustomerServiceImpl implements CustomerService {
             log.error("Error in bulk upload: {}", e.getMessage(), e);
             genericHandler.logIncidentReport("Bulk upload service failed");
             genericHandler.logAndSaveException(e, "Bulk upload meter");
-            throw new IOException("Bulk upload failed: " + e.getMessage());
+            throw e;
+//            throw new IOException("Bulk upload failed: " + e.getMessage());
         }
     }
 

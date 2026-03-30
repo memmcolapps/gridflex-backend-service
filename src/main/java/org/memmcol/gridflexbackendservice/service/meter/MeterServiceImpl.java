@@ -434,6 +434,8 @@ public class MeterServiceImpl implements MeterService {
                     && "Prepaid".equalsIgnoreCase(request.getMeterCategory())
                     && existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
                 handlePaymentMode(request, nodeType, existingMeter, user, meterStage);
+                meterStage = "Assign-edited";
+                request.setDescription(meterStage);
             }
 
 
@@ -910,19 +912,19 @@ public class MeterServiceImpl implements MeterService {
 //            }
 
             if(meterNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin.trim(), "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin, "", nodeId);
             }
 
             if(accountNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin.trim(), "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin, "", nodeId);
             }
 
             if(meterId != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin.trim(), "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
             }
 
             if(cin != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin.trim(), "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
             }
 
             if(versionMeterNumber != null){
