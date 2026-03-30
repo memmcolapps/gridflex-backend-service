@@ -411,6 +411,7 @@ public class MeterServiceImpl implements MeterService {
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
                 handleAssignedMeter(existingMeter, nodeType, request, user);
                 meterStage = "Assign-edited";
+                request.setDescription(meterStage);
             }
 
             request.setMeterStage(meterStage);
@@ -505,9 +506,9 @@ public class MeterServiceImpl implements MeterService {
             request.setRegion(existingMeter.getRegion());
             request.setServiceCenter(existingMeter.getServiceCenter());
             request.setSubstation(existingMeter.getSubstation());
-            request.setNodeId(feederLine.getParentId());
-            request.setFeeder(feederLine.getNodeId());
-            request.setDss(dss.getNodeId());
+            request.setNodeId(existingMeter.getNodeId());
+            request.setFeeder(existingMeter.getFeeder());
+            request.setDss(existingMeter.getDss());
             request.setMeterNumber(existingMeter.getMeterNumber());
             request.setSimNumber(existingMeter.getSimNumber());
             request.setMeterManufacturer(existingMeter.getMeterManufacturer());
