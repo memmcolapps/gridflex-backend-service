@@ -1772,7 +1772,7 @@ public interface MeterMapper {
                             OR m.substation = #{nodeId})
                       AND (
                             m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
-                                               'Assign-edited', 'Pending-detached', 'Pending-migrated')
+                                               'Pending-assigned', 'Assign-edited', 'Pending-detached', 'Pending-migrated')
                             OR m.status IN ('Pending-deactivated', 'Pending-activated')
                           )
                     ORDER BY m.created_at DESC

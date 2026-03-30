@@ -54,6 +54,7 @@ public class DashboardServiceImpl implements  DashboardService{
     try {
         UserModel um = handleUserValidation();
         UUID nodeId = um.getNodeInfo().getNodeId();
+        String nodeType = um.getNodeInfo().getType();
 
         List<Meter> meters = dashboardMapper.getMeters(um.getOrgId());
 
@@ -92,8 +93,12 @@ public class DashboardServiceImpl implements  DashboardService{
         // COUNTS
         // -----------------------------------------
 
+//        long inventory = filteredMeters.stream()
+//                .filter(m -> m.getNodeId() == null)
+//                .count();
+
         long inventory = filteredMeters.stream()
-                .filter(m -> m.getNodeId() == null)
+                .filter(m -> belongsToNode.test(m))
                 .count();
 
         long allocated = filteredMeters.stream()
@@ -234,7 +239,7 @@ public class DashboardServiceImpl implements  DashboardService{
 //        resp.put("deactivated", String.format("%.2f", deactivatedPercent));
 
         Map<String, Object> card = new HashMap<>();
-        card.put("totalMeter", filteredMeters.size());
+        card.put("totalMeter", inventory);
         card.put("inventory", inventory);
         card.put("allocated", allocated);
         card.put("assigned", assigned);
@@ -504,14 +509,25 @@ public class DashboardServiceImpl implements  DashboardService{
                                                 .filter(Objects::nonNull)
                                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                                        BigDecimal costUnitSum = list.stream()
-                                                .map(Transaction::getUnitCost)
-                                                .filter(Objects::nonNull)
-                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//                                        BigDecimal costUnitSum = list.stream()
+//                                                .map(Transaction::getUnitCost)
+//                                                .filter(Objects::nonNull)
+//                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//                                        BigDecimal unitSum = list.stream()
+//                                                .map(Transaction::getUnit)
+//                                                .filter(Objects::nonNull)
+//                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                                        BigDecimal unitSum = list.stream()
-                                                .map(Transaction::getUnit)
-                                                .filter(Objects::nonNull)
+                                        BigDecimal costUnitSum = list.stream()
+                                                .map(t -> {
+                                                    BigDecimal uc = t.getUnitCost();
+                                                    BigDecimal u = t.getUnit();
+                                                    if (uc != null && u != null) {
+                                                        return uc.multiply(u);
+                                                    }
+                                                    return BigDecimal.ZERO;
+                                                })
                                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                                         BigDecimal vatAmountSum = list.stream()
@@ -521,7 +537,8 @@ public class DashboardServiceImpl implements  DashboardService{
 
                                         Map<String, BigDecimal> sums = new HashMap<>();
                                         sums.put("amountSum", amountSum);
-                                        sums.put("costUnitSum", costUnitSum.multiply(unitSum));
+                                        sums.put("costUnitSum", costUnitSum);
+//                                        sums.put("costUnitSum", costUnitSum.multiply(unitSum));
                                         sums.put("vatAmountSum", vatAmountSum);
                                         return sums;
                                     })

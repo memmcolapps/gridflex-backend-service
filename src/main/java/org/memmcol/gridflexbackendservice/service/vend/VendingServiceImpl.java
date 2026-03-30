@@ -225,6 +225,10 @@ public class VendingServiceImpl implements VendingService {
             // --- Persist Transaction ---
             Transaction transaction = new Transaction();
             transaction.setTxNodeId(nodeId);
+            transaction.setCustomerFullname(meter.getCustomerFullname());
+            transaction.setMeterNumber(meter.getMeterNumber());
+            transaction.setMeterAccountNumber(meter.getMeterAccountNumber());
+            transaction.setUserFullname(user.getFirstname()+' '+user.getLastname());
             transaction.setMeterId(meter.getMeterId());
             transaction.setInitialAmount(creditToken.getInitialAmount());
             transaction.setFinalAmount(finalNetTender);
