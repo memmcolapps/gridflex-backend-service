@@ -1059,7 +1059,7 @@ public interface MeterMapper {
                     SELECT *
                     FROM meters m
                     WHERE m.org_id = #{orgId}
-                        AND m.region = #{nodeId}
+                        AND (m.region = #{nodeId} OR m.root = #{nodeId})
                         AND m.node_id IS NULL
                     ORDER BY m.created_at DESC
                
@@ -1112,7 +1112,7 @@ public interface MeterMapper {
                     SELECT *
                     FROM meters m
                     WHERE m.org_id = #{orgId}
-                      AND m.region = #{nodeId}
+                      AND (m.region = #{nodeId} OR m.root = #{nodeId})
                       AND m.node_id IS NOT NULL
                       AND m.meter_stage IN (
                             'Assigned',
@@ -1282,7 +1282,7 @@ public interface MeterMapper {
                     SELECT *
                     FROM meters m
                     WHERE m.org_id = #{orgId}
-                      AND m.region = #{nodeId}
+                      AND (m.region = #{nodeId} OR m.root = #{nodeId})
                       AND m.node_id IS NOT NULL
                          AND m.dss IS NOT NULL
                       AND m.meter_stage IN (
@@ -1432,7 +1432,7 @@ public interface MeterMapper {
                     SELECT *
                     FROM meters m
                     WHERE m.org_id = #{orgId}
-                        AND m.region = #{nodeId}
+                        AND (m.region = #{nodeId} OR m.root = #{nodeId})
                         AND m.node_id IS NOT NULL
                         AND m.type = 'VIRTUAL'
                     ORDER BY m.created_at DESC
@@ -1566,7 +1566,7 @@ public interface MeterMapper {
                     FROM meters m
                     LEFT JOIN customers c ON c.customer_id = m.customer_id
                     WHERE m.org_id = #{orgId}
-                        AND m.region = #{nodeId}
+                        AND (m.region = #{nodeId} OR m.root = #{nodeId})
                         ORDER BY m.created_at DESC
                     
                         <if test="size != 0">

@@ -531,7 +531,6 @@ public class MeterServiceImpl implements MeterService {
             request.setTariff(tariff.getId());
     }
 
-
     private String handleSmartMeterInfo(Meter request, String nodeType, Meter existingMeter, UserModel user, String meterStage) {
         String SmartDesc = "";
         if (nodeType.equalsIgnoreCase("Region")
