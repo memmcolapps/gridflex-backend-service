@@ -410,8 +410,7 @@ public class MeterServiceImpl implements MeterService {
 
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
                 handleAssignedMeter(existingMeter, nodeType, request, user);
-                meterStage = "Assign-edited";
-                request.setDescription(meterStage);
+                request.setDescription("Assign edited");
             }
 
             request.setMeterStage(meterStage);
@@ -435,8 +434,7 @@ public class MeterServiceImpl implements MeterService {
                     && "Prepaid".equalsIgnoreCase(request.getMeterCategory())
                     && existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
                 handlePaymentMode(request, nodeType, existingMeter, user, meterStage);
-                meterStage = "Assign-edited";
-                request.setDescription(meterStage);
+                request.setDescription("Assign edited");
             }
 
 
