@@ -410,8 +410,7 @@ public class MeterServiceImpl implements MeterService {
 
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
                 handleAssignedMeter(existingMeter, nodeType, request, user);
-                meterStage = "Assign-edited";
-                request.setDescription(meterStage);
+                request.setDescription("Assign-edited");
             }
 
             request.setMeterStage(meterStage);
@@ -434,9 +433,7 @@ public class MeterServiceImpl implements MeterService {
             if(request.getPaymentMode() != null
                     && "Prepaid".equalsIgnoreCase(request.getMeterCategory())
                     && existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
-                handlePaymentMode(request, nodeType, existingMeter, user, meterStage);
-                meterStage = "Assign-edited";
-                request.setDescription(meterStage);
+                handlePaymentMode(request, nodeType, existingMeter, user);
             }
 
 
@@ -597,7 +594,7 @@ public class MeterServiceImpl implements MeterService {
         return MDDesc;
     }
 
-    private void handlePaymentMode(Meter request, String nodeType, Meter existingMeter, UserModel user, String meterStage) {
+    private void handlePaymentMode(Meter request, String nodeType, Meter existingMeter, UserModel user) {
         if (nodeType.equalsIgnoreCase("Region")
                 || nodeType.equalsIgnoreCase("Root")
                 || nodeType.equalsIgnoreCase("Business hub")
@@ -608,8 +605,8 @@ public class MeterServiceImpl implements MeterService {
             payment.setMeterId(meterId);
             payment.setOrgId(user.getOrgId());
             payment.setCreatedBy(user.getId());
-            payment.setDescription("Pending edited");
-            payment.setMeterStage(meterStage);
+            payment.setDescription("Assign edited");
+            payment.setMeterStage("Assign-edited");
 
 //                String paymentType = payment.getPaymentType();
             String creditPaymentMode = payment.getCreditPaymentMode();
@@ -671,8 +668,8 @@ public class MeterServiceImpl implements MeterService {
                 location.setMeterId(meterId);
                 location.setOrgId(user.getOrgId());
                 location.setCreatedBy(user.getId());
-                location.setDescription("Pending edited");
-                location.setMeterStage(meterStage);
+                location.setDescription("Assign edited");
+                location.setMeterStage("Assign-edited");
 
                 int locationAssignResult = meterMapper.assignVerMeterToLocation(location);
 
