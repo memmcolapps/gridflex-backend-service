@@ -109,7 +109,8 @@ public class MeterServiceImpl implements MeterService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")){
+//                    && !nodeType.equalsIgnoreCase("Root")
+            ){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
