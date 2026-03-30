@@ -912,11 +912,11 @@ public class MeterServiceImpl implements MeterService {
 //            }
 
             if(meterNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin, "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
             }
 
             if(accountNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin, "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
             }
 
             if(meterId != null){
@@ -2057,7 +2057,7 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-            if(c == 1) {
+            if(c <= 1) {
 
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
