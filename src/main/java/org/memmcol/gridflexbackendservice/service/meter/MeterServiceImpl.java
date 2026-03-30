@@ -2057,7 +2057,7 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-            if(c == 1) {
+            if(c <= 1) {
 
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
