@@ -912,11 +912,11 @@ public class MeterServiceImpl implements MeterService {
 //            }
 
             if(meterNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin, "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
             }
 
             if(accountNumber != null){
-                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber.trim(), cin, "", nodeId);
+                meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
             }
 
             if(meterId != null){
