@@ -112,7 +112,10 @@ public interface DebitCreditAdjustmentMapper {
     })
     LiabilityCause getLcById(UUID liabilityCauseId);
 
-    @Select("SELECT * FROM credit_debit_adjustment WHERE meter_id = #{id} AND org_id = #{orgId} AND type = #{type}")
+    @Select("SELECT * FROM credit_debit_adjustment " +
+            "WHERE meter_id = #{id} AND org_id = #{orgId} AND type = #{type} " +
+            "AND (m.root = #{nodeId} OR m.region = #{nodeId} " +
+            "     OR m.node_id = #{nodeId} OR m.service_center = #{nodeId})")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),
@@ -128,7 +131,11 @@ public interface DebitCreditAdjustmentMapper {
             @Result(property = "payment", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper.getDebitCreditPayment"))
     })
-    List<DebitCreditAdjust> getDebitAdjustmentByMeterId(@Param("id") UUID id, @Param("orgId") UUID orgId, @Param("type") String type);
+    List<DebitCreditAdjust> getDebitAdjustmentByMeterId(
+            @Param("id") UUID id,
+            @Param("orgId") UUID orgId,
+            @Param("type") String type,
+            @Param("nodeId") UUID nodeId);
 
     @Select("SELECT * FROM liability_cause WHERE org_id = #{orgId} AND approve_status = 'Approved'")
     @Results({
@@ -146,8 +153,11 @@ public interface DebitCreditAdjustmentMapper {
                 SELECT DISTINCT m.*,
                 SUM(SUM(c.balance)) OVER (PARTITION BY m.id) AS outstanding_balance
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
-                WHERE c.org_id = #{orgId}
-                 AND UPPER(c.type) = 'CREDIT'
+                WHERE c.org_id = #{orgId} 
+                    AND m.meter_stage IN ('Assigned', 'Assign-edited') 
+                    AND (m.root = #{nodeId} OR m.region = #{nodeId} 
+                            OR m.node_id = #{nodeId} OR m.service_center = #{nodeId})
+                    AND UPPER(c.type) = 'CREDIT'
              GROUP BY m.id
                 <if test="size > 0">
                     LIMIT #{size} OFFSET #{page}  * #{size}
@@ -169,7 +179,7 @@ public interface DebitCreditAdjustmentMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
 
     })
-    List<Meter> GetCreditAdjustment(UUID orgId, int page, int size);
+    List<Meter> GetCreditAdjustment(UUID orgId, int page, int size, UUID nodeId);
 
     @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
     @Results({
@@ -211,7 +221,10 @@ public interface DebitCreditAdjustmentMapper {
                 SELECT DISTINCT m.*,
                 SUM(SUM(c.balance)) OVER (PARTITION BY m.id) AS outstanding_balance
                 FROM meters m LEFT JOIN credit_debit_adjustment c ON m.id = c.meter_id
-                WHERE c.org_id = #{orgId}
+                WHERE c.org_id = #{orgId} 
+                    AND m.meter_stage IN ('Assigned', 'Assign-edited') 
+                    AND (m.root = #{nodeId} OR m.region = #{nodeId} 
+                            OR m.node_id = #{nodeId} OR m.service_center = #{nodeId})
                 AND UPPER(c.type) = 'DEBIT'
             GROUP BY m.id
                 <if test="size > 0">
@@ -234,7 +247,7 @@ public interface DebitCreditAdjustmentMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getByCustomerId")),
 
     })
-    List<Meter> GetDebitAdjustment(UUID orgId, int page, int size);
+    List<Meter> GetDebitAdjustment(UUID orgId, int page, int size, UUID nodeId);
 
     @Select("SELECT c.*, " +
             "SUM(c.balance) OVER (PARTITION BY c.meter_id, c.liability_cause_id, c.org_id) " +
