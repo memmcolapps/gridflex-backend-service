@@ -147,6 +147,8 @@ public interface MeterMapper {
             @Result(property = "meterNumber", column = "meter_number"),
             @Result(property = "accountNumber", column = "account_number"),
             @Result(property = "tariff", column = "tariff"),
+            @Result(property = "feeder", column = "feeder"),
+            @Result(property = "dss", column = "dss"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "simNumber", column = "sim_number"),
@@ -183,7 +185,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -240,7 +242,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -500,7 +502,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
     })
     Meter findByMeterNumber(String meterNumber, UUID orgId);
@@ -645,7 +647,7 @@ public interface MeterMapper {
             "meter_type = #{meterType}, " +
             "meter_stage = #{meterStage}, " +
             "status = #{status}, " +
-            "customer_id = #{customerId}, " +
+            "customer_id = NULL, " +
             "cin = #{cin}, " +
             "tariff = #{tariff}, " +
             "meter_number = #{meterNumber}, " +
@@ -774,7 +776,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -840,7 +842,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -902,7 +904,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -958,7 +960,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -1172,7 +1174,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -1246,7 +1248,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -1341,7 +1343,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -1417,7 +1419,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
@@ -1482,7 +1484,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
@@ -1550,7 +1552,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
@@ -1614,7 +1616,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
@@ -1679,7 +1681,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
@@ -1755,9 +1757,10 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
-
+            @Result(property = "dssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
     })
     List<Meter> getMetersVersion(UUID orgId, int page, int size, UUID nodeId);
 
@@ -1825,9 +1828,10 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss"))
-
+            @Result(property = "dssInfo", column = "dss",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
+            @Result(property = "tariffInfo", column = "tariff",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff")),
     })
     List<Meter> getMetersVersionNode(UUID orgId, int page, int size, UUID nodeId);
 
@@ -1883,7 +1887,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getSmartMeter")),
             @Result(property = "feederInfo", column = "node_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getTariff"))
@@ -2932,7 +2936,7 @@ public interface MeterMapper {
                     one = @One(select = "getMeterManufacturer")),
             @Result(property = "feederInfo", column = "node_id",
                     one = @One(select = "getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "getTariff"))
@@ -3549,7 +3553,7 @@ public interface MeterMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getNodeInfo")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getFeederDss")),
             @Result(property = "debitCreditAdjustInfo", column = "id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.MeterMapper.getDebitAdjustmentById"))
