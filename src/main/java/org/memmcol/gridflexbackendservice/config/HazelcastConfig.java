@@ -19,7 +19,7 @@ public class HazelcastConfig {
 	@Value("${hazelcast.instance-name}")
 	private String instanceName;
 
-	@Value("${hazelcast.network.join.multicast.enabled}")
+	@Value("${hazelcast.network.join.multicast.enabled}") //change to "true" if you want use cache
 	private boolean multicastEnabled;
 
 	@Autowired

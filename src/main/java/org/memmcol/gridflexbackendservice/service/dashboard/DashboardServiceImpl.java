@@ -313,14 +313,27 @@ public class DashboardServiceImpl implements  DashboardService{
     public Map<String, Object> vendingDashboard(String band, String year, String meterClass) {
         try {
             UserModel um = handleUserValidation();
-//            UUID uId = um.getOrgId();
-//            UUID nodeId = um.getNodeInfo().getNodeId();
-//            String nodeType = um.getNodeInfo().getType();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
 
             List<Transaction> transactions = dashboardMapper.getVendingTransaction(um.getOrgId());
 
+            // -----------------------------------------
+            // NODE FILTER HELPER
+            // -----------------------------------------
+
+            Predicate<Transaction> belongsToNode = t -> {
+                if (nodeType.equalsIgnoreCase("Root")) {
+                    return true;
+                }
+                return Objects.equals(t.getNodeId(), nodeId) ||
+                        Objects.equals(t.getRegion(), nodeId) ||
+                        Objects.equals(t.getServiceCenter(), nodeId);
+            };
+
             // === Filter transactions ===
             List<Transaction> filteredTransaction = transactions.stream()
+                    .filter(belongsToNode)
                     .filter(t -> band == null || band.isEmpty() || t.getBandName().equalsIgnoreCase(band))
                     .filter(t -> meterClass == null || meterClass.isEmpty() ||
                             t.getMeterClass().equalsIgnoreCase(meterClass))
