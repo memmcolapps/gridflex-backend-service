@@ -492,16 +492,28 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         try {
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
 
             List<Meter> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
             if(type.equalsIgnoreCase("debit")) {
-                allDebitCreditAdjustment = mapper.GetDebitAdjustment(um.getOrgId(), page,size);
+                allDebitCreditAdjustment = mapper.GetDebitAdjustment(um.getOrgId(), page,size, nodeId);
             } else if (type.equalsIgnoreCase("credit")){
-                allDebitCreditAdjustment = mapper.GetCreditAdjustment(um.getOrgId(), page,size);
+                allDebitCreditAdjustment = mapper.GetCreditAdjustment(um.getOrgId(), page,size, nodeId);
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Type parameter (" + type + ") not supported");
             }
+
+//            Meter meter = mapper.getMeterById(meterId);
+//            if (meter == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
+//            }
+//
+//            if(!meter.getNodeId().equals(nodeId)
+//                    && !meter.getServiceCenter().equals(nodeId)
+//                    && !meter.getRoot().equals(nodeId)){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
 
             List<Meter> filteredDebitCreditAdjustment =
@@ -657,8 +669,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     public Map<String, Object> getDebitAdjustment(UUID meterId, String type) {
         try {
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
 
-            List<DebitCreditAdjust> result = mapper.getDebitAdjustmentByMeterId(meterId, um.getOrgId(), type);
+            List<DebitCreditAdjust> result = mapper.getDebitAdjustmentByMeterId(meterId, um.getOrgId(), type, nodeId);
 
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(debit + " " + status.getNotFoundDesc());
