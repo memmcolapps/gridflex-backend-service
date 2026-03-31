@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.model.hes.AuthResponse;
 import org.memmcol.gridflexbackendservice.model.hes.RefreshData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,18 +17,12 @@ import java.util.Map;
 @Service
 public class HesAuthServiceImpl {
 
-//    private final WebClient client = WebClient.create("https://thirdparty.com");
-
     private final WebClient authWebClient;    // for auth endpoints
     private final WebClient realtimeWebClient; // for protected endpoints
 
     private String accessToken;
     private String refreshToken;  // original refresh token from login
     private Instant expiryTime;
-
-//    @Qualifier("realtimeWebClient")
-//    @Autowired
-//    private WebClient webClient;
 
     private final String clientId = "123e4567-e89b-12d3-a456-426614174000";
     private final String clientSecret = "5D8F2A3B4C5D6E7F8A9B0C1D2E3F4A5B6C7D8E9F0A1B2C3D4E5F6A7B8C9D0E1";
@@ -44,13 +39,12 @@ public class HesAuthServiceImpl {
     public HesAuthServiceImpl(
             WebClient.Builder builder,
             @Qualifier("realtimeWebClient") WebClient realtimeWebClient,
-            @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
+            @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance,
+            @Value("${external.hes-endpoint.base-url}") String baseUrl) {
 
         // Base URL stops at the host — no /api/realtime prefix
-        this.authWebClient = builder
-                .baseUrl("http://172.16.2.46:9061")
-                .build();
-
+//        this.authWebClient = builder.baseUrl("http://172.16.2.46:9061").build();
+        this.authWebClient = builder.baseUrl("http://localhost:9061").build();
         this.realtimeWebClient = realtimeWebClient;
         this.debtCache = hazelcastInstance.getMap("hesTokenCache");
     }
