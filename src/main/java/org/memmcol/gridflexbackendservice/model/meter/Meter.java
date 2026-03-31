@@ -77,8 +77,8 @@ public class Meter implements Serializable {
     private Meter oldMeterInfo;
     private RegionBhubServiceCenter regionInfo;
     private RegionBhubServiceCenter nodeInfo;
-    private SubStationTransformerFeederLine FeederInfo;
-    private SubStationTransformerFeederLine DssInfo;
+    private SubStationTransformerFeederLine feederInfo;
+    private SubStationTransformerFeederLine dssInfo;
     private Tariff tariffInfo;
     private FlatNode flatNode;
     private List<DebitCreditAdjust> debitCreditAdjustInfo;
@@ -488,19 +488,19 @@ public class Meter implements Serializable {
     }
 
     public SubStationTransformerFeederLine getFeederInfo() {
-        return FeederInfo;
+        return feederInfo;
     }
 
     public void setFeederInfo(SubStationTransformerFeederLine feederInfo) {
-        FeederInfo = feederInfo;
+        this.feederInfo = feederInfo;
     }
 
     public SubStationTransformerFeederLine getDssInfo() {
-        return DssInfo;
+        return dssInfo;
     }
 
     public void setDssInfo(SubStationTransformerFeederLine dssInfo) {
-        DssInfo = dssInfo;
+        this.dssInfo = dssInfo;
     }
 
     public Tariff getTariffInfo() {

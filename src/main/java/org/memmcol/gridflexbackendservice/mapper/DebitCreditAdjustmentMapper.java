@@ -80,6 +80,14 @@ public interface DebitCreditAdjustmentMapper {
     DebitCreditAdjust getDebitAdjustmentByStatus(UUID id, UUID orgId);
 
     @Select("SELECT * FROM meters WHERE id = #{meterId} AND meter_stage = 'Assigned' ")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "node_id", property = "nodeId"),
+            @Result(column = "service_center", property = "serviceCenter"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
     Meter getMeterById(UUID meterId);
 
     @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} AND org_id = #{orgId} AND approve_status = 'Approved'")

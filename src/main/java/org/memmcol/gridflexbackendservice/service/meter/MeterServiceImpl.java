@@ -409,8 +409,9 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterId(existingMeter.getId());
 
             if(existingMeter.getMeterStage().equalsIgnoreCase("Assigned")){
-                handleAssignedMeter(existingMeter, nodeType, request, user);
-                request.setDescription("Assign-edited");
+                meterStage = "Assign-edited";
+                handleAssignedMeter(existingMeter, nodeType, request, user, meterStage);
+                request.setDescription(meterStage);
             }
 
             request.setMeterStage(meterStage);
@@ -455,7 +456,7 @@ public class MeterServiceImpl implements MeterService {
     }
 
 
-    private void handleAssignedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user) {
+    private void handleAssignedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user, String meterStage) {
         if(!nodeType.equalsIgnoreCase("Root")
                 && !nodeType.equalsIgnoreCase("Region")
                 && !nodeType.equalsIgnoreCase("Business hub")
@@ -496,7 +497,9 @@ public class MeterServiceImpl implements MeterService {
                         "provided does not belong to the feeder line ("+request.getFeederAssetId()+")");
             }
 
-            request.setMeterStage("Assign-edited");
+            System.out.println("feeder: "+existingMeter.getFeeder());
+        System.out.println("dss: "+existingMeter.getDss());
+            request.setMeterStage(meterStage);
             request.setCin(request.getCin());
             request.setAccountNumber(request.getAccountNumber());
             request.setRoot(existingMeter.getRoot());
@@ -1618,7 +1621,7 @@ public class MeterServiceImpl implements MeterService {
             meterById.setSubstation(null);
             meterById.setDss(null);
             meterById.setFeeder(null);
-            meterById.setCustomerId(null);
+//            meterById.setCustomerId(null);
             meterById.setAccountNumber(null);
             meterById.setTariff(null);
             meterById.setCin(null);
@@ -2055,7 +2058,6 @@ public class MeterServiceImpl implements MeterService {
             }
 
             if(c <= 1) {
-
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
