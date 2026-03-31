@@ -177,14 +177,49 @@ public class HesController {
         return emitter;
     }
 
-    @PutMapping("/set/schedule")
+    @PostMapping("/set/schedule")
     public ResponseEntity<?> setSchedule(
             @RequestParam String profileType,
             @RequestParam String timeInterval,
             @RequestParam String unit
     ) {
         try {
-            Map<String, Object> result = hesService.setSchedule(profileType, timeInterval, unit);
+            String jobGroup = "";
+            String jobName = "";
+            if(profileType.equalsIgnoreCase("Monthly Billing Channel")){
+                jobGroup = "profiles";
+                jobName = "MonthlyBillingJob";
+            } else if(profileType.equalsIgnoreCase("Daily Billing Channel")){
+                jobGroup = "profiles";
+                jobName = "DailyBillingJob";
+            } else if (profileType.equalsIgnoreCase("Load Profile 1")){
+                jobGroup = "profiles";
+                jobName = "Channel1Job";
+            } else if(profileType.equalsIgnoreCase("Load Profile 2")){
+                jobGroup = "profiles";
+                jobName = "Channel2Job";
+            }else if (profileType.equalsIgnoreCase("Fraud Event Logs")){
+                jobGroup = "profiles";
+                jobName = "EventsJob";
+            }else if (profileType.equalsIgnoreCase("Control Event Logs")){
+                jobGroup = "profiles";
+                jobName = "EventsJob";
+            }else if(profileType.equalsIgnoreCase("Recharge Token Event Logs")){
+                jobGroup = "profiles";
+                jobName = "EventsJob";
+            }else if (profileType.equalsIgnoreCase("Power Grid Event Logs")){
+                jobGroup = "profiles";
+                jobName = "EventsJob";
+            }else if(profileType.equalsIgnoreCase("ManageToken Event Logs")){
+                jobGroup = "profiles";
+                jobName = "EventsJob";
+            } else if (profileType.equalsIgnoreCase("Standard Event Logs")){
+                jobGroup = "profiles";
+                jobName = "EventsJob";
+            } else {
+                jobGroup = "profiles";
+            }
+            Map<String, Object> result = hesService.setSchedule(jobGroup, timeInterval, unit, jobName);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

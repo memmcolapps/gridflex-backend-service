@@ -410,15 +410,15 @@ public class HesClientServiceImpl implements HesService {
     }
 
     @Override
-    public Map<String, Object> setSchedule(String profileType, String timeInterval, String unit) {
+    public Map<String, Object> setSchedule(String jobGroup, String timeInterval, String unit, String jobName) {
         String token = auth.getAccessToken();
 
         try {
             Map<String, Object> resp = hesWebClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/quartz/profiles/{jobName}/interval/{unit}")
+                            .path("/quartz/{jobGroup}/{jobName}/interval/{unit}")
                             .queryParam(unit, timeInterval)
-                            .build(profileType, unit)
+                            .build(jobGroup, jobName, unit)
                     )
                     .headers(h -> h.setBearerAuth(token))
                     .retrieve()

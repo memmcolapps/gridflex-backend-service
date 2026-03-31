@@ -20,7 +20,7 @@ public interface HesService {
 
     Map<String, Object> scheduleData(int page, int size, String search);
 
-    Map<String, Object> setSchedule(String profileType, String timeInterval, String unit);
+    Map<String, Object> setSchedule(String jobGroup, String timeInterval, String unit, String jobName);
 
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

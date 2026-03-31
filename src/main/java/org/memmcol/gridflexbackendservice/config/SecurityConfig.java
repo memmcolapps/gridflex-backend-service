@@ -422,6 +422,7 @@ public class  SecurityConfig {
 						basePath + "/hes/service/meter-status/stream",
 						basePath + "/hes/service/stream",
 						basePath + "/hes/service/data/schedule",
+						basePath + "/hes/service/set/schedule",
 						basePath + "/hes/service/dlms/set-clock",
 						basePath + "/hes/service/dlms/set-ctpt",
 						basePath + "/hes/service/dlms/set-apn",
