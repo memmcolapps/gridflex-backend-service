@@ -39,6 +39,10 @@ public class HesClientServiceImpl implements HesService {
     @Autowired
     private WebClient webClient;
 
+    @Qualifier("hesWebClient")
+    @Autowired
+    private WebClient hesWebClient;
+
     @Qualifier("dlmsWriteOpsClient")
     @Autowired
     private WebClient dlmsWriteOpsClient;
@@ -410,9 +414,9 @@ public class HesClientServiceImpl implements HesService {
         String token = auth.getAccessToken();
 
         try {
-            Map<String, Object> resp = webClient.get()
+            Map<String, Object> resp = hesWebClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/api/quartz/profiles/{jobName}/interval/{unit}")
+                            .path("/quartz/profiles/{jobName}/interval/{unit}")
                             .queryParam(unit, timeInterval)
                             .build(profileType, unit)
                     )

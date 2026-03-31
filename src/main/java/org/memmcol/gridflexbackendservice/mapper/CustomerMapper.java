@@ -58,6 +58,8 @@ public interface CustomerMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
             @Result(property = "assetId", column = "asset_id"),
+            @Result(property = "feeder", column = "feeder"),
+            @Result(property = "dss", column = "dss"),
             @Result(property = "nodeId", column = "node_id"),
             @Result(property = "serviceCenter", column = "service_center"),
             @Result(property = "meterNumber", column = "meter_number"),
@@ -90,7 +92,7 @@ public interface CustomerMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getSmartMeter")),
             @Result(property = "feederInfo", column = "feeder",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getFeederDss")),
-            @Result(property = "DssInfo", column = "dss",
+            @Result(property = "dssInfo", column = "dss",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getFeederDss")),
             @Result(property = "tariffInfo", column = "tariff",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getTariff"))
