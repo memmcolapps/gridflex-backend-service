@@ -412,7 +412,7 @@ public interface VendMapper {
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, node_id) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, '0.00', " +
             "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
             "#{kct1}, #{kct2}, #{txNodeId})")
