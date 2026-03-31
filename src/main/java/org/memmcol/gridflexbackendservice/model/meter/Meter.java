@@ -74,7 +74,6 @@ public class Meter implements Serializable {
     private PaymentMode paymentMode;
     private Manufacturer manufacturer;
     private SmartMeterInfo smartMeterInfo;
-    private Meter oldMeterInfo;
     private RegionBhubServiceCenter regionInfo;
     private RegionBhubServiceCenter nodeInfo;
     private SubStationTransformerFeederLine feederInfo;
@@ -83,6 +82,7 @@ public class Meter implements Serializable {
     private FlatNode flatNode;
     private List<DebitCreditAdjust> debitCreditAdjustInfo;
     private DebitCreditAdjustVersion debitCreditAdjustVersionInfo;
+    private Meter oldMeterInfo;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
