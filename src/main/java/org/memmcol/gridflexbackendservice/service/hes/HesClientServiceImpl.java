@@ -16,11 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.http.HttpStatus;
+import reactor.core.publisher.Mono;
 
 
 import java.time.LocalDateTime;
@@ -363,8 +365,8 @@ public class HesClientServiceImpl implements HesService {
     @Override
     public Map<String, Object> scheduleData(int page, int size, String search) {
         try {
-            UserModel user = handleUserValidation();
-            List<Schedule> meterConnEvent = hesMapper.getScheduleData(page, size, user.getOrgId());
+            handleUserValidation();
+            List<Schedule> meterConnEvent = hesMapper.getScheduleData(page, size);
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
@@ -409,11 +411,21 @@ public class HesClientServiceImpl implements HesService {
 
     }
 
+    @Transactional
     @Override
     public Map<String, Object> setSchedule(String jobGroup, String timeInterval, String unit, String jobName) {
         String token = auth.getAccessToken();
 
         try {
+            handleUserValidation();
+            Schedule response = hesMapper.getProfileEvent(jobName);
+            if(response == null){
+                throw new GlobalExceptionHandler.NotFoundException("Job Name "+status.getNotFoundDesc());
+            }
+            if(!response.getJobGroup().trim().equals(jobGroup.trim())){
+                throw new GlobalExceptionHandler.NotFoundException("Job group is wrong");
+            }
+
             Map<String, Object> resp = hesWebClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/quartz/{jobGroup}/{jobName}/interval/{unit}")
@@ -443,6 +455,69 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Override
+    public Map<String, Object> profileEvents() {
+        try {
+            handleUserValidation();
+            List<Schedule> resp = hesMapper.getProfileEvents();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+        } catch (Exception e){
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> setCron(String jobGroup, String jobName, String cronExpression) {
+        String token = auth.getAccessToken();
+
+        try {
+            handleUserValidation();
+
+            Schedule response = hesMapper.getProfileEvent(jobName.trim());
+            if(response == null){
+                throw new GlobalExceptionHandler.NotFoundException("Job Name "+status.getNotFoundDesc());
+            }
+            if(!response.getJobGroup().trim().equals(jobGroup.trim())){
+                throw new GlobalExceptionHandler.NotFoundException("Job group is wrong");
+            }
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("jobGroup", response.getJobGroup());
+            requestBody.put("jobName", response.getJobName());
+            requestBody.put("cron", cronExpression);
+
+            Map<String, Object> resp = hesWebClient.post()
+                    .uri("/quartz/interval/cron")
+                    .headers(h -> {
+                        h.setBearerAuth(token);
+                        h.setContentType(MediaType.APPLICATION_JSON);
+                    })
+                    .bodyValue(requestBody) // JSON body
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .flatMap(body -> Mono.error(
+                                            new RuntimeException("set schedule service error: " + body)
+                                    ))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("set cron service failed");
+            genericHandler.logAndSaveException(e, "set cron service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("set cron service failed");
+            genericHandler.logAndSaveException(e, "set cron");
+            throw e;
+        }
+    }
 
 //    @Override
 //    public Map<String, Object> setSchedule(String profileType, String timeInterval, String unit) {
@@ -475,70 +550,3 @@ public class HesClientServiceImpl implements HesService {
 //    }
 
 }
-
-//            // SCHEDULER RATE
-//            long active = hesMapper.countByJobStatusIgnoreCase("COMPLETED") +
-//                    hesMapper.countByJobStatusIgnoreCase("RUNNING");
-//
-//            long paused = hesMapper.countByJobStatusIgnoreCase("PAUSED");
-//
-//            double sum = active + paused;
-//            double activePercent = sum > 0 ? (active / sum) * 100.0 : 0;
-//            double pausedPercent = sum > 0 ? (paused / sum) * 100.0 : 0;
-//
-//            DashboardSummaryResponse.DataSchedulerRate schedulerRate =
-//                    new DashboardSummaryResponse.DataSchedulerRate(activePercent, pausedPercent);
-
-// COMM REPORT
-///---------------
-//            // Run all tasks asynchronously in parallel
-//            CompletableFuture<DashboardSummaryResponse.MeterSummary> meterSummaryFuture = asyncService.getMeterSummaryAsync();
-//            CompletableFuture<List<DashboardSummaryResponse.CommunicationLogPoint>> communicationLogsFuture = asyncService.getCommunicationLogsAsync();
-//            CompletableFuture<DashboardSummaryResponse.DataSchedulerRate> schedulerRateFuture = asyncService.getSchedulerRateAsync();
-//            CompletableFuture<List<DashboardSummaryResponse.CommunicationReportRow>> communicationReportFuture = asyncService.
-//                    getCommunicationReportAsync(0, 5, "lastSync", true);
-//
-//            // Wait for all to complete
-//            CompletableFuture.allOf(
-//                    meterSummaryFuture,
-//                    communicationLogsFuture,
-//                    schedulerRateFuture,
-//                    communicationReportFuture
-//            ).join();
-//            DashboardSummaryResponse resp;
-//            // Combine results
-//            resp = new DashboardSummaryResponse(
-//                    meterSummaryFuture.join(),
-//                    communicationLogsFuture.join(),
-//                    schedulerRateFuture.join(),
-//                    communicationReportFuture.join()
-//            );
-///-----------------
-//    public Map<String, Object> dashboard() {
-//        String token = auth.getAccessToken();
-//
-//        try {
-//            Map<String, Object> resp = webClient.get()
-//                    .uri("/api/dashboard/summary")
-//                    .headers(h -> h.setBearerAuth(token))
-//                    .retrieve()
-//                    .onStatus(HttpStatusCode::isError,
-//                            clientResponse -> clientResponse.bodyToMono(String.class)
-//                                    .map(body -> new RuntimeException("HES service error: " + body))
-//                    )
-//                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-//                    .block();
-//
-//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-//
-//        } catch (WebClientResponseException webClientResponseException) {
-//            genericHandler.logIncidentReport("fetching hes dashboard service failed");
-//            genericHandler.logAndSaveException(webClientResponseException, "fetching hes dashboard");
-//            // handles HTTP errors
-//            throw webClientResponseException;
-//        } catch (Exception exception) {
-//            genericHandler.logIncidentReport("fetching hes dashboard service failed");
-//            genericHandler.logAndSaveException(exception, "fetching hes dashboard");
-//            throw exception;
-//        }
-//    }

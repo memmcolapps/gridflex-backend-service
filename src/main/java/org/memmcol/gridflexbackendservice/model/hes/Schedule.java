@@ -12,6 +12,7 @@ public class Schedule implements Serializable {
     private Number id;
     private String name;
     private String orgId;
+    private String cron;
     private String cronExpression;
     private Boolean cronJob;
     private String description;
@@ -57,6 +58,14 @@ public class Schedule implements Serializable {
 
     public void setOrgId(String orgId) {
         this.orgId = orgId;
+    }
+
+    public String getCron() {
+        return cron;
+    }
+
+    public void setCron(String cron) {
+        this.cron = cron;
     }
 
     public String getCronExpression() {

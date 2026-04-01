@@ -423,6 +423,8 @@ public class  SecurityConfig {
 						basePath + "/hes/service/stream",
 						basePath + "/hes/service/data/schedule",
 						basePath + "/hes/service/set/schedule",
+						basePath + "/hes/service/set/cron",
+						basePath + "/hes/service/profile-events",
 						basePath + "/hes/service/dlms/set-clock",
 						basePath + "/hes/service/dlms/set-ctpt",
 						basePath + "/hes/service/dlms/set-apn",
