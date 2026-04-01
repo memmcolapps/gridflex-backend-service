@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import org.apache.ibatis.annotations.Update;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
+import org.memmcol.gridflexbackendservice.model.hes.Schedule;
 import org.memmcol.gridflexbackendservice.service.hes.DlmsService;
 import org.memmcol.gridflexbackendservice.service.hes.HesService;
 import org.memmcol.gridflexbackendservice.service.hes.HesServiceConsumer;
@@ -179,47 +180,34 @@ public class HesController {
 
     @PostMapping("/set/schedule")
     public ResponseEntity<?> setSchedule(
-            @RequestParam String profileType,
+            @RequestParam String jobGroup,
+            @RequestParam String jobName,
             @RequestParam String timeInterval,
             @RequestParam String unit
     ) {
         try {
-            String jobGroup = "";
-            String jobName = "";
-            if(profileType.equalsIgnoreCase("Monthly Billing Channel")){
-                jobGroup = "profiles";
-                jobName = "MonthlyBillingJob";
-            } else if(profileType.equalsIgnoreCase("Daily Billing Channel")){
-                jobGroup = "profiles";
-                jobName = "DailyBillingJob";
-            } else if (profileType.equalsIgnoreCase("Load Profile 1")){
-                jobGroup = "profiles";
-                jobName = "Channel1Job";
-            } else if(profileType.equalsIgnoreCase("Load Profile 2")){
-                jobGroup = "profiles";
-                jobName = "Channel2Job";
-            }else if (profileType.equalsIgnoreCase("Fraud Event Logs")){
-                jobGroup = "profiles";
-                jobName = "EventsJob";
-            }else if (profileType.equalsIgnoreCase("Control Event Logs")){
-                jobGroup = "profiles";
-                jobName = "EventsJob";
-            }else if(profileType.equalsIgnoreCase("Recharge Token Event Logs")){
-                jobGroup = "profiles";
-                jobName = "EventsJob";
-            }else if (profileType.equalsIgnoreCase("Power Grid Event Logs")){
-                jobGroup = "profiles";
-                jobName = "EventsJob";
-            }else if(profileType.equalsIgnoreCase("ManageToken Event Logs")){
-                jobGroup = "profiles";
-                jobName = "EventsJob";
-            } else if (profileType.equalsIgnoreCase("Standard Event Logs")){
-                jobGroup = "profiles";
-                jobName = "EventsJob";
-            } else {
-                jobGroup = "profiles";
-            }
             Map<String, Object> result = hesService.setSchedule(jobGroup, timeInterval, unit, jobName);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/set/cron")
+    public ResponseEntity<?> setCron(
+            @RequestBody Schedule schedule) {
+        try {
+            Map<String, Object> result = hesService.setCron(schedule.getJobGroup(), schedule.getJobName(), schedule.getCron());
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/profile-events")
+    public ResponseEntity<?> profileEvents() {
+        try {
+            Map<String, Object> result = hesService.profileEvents();
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

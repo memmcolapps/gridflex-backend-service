@@ -996,21 +996,29 @@ public interface HesMapper {
     })
     List<Event> getEventsReport(UUID orgId);
 
+//    @Select("""
+//                <script>
+//                    SELECT s.*, o.* FROM scheduler_job_info s
+//                    JOIN organizations o ON s.org_id = o.id
+//                    <where>
+//                        AND s.org_id = #{orgId}
+//                    </where>
+//                    ORDER BY s.last_run_time DESC
+//                    <if test="size != 0">
+//                        LIMIT #{size} OFFSET #{page} * #{size}
+//                    </if>
+//                </script>
+//            """)
     @Select("""
-                <script>
-                    SELECT s.*, o.* FROM scheduler_job_info s
-                    JOIN organizations o ON s.org_id = o.id
-                    <where>
-                        AND s.org_id = #{orgId}
-                    </where>
-                    ORDER BY s.last_run_time DESC
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
-                </script>
-            """)
+        <script>
+            SELECT * FROM scheduler_job_info
+            ORDER BY last_run_time DESC
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
     @Results({
-            @Result(column = "org_id", property = "orgId"),
             @Result(column = "cron_expression", property = "cronExpression"),
             @Result(column = "cron_job", property = "cronJob"),
             @Result(column = "description", property = "description"),
@@ -1027,11 +1035,30 @@ public interface HesMapper {
             @Result(column = "obis_codes", property = "obisCode"),
             @Result(column = "updated_at", property = "updatedAt"),
 
-            @Result(property = "organization.businessName", column = "business_name"),
-            @Result(property = "organization.createdAt", column = "created_at"),
-            @Result(property = "organization.updatedAt", column = "updated_at"),
+//            @Result(property = "organization.businessName", column = "business_name"),
+//            @Result(property = "organization.createdAt", column = "created_at"),
+//            @Result(property = "organization.updatedAt", column = "updated_at"),
     })
-    List<Schedule> getScheduleData(int page, int size, UUID orgId);
+    List<Schedule> getScheduleData(int page, int size);
+
+    @Select("SELECT obis_codes, name, job_name, job_group FROM scheduler_job_info ")
+    @Results({
+            @Result(column = "obis_codes", property = "obisCode"),
+            @Result(column = "name", property = "name"),
+            @Result(column = "job_name", property = "jobName"),
+            @Result(column = "job_group", property = "jobGroup")
+    })
+    List<Schedule> getProfileEvents();
+
+    @Select("SELECT obis_codes, name, job_name, job_group, cron_expression FROM scheduler_job_info WHERE job_name = #{jobName}")
+    @Results({
+            @Result(column = "obis_codes", property = "obisCode"),
+            @Result(column = "name", property = "name"),
+            @Result(column = "job_name", property = "jobName"),
+            @Result(column = "job_group", property = "jobGroup"),
+            @Result(column = "cron_expression", property = "cronExpression")
+    })
+    Schedule getProfileEvent(String jobName);
 
 //    private String lastRunTime;
 //    private String obisCode;

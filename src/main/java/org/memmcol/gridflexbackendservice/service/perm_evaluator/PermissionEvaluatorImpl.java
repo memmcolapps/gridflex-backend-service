@@ -46,7 +46,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                     "/virtual/non-md-meter/energy/import/assetId/all",
                     "/billing/service/feeder/reading/create", "/billing/service/feeder/reading/update", "/billing/service/feeder/overall/consumption",
                     "/vending/service/generate/token/print", "/dashboard/service/vending", "/dashboard/service/hes", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile",
-                    "/hes/service/model", "/hes/service/communication/range/report", "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule", "/hes/service/set/schedule")),
+                    "/hes/service/model", "/hes/service/communication/range/report", "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule", "/hes/service/set/schedule",
+                    "/hes/service/profile-events", "/hes/service/set/cron")),
 
             Map.entry("data management", List.of("/band/service/create", "/band/service/update", "/band/service/change-state", "/user/service/update",
                     "/band/service/all",  "/band/service/single", "/tariff/service/single", "/tariff/service/all", "/tariff/service/export",
@@ -162,8 +163,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
             Map.entry("hes", List.of("/dashboard/service/hes-management", "/audit-log/service/single-log", "/audit-log/service/incident/report", "/audit-log/service/incident/report/get",
                     "/dashboard/service/hes", "/hes/service/communication/report", "/hes/service/event", "/hes/service/profile", "/hes/service/model", "/hes/service/communication/range/report",
-                    "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule", "/hes/service/set/schedule"))
-
+                    "/hes/service/meter-status/stream", "/hes/service/stream", "/hes/service/data/schedule", "/hes/service/set/schedule",
+                    "/hes/service/profile-events","/hes/service/set/cron"))
     );
 
     @Override
