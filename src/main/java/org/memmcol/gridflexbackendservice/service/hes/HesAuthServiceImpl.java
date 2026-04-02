@@ -42,7 +42,6 @@ public class HesAuthServiceImpl {
             @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance,
             @Value("${external.hes-endpoint.base-url}") String baseUrl) {
 
-        // Base URL stops at the host — no /api/realtime prefix
 //        this.authWebClient = builder.baseUrl("http://172.16.2.46:9061").build();
         this.authWebClient = builder.baseUrl("http://localhost:9061").build();
         this.realtimeWebClient = realtimeWebClient;
@@ -63,13 +62,12 @@ public class HesAuthServiceImpl {
                 authenticate();  // initial login
             }
         }
-        System.out.println("return statement");
         return accessToken;
     }
 
     private void authenticate() {
         AuthResponse response = authWebClient.post()
-                .uri("/api/auth/token")          // ✅ resolves to correct path
+                .uri("/api/auth/token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of("clientId", clientId, "clientSecret", clientSecret))
                 .retrieve()

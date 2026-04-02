@@ -214,6 +214,20 @@ public class HesController {
         }
     }
 
+    //---------- Test schedule Api-----------
+    @PostMapping("/trigger")
+    public ResponseEntity<?> triggerEvent(
+            @RequestParam String jobGroup,
+            @RequestParam String jobName
+    ) {
+        try {
+            Map<String, Object> result = hesService.triggerEvent(jobGroup, jobName);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @PostMapping("/dlms/set-clock")
     public ResponseEntity<?> setClock(
             @RequestParam String serial,
