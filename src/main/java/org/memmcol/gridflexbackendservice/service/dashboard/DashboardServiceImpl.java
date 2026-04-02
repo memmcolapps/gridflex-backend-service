@@ -50,7 +50,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> dataManagementDashboard(String band, String year, String meterCategory) {
+    public Map<String, Object> dataManagementDashboard(String band, String year, String meterClass) {
     try {
         UserModel um = handleUserValidation();
         UUID nodeId = um.getNodeInfo().getNodeId();
@@ -71,7 +71,7 @@ public class DashboardServiceImpl implements  DashboardService{
                     int meterYear = zoned.getYear();
                     return String.valueOf(meterYear).equals(year);
                 })
-                .filter(m -> meterCategory == null || meterCategory.isEmpty() || m.getMeterCategory().equalsIgnoreCase(meterCategory))
+                .filter(m -> meterClass == null || meterClass.isEmpty() || m.getMeterClass().equalsIgnoreCase(meterClass))
                 .collect(Collectors.toList());
 
         int total = filteredMeters.size();

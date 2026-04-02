@@ -230,6 +230,23 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("New tariff index field is required");
         }
 
+//        if(!request.getMeterClass().toLowerCase().contains("single phase")
+//                && !request.getMeterClass().toLowerCase().contains("singlephase")
+//                && !request.getMeterClass().toLowerCase().contains("three phase")
+//                && !request.getMeterClass().toLowerCase().contains("threephase")
+//                && !request.getMeterClass().toLowerCase().contains("md")){
+//            throw new GlobalExceptionHandler.NotFoundException("Meter class is not supported");
+//        }
+//        if (request.getMeterClass().toLowerCase().contains("single phase")
+//                && request.getMeterClass().toLowerCase().contains("singlephase")){
+//            request.setMeterClass("Single-Phase");
+//        }
+//
+//        if (request.getMeterClass().toLowerCase().contains("three phase")
+//                && request.getMeterClass().toLowerCase().contains("threephase")){
+//            request.setMeterClass("Three-Phase");
+//        }
+
         if(request.getSmartStatus()) {
             if(request.getSmartMeterInfo() == null){
                 throw new GlobalExceptionHandler.NotFoundException("Smart meter info field is required");
@@ -301,11 +318,44 @@ public class MeterServiceImpl implements MeterService {
 //        }
 
         String clazz = request.getMeterClass();
-        if (!clazz.equalsIgnoreCase("md") &&
-                !clazz.equalsIgnoreCase("single-phase") &&
-                !clazz.equalsIgnoreCase("three-phase")) {
+        String category = request.getMeterCategory();
+        String type = request.getMeterType();
+
+        if (category.equalsIgnoreCase("prepaid")){
+            request.setMeterClass("Prepaid");
+        }
+
+        if (type.toLowerCase().equalsIgnoreCase("Electricity")){
+            request.setMeterClass("Electricity");
+        }
+
+        if (clazz.equalsIgnoreCase("single phase")
+                || clazz.equalsIgnoreCase("singlephase")){
+            request.setMeterClass("Single-Phase");
+        }
+
+        if (clazz.equalsIgnoreCase("three phase")
+                || clazz.equalsIgnoreCase("threephase")){
+            request.setMeterClass("Three-Phase");
+        }
+
+        if (!request.getMeterClass().equalsIgnoreCase("md") &&
+                !request.getMeterClass().equalsIgnoreCase("single-phase") &&
+                !request.getMeterClass().equalsIgnoreCase("three-phase")) {
             throw new GlobalExceptionHandler.NotFoundException(
-                    "Meter class must be one of: MD, single-phase, or three-phase");
+                    "Meter class not supported");
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "Meter class must be one of: MD, single-phase, or three-phase");
+        }
+
+        if (!request.getMeterCategory().equalsIgnoreCase("Prepaid")) {
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Meter category not supported");
+        }
+
+        if (!request.getMeterType().equalsIgnoreCase("Electricity")) {
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Meter type not supported");
         }
 
         // Default states
@@ -2501,8 +2551,6 @@ public class MeterServiceImpl implements MeterService {
             } else {
                 throw new IOException("You do not have permission");
             }
-//            resolveNodeHierarchy(meters.get(0), nodeId, user.getOrgId());
-
             return bulkInsertMeters(meters, user);
 
         } catch (Exception e) {
@@ -4339,6 +4387,8 @@ public class MeterServiceImpl implements MeterService {
             if(nodeId != null){
                 resolveNodeHierarchy(meter, nodeId, user.getOrgId());
             }
+
+            validateMeterRequest(meter, user);
 
             // --- Default Meter Fields ---
             meter.setOrgId(user.getOrgId());
