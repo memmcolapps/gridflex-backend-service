@@ -26,5 +26,7 @@ public interface HesService {
 
     Map<String, Object> setCron(String jobGroup, String jobName, String cronExpression);
 
+    Map<String, Object> triggerEvent(String jobGroup, String jobName);
+
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }
