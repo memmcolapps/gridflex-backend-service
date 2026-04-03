@@ -325,17 +325,19 @@ public class MeterServiceImpl implements MeterService {
             request.setMeterClass("Prepaid");
         }
 
-        if (type.toLowerCase().equalsIgnoreCase("Electricity")){
+        if (type.equalsIgnoreCase("Electricity")){
             request.setMeterClass("Electricity");
         }
 
         if (clazz.equalsIgnoreCase("single phase")
-                || clazz.equalsIgnoreCase("singlephase")){
+                || clazz.equalsIgnoreCase("singlephase")
+                || clazz.equalsIgnoreCase("single-phase")){
             request.setMeterClass("Single-Phase");
         }
 
         if (clazz.equalsIgnoreCase("three phase")
-                || clazz.equalsIgnoreCase("threephase")){
+                || clazz.equalsIgnoreCase("threephase")
+                || clazz.equalsIgnoreCase("three-phase")){
             request.setMeterClass("Three-Phase");
         }
 
@@ -4388,7 +4390,28 @@ public class MeterServiceImpl implements MeterService {
                 resolveNodeHierarchy(meter, nodeId, user.getOrgId());
             }
 
-            validateMeterRequest(meter, user);
+            if (meter.getMeterCategory().equalsIgnoreCase("prepaid")){
+                meter.setMeterClass("Prepaid");
+            }
+
+            if (meter.getMeterType().equalsIgnoreCase("Electricity")){
+                meter.setMeterClass("Electricity");
+            }
+
+            if (meter.getMeterClass().equalsIgnoreCase("single phase")
+                    || meter.getMeterClass().equalsIgnoreCase("singlephase")
+                    || meter.getMeterClass().equalsIgnoreCase("single-phase")){
+                meter.setMeterClass("Single-Phase");
+            }
+
+            if (meter.getMeterClass().equalsIgnoreCase("three phase")
+                    || meter.getMeterClass().equalsIgnoreCase("threephase")
+                    || meter.getMeterClass().equalsIgnoreCase("three-phase")){
+                meter.setMeterClass("Three-Phase");
+            }
+
+
+//            validateMeterRequest(meter, user);
 
             // --- Default Meter Fields ---
             meter.setOrgId(user.getOrgId());
@@ -4406,6 +4429,8 @@ public class MeterServiceImpl implements MeterService {
         if (meter.getNewTariffIndex() == null) return "new tariff index is required";
         if (meter.getMeterNumber() == null || meter.getMeterNumber().trim().isEmpty()) return "meter number is required";
         if (meter.getMeterCategory() == null || meter.getMeterCategory().trim().isEmpty()) return "meter category is required";
+        if (meter.getMeterClass() == null || meter.getMeterClass().trim().isEmpty()) return "meter class is required";
+        if (meter.getMeterType() == null || meter.getMeterType().trim().isEmpty()) return "meter type is required";
 
         return null;
     }
