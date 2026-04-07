@@ -2008,7 +2008,7 @@ public class MeterServiceImpl implements MeterService {
 
         String customerId = meter.getCustomerId();
 
-        int c = customerMapper.totalCustomer(customerId);
+        List<Customer> c = customerMapper.totalCustomer(customerId);
 
         meter.setCustomerId(customerId);
 
@@ -2109,7 +2109,7 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-            if(c == 1) {
+            if(c.size() == 1) {
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
                 if (customerStatus == 0) {
                     throw new GlobalExceptionHandler.NotFoundException("Customer status update failed");
@@ -4247,7 +4247,6 @@ public class MeterServiceImpl implements MeterService {
         for (Meter meter : batch) {
             meter.setMeterId(meter.getId()); // Copy generated ID
         }
-        System.out.println("node>>>: "+batch.get(0).getRegion());
         // Insert into meter_versions (replica)
         meterMapper.insertMeterVersions(batch);
 

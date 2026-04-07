@@ -578,8 +578,8 @@ public class CustomerServiceImpl implements CustomerService {
         return successCount;
     }
 
-public void insertBatchTransactional(
-        List<Customer> batch, UserModel user, List<GenericResp> failedRecords) {
+    public void insertBatchTransactional(
+            List<Customer> batch, UserModel user, List<GenericResp> failedRecords) {
 
     prepareCustomers(batch, user, failedRecords);
 

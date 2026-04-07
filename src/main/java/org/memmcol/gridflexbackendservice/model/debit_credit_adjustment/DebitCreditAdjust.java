@@ -18,6 +18,8 @@ public class DebitCreditAdjust implements Serializable {
     @Id
     private UUID id;
     private UUID meterId;
+    private String meterNumber;
+    private String code;
     private UUID liabilityCauseId;
     private BigDecimal amount;
     private BigDecimal balance;
@@ -64,6 +66,22 @@ public class DebitCreditAdjust implements Serializable {
 
     public void setMeterId(UUID meterId) {
         this.meterId = meterId;
+    }
+
+    public String getMeterNumber() {
+        return meterNumber;
+    }
+
+    public void setMeterNumber(String meterNumber) {
+        this.meterNumber = meterNumber;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public UUID getOrgId() {

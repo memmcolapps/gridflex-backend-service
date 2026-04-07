@@ -261,7 +261,7 @@ public interface CustomerMapper {
     })
     void changeStatusBulkCustomer(@Param("batch") List<Meter> batch, @Param("orgId") UUID orgId);
 
-    @Select("SELECT COUNT(*) FROM customers WHERE customer_id = #{customerId}")
-    int totalCustomer(String customerId);
+    @Select("SELECT * FROM customers WHERE customer_id = #{customerId}")
+    List<Customer> totalCustomer(String customerId);
 
 }
