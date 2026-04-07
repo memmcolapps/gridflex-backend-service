@@ -38,18 +38,18 @@ public class DebtSettingController {
     @Autowired private DebtSettingService service;
 
 
-    private static final String[] LIABILITYCAUSEHEADERS = {
-            "Name",
-            "Code"
-    };
-
-    private static final String[] PERCENTAGERANGEHEADERS = {
-            "Percentage",
-            "Code",
-            "Band",
-            "Amount Start Range",
-            "Amount End Range",
-    };
+//    private static final String[] LIABILITYCAUSEHEADERS = {
+//            "Name",
+//            "Code"
+//    };
+//
+//    private static final String[] PERCENTAGERANGEHEADERS = {
+//            "Percentage",
+//            "Code",
+//            "Band",
+//            "Amount Start Range",
+//            "Amount End Range",
+//    };
 
 
     @PostMapping("/liability-cause/create")
@@ -214,146 +214,146 @@ public class DebtSettingController {
         }
     }
 
-    @GetMapping("/download/liability-cause/template/csv")
-    public ResponseEntity<Resource> downloadLiabilityCauseCsvTemplate() throws IOException {
-        String sampleRow = "fraud, 419";
+//    @GetMapping("/download/liability-cause/template/csv")
+//    public ResponseEntity<Resource> downloadLiabilityCauseCsvTemplate() throws IOException {
+//        String sampleRow = "fraud, 419";
+//
+//        // Build CSV content in memory
+//        String csvContent = String.join(",", LIABILITYCAUSEHEADERS) + "\n" + sampleRow;
+//        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+//
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.CONTENT_DISPOSITION,
+//                        "attachment; filename=meter_liability_cause_template.csv")
+//                .contentType(MediaType.parseMediaType("text/csv"))
+//                .contentLength(resource.contentLength())
+//                .body(resource);
+//    }
+//
+//    @GetMapping("/download/liability-cause/template/excel")
+//    public void downloadLiabilityCauseExcelTemplate(HttpServletResponse response) throws IOException {
+//        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+//            XSSFSheet sheet = workbook.createSheet("Meter Bulk Upload Liability Cause Template");
+//
+//            // Create header row
+//            Row headerRow = sheet.createRow(0);
+//            for (int i = 0; i < LIABILITYCAUSEHEADERS.length; i++) {
+//                Cell cell = headerRow.createCell(i);
+//                cell.setCellValue(LIABILITYCAUSEHEADERS[i]);
+//            }
+//
+//            // Optional: Add a sample row
+//            Row sampleRow = sheet.createRow(1);
+//
+//            Object[] sampleData = {
+//                    "fraud", "419"
+//            };
+//
+//            for (int i = 0; i < sampleData.length; i++) {
+//                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
+//            }
+//
+//            // Auto-size columns
+//            for (int i = 0; i < LIABILITYCAUSEHEADERS.length; i++) {
+//                sheet.autoSizeColumn(i);
+//            }
+//
+//            // Set response headers
+//            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//            response.setHeader("Content-Disposition",
+//                    "attachment; filename=meter_liability_cause_template.xlsx");
+//
+//            workbook.write(response.getOutputStream());
+//        }
+//    }
 
-        // Build CSV content in memory
-        String csvContent = String.join(",", LIABILITYCAUSEHEADERS) + "\n" + sampleRow;
-        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+//    @PutMapping("/liability-cause/bulk-upload")
+//    public ResponseEntity<Map<String, Object>> bulkUploadLiabilityCause(@RequestParam("file") MultipartFile file) {
+//        try {
+//            Map<String, Object> result =  service.bulkLiabilityCause(file);
+//            String code = (String) result.get("responsecode");
+//
+//            if ("131".equals(code)) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+//            }
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+//
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=meter_liability_cause_template.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .contentLength(resource.contentLength())
-                .body(resource);
-    }
+//    @GetMapping("/download/percentage-range/template/csv")
+//    public ResponseEntity<Resource> downloadPercentageRangeCsvTemplate() throws IOException {
+//        String sampleRow = "2, 914, Band A, 10, 10000";
+//
+//        // Build CSV content in memory
+//        String csvContent = String.join(",", PERCENTAGERANGEHEADERS) + "\n" + sampleRow;
+//        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+//
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.CONTENT_DISPOSITION,
+//                        "attachment; filename=meter_liability_cause_template.csv")
+//                .contentType(MediaType.parseMediaType("text/csv"))
+//                .contentLength(resource.contentLength())
+//                .body(resource);
+//    }
 
-    @GetMapping("/download/liability-cause/template/excel")
-    public void downloadLiabilityCauseExcelTemplate(HttpServletResponse response) throws IOException {
-        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            XSSFSheet sheet = workbook.createSheet("Meter Bulk Upload Liability Cause Template");
+//    @GetMapping("/download/percentage-range/template/excel")
+//    public void downloadPercentageRangeExcelTemplate(HttpServletResponse response) throws IOException {
+//        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+//            XSSFSheet sheet = workbook.createSheet("Meter Bulk Upload Percentage Range Template");
+//
+//            // Create header row
+//            Row headerRow = sheet.createRow(0);
+//            for (int i = 0; i < PERCENTAGERANGEHEADERS.length; i++) {
+//                Cell cell = headerRow.createCell(i);
+//                cell.setCellValue(PERCENTAGERANGEHEADERS[i]);
+//            }
+//
+//            // Optional: Add a sample row
+//            Row sampleRow = sheet.createRow(1);
+//
+//            Object[] sampleData = {
+//                    "2", "914", "Band A", "10", "10000"
+//            };
+//
+//            for (int i = 0; i < sampleData.length; i++) {
+//                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
+//            }
+//
+//            // Auto-size columns
+//            for (int i = 0; i < PERCENTAGERANGEHEADERS.length; i++) {
+//                sheet.autoSizeColumn(i);
+//            }
+//
+//            // Set response headers
+//            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//            response.setHeader("Content-Disposition",
+//                    "attachment; filename=meter_percentage_range_template.xlsx");
+//
+//            workbook.write(response.getOutputStream());
+//        }
+//    }
 
-            // Create header row
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < LIABILITYCAUSEHEADERS.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(LIABILITYCAUSEHEADERS[i]);
-            }
-
-            // Optional: Add a sample row
-            Row sampleRow = sheet.createRow(1);
-
-            Object[] sampleData = {
-                    "fraud", "419"
-            };
-
-            for (int i = 0; i < sampleData.length; i++) {
-                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < LIABILITYCAUSEHEADERS.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            // Set response headers
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition",
-                    "attachment; filename=meter_liability_cause_template.xlsx");
-
-            workbook.write(response.getOutputStream());
-        }
-    }
-
-    @PutMapping("/liability-cause/bulk-upload")
-    public ResponseEntity<Map<String, Object>> bulkUploadLiabilityCause(@RequestParam("file") MultipartFile file) {
-        try {
-            Map<String, Object> result =  service.bulkLiabilityCause(file);
-            String code = (String) result.get("responsecode");
-
-            if ("131".equals(code)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
-            }
-            return ResponseEntity.ok(result);
-        } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    @GetMapping("/download/percentage-range/template/csv")
-    public ResponseEntity<Resource> downloadPercentageRangeCsvTemplate() throws IOException {
-        String sampleRow = "2, 914, Band A, 10, 10000";
-
-        // Build CSV content in memory
-        String csvContent = String.join(",", PERCENTAGERANGEHEADERS) + "\n" + sampleRow;
-        ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=meter_liability_cause_template.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .contentLength(resource.contentLength())
-                .body(resource);
-    }
-
-    @GetMapping("/download/percentage-range/template/excel")
-    public void downloadPercentageRangeExcelTemplate(HttpServletResponse response) throws IOException {
-        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            XSSFSheet sheet = workbook.createSheet("Meter Bulk Upload Percentage Range Template");
-
-            // Create header row
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < PERCENTAGERANGEHEADERS.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(PERCENTAGERANGEHEADERS[i]);
-            }
-
-            // Optional: Add a sample row
-            Row sampleRow = sheet.createRow(1);
-
-            Object[] sampleData = {
-                    "2", "914", "Band A", "10", "10000"
-            };
-
-            for (int i = 0; i < sampleData.length; i++) {
-                sampleRow.createCell(i).setCellValue(sampleData[i].toString());
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < PERCENTAGERANGEHEADERS.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            // Set response headers
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition",
-                    "attachment; filename=meter_percentage_range_template.xlsx");
-
-            workbook.write(response.getOutputStream());
-        }
-    }
-
-    @PutMapping("/percentage-range/bulk-upload")
-    public ResponseEntity<Map<String, Object>> bulkUploadPercentageRange(@RequestParam("file") MultipartFile file) {
-        try {
-            Map<String, Object> result =  service.bulkPercentageRange(file);
-            String code = (String) result.get("responsecode");
-
-            if ("131".equals(code)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
-            }
-            return ResponseEntity.ok(result);
-        } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    @PutMapping("/percentage-range/bulk-upload")
+//    public ResponseEntity<Map<String, Object>> bulkUploadPercentageRange(@RequestParam("file") MultipartFile file) {
+//        try {
+//            Map<String, Object> result =  service.bulkPercentageRange(file);
+//            String code = (String) result.get("responsecode");
+//
+//            if ("131".equals(code)) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+//            }
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {

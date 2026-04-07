@@ -3,9 +3,16 @@ package org.memmcol.gridflexbackendservice.service.debit_credit_adjustment;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.CreditDebitAdjustment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.MeterAndLiabilityCause;
@@ -17,6 +24,7 @@ import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -24,11 +32,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
@@ -485,6 +502,573 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         }
     }
 
+    @Override
+    public Map<String, Object> debitCreditAdjustmentBulkUpload(MultipartFile file) throws IOException {
+        UserModel user = handleUserValidation();
+        try {
+        // Determine file type
+        String filename = Optional.ofNullable(file.getOriginalFilename())
+                .orElseThrow(() -> new IOException("File has no name"));
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Business hub")
+                    && !nodeType.equalsIgnoreCase("Service center")
+                    && !nodeType.equalsIgnoreCase("Region")){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
+        List<DebitCreditAdjust> debitCreditAdjusts;
+        if (filename.endsWith(".csv")) {
+            debitCreditAdjusts = processDebitCreditAdjustCsv(file.getInputStream());
+        } else if (filename.endsWith(".xlsx")) {
+            debitCreditAdjusts = processDebitCreditAdjustExcel(file.getInputStream());
+        } else {
+            throw new IOException("Unsupported file format. Only .csv or .xlsx allowed.");
+        }
+
+        Map<String, Object> result = bulkInsertDebitCreditAdjust(debitCreditAdjusts, user);
+
+
+        // --- Prepare payments for new adjustments only ---
+        List<DebitCreditAdjust> successfulAdjustments = (List<DebitCreditAdjust>) result.get("successfulAdjustments");
+
+        bulkInsertDebtCreditPayments(successfulAdjustments, user);
+
+        return result;
+
+    } catch (Exception e) {
+        log.error("Error in bulk upload: {}", e.getMessage(), e);
+        genericHandler.logIncidentReport("Debit-credit-adjustment bulk upload failed");
+        genericHandler.logAndSaveException(e, "Bulk upload debit-credit-adjustment failed");
+        throw new IOException("Bulk upload failed: " + e.getMessage());
+    }
+    }
+
+    private Map<String, Object> bulkInsertDebitCreditAdjust(List<DebitCreditAdjust> debitCreditAdjusts, UserModel user) {
+        Map<String, Object> result = new HashMap<>();
+        List<GenericResp> failedRecords = new ArrayList<>();
+
+        if (debitCreditAdjusts == null || debitCreditAdjusts.isEmpty()) {
+            throw new IllegalArgumentException("Debit Credit adjustment list cannot be empty");
+        }
+
+        int successCount = 0;
+
+        int batchSize = 500; // try 500–1000 for optimal JDBC performance
+
+        for (int i = 0; i < debitCreditAdjusts.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, debitCreditAdjusts.size());
+//            List<Customer> batch = customers.subList(i, end);
+            // IMPORTANT: create copy to avoid modifying original list
+            List<DebitCreditAdjust> batch = new ArrayList<>(debitCreditAdjusts.subList(i, end));
+            try {
+                insertBatchTransactional(batch, user,failedRecords);
+                successCount += batch.size();
+                log.info("Batch {} processed successfully", (i / batchSize) + 1);
+
+            } catch (Exception e) {
+                log.warn("Batch {} failed. Retrying with sub-batches. Reason: {}",
+                        (i / batchSize) + 1, e.getMessage());
+
+                // Attempt smaller sub-batches to isolate failure
+                successCount += insertSubBatchTransactional(batch, user, failedRecords);
+            }
+        }
+
+        final int totalRecords = debitCreditAdjusts.size();
+
+        result.put("totalRecords", debitCreditAdjusts.size());
+        result.put("successCount", successCount);
+        result.put("failedCount", failedRecords.size());
+        result.put("failedRecords", failedRecords);
+
+        if (!failedRecords.isEmpty()) {
+            return ResponseMap.response(
+                    "131",
+                    failedRecords.size() + " of " + totalRecords + " debit or credit upload failed",
+                    result
+            );
+        }
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                successCount + " of " + totalRecords + " debit or credit uploaded successfully",
+                result
+        );
+    }
+
+    private void bulkInsertDebtCreditPayments(List<DebitCreditAdjust> adjustments, UserModel user) {
+        if (adjustments.isEmpty()) return;
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<DebitCreditPayment> payments = adjustments.stream().map(adj -> {
+            DebitCreditPayment p = new DebitCreditPayment();
+            p.setParentId(null);
+            p.setCreditDebitAdjId(adj.getId());
+            p.setCredit(adj.getType().equalsIgnoreCase("credit") ? adj.getAmount() : BigDecimal.ZERO);
+            p.setDebt(adj.getType().equalsIgnoreCase("debit") ? adj.getAmount() : BigDecimal.ZERO);
+            p.setBalance(adj.getAmount());
+            p.setOrgId(adj.getOrgId());
+            p.setCreatedAt(now);
+            return p;
+        }).toList();
+
+        mapper.bulkInsertDebtCreditPayments(payments);
+    }
+
+    private List<DebitCreditAdjust> insertBatchTransactional(List<DebitCreditAdjust> batch, UserModel user, List<GenericResp> failedRecords) {
+
+//        prepareDebitCredits(batch, user, failedRecords);
+        // Validate & prepare debit credits; returns only valid records
+        List<DebitCreditAdjust> validRecords = prepareDebitCredits(batch, user, failedRecords);
+
+        if (validRecords.isEmpty()) return Collections.emptyList();
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // --- Collect unique IDs for batch query ---
+        List<UUID> meterIds = validRecords.stream().map(DebitCreditAdjust::getMeterId).distinct().toList();
+        List<UUID> liabilityIds = validRecords.stream().map(DebitCreditAdjust::getLiabilityCauseId).distinct().toList();
+        List<String> types = validRecords.stream().map(DebitCreditAdjust::getType).distinct().toList();
+
+        // --- Fetch existing adjustments in bulk ---
+        List<DebitCreditAdjust> existingAdjustments = mapper.findExistingAdjustments(meterIds, user.getOrgId(), liabilityIds, types);
+
+        Map<String, DebitCreditAdjust> existingMap = existingAdjustments.stream()
+                .collect(Collectors.toMap(
+                        a -> a.getMeterId() + "_" + a.getLiabilityCauseId() + "_" + a.getType().toLowerCase(),
+                        a -> a
+                ));
+
+        List<DebitCreditAdjust> toUpdate = new ArrayList<>();
+        List<DebitCreditAdjust> toInsert = new ArrayList<>();
+        List<DebitCreditPayment> toInsertPayment = new ArrayList<>();
+
+        for (DebitCreditAdjust adjust : validRecords) {
+            String key = adjust.getMeterId() + "_" + adjust.getLiabilityCauseId() + "_" + adjust.getType().toLowerCase();
+            DebitCreditAdjust existing = existingMap.get(key);
+
+            if (existing != null) {
+                // Prepare for bulk update
+                existing.setAmount(adjust.getAmount()); // amount to add
+                existing.setUpdatedAt(now);
+                toUpdate.add(existing);
+            } else {
+//                DebitCreditPayment payment = new DebitCreditPayment();
+//                payment.setCreditDebitAdjId(request.getId());
+//                payment.setCredit(request.getType().equalsIgnoreCase("credit")
+//                        ? request.getAmount() : BigDecimal.ZERO);
+//                payment.setBalance(AdjustResult != null ? request.getBalance() : request.getAmount());
+//                payment.setDebt(request.getType().equalsIgnoreCase("credit")
+//                        ? BigDecimal.ZERO : request.getAmount());
+//                payment.setOrgId(um.getOrgId());
+//
+                // Prepare for bulk insert
+//                adjust.setId(UUID.randomUUID());
+//                adjust.setCreatedAt(now);
+//                adjust.setUpdatedAt(now);
+                toInsert.add(adjust);
+            }
+        }
+
+        // --- Bulk update existing adjustments ---
+        if (!toUpdate.isEmpty()) {
+            mapper.bulkUpdateAdjustments(toUpdate);
+        }
+
+        // --- Bulk insert new adjustments ---
+        if (!toInsert.isEmpty()) {
+            mapper.bulkInsertDebitCreditAdjust(toInsert);
+        }
+
+        // Audit
+        auditBatch(validRecords, user, "Adjustment created/updated in bulk");
+
+        List<DebitCreditAdjust> allProcessed = new ArrayList<>();
+        allProcessed.addAll(toInsert);
+        allProcessed.addAll(toUpdate);
+        return allProcessed;
+    }
+
+    private List<DebitCreditAdjust> prepareDebitCredits(
+            List<DebitCreditAdjust> batch,
+            UserModel user,
+            List<GenericResp> failedRecords) {
+
+        // Fetch meters and liability causes
+        List<String> meterNumbers = batch.stream().map(DebitCreditAdjust::getMeterNumber)
+                .filter(Objects::nonNull).distinct().toList();
+
+        List<String> codes = batch.stream().map(DebitCreditAdjust::getCode)
+                .filter(Objects::nonNull).distinct().toList();
+
+        Map<String, UUID> meterMap = mapper.findMetersByNumbers(meterNumbers).stream()
+                .collect(Collectors.toMap(m -> (String) m.get("meter_number"), m -> (UUID) m.get("id")));
+
+        Map<String, UUID> liabilityMap = mapper.findLiabilityByCodes(codes).stream()
+                .collect(Collectors.toMap(l -> (String) l.get("code"), l -> (UUID) l.get("id")));
+
+        List<DebitCreditAdjust> validAdjustments = new ArrayList<>();
+
+        for (DebitCreditAdjust adjust : batch) {
+
+            if (isBlank(adjust.getMeterNumber())) {
+                failedRecords.add(buildFailure(adjust, "Meter number is required")); continue;
+            }
+            if (isBlank(adjust.getCode())) {
+                failedRecords.add(buildFailure(adjust, "Code is required")); continue;
+            }
+            if (adjust.getAmount() == null || adjust.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                failedRecords.add(buildFailure(adjust, "Amount must be greater than zero")); continue;
+            }
+            if (isBlank(adjust.getType()) || (!adjust.getType().equalsIgnoreCase("credit") && !adjust.getType().equalsIgnoreCase("debit"))) {
+                failedRecords.add(buildFailure(adjust, "Type parameter not supported")); continue;
+            }
+
+            UUID meterId = meterMap.get(adjust.getMeterNumber());
+            UUID liabilityId = liabilityMap.get(adjust.getCode());
+
+            if (meterId == null) { failedRecords.add(buildFailure(adjust, "Meter not found")); continue; }
+            if (liabilityId == null) { failedRecords.add(buildFailure(adjust, "Liability code not found")); continue; }
+
+            // Set resolved IDs and system fields
+            adjust.setMeterId(meterId);
+            adjust.setLiabilityCauseId(liabilityId);
+            adjust.setOrgId(user.getOrgId());
+            adjust.setStatus("UNPAID");
+
+            validAdjustments.add(adjust);
+        }
+
+        return validAdjustments;
+    }
+
+    private int insertSubBatchTransactional(List<DebitCreditAdjust> batch, UserModel user, List<GenericResp> failedRecords) {
+        int successCount = 0;
+        int subBatchSize = 100;
+
+        for (int i = 0; i < batch.size(); i += subBatchSize) {
+            int end = Math.min(i + subBatchSize, batch.size());
+//            List<Meter> subBatch = batch.subList(i, end);
+            List<DebitCreditAdjust> subBatch = new ArrayList<>(batch.subList(i, end));
+
+            try {
+                insertBatchTransactional(subBatch, user, failedRecords);
+                successCount += subBatch.size();
+            } catch (Exception e) {
+                log.warn("Sub-batch failed (size={}): {}", subBatch.size(), e.getMessage());
+
+                if (subBatch.size() > 50) {
+                    successCount += insertSinglesFallbackAsync(subBatch, user, failedRecords);
+                } else {
+                    successCount += insertSinglesFallback(subBatch, user, failedRecords);
+                }
+            }
+        }
+        return successCount;
+    }
+
+    private int insertSinglesFallback(List<DebitCreditAdjust> subBatch, UserModel user, List<GenericResp> failedRecords) {
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+        for (DebitCreditAdjust debitCreditAdjust : subBatch) {
+            futures.add(insertSingleAsync(debitCreditAdjust, user, failedRecords));
+        }
+
+        // Wait for all tasks to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Sum successful inserts
+        return futures.stream().mapToInt(f -> f.join()).sum();
+    }
+
+    @Async("bulkUploadExecutor")
+    public CompletableFuture<Integer> insertSingleAsync(DebitCreditAdjust debitCreditAdjust, UserModel user, List<GenericResp> failedRecords) {
+        try {
+            insertSingleTransactional(debitCreditAdjust, user);
+            return CompletableFuture.completedFuture(1);
+        } catch (Exception e) {
+            String reason = extractErrorMessage(e);
+            GenericResp resp = new GenericResp();
+            resp.setId(debitCreditAdjust.getMeterNumber());
+            resp.setMessage("Debit-credit adjustment failed: "+reason);
+            resp.setData(debitCreditAdjust.getMeterNumber());
+
+            failedRecords.add(resp);
+//            failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+            log.warn("Async single insert failed for {}: {}", debitCreditAdjust.getMeterNumber(), reason);
+            return CompletableFuture.completedFuture(0);
+        }
+    }
+
+
+    private int insertSinglesFallbackAsync(List<DebitCreditAdjust> subBatch, UserModel user, List<GenericResp> failedRecords) {
+        int successCount = 0;
+
+        for (DebitCreditAdjust debitCreditAdjust : subBatch) {
+            try {
+                log.debug("Fallback single upload for adjustment: {}", debitCreditAdjust.getMeterNumber());
+                insertSingleTransactional(debitCreditAdjust, user);
+                successCount++;
+            } catch (Exception e) {
+                String reason = extractErrorMessage(e);
+                GenericResp resp = new GenericResp();
+                resp.setId(debitCreditAdjust.getMeterNumber());
+                resp.setMessage("Adjustment single save failed: "+reason);
+                resp.setData(debitCreditAdjust.getMeterNumber());
+
+                failedRecords.add(resp);
+//                failedRecords.add(meter.getMeterNumber() + " (" + reason + ")");
+                log.warn("Adjustment {} failed individually: {}", debitCreditAdjust.getMeterNumber(), reason);
+            }
+        }
+
+        return successCount;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void insertSingleTransactional(DebitCreditAdjust debitCreditAdjust, UserModel user) {
+//        try {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        // --- Step 1: Prepare core meter entity ---
+        debitCreditAdjust.setOrgId(user.getOrgId());
+
+        // --- Step 2: Insert into main + version tables ---
+        createDebitAdjustment(debitCreditAdjust);
+//        mapper.createDebitAdjustment(debitCreditAdjust);
+
+        // --- Step 4: Audit logging ---
+        DebitCreditAdjust debitAdjustment = mapper.getDebitAdjustmentById(debitCreditAdjust.getId(), user.getOrgId());
+//        Meter newMeter = mapper.findByIdVersion(debitCreditAdjust.getId(), user.getOrgId(), user.getNodeInfo().getNodeId());
+        AuditLog auditLog = buildAuditLog(user, "Adjustment created/updated in bulk-single","debit-credit", debitAdjustment, metadata);
+        safeAuditService.saveAudit(auditLog);
+
+//        } catch (Exception e) {
+//            log.error("Failed to insert meter {}: {}", meter.getMeterNumber(), e.getMessage(), e);
+//            throw e; // rethrow so parent caller can track failure count
+//        }
+    }
+
+//    private void prepareDebitCredits(
+//            List<DebitCreditAdjust> batch,
+//            UserModel user,
+//            List<GenericResp> failedRecords) {
+//
+//        // STEP 1: Extract values for bulk lookup
+//        List<String> meterNumbers = batch.stream()
+//                .map(DebitCreditAdjust::getMeterNumber)
+//                .filter(Objects::nonNull)
+//                .distinct()
+//                .toList();
+//
+//        List<String> codes = batch.stream()
+//                .map(DebitCreditAdjust::getCode)
+//                .filter(Objects::nonNull)
+//                .distinct()
+//                .toList();
+//
+//        // STEP 2: Fetch from DB
+//        Map<String, UUID> meterMap = mapper.findMetersByNumbers(meterNumbers)
+//                .stream()
+//                .collect(Collectors.toMap(
+//                        m -> (String) m.get("meter_number"),
+//                        m -> (UUID) m.get("id")
+//                ));
+//
+//        Map<String, UUID> liabilityMap = mapper.findLiabilityByCodes(codes)
+//                .stream()
+//                .collect(Collectors.toMap(
+//                        l -> (String) l.get("code"),
+//                        l -> (UUID) l.get("id")
+//                ));
+//
+//        // STEP 3: Validate + Map
+//        Iterator<DebitCreditAdjust> iterator = batch.iterator();
+////        Set<String> allowedStatuses = Set.of("PAID", "PARTIALLY_PAID", "UNPAID");
+//
+//            while (iterator.hasNext()) {
+//
+//                DebitCreditAdjust adjust = iterator.next();
+//
+//                if (isBlank(adjust.getMeterNumber())) {
+//
+//                    failedRecords.add(
+//                            buildFailure(adjust, "Meter number is required"));
+//
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (isBlank(adjust.getCode())) {
+//
+//                    failedRecords.add(
+//                            buildFailure(adjust, "Code is required"));
+//
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (adjust.getAmount() == null) {
+//
+//                    failedRecords.add(
+//                            buildFailure(adjust, "Amount is required"));
+//
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (adjust.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+//
+//                    failedRecords.add(
+//                            buildFailure(adjust, "Amount must greater than zero"));
+//
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (isBlank(adjust.getType())) {
+//
+//                    failedRecords.add(
+//                            buildFailure(adjust, "Type is required"));
+//
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                if (!adjust.getType().equalsIgnoreCase("credit")
+//                        && !adjust.getType().equalsIgnoreCase("debit")) {
+//                    failedRecords.add(
+//                            buildFailure(adjust, "Type parameter not supported"));
+//
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                // Lookup meter
+//                UUID meterId = meterMap.get(adjust.getMeterNumber());
+//                if (meterId == null) {
+//                    failedRecords.add(buildFailure(adjust, "Meter not found or not assigned"));
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                // Lookup liability cause
+//                UUID liabilityId = liabilityMap.get(adjust.getCode());
+//                if (liabilityId == null) {
+//                    failedRecords.add(buildFailure(adjust, "Liability code not found"));
+//                    iterator.remove();
+//                    continue;
+//                }
+//
+//                // Set resolved IDs
+//                adjust.setMeterId(meterId);
+//                adjust.setLiabilityCauseId(liabilityId);
+//
+//                // Set system fields
+//                adjust.setOrgId(user.getOrgId());
+//                adjust.setStatus("UNPAID");
+//            }
+//
+//    }
+
+    private String extractErrorMessage(Exception e) {
+        String message = e.getMessage();
+
+        if (message == null) return "Unknown error";
+
+        if (message.contains("violates not-null constraint")) {
+            return "Missing required field — one or more mandatory columns are empty.";
+        }
+        if (message.contains("foreign key constraint")) {
+            return "Invalid reference — linked data does not exist.";
+        }
+        if (message.contains("invalid input syntax")) {
+            return "Invalid data type — check number or date format.";
+        }
+
+        // default fallback
+        return message.split("\n")[0];
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private GenericResp buildFailure(DebitCreditAdjust adjust, String message) {
+
+        GenericResp resp = new GenericResp();
+
+        resp.setId(adjust.getMeterNumber());
+        resp.setMessage(message);
+        resp.setData(adjust);
+
+        return resp;
+    }
+
+    private void auditBatch(List<DebitCreditAdjust> batch, UserModel user, String desc) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+        for (DebitCreditAdjust m : batch) {
+            AuditLog auditLog = buildAuditLog(user, desc,"debit-credit ", m, metadata);
+            safeAuditService.saveAudit(auditLog);
+        }
+    }
+
+    private static List<DebitCreditAdjust> processDebitCreditAdjustExcel(InputStream inputStream) throws IOException {
+        List<DebitCreditAdjust> debitCreditAdjusts = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Skip header row safely
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                DebitCreditAdjust debitCreditAdjust = new DebitCreditAdjust();
+
+                debitCreditAdjust.setMeterNumber(getStringCellValue(row.getCell(0)).trim());
+                debitCreditAdjust.setCode(getStringCellValue(row.getCell(1)).trim());
+                debitCreditAdjust.setAmount(BigDecimal.valueOf(Long.parseLong(String.valueOf(row.getCell(2)))));
+                debitCreditAdjust.setType(getStringCellValue(row.getCell(3)).trim());
+
+
+                debitCreditAdjusts.add(debitCreditAdjust);
+            }
+        }
+        return debitCreditAdjusts;
+    }
+
+    private static String getStringCellValue(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
+    }
+
+    private List<DebitCreditAdjust> processDebitCreditAdjustCsv(InputStream inputStream) throws IOException {
+        List<DebitCreditAdjust> debitCreditAdjusts = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            for (CSVRecord record : csvParser) {
+                DebitCreditAdjust debitCreditAdjust = new DebitCreditAdjust();
+                debitCreditAdjust.setMeterNumber(record.get("Meter number".trim()));
+                debitCreditAdjust.setCode(record.get("Liability cause code".trim().trim()));
+                debitCreditAdjust.setAmount(BigDecimal.valueOf(Long.parseLong(record.get("Amount").trim())));
+                debitCreditAdjust.setType(record.get("Type".trim()));
+
+                debitCreditAdjusts.add(debitCreditAdjust);
+            }
+        }
+        return debitCreditAdjusts;
+    }
+
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustments(
@@ -570,7 +1154,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             throw exception;
         }
     }
-
 
 //    @Transactional(readOnly = true)
 //    @Override

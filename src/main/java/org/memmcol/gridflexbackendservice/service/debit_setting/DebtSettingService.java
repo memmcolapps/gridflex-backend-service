@@ -39,7 +39,7 @@ public interface DebtSettingService {
 
     Map<String, Object> bulkApprovePercentageRange(List<PercentageRange> pr);
 
-    Map<String, Object> bulkPercentageRange(MultipartFile file) throws IOException;;
-
-    Map<String, Object> bulkLiabilityCause(MultipartFile file) throws IOException;;
+//    Map<String, Object> bulkPercentageRange(MultipartFile file) throws IOException;;
+//
+//    Map<String, Object> bulkLiabilityCause(MultipartFile file) throws IOException;;
 }
