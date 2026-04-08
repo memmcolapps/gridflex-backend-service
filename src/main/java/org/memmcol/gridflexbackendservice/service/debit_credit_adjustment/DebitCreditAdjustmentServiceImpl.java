@@ -893,17 +893,25 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                         a -> a
                 ));
 
+        System.out.println("existingMap: "+existingMap);
+
         int successCount = 0;
 
+        List<DebitCreditAdjust> updates = new ArrayList<>();
         for (DebitCreditAdjust r : validRecords) {
+            BigDecimal newBalance;
             String key = r.getMeterId() + "_" + r.getLiabilityCauseId() + "_" + r.getType().toLowerCase();
             DebitCreditAdjust existing = existingMap.get(key);
-            BigDecimal newBalance;
-
             if (existing != null) {
-                // UPDATE EXISTING
-                mapper.updateAdjustmentBalance(existing.getId(), r.getAmount());
+                DebitCreditAdjust upd = new DebitCreditAdjust();
+                upd.setId(existing.getId());
+                upd.setAmount(r.getAmount());
+//                upd.setBalance(r.getType().equalsIgnoreCase("debit") ? r.getAmount() : BigDecimal.ZERO);
+                upd.setUpdatedAt(LocalDateTime.now());
+                updates.add(upd);
+
                 r.setId(existing.getId());
+//                r.setBalance(existing.getBalance().add(r.getAmount()));
                 newBalance = existing.getBalance().add(r.getAmount());
             } else {
                 // NEW ADJUSTMENT
@@ -929,8 +937,48 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             successCount++;
         }
+//        for (DebitCreditAdjust r : validRecords) {
+//            String key = r.getMeterId() + "_" + r.getLiabilityCauseId() + "_" + r.getType().toLowerCase();
+//            DebitCreditAdjust existing = existingMap.get(key);
+//            BigDecimal newBalance;
+//            System.out.println("existing: "+existing);
+//            System.out.println("id1: "+existing.getId());
+//            System.out.println("lc1: "+existing.getLiabilityCauseId());
+//
+//            if (existing != null) {
+//                System.out.println("id: "+existing.getId());
+//                System.out.println("lc: "+existing.getLiabilityCauseId());
+//                // UPDATE EXISTING
+//                mapper.updateAdjustmentBalance(existing.getId(), r.getAmount(), r.getAmount(), r.getUpdatedAt());
+//                r.setId(existing.getId());
+//                newBalance = existing.getBalance().add(r.getAmount());
+//            } else {
+//                // NEW ADJUSTMENT
+//                r.setId(UUID.randomUUID());
+//                r.setOrgId(user.getOrgId());
+//                r.setStatus("UNPAID");
+//                r.setCreatedAt(now);
+//                r.setUpdatedAt(now);
+//                r.setBalance(r.getAmount());
+//                toInsert.add(r);
+//                newBalance = r.getAmount();
+//            }
+//
+//            // CREATE PAYMENT
+//            DebitCreditPayment p = new DebitCreditPayment();
+//            p.setCreditDebitAdjId(r.getId());
+//            p.setCredit(r.getType().equalsIgnoreCase("credit") ? r.getAmount() : BigDecimal.ZERO);
+//            p.setDebt(r.getType().equalsIgnoreCase("debit") ? r.getAmount() : BigDecimal.ZERO);
+//            p.setBalance(newBalance);
+//            p.setOrgId(user.getOrgId());
+//            p.setCreatedAt(now);
+//            payments.add(p);
+//
+//            successCount++;
+//        }
 
         // STEP 5: BULK INSERT
+        if (!updates.isEmpty()) mapper.bulkUpdateAdjustmentBalance(updates);
         if (!toInsert.isEmpty()) mapper.bulkInsertDebitCreditAdjust(toInsert);
         if (!payments.isEmpty()) mapper.bulkInsertDebtCreditPayments(payments);
 
