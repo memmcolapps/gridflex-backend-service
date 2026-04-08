@@ -10,7 +10,6 @@ import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -543,51 +542,51 @@ public interface DebitCreditAdjustmentMapper {
 //            "VALUES (#{liabilityCauseId}, #{meterId}, #{orgId}, #{status}, #{amount}, #{amount}, #{type}, #{createdAt}, #{updatedAt})")
 //    void bulkInsertDebitCreditAdjust(List<DebitCreditAdjust> batch);
 
-    @Insert({
-            "<script>",
-            "INSERT INTO credit_debit_adjustment ",
-            "(liability_cause_id, meter_id, org_id, status, debit, balance, type, created_at, updated_at)",
-            "VALUES",
-            "<foreach collection='batch' item='item' separator=','>",
-            "(",
-            "#{item.liabilityCauseId},",
-            "#{item.meterId},",
-            "#{item.orgId},",
-            "#{item.status},",
-            "#{item.amount},",
-            "#{item.amount},",
-            "#{item.type},",
-            "#{item.createdAt},",
-            "#{item.updatedAt}",
-            ")",
-            "</foreach>",
-            "</script>"
-    })
-    void bulkInsertDebitCreditAdjust(@Param("batch") List<DebitCreditAdjust> batch);
+//    @Insert({
+//            "<script>",
+//            "INSERT INTO credit_debit_adjustment ",
+//            "(liability_cause_id, meter_id, org_id, status, debit, balance, type, created_at, updated_at)",
+//            "VALUES",
+//            "<foreach collection='batch' item='item' separator=','>",
+//            "(",
+//            "#{item.liabilityCauseId},",
+//            "#{item.meterId},",
+//            "#{item.orgId},",
+//            "#{item.status},",
+//            "#{item.amount},",
+//            "#{item.amount},",
+//            "#{item.type},",
+//            "#{item.createdAt},",
+//            "#{item.updatedAt}",
+//            ")",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    void bulkInsertDebitCreditAdjust(@Param("batch") List<DebitCreditAdjust> batch);
 
     @Select({
             "<script>",
             "SELECT meter_number, id FROM meters",
-            "WHERE approve_status IN ('Approved', 'Assign-edited') " +
+            "WHERE org_id = #{orgId} AND meter_stage IN ('Assigned', 'Assign-edited') " +
             "AND meter_number IN",
             "<foreach collection='meterNumbers' item='item' open='(' separator=',' close=')'>",
             "#{item}",
             "</foreach>",
             "</script>"
     })
-    List<Map<String, Object>> findMetersByNumbers(List<String> meterNumbers);
+    List<Map<String, Object>> findMetersByNumbers(List<String> meterNumbers, UUID orgId);
 
     @Select({
             "<script>",
             "SELECT code, id FROM liability_cause",
-            "WHERE approve_status IN ('Approved', 'Pending-edited') " +
+            "WHERE org_id = #{orgId} AND approve_status IN ('Approved', 'Pending-edited') " +
             "AND code IN",
             "<foreach collection='codes' item='item' open='(' separator=',' close=')'>",
             "#{item}",
             "</foreach>",
             "</script>"
     })
-    List<Map<String, Object>> findLiabilityByCodes(List<String> codes);
+    List<Map<String, Object>> findLiabilityByCodes(List<String> codes, UUID orgId);
 
 //    @Select({
 //            "<script>",
@@ -607,49 +606,159 @@ public interface DebitCreditAdjustmentMapper {
 //    })
 //    List<Map<String, Object>> findLatestStatusByMeterIds(List<UUID> validMeterIds);
 
-    @Select({
-            "<script>",
-            "SELECT * FROM credit_debit_adjustment",
-            "WHERE meter_id IN",
-            "<foreach collection='meterIds' item='item' open='(' separator=',' close=')'>#{item}</foreach>",
-            "AND org_id = #{orgId}",
-            "AND liability_cause_id IN",
-            "<foreach collection='liabilityIds' item='item' open='(' separator=',' close=')'>#{item}</foreach>",
-            "AND type IN",
-            "<foreach collection='types' item='item' open='(' separator=',' close=')'>#{item}</foreach>",
-            "AND (status = 'UNPAID' OR status = 'PARTIALLY_PAID')",
-            "</script>"
+//    @Select({
+//            "<script>",
+//            "SELECT * FROM credit_debit_adjustment",
+//            "WHERE meter_id IN",
+//            "<foreach collection='meterIds' item='item' open='(' separator=',' close=')'>#{item}</foreach>",
+//            "AND org_id = #{orgId}",
+//            "AND liability_cause_id IN",
+//            "<foreach collection='liabilityIds' item='item' open='(' separator=',' close=')'>#{item}</foreach>",
+//            "AND type IN",
+//            "<foreach collection='types' item='item' open='(' separator=',' close=')'>#{item}</foreach>",
+//            "AND (status = 'UNPAID' OR status = 'PARTIALLY_PAID')",
+//            "</script>"
+//    })
+//    List<DebitCreditAdjust> findExistingAdjustments(@Param("meterIds") List<UUID> meterIds,
+//                                                    @Param("orgId") UUID orgId,
+//                                                    @Param("liabilityIds") List<UUID> liabilityIds,
+//                                                    @Param("types") List<String> types);
+
+    // Get meters by meter numbers
+    @Select("<script>" +
+            "SELECT * FROM meters WHERE meter_number IN " +
+            "<foreach collection='meterNumbers' item='num' open='(' separator=',' close=')'>#{num}</foreach>" +
+            "AND meter_stage IN ('Assigned','Assign-edited')" +
+            "</script>")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "meterNumber", column = "meter_number"),
     })
+    List<Meter> getMetersByNumbers(@Param("meterNumbers") List<String> meterNumbers);
+
+    // Get liability causes by IDs
+    @Select("<script>" +
+            "SELECT * FROM liability_cause WHERE code IN " +
+            "<foreach collection='codes' item='code' open='(' separator=',' close=')'>#{code}</foreach>" +
+            "AND org_id = #{orgId}" +
+            "</script>")
+    List<LiabilityCause> getLiabilityCausesByIds(@Param("codes") List<String> codes, @Param("orgId") UUID orgId);
+
+    // Find existing adjustments to update
+    @Select("<script>" +
+            "SELECT * FROM credit_debit_adjustment " +
+            "WHERE meter_id IN " +
+            "<foreach collection='meterIds' item='id' open='(' separator=',' close=')'>#{id}</foreach> " +
+            "AND org_id = #{orgId} " +
+            "AND liability_cause_id IN " +
+            "<foreach collection='liabilityIds' item='id' open='(' separator=',' close=')'>#{id}</foreach> " +
+            "AND type IN " +
+            "<foreach collection='types' item='t' open='(' separator=',' close=')'>#{t}</foreach> " +
+            "AND status IN ('UNPAID','PARTIALLY_PAID')" +
+            "</script>")
     List<DebitCreditAdjust> findExistingAdjustments(@Param("meterIds") List<UUID> meterIds,
                                                     @Param("orgId") UUID orgId,
                                                     @Param("liabilityIds") List<UUID> liabilityIds,
                                                     @Param("types") List<String> types);
 
-    @Update({
-            "<script>",
-            "<foreach collection='list' item='item'>",
-            "UPDATE credit_debit_adjustment",
-            "SET debit = debit + #{item.amount},",
-            "balance = balance + #{item.amount},",
-            "updated_at = #{item.updatedAt}",
-            "WHERE id = #{item.id};",
-            "</foreach>",
-            "</script>"
-    })
-    void bulkUpdateAdjustments(@Param("list") List<DebitCreditAdjust> list);
+    // Bulk insert new adjustments
+    @Insert("<script>" +
+            "INSERT INTO credit_debit_adjustment " +
+            "(id, meter_id, liability_cause_id, type, debit, balance, status, org_id, created_at, updated_at) " +
+            "VALUES " +
+            "<foreach collection='adjustments' item='a' separator=','> " +
+            "(#{a.id}, #{a.meterId}, #{a.liabilityCauseId}, #{a.type}, #{a.amount}, #{a.balance}, #{a.status}, #{a.orgId}, #{a.createdAt}, #{a.updatedAt})" +
+            "</foreach>" +
+            "</script>")
+    int bulkInsertDebitCreditAdjust(@Param("adjustments") List<DebitCreditAdjust> adjustments);
 
-    @Insert({
-            "<script>",
-            "INSERT INTO credit_debit_payment ",
-            "(parent_id, credit_debit_adj_id, credit, debt, balance, created_at, org_id) ",
-            "VALUES ",
-            "<foreach collection='payments' item='p' separator=','>",
-            "(#{p.parentId}, #{p.creditDebitAdjId}, #{p.credit}, #{p.debt}, #{p.balance}, #{p.createdAt}, #{p.orgId})",
-            "</foreach>",
-            "</script>"
-    })
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void bulkInsertDebtCreditPayments(@Param("payments") List<DebitCreditPayment> payments);
+    // Update existing adjustment balance
+    @Update("UPDATE credit_debit_adjustment " +
+            "SET balance = balance + #{amount}, updated_at = NOW() " +
+            "WHERE id = #{id}")
+    int updateAdjustmentBalance(@Param("id") UUID id, @Param("amount") BigDecimal amount);
+
+    // Bulk insert payments
+    @Insert("<script>" +
+            "INSERT INTO credit_debit_payment " +
+            "(credit_debit_adj_id, credit, debt, balance, org_id, created_at) " +
+            "VALUES " +
+            "<foreach collection='payments' item='p' separator=','> " +
+            "(#{p.creditDebitAdjId}, #{p.credit}, #{p.debt}, #{p.balance}, #{p.orgId}, #{p.createdAt})" +
+            "</foreach>" +
+            "</script>")
+    int bulkInsertDebtCreditPayments(@Param("payments") List<DebitCreditPayment> payments);
+
+//    @Update({
+//            "<script>",
+//            "<foreach collection='list' item='item'>",
+//            "UPDATE credit_debit_adjustment",
+//            "SET debit = debit + #{item.amount},",
+//            "balance = balance + #{item.amount},",
+//            "updated_at = #{item.updatedAt}",
+//            "WHERE id = #{item.id};",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    void bulkUpdateAdjustments(@Param("list") List<DebitCreditAdjust> list);
+//
+//    @Insert({
+//            "<script>",
+//            "INSERT INTO credit_debit_payment ",
+//            "(parent_id, credit_debit_adj_id, credit, debt, balance, created_at, org_id) ",
+//            "VALUES ",
+//            "<foreach collection='payments' item='p' separator=','>",
+//            "(#{p.parentId}, #{p.creditDebitAdjId}, #{p.credit}, #{p.debt}, #{p.balance}, #{p.createdAt}, #{p.orgId})",
+//            "</foreach>",
+//            "</script>"
+//    })
+//    @Options(useGeneratedKeys = true, keyProperty = "id")
+//    void bulkInsertDebtCreditPayments(@Param("payments") List<DebitCreditPayment> payments);
+//
+//    @Select({
+//            "<script>",
+//            "SELECT * FROM liability_cause",
+//            "WHERE id IN",
+//            "<foreach collection='liabilityIds' item='id' open='(' separator=',' close=')'>",
+//            "#{id}",
+//            "</foreach>",
+//            "AND org_id = #{orgId}",
+//            "AND (approve_status = 'Approved' OR approve_status = 'Pending-edited')",
+//            "</script>"
+//    })
+//    @Results({
+//            @Result(column = "id", property = "id"),
+//            @Result(column = "org_id", property = "orgId"),
+//            @Result(column = "approve_status", property = "approveStatus"),
+//            @Result(column = "created_at", property = "createdAt"),
+//            @Result(column = "updated_at", property = "updatedAt")
+//    })
+//    List<LiabilityCause> getLiabilityCausesByIds(
+//            @Param("liabilityIds") List<UUID> liabilityIds,
+//            @Param("orgId") UUID orgId
+//    );
+//
+//    @Select({
+//            "<script>",
+//            "SELECT * FROM meters",
+//            "WHERE id IN",
+//            "<foreach collection='meterIds' item='id' open='(' separator=',' close=')'>",
+//            "#{id}",
+//            "</foreach>",
+//            "AND (meter_stage = 'Assigned' OR meter_stage = 'Assign-edited')",
+//            "</script>"
+//    })
+//    @Results({
+//            @Result(column = "id", property = "id"),
+//            @Result(column = "org_id", property = "orgId"),
+//            @Result(column = "node_id", property = "nodeId"),
+//            @Result(column = "service_center", property = "serviceCenter"),
+//            @Result(column = "root", property = "root"),
+//            @Result(column = "created_at", property = "createdAt"),
+//            @Result(column = "updated_at", property = "updatedAt")
+//    })
+//    List<Meter> getMetersByIds(@Param("meterIds") List<UUID> meterIds);
+
 
 //    @Insert({
 //            "<script>",
