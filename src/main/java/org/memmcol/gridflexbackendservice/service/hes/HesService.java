@@ -28,5 +28,9 @@ public interface HesService {
 
     Map<String, Object> triggerEvent(String jobGroup, String jobName);
 
+    Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
+            String businessHub, String manufacturer, String meterStatus, int page, int size);
+
+
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

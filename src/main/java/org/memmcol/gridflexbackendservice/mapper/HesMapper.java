@@ -1065,4 +1065,53 @@ public interface HesMapper {
 //    private String obisCode;
 //    private EventType eventType;
 
+
+    @Select("""
+        <script>
+            SELECT * FROM vw_meter_summary m
+            JOIN  meters_connection_event mc ON mc.meter_no = m.meter_number
+            WHERE m.org_id = #{orgId}
+            ORDER BY m.updated_at DESC
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+            @Result(property = "onlineTime", column = "online_time"),
+            @Result(property = "offlineTime", column = "offline_time"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "businessName", column = "bhub_name"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+//            @Result(property = "meter.createdAt", column = "created_at"),
+//            @Result(property = "meter.updatedAt", column = "updated_at"),
+            @Result(property = "meter.meterManufacturerName", column = "manufacturer_name"),
+            @Result(property = "meter.region", column = "region"),
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "smart_meter_model"),
+    })
+    List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId);
+
 }
