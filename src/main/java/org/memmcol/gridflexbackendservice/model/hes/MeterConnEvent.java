@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.model.hes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
+import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 
 import java.io.Serializable;
@@ -18,6 +19,8 @@ public class MeterConnEvent implements Serializable {
     private LocalDateTime offlineTime;
 
     private LocalDateTime updatedAt;
+
+    private String businessName;
 
     private Meter meter;
 
@@ -69,4 +72,11 @@ public class MeterConnEvent implements Serializable {
         this.meter = meter;
     }
 
+    public String getBusinessName() {
+        return businessName;
+    }
+
+    public void setBusinessName(String businessName) {
+        this.businessName = businessName;
+    }
 }

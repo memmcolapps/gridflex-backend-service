@@ -286,6 +286,29 @@ public class HesController {
         }
     }
 
+
+    @GetMapping("/meter-configuration")
+    public ResponseEntity<?> meterConfiguration(
+            @RequestParam(required = false) String meterNumber,
+            @RequestParam(required = false) String simNo,
+            @RequestParam(required = false) String model,
+            @RequestParam(required = false) String meterClass,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String businessHub,
+            @RequestParam(required = false) String manufacturer,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") int size) {
+        try {
+            Map<String, Object> result = hesService.meterConfiguration(
+                    meterNumber, simNo, model, meterClass, category,
+                    businessHub, manufacturer, status, page, size);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 //    /**
 //     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
 //     */

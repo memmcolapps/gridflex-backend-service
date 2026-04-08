@@ -279,23 +279,64 @@ public class HesClientServiceImpl implements HesService {
             if(flatList == null || flatList.isEmpty()){
                 return ResponseMap.response(status.getSuccessCode(), status.getDesc(), flatList);
             }
-            Map<UUID, Node> nodeMap = new HashMap<>();
-            List<Node> roots = new ArrayList<>();
 
-            // Map nodes by ID
+            // Get user node info
+            String userNodeType = um.getNodeInfo() != null ? um.getNodeInfo().getType() : null;
+            UUID userNodeId = um.getNodeInfo() != null ? um.getNodeInfo().getNodeId() : null;
+
+            // Build node map first
+            Map<UUID, Node> nodeMap = new HashMap<>();
             for (Node node : flatList) {
                 nodeMap.put(node.getId(), node);
-                node.setNodesTree(new ArrayList<>()); // Initialize children list
             }
 
-            // Reconstruct the tree
-            for (Node node : flatList) {
+            // If user is root, return full tree
+            List<Node> filteredFlatList = flatList;
+            if (userNodeType != null && !userNodeType.equalsIgnoreCase("root") && userNodeId != null) {
+                // Find user's node
+                Node userNode = nodeMap.get(userNodeId);
+                if (userNode != null) {
+                    // Get allowed node IDs (ancestors + user node + descendants)
+                    Set<UUID> allowedIds = new HashSet<>();
+                    
+                    // Add user's node
+                    allowedIds.add(userNodeId);
+                    
+                    // Add all ancestors
+                    UUID parentId = userNode.getParentId();
+                    while (parentId != null) {
+                        allowedIds.add(parentId);
+                        Node parent = nodeMap.get(parentId);
+                        parentId = (parent != null) ? parent.getParentId() : null;
+                    }
+                    
+                    // Add all descendants - check parentId in flat list
+                    Set<UUID> descendantIds = getDescendantIds(userNodeId, flatList);
+                    allowedIds.addAll(descendantIds);
+                    
+                    // Filter flat list to only include allowed nodes
+                    filteredFlatList = flatList.stream()
+                            .filter(n -> allowedIds.contains(n.getId()))
+                            .collect(Collectors.toList());
+                }
+            }
+
+            // Re-initialize and build tree from filtered list
+            Map<UUID, Node> filteredNodeMap = new HashMap<>();
+            List<Node> roots = new ArrayList<>();
+
+            for (Node node : filteredFlatList) {
+                filteredNodeMap.put(node.getId(), node);
+                node.setNodesTree(new ArrayList<>());
+            }
+
+            for (Node node : filteredFlatList) {
                 if (node.getParentId() == null) {
-                    roots.add(node); // Add root nodes to the list
+                    roots.add(node);
                 } else {
-                    Node parent = nodeMap.get(node.getParentId());
+                    Node parent = filteredNodeMap.get(node.getParentId());
                     if (parent != null) {
-                        parent.getNodesTree().add(node); // Add as a child to the parent
+                        parent.getNodesTree().add(node);
                     }
                 }
             }
@@ -311,6 +352,25 @@ public class HesClientServiceImpl implements HesService {
             genericHandler.logIncidentReport("profile event filter service failed");
             genericHandler.logAndSaveException(exception, "profile event filter");
             throw exception;
+        }
+    }
+
+    private Set<UUID> getDescendantIds(UUID nodeId, List<Node> flatList) {
+        Set<UUID> descendantIds = new HashSet<>();
+        Map<UUID, Node> nodeMap = new HashMap<>();
+        for (Node node : flatList) {
+            nodeMap.put(node.getId(), node);
+        }
+        collectDescendants(nodeId, descendantIds, nodeMap, flatList);
+        return descendantIds;
+    }
+
+    private void collectDescendants(UUID nodeId, Set<UUID> descendantIds, Map<UUID, Node> nodeMap, List<Node> flatList) {
+        for (Node node : flatList) {
+            if (node.getParentId() != null && node.getParentId().equals(nodeId)) {
+                descendantIds.add(node.getId());
+                collectDescendants(node.getId(), descendantIds, nodeMap, flatList);
+            }
         }
     }
 
@@ -557,6 +617,52 @@ public class HesClientServiceImpl implements HesService {
         } catch (Exception e) {
 //            genericHandler.logIncidentReport("set schedule service failed");
 //            genericHandler.logAndSaveException(e, "set schedule");
+            throw e;
+        }
+    }
+
+    @Override
+    public Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
+                                           String businessHub, String manufacturer, String meterStatus, int page, int size) {
+        try {
+            UserModel um = handleUserValidation();
+
+            UUID orgId = um.getOrgId();
+            List<MeterConnEvent> meterConfig = hesMapper.getMeterConfiguration(page, size, orgId);
+
+            List<MeterConnEvent> filteredComm = meterConfig.stream()
+                    .filter(e -> (meterNumber == null || e.getMeterNo() != null && e.getMeterNo().equalsIgnoreCase(meterNumber)) &&
+                            (simNo == null || e.getMeter() != null && e.getMeter().getSimNumber() != null && e.getMeter().getSimNumber().equalsIgnoreCase(simNo)) &&
+                            (model == null || e.getMeter() != null && e.getMeter().getSmartMeterInfo() != null && e.getMeter().getSmartMeterInfo().getMeterModel() != null && e.getMeter().getSmartMeterInfo().getMeterModel().equalsIgnoreCase(model)) &&
+                            (meterClass == null || e.getMeter() != null && e.getMeter().getMeterClass() != null && e.getMeter().getMeterClass().equalsIgnoreCase(meterClass)) &&
+                            (category == null || e.getMeter() != null && e.getMeter().getMeterCategory() != null && e.getMeter().getMeterCategory().equalsIgnoreCase(category)) &&
+                            (businessHub == null || e.getBusinessName() != null && e.getBusinessName().equalsIgnoreCase(businessHub)) &&
+                            (manufacturer == null || e.getMeter() != null && e.getMeter().getMeterManufacturerName() != null && e.getMeter().getMeterManufacturerName().equalsIgnoreCase(manufacturer)) &&
+                            (meterStatus == null || e.getMeter() != null && e.getMeter().getSmartStatus() != null && e.getMeter().getSmartStatus().toString().equalsIgnoreCase(meterStatus))
+                    )
+                    .collect(Collectors.toList());
+
+            int totalComm = filteredComm.size();
+            List<MeterConnEvent> paginatedEvents;
+            if (size == 0) {
+                paginatedEvents = filteredComm;
+            } else {
+                int fromIndex = Math.min(page * size, totalComm);
+                int toIndex = Math.min(fromIndex + size, totalComm);
+                paginatedEvents = filteredComm.subList(fromIndex, toIndex);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", paginatedEvents);
+            response.put("totalData", totalComm);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalPages", size > 0 ? (int) Math.ceil((double) totalComm / size) : 0);
+            return ResponseMap.response(this.status.getSuccessCode(), "Fetched successfully", response);
+
+        }catch (Exception e){
+            genericHandler.logIncidentReport("meterConfiguration failed");
+            genericHandler.logAndSaveException(e, "meterConfiguration");
             throw e;
         }
     }
