@@ -169,7 +169,7 @@ public class DebitCreditAdjustment {
                 .body(resource);
     }
 
-    @PutMapping("/bulk-upload")
+    @PostMapping("/bulk-upload")
     public ResponseEntity<Map<String, Object>> bulkUploadLiabilityCause(@RequestParam("file") MultipartFile file) {
         try {
             Map<String, Object> result =  service.debitCreditAdjustmentBulkUpload(file);
