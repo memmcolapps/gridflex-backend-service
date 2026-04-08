@@ -1,7 +1,6 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
-import org.memmcol.gridflexbackendservice.controller.HesController;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.CreditDebitAdjustment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
@@ -10,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -656,6 +656,10 @@ public interface DebitCreditAdjustmentMapper {
             "<foreach collection='types' item='t' open='(' separator=',' close=')'>#{t}</foreach> " +
             "AND status IN ('UNPAID','PARTIALLY_PAID')" +
             "</script>")
+    @Results({
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "liabilityCauseId", column = "liability_cause_id")
+    })
     List<DebitCreditAdjust> findExistingAdjustments(@Param("meterIds") List<UUID> meterIds,
                                                     @Param("orgId") UUID orgId,
                                                     @Param("liabilityIds") List<UUID> liabilityIds,
@@ -674,9 +678,9 @@ public interface DebitCreditAdjustmentMapper {
 
     // Update existing adjustment balance
     @Update("UPDATE credit_debit_adjustment " +
-            "SET balance = balance + #{amount}, updated_at = NOW() " +
+            "SET balance = balance + #{amount}, debit = debit + #{debit}, updated_at = #{updatedAt} " +
             "WHERE id = #{id}")
-    int updateAdjustmentBalance(@Param("id") UUID id, @Param("amount") BigDecimal amount);
+    int updateAdjustmentBalance(@Param("id") UUID id, @Param("amount") BigDecimal amount, BigDecimal debit, LocalDateTime updatedAt);
 
     // Bulk insert payments
     @Insert("<script>" +
@@ -688,6 +692,21 @@ public interface DebitCreditAdjustmentMapper {
             "</foreach>" +
             "</script>")
     int bulkInsertDebtCreditPayments(@Param("payments") List<DebitCreditPayment> payments);
+//    @Update("UPDATE credit_debit_adjustment " +
+//            "SET balance = balance + #{amount}, debit = debit + #{debit}, updated_at = #{updatedAt} " +
+//            "WHERE id = #{id}")
+    @Update({
+            "<script>",
+            "<foreach collection='updates' item='item' separator=';'>",
+            "UPDATE credit_debit_adjustment",
+            "SET balance = balance + #{item.amount},",
+            "    debit = debit + #{item.amount},",
+            "    updated_at = #{item.updatedAt}",
+            "WHERE id = #{item.id}",
+            "</foreach>",
+            "</script>"
+    })
+    void bulkUpdateAdjustmentBalance(List<DebitCreditAdjust> updates);
 
 //    @Update({
 //            "<script>",
