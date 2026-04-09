@@ -431,7 +431,8 @@ public class  SecurityConfig {
 						basePath + "/hes/service/dlms/set-clock",
 						basePath + "/hes/service/dlms/set-ctpt",
 						basePath + "/hes/service/dlms/set-apn",
-						basePath + "/hes/service/dlms/set-ip-port"
+						basePath + "/hes/service/dlms/set-ip-port",
+						basePath +"/hes/service/meter-configuration"
 				)
 				.access((context, authSupplier) -> {
 					Authentication authentication =  context.get();

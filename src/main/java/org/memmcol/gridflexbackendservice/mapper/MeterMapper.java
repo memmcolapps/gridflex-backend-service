@@ -3482,6 +3482,52 @@ public interface MeterMapper {
     })
     void removeBulkAssignedLocations(List<Meter> meterIds);
 
+    @Update({
+            "<script>",
+            "UPDATE meter_assign_locations_version",
+            "SET ",
+            "  meter_stage = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN 'Approved'",
+            "    </foreach>",
+            "  END,",
+            "  approve_by = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.approveBy} AS UUID)",
+            "    </foreach>",
+            "  END ",
+            "WHERE meter_id IN ",
+            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
+            "    #{m.meterId}",
+            "  </foreach> ",
+            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "</script>"
+    })
+    void updateDetachLocation(List<Meter> meterIds);
+
+    @Update({
+            "<script>",
+            "UPDATE payment_mode_version",
+            "SET ",
+            "  meter_stage = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN 'Approved'",
+            "    </foreach>",
+            "  END,",
+            "  approve_by = CASE meter_id",
+            "    <foreach collection='list' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.approveBy} AS UUID)",
+            "    </foreach>",
+            "  END ",
+            "WHERE meter_id IN ",
+            "  <foreach collection='list' item='m' open='(' separator=',' close=')'>",
+            "    #{m.meterId}",
+            "  </foreach> ",
+            "  AND org_id = #{list[0].orgId} AND meter_stage ILIKE 'Pending%'",
+            "</script>"
+    })
+    void updateDetachPaymentModes(List<Meter> meterIds);
+
     @Delete({
             "<script>",
             "DELETE FROM payment_mode",
