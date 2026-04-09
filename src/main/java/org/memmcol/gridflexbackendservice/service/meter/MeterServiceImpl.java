@@ -1903,7 +1903,7 @@ public class MeterServiceImpl implements MeterService {
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                     meterName + " ("+meter.getMeterNumber() +") " + capitalizeFirstLetter(approveStatus) + "ed Successfully",
+                     meterName + " ("+meter.getMeterNumber() +") " + approveStatus + "d successfully",
                     ""
             );
 
