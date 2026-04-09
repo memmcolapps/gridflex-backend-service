@@ -1681,9 +1681,27 @@ public class MeterServiceImpl implements MeterService {
             meterById.setReason(reason);
             int m = meterMapper.insertMeterVersion(meterById);
             if(m == 0) {
-                throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getRegFailureDesc());
+                throw new GlobalExceptionHandler.NotFoundException(meterName + " detach failed");
             }
 
+            meterById.getPaymentMode().setMeterStage("Pending-detached");
+            meterById.getPaymentMode().setOrgId(um.getOrgId());
+            meterById.getPaymentMode().setCreatedBy(um.getId());
+            meterById.getPaymentMode().setDescription("Location detached");
+            meterById.getMeterAssignLocation().setMeterStage("Pending-detached");
+            meterById.getMeterAssignLocation().setDescription("Location detached");
+            meterById.getMeterAssignLocation().setOrgId(um.getOrgId());
+            meterById.getMeterAssignLocation().setCreatedBy(um.getId());
+
+            int pm = meterMapper.assignPaymentModeVer(meterById.getPaymentMode());
+            if(pm == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Payment mode detach failed");
+            }
+
+            int ml = meterMapper.assignVerMeterToLocation(meterById.getMeterAssignLocation());
+            if(ml == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter location detach failed");
+            }
             // get recent meter record
             Meter meter =  meterMapper.findById(meterId, um.getOrgId(), nodeId);
 
@@ -2008,7 +2026,7 @@ public class MeterServiceImpl implements MeterService {
 
         String customerId = meter.getCustomerId();
 
-        List<Customer> c = customerMapper.totalCustomer(customerId);
+        List<Meter> c = customerMapper.totalCustomer(customerId);
 
         meter.setCustomerId(customerId);
 
@@ -2097,17 +2115,34 @@ public class MeterServiceImpl implements MeterService {
             }
 
             if(meter.getMeterAssignLocation() != null){
+                meter.getMeterAssignLocation().setApproveBy(user.getId());
+                meter.getMeterAssignLocation().setOrgId(user.getOrgId());
+                meter.getMeterAssignLocation().setMeterStage("Approved");
+
                 if(meterMapper.removeAssignedLocation(meter.getMeterId()) == 0){
+                    throw new GlobalExceptionHandler.NotFoundException("Unassigned location failed");
+                }
+                if(meterMapper.approveMeterAssignLocationVersion(meter.getMeterAssignLocation()) == 0){
                     throw new GlobalExceptionHandler.NotFoundException("Unassigned location failed");
                 }
             }
 
-
             if(meter.getPaymentMode() != null){
+                meter.getPaymentMode().setStatus(false);
+                meter.getPaymentMode().setApproveBy(user.getId());
+                meter.getPaymentMode().setOrgId(user.getOrgId());
+                meter.getPaymentMode().setMeterStage("Approved");
+
                 if(meterMapper.removePaymentMode(meter.getMeterId()) == 0){
                     throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
                 }
+
+                if(meterMapper.approvePrepaidMeterVersion(meter.getPaymentMode()) == 0){
+                    throw new GlobalExceptionHandler.NotFoundException("Unassigned payment mode failed");
+                }
             }
+
+            System.out.println("customer size: "+c.size());
 
             if(c.size() == 1) {
                 int customerStatus = customerMapper.changeStatusCustomer(meter.getCustomerId(), "Inactive",user.getOrgId());
@@ -3421,28 +3456,6 @@ public class MeterServiceImpl implements MeterService {
 
         try {
 
-//            for (Meter meter : batch) {
-//                if (meter.getDebitCreditAdjustVersionInfo() != null) {
-//                    int res1 = meterMapper.updateBatchDebitCreditAdj(
-//                            meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
-//                            meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
-//                            user.getOrgId()
-//                    );
-//
-//                    int res2 = meterMapper.updateBatchDebitCreditAdjVersion(
-//                            meter.getDebitCreditAdjustVersionInfo().getOldMeterId(),
-//                            meter.getDebitCreditAdjustVersionInfo().getNewMeterId(),
-//                            false,
-//                            user.getOrgId()
-//                    );
-//
-//                    if (res1 == 0 || res2 == 0) {
-//                        throw new GlobalExceptionHandler.NotFoundException("Debit credit adjustment replacement failed");
-//                    }
-//                }
-//            }
-
-
             List<Meter> approvedCreatedMeters = batch.stream()
                     .filter(m -> "Pending-created".equalsIgnoreCase(m.getMeterStage()))
                     .peek(m -> m.setMeterStage("Created"))
@@ -3526,6 +3539,8 @@ public class MeterServiceImpl implements MeterService {
                 meterMapper.updateBatchVersionMeters(detach);
                 meterMapper.removeBulkAssignedLocations(detach);
                 meterMapper.removeBulkPaymentModes(detach);
+                meterMapper.updateDetachLocation(detach);
+                meterMapper.updateDetachPaymentModes(detach);
             }
 
             List<DebitCreditAdjustVersion> adjustmentList = batch.stream()
