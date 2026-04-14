@@ -449,7 +449,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             PercentageRange isRangeExist = debtMapper.getPercentageByRange(
                     startRange, endRange, um.getOrgId(),
                     request.getBandId());
-            if (isRangeExist != null) {
+            if (isRangeExist != null && !isRangeExist.getId().equals(request.getPercentageId())) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(
                         "Percentage range amount (" + request.getAmountStartRange() + " - " +
                                 request.getAmountEndRange() + ") overlaps with existing range (" +
