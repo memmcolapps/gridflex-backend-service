@@ -364,6 +364,20 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException("Percentage range code ("+request.getCode()+") " + status.getExistDesc());
             }
 
+            int startRange = Integer.parseInt(request.getAmountStartRange());
+            int endRange = Integer.parseInt(request.getAmountEndRange());
+
+
+            PercentageRange isRangeExist = debtMapper.getPercentageByRange(startRange,endRange,
+                    um.getOrgId(), request.getBandId());
+            if (isRangeExist != null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(
+                        "Percentage range amount (" + request.getAmountStartRange() + " - " +
+                                request.getAmountEndRange() + ") overlaps with existing range (" +
+                                isRangeExist.getAmountStartRange() + " - " + isRangeExist.getAmountEndRange() + ") " +
+                                status.getExistDesc());
+            }
+
             PercentageRange isVersionExist = debtMapper.getPercentageVersionByCode(request.getCode(), um.getOrgId());
             if(isVersionExist != null) {
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getCode()+ " have a pending status that needs to be cleared");
@@ -428,6 +442,21 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if (band == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Band is either not found, not approved or deactivated" );
             }
+
+            int startRange = Integer.parseInt(request.getAmountStartRange());
+            int endRange = Integer.parseInt(request.getAmountEndRange());
+
+            PercentageRange isRangeExist = debtMapper.getPercentageByRange(
+                    startRange, endRange, um.getOrgId(),
+                    request.getBandId());
+            if (isRangeExist != null) {
+                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(
+                        "Percentage range amount (" + request.getAmountStartRange() + " - " +
+                                request.getAmountEndRange() + ") overlaps with existing range (" +
+                                isRangeExist.getAmountStartRange() + " - " + isRangeExist.getAmountEndRange() + ") " +
+                                status.getExistDesc());
+            }
+
             PercentageRange isVersionExist = debtMapper.getPercentageVersionByName(request.getPercentage(), um.getOrgId());
 
             request.setApproveStatus("Pending-edited");

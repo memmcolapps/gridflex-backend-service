@@ -363,6 +363,51 @@ public interface DebtSettingMapper {
     })
     PercentageRange getPercentageByCode(String code, UUID orgId);
 
+    @Select("<script>" +
+            "SELECT * FROM debt_percentage WHERE org_id = #{orgId} AND band_id = #{bandId} " +
+            "AND ((#{startRange} &gt;= CAST(amount_start_range AS INT) AND #{startRange} &lt;= CAST(amount_end_range AS INT)) OR " +
+            "(#{endRange} &gt;= CAST(amount_start_range AS INT) AND #{endRange} &lt;= CAST(amount_end_range AS INT)) OR " +
+            "(#{startRange} &lt;= CAST(amount_start_range AS INT) AND #{endRange} &gt;= CAST(amount_end_range AS INT))) " +
+            "LIMIT 1 " +
+            "</script>")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "amount_start_range", property = "amountStartRange"),
+            @Result(column = "amount_end_range", property = "amountEndRange"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
+    })
+    PercentageRange getPercentageByRange(int startRange, int endRange, UUID orgId, UUID bandId);
+
+//    @Select("<script>" +
+//            "SELECT * FROM debt_percentage WHERE org_id = #{orgId} AND band_id = #{bandId} AND id != #{excludeId} " +
+//            "AND ((#{startRange} &gt;= CAST(amount_start_range AS INT) AND #{startRange} &lt;= CAST(amount_end_range AS INT)) OR " +
+//            "(#{endRange} &gt;= CAST(amount_start_range AS INT) AND #{endRange} &lt;= CAST(amount_end_range AS INT)) OR " +
+//            "(#{startRange} &lt;= CAST(amount_start_range AS INT) AND #{endRange} &gt;= CAST(amount_end_range AS INT)))" +
+//            "</script>")
+//    @Results({
+//            @Result(column = "id", property = "id"),
+//            @Result(column = "org_id", property = "orgId"),
+//            @Result(column = "debt_percentage_id", property = "percentageId"),
+//            @Result(column = "approve_status", property = "approveStatus"),
+//            @Result(column = "amount_start_range", property = "amountStartRange"),
+//            @Result(column = "amount_end_range", property = "amountEndRange"),
+//            @Result(column = "approve_by", property = "approveBy"),
+//            @Result(column = "created_by", property = "createdBy"),
+//            @Result(column = "created_at", property = "createdAt"),
+//            @Result(column = "updated_at", property = "updatedAt"),
+//            @Result(property = "band", column = "band_id",
+//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
+//    })
+//    PercentageRange getPercentageByRangeExcludingId(int startRange, int endRange, UUID orgId, UUID bandId, UUID excludeId);
+
     @Select("SELECT * FROM debt_percentage_version WHERE code = #{code} AND org_id = #{orgId} AND " +
             "(approve_status != 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +
             "OR approve_status = 'Pending-deactivated')")
