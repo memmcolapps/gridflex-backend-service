@@ -74,10 +74,12 @@ public class DashboardServiceImpl implements  DashboardService{
                 .filter(m -> meterClass == null || meterClass.isEmpty() || m.getMeterClass().equalsIgnoreCase(meterClass))
                 .collect(Collectors.toList());
 
-        int total = filteredMeters.size();
-        if (total == 0) {
-            total = 1;
-        }
+//
+//        int total = filteredMeters.size();
+//        if (total == 0) {
+//            total = 1;
+//        }
+
         // -----------------------------------------
         // NODE FILTER HELPER
         // -----------------------------------------
@@ -89,6 +91,10 @@ public class DashboardServiceImpl implements  DashboardService{
                         Objects.equals(m.getDss(), nodeId) ||
                         Objects.equals(m.getRoot(), nodeId);
 
+
+        long total = filteredMeters.stream()
+                .filter(belongsToNode).count();
+
         // -----------------------------------------
         // COUNTS
         // -----------------------------------------
@@ -98,7 +104,7 @@ public class DashboardServiceImpl implements  DashboardService{
 //                .count();
 
         long inventory = filteredMeters.stream()
-                .filter(m -> belongsToNode.test(m))
+                .filter(m -> m.getNodeId() == null && belongsToNode.test(m))
                 .count();
 
         long allocated = filteredMeters.stream()
@@ -173,9 +179,11 @@ public class DashboardServiceImpl implements  DashboardService{
 //                        || m.getFeeder() == nodeId || m.getDss() == nodeId) || m.getRoot() == nodeId)
 //                .count();
 
+        long totalInventoryAllocated = inventory + allocated;
+
         // Calculate percentages
-        double inventoryPercent = (inventory * 100.0) / total;
-        double allocatedPercent = (allocated * 100.0) / total;
+        double inventoryPercent = ((double) inventory / totalInventoryAllocated) * 100.0;
+        double allocatedPercent = ((double) allocated / totalInventoryAllocated) * 100.0; ;
 //        double assignedPercent = (assigned * 100.0) / total;
 //        double deactivatedPercent = (deactivated * 100.0) / total;
 
@@ -196,6 +204,13 @@ public class DashboardServiceImpl implements  DashboardService{
                 })
                 .collect(Collectors.toList());
 
+        Map<Integer, Long> metersByYear = meters.stream()
+                .filter(m -> m.getCustomerId() != null && m.getUpdatedAt() != null)
+                .collect(Collectors.groupingBy(
+                        m -> m.getUpdatedAt().getYear(),
+                        Collectors.counting()
+                ));
+
         // Group meters installed by year and month (handling java.util.Date safely)
         Map<Integer, Map<String, Long>> metersInstalledByYearAndMonth = meters.stream()
                 .filter(m -> m.getCustomerId() != null && m.getUpdatedAt() != null)
@@ -215,17 +230,53 @@ public class DashboardServiceImpl implements  DashboardService{
                         )
                 ));
 
-        // Flatten into a list of objects with year, month, and count
         List<Map<String, Object>> installedOverMonths = new ArrayList<>();
-        metersInstalledByYearAndMonth.forEach((yr, monthMap) -> {
-            monthMap.forEach((month, count) -> {
-                Map<String, Object> data = new HashMap<>();
-                data.put("year", yr);
-                data.put("month", month);
-                data.put("count", count);
-                installedOverMonths.add(data);
-            });
-        });
+
+        Integer targetYear;
+        try {
+            targetYear = (year == null || year.trim().isEmpty()) ? LocalDateTime.now().getYear() : Integer.parseInt(year.trim());
+        }catch (NumberFormatException e) {
+            targetYear = LocalDateTime.now().getYear();
+        }
+
+        int currentMonth = LocalDateTime.now().getMonthValue();
+        Map<String, Long> monthData = metersInstalledByYearAndMonth.getOrDefault(targetYear, Collections.emptyMap());
+
+        for (int i = 1 ; i <= currentMonth; i++) {
+
+            Month monthEnum = Month.of(i);
+            String monthName = monthEnum.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+
+            Long count = monthData.getOrDefault(monthName, 0L);
+            Map<String, Object> data = new HashMap<>();
+            data.put("year", targetYear);
+            data.put("month", monthName);
+            data.put("count", count);
+            installedOverMonths.add(data);
+        }
+
+        List<Map<String, Object>> installedOverYears = metersByYear.entrySet()
+                .stream()
+                .map(entry -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("year", entry.getKey());
+                    data.put("count", entry.getValue());
+                    return data;
+                })
+                .sorted(Comparator.comparingInt(e -> (Integer) e.get("year")))
+                .collect(Collectors.toList());
+
+        // Flatten into a list of objects with year, month, and count
+//        List<Map<String, Object>> installedOverMonths = new ArrayList<>();
+//        metersInstalledByYearAndMonth.forEach((yr, monthMap) -> {
+//            monthMap.forEach((month, count) -> {
+//                Map<String, Object> data = new HashMap<>();
+//                data.put("year", yr);
+//                data.put("month", month);
+//                data.put("count", count);
+//                installedOverMonths.add(data);
+//            });
+//        });
 
         // Optionally sort results by year then by month order
         installedOverMonths.sort(Comparator
@@ -239,7 +290,7 @@ public class DashboardServiceImpl implements  DashboardService{
 //        resp.put("deactivated", String.format("%.2f", deactivatedPercent));
 
         Map<String, Object> card = new HashMap<>();
-        card.put("totalMeter", inventory);
+        card.put("totalMeter", total);
         card.put("inventory", inventory);
         card.put("allocated", allocated);
         card.put("assigned", assigned);
@@ -251,6 +302,7 @@ public class DashboardServiceImpl implements  DashboardService{
         response.put("percentData", resp);
         response.put("manufacturers", manufacturersSummary);
         response.put("installedOverMonths", installedOverMonths);
+        response.put("installedOverYear", installedOverYears);
 
         return ResponseMap.response(status.getSuccessCode(), status.getDesc(), response);
 

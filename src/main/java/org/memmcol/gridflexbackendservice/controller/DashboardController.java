@@ -22,9 +22,9 @@ public class DashboardController {
     public ResponseEntity<?> dataManagement(
             @RequestParam(value = "band", required = false, defaultValue = "") String band,
             @RequestParam(value = "year", required = false, defaultValue = "") String year,
-            @RequestParam(value = "meterCategory", required = false, defaultValue = "") String meterCategory) {
+            @RequestParam(value = "meterClass", required = false, defaultValue = "") String meterClass) {
         try {
-            Map<String, Object> result = service.dataManagementDashboard(band, year,meterCategory);
+            Map<String, Object> result = service.dataManagementDashboard(band, year,meterClass);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
