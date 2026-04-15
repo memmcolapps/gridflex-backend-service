@@ -322,11 +322,11 @@ public class MeterServiceImpl implements MeterService {
         String type = request.getMeterType();
 
         if (category.equalsIgnoreCase("prepaid")){
-            request.setMeterClass("Prepaid");
+            request.setMeterCategory("Prepaid");
         }
 
         if (type.equalsIgnoreCase("Electricity")){
-            request.setMeterClass("Electricity");
+            request.setMeterType("Electricity");
         }
 
         if (clazz.equalsIgnoreCase("single phase")
@@ -340,10 +340,11 @@ public class MeterServiceImpl implements MeterService {
                 || clazz.equalsIgnoreCase("three-phase")){
             request.setMeterClass("Three-Phase");
         }
-
-        if (!request.getMeterClass().equalsIgnoreCase("md") &&
-                !request.getMeterClass().equalsIgnoreCase("single-phase") &&
-                !request.getMeterClass().equalsIgnoreCase("three-phase")) {
+        System.out.print(">>>>>>>>>>>>>>>>>>::: "+clazz);
+//        System.out.print(">>>>>>>>>>>>>>>>>>::: "+request.getMeterClass());
+        if (!clazz.equalsIgnoreCase("md") &&
+                !clazz.equalsIgnoreCase("single-phase") &&
+                !clazz.equalsIgnoreCase("three-phase")) {
             throw new GlobalExceptionHandler.NotFoundException(
                     "Meter class not supported");
 //            throw new GlobalExceptionHandler.NotFoundException(
@@ -3521,7 +3522,7 @@ public class MeterServiceImpl implements MeterService {
                             approvedAssignedMeters,
                             approvedMigratedMeters,
                             approvedEditedMeters,
-//                            approvedDeactivatedMetersStatus,
+                            approvedDeactivatedMetersStatus,
                             approvedActiveMetersStatus)
                     .flatMap(Collection::stream)
                     .toList();
@@ -4442,12 +4443,14 @@ public class MeterServiceImpl implements MeterService {
             }
 
             if (meter.getMeterCategory().equalsIgnoreCase("prepaid")){
-                meter.setMeterClass("Prepaid");
+                meter.setMeterCategory("Prepaid");
             }
 
             if (meter.getMeterType().equalsIgnoreCase("Electricity")){
-                meter.setMeterClass("Electricity");
+                meter.setMeterType("Electricity");
             }
+
+//            String clazz = meter.getClazz
 
             if (meter.getMeterClass().equalsIgnoreCase("single phase")
                     || meter.getMeterClass().equalsIgnoreCase("singlephase")

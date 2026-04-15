@@ -2659,6 +2659,27 @@ public interface MeterMapper {
     })
     void updateBatchVersionMeters(@Param("batch") List<Meter> batch);
 
+//      " <if test='meterNumber != null'> meter_number = #{meterNumber}, </if>",
+//              " <if test='meterStage != null'> meter_stage = #{meterStage}, </if>",
+//              " <if test='meterCategory != null'> meter_category = #{meterCategory}, </if>",
+//              " <if test='meterClass != null'> meter_class = #{meterClass}, </if>",
+//              " <if test='simNumber != null'> sim_number = #{simNumber}, </if>",
+//              " <if test='meterType != null'> meter_type = #{meterType}, </if>",
+//              " <if test='fixedEnergy != null'> fixed_energy = #{fixedEnergy}, </if>",
+//              " <if test='oldSgc != null'> old_sgc = #{oldSgc}, </if>",
+//              " <if test='newSgc != null'> new_sgc = #{newSgc}, </if>",
+//              " <if test='oldKrn != null'> old_krn = #{oldKrn}, </if>",
+//              " <if test='newKrn != null'> new_krn = #{newKrn}, </if>",
+//              " <if test='oldTariffIndex != null'> old_tariff_index = #{oldTariffIndex}, </if>",
+//              " <if test='newTariffIndex != null'> new_tariff_index = #{newTariffIndex}, </if>",
+//              " <if test='meterManufacturer != null'> meter_manufacturer = #{meterManufacturer}, </if>",
+
+//    " <if test='meterNumber != null'> meter_number = #{meterNumber}, </if>",
+//            " <if test='nodeId != null'> node_id = #{nodeId}, </if>",
+//            " <if test='fixedEnergy != null'> fixed_energy = #{fixedEnergy}, </if>",
+//            " <if test='tariff != null'> tariff = #{tariff}, </if>",
+//            " updated_at = #{updatedAt}, ",
+//
     @Update({
             "<script>",
             "UPDATE meters",
@@ -2669,9 +2690,80 @@ public interface MeterMapper {
             "    </foreach>",
             "  END,",
 
+            "  meter_category = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterCategory}",
+            "    </foreach>",
+            "  END,",
+
+            "  meter_class = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterClass}",
+            "    </foreach>",
+            "  END,",
+
+            "  sin_number = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.sinNumber}",
+            "    </foreach>",
+            "  END,",
+
             "  meter_number = CASE id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterId} THEN #{m.meterNumber}",
+            "    </foreach>",
+            "  END,",
+
+            "  meter_Type = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterType}",
+            "    </foreach>",
+            "  END,",
+
+            "  fixed_charge = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterCharge}",
+            "    </foreach>",
+            "  END,",
+
+            "  old_sgc = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.oldSgc}",
+            "    </foreach>",
+            "  END,",
+
+            "  new_sgc = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.newSgc}",
+            "    </foreach>",
+            "  END,",
+
+            "  old_krn = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.oldkrn}",
+            "    </foreach>",
+            "  END,",
+
+            "  new_krn = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.newKrn}",
+            "    </foreach>",
+            "  END,",
+
+            "  old_tariff_index = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.oldTariffIndex}",
+            "    </foreach>",
+            "  END,",
+            "  new_tariff_index = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.newTariffIndex}",
+            "    </foreach>",
+            "  END,",
+
+            "  meter_manufacturer = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN #{m.meterManufacturer}",
             "    </foreach>",
             "  END,",
 
