@@ -2363,6 +2363,28 @@ public interface MeterMapper {
     @Select("SELECT id, meter_number AS meterNumber FROM meters WHERE org_id = #{orgId}")
     List<Meter> fetchMeters(UUID orgId);
 
+//    @Select({
+//            "<script>",
+//                "SELECT * FROM meters_version m",
+//                "LEFT JOIN customers c ON c.customer_id = m.customer_id",
+//                "WHERE m.meter_number IN",
+//                "<foreach item='meterNumber' collection='meterNumbers' open='(' separator=',' close=')'>",
+//                "#{meterNumber}",
+//                "</foreach>",
+//                "AND (",
+//                "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned', " +
+//                        "'Pending-edited', 'Pending-migrated', 'Pending-detached', 'Assign-edited')",
+//                "OR m.status IN ('Pending-deactivated', 'Pending-activated')",
+//                ")",
+//                "AND m.org_id = #{orgId}",
+//                "AND (m.node_id = #{nodeId}",
+//                "OR m.service_center = #{nodeId}",
+//                "OR m.region = #{nodeId}",
+//                "OR m.root = #{nodeId}",
+//                ")",
+//            "</script>"
+//    })
+
     @Select({
             "<script>",
             "SELECT * FROM meters_version m",

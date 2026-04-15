@@ -3310,6 +3310,8 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
+                System.out.print("meters: "+meterNumbers);
+
                 // fetch found meters
                 List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId(), user.getNodeInfo().getNodeId());
 
