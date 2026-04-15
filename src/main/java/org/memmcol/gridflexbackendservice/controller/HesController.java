@@ -168,12 +168,12 @@ public class HesController {
     @PostMapping("/stream")
     public SseEmitter subscribeWithParams(@RequestBody RealTimeReadRequest req) {
         // Create a tenant-scoped emitter (validate tenant inside)
-        SseEmitter emitter = emitterService.subscribe();
+//        SseEmitter emitter = emitterService.subscribe();
 
         // Start the parameterized upstream stream; it will forward to emitterService for this org
-        hesServiceConsumer.startParameterizedStream(req);
+//        hesServiceConsumer.startParameterizedStream(req);
 
-        return emitter;
+        return hesServiceConsumer.startParameterizedStream(req);
     }
 
     @PostMapping("/set/schedule")

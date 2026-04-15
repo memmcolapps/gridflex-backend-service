@@ -354,7 +354,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                     meterId, liabilityCauseId, um.getOrgId());
             if (debitCreditAdjust == null) {
                 throw new GlobalExceptionHandler.NotFoundException(
-                        "Debit Adjustment not found or no debt available");
+                        "Debit Adjustment or liability cause not found or no debt available");
             }
 
             if (debitCreditAdjust.getStatus().equalsIgnoreCase("PAID")) {

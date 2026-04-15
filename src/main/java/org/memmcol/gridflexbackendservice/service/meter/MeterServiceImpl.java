@@ -423,7 +423,9 @@ public class MeterServiceImpl implements MeterService {
             }
             // Insert or update meter version
             int result;
-            if (existingMeter.getMeterStage().contains("Pending") || existingMeter.getStatus().contains("Pending")) {
+            if (existingMeter.getMeterStage().contains("Pending")
+                    || existingMeter.getStatus().contains("Pending")
+                    || existingMeter.getMeterStage().equalsIgnoreCase("Assign-edited")) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter ("+existingMeter.getMeterNumber()+ ") have a pending state that needs to be cleared");
             }
             if(existingMeter.getStatus().equalsIgnoreCase("Deactivated")){
@@ -3496,7 +3498,6 @@ public class MeterServiceImpl implements MeterService {
                     .peek(m -> m.setStatus("Active"))
                     .toList();
 
-
             // Handle "Pending-edited" dynamically
             List<Meter> approvedEditedMeters = batch.stream()
                     .filter(m -> "Pending-edited".equalsIgnoreCase(m.getMeterStage())
@@ -3520,11 +3521,12 @@ public class MeterServiceImpl implements MeterService {
                             approvedAssignedMeters,
                             approvedMigratedMeters,
                             approvedEditedMeters,
-                            approvedDeactivatedMetersStatus,
+//                            approvedDeactivatedMetersStatus,
                             approvedActiveMetersStatus)
                     .flatMap(Collection::stream)
                     .toList();
             if (!toUpdate.isEmpty()) {
+                System.out.println(">>>>>>>>>>>toUpdate:::: ");
                 meterMapper.updateBatchMeters(toUpdate);
                 meterMapper.updateBatchVersionMeters(toUpdate);
             }
@@ -3535,12 +3537,47 @@ public class MeterServiceImpl implements MeterService {
                     .toList();
 
             if (!detach.isEmpty()) {
+                System.out.println(">>>>>>>>>>>detached1:::: ");
                 meterMapper.updateDetachBatchMeters(detach, user.getOrgId());
                 meterMapper.updateBatchVersionMeters(detach);
                 meterMapper.removeBulkAssignedLocations(detach);
                 meterMapper.removeBulkPaymentModes(detach);
                 meterMapper.updateDetachLocation(detach);
                 meterMapper.updateDetachPaymentModes(detach);
+                System.out.println(">>>>>>>>>>>detached2:::: ");
+            }
+
+            Set<String> affectedCustomerIds = detach.stream()
+                    .map(Meter::getCustomerId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            if (!affectedCustomerIds.isEmpty()) {
+
+                List<String> customerIds = new ArrayList<>(affectedCustomerIds);
+
+                List<Customer> counts =
+                        meterMapper.countMetersByCustomerIds(customerIds);
+
+                // Customers with meters
+                Set<String> activeCustomers = counts.stream()
+                        .filter(c -> c.getMeterCount() > 0)
+                        .map(Customer::getCustomerId)
+                        .collect(Collectors.toSet());
+
+                // Customers with ZERO meters
+                List<String> inactiveCustomers = customerIds.stream()
+                        .filter(id -> !activeCustomers.contains(id))
+                        .toList();
+
+                // Batch updates
+                if (!activeCustomers.isEmpty()) {
+                    meterMapper.markCustomersActive(new ArrayList<>(activeCustomers));
+                }
+
+                if (!inactiveCustomers.isEmpty()) {
+                    meterMapper.markCustomersInactive(inactiveCustomers);
+                }
             }
 
             List<DebitCreditAdjustVersion> adjustmentList = batch.stream()

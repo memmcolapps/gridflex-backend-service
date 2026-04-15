@@ -15,6 +15,7 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -3335,7 +3336,7 @@ public interface MeterMapper {
             "  END,",
             "  customer_id = CASE id",
             "    <foreach collection='list' item='m'>",
-            "      WHEN #{m.meterId} THEN CAST(#{m.customerId} AS uuid)",
+            "      WHEN #{m.meterId} THEN NULL",
             "    </foreach>",
             "  END,",
             "  cin = CASE id",
@@ -3474,8 +3475,8 @@ public interface MeterMapper {
             "<script>",
             "DELETE FROM meter_assign_locations",
             "WHERE meter_id IN",
-            "<foreach collection='meterIds' item='meterId' open='(' separator=',' close=')'>",
-            "  #{meterId}",
+            "<foreach collection='meterIds' item='meter' open='(' separator=',' close=')'>",
+            "  #{meter.meterId}",
             "</foreach>",
             "AND org_id = #{meterIds[0].orgId}",
             "</script>"
@@ -3532,8 +3533,8 @@ public interface MeterMapper {
             "<script>",
             "DELETE FROM payment_mode",
             "WHERE meter_id IN",
-            "<foreach collection='meterIds' item='meterId' open='(' separator=',' close=')'>",
-            "  #{meterId}",
+            "<foreach collection='meterIds' item='meter' open='(' separator=',' close=')'>",
+            "  #{meter.meterId}",
             "</foreach>",
             "AND org_id = #{meterIds[0].orgId}",
             "</script>"
@@ -3669,4 +3670,82 @@ public interface MeterMapper {
     })
     Manufacturer findManufacturerById(UUID id, UUID orgId);
 
+//    @Select("""
+//        SELECT customer_id, COUNT(*) AS meter_count
+//        FROM meters
+//        WHERE customer_id IN
+//        <foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>
+//            #{customerId}
+//        </foreach>
+//        AND status = 'Active'
+//        GROUP BY customer_id
+//    """)
+//    @Results({
+//            @Result(property = "meterCount", column = "meter_count")
+//    })
+//    List<Customer> countMetersByCustomerIds(List<String> customerIds);
+
+    @Select({
+            "<script>",
+            "SELECT customer_id, COUNT(*) AS meter_count",
+            "FROM meters",
+            "WHERE customer_id IN",
+            "<foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>",
+            "   #{customerId}",
+            "</foreach>",
+            "AND status = 'Active'",
+            "GROUP BY customer_id",
+            "</script>"
+    })
+    @Results({
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "meterCount", column = "meter_count")
+    })
+    List<Customer> countMetersByCustomerIds(
+            @Param("customerIds") List<String> customerIds
+    );
+
+//    @Update("""
+//        UPDATE customers
+//        SET status = 'Inactive'
+//        WHERE customer_id IN
+//        <foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>
+//            #{customerId}
+//        </foreach>
+//    """)
+//    void markCustomersActive(ArrayList<String> customerIds);
+
+    @Update({
+            "<script>",
+            "UPDATE customers",
+            "SET status = 'Inactive'",
+            "WHERE customer_id IN",
+            "<foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>",
+            "   #{customerId}",
+            "</foreach>",
+            "</script>"
+    })
+    void markCustomersActive(@Param("customerIds") List<String> customerIds);
+
+    @Update({
+            "<script>",
+            "UPDATE customers",
+            "SET status = 'Active'",
+            "WHERE customer_id IN",
+            "<foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>",
+            "   #{customerId}",
+            "</foreach>",
+            "</script>"
+    })
+    void markCustomersInactive(@Param("customerIds") List<String> customerIds);
+
+//    @Update("""
+//        UPDATE customers
+//        SET status = 'Active'
+//        WHERE customer_id IN
+//        <foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>
+//            #{customerId}
+//        </foreach>
+//    """)
+//    void markCustomersInactive(List<String> customerIds);
 }

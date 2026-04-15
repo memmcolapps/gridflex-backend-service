@@ -43,7 +43,7 @@ public class HesAuthServiceImpl {
             @Value("${external.hes-endpoint.base-url}") String baseUrl) {
 
 //        this.authWebClient = builder.baseUrl("http://172.16.2.46:9061").build();
-        this.authWebClient = builder.baseUrl("http://localhost:9061").build();
+        this.authWebClient = builder.baseUrl("http://127.0.0.1:9061").build();
         this.realtimeWebClient = realtimeWebClient;
         this.debtCache = hazelcastInstance.getMap("hesTokenCache");
     }

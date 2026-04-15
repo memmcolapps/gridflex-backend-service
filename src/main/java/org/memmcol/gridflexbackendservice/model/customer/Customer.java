@@ -36,6 +36,8 @@ public class Customer implements Serializable {
     private String status;
     private String vat;
     private List<Meter> meter;
+    private int meterCount;
+
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -214,5 +216,13 @@ public class Customer implements Serializable {
 
     public void setMeter(List<Meter> meter) {
         this.meter = meter;
+    }
+
+    public int getMeterCount() {
+        return meterCount;
+    }
+
+    public void setMeterCount(int meterCount) {
+        this.meterCount = meterCount;
     }
 }
