@@ -340,10 +340,11 @@ public class MeterServiceImpl implements MeterService {
                 || clazz.equalsIgnoreCase("three-phase")){
             request.setMeterClass("Three-Phase");
         }
-
-        if (!request.getMeterClass().equalsIgnoreCase("md") &&
-                !request.getMeterClass().equalsIgnoreCase("single-phase") &&
-                !request.getMeterClass().equalsIgnoreCase("three-phase")) {
+        System.out.print(">>>>>>>>>>>>>>>>>>::: "+clazz);
+//        System.out.print(">>>>>>>>>>>>>>>>>>::: "+request.getMeterClass());
+        if (!clazz.equalsIgnoreCase("md") &&
+                !clazz.equalsIgnoreCase("single-phase") &&
+                !clazz.equalsIgnoreCase("three-phase")) {
             throw new GlobalExceptionHandler.NotFoundException(
                     "Meter class not supported");
 //            throw new GlobalExceptionHandler.NotFoundException(
@@ -3521,7 +3522,7 @@ public class MeterServiceImpl implements MeterService {
                             approvedAssignedMeters,
                             approvedMigratedMeters,
                             approvedEditedMeters,
-//                            approvedDeactivatedMetersStatus,
+                            approvedDeactivatedMetersStatus,
                             approvedActiveMetersStatus)
                     .flatMap(Collection::stream)
                     .toList();
@@ -4448,6 +4449,8 @@ public class MeterServiceImpl implements MeterService {
             if (meter.getMeterType().equalsIgnoreCase("Electricity")){
                 meter.setMeterClass("Electricity");
             }
+
+//            String clazz = meter.getClazz
 
             if (meter.getMeterClass().equalsIgnoreCase("single phase")
                     || meter.getMeterClass().equalsIgnoreCase("singlephase")
