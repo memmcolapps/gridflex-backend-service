@@ -1777,8 +1777,8 @@ public interface MeterMapper {
                             OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
                             OR m.substation = #{nodeId})
                       AND (
-                            m.meter_stage IN ('Pending-created', 'Pending-edited', 'Pending-allocated',
-                                               'Pending-assigned', 'Assign-edited', 'Pending-detached', 'Pending-migrated')
+                            m.meter_stage IN ('Pending-assigned', 'Assign-edited', 
+                                  'Pending-detached', 'Pending-migrated')
                             OR m.status IN ('Pending-deactivated', 'Pending-activated')
                           )
                     ORDER BY m.created_at DESC
@@ -2812,6 +2812,12 @@ public interface MeterMapper {
             "    </foreach>",
             "  END,",
 
+            "  org_id = CASE id",
+            "    <foreach collection='batch' item='m'>",
+            "      WHEN #{m.meterId} THEN CAST(#{m.orgId} AS uuid)",
+            "    </foreach>",
+            "  END,",
+
             "  feeder = CASE id",
             "    <foreach collection='batch' item='m'>",
             "      WHEN #{m.meterId} THEN CAST(#{m.feeder} AS uuid)",
@@ -3831,7 +3837,7 @@ public interface MeterMapper {
     @Update({
             "<script>",
             "UPDATE customers",
-            "SET status = 'Inactive'",
+            "SET status = 'Active'",
             "WHERE customer_id IN",
             "<foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>",
             "   #{customerId}",
@@ -3843,7 +3849,7 @@ public interface MeterMapper {
     @Update({
             "<script>",
             "UPDATE customers",
-            "SET status = 'Active'",
+            "SET status = 'Inactive'",
             "WHERE customer_id IN",
             "<foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>",
             "   #{customerId}",

@@ -437,12 +437,13 @@ public class MeterServiceImpl implements MeterService {
                 handleCreatedMeter(existingMeter, nodeType, request, user);
             }
 
-            boolean b = nodeType.equalsIgnoreCase("Root")
-                    || nodeType.equalsIgnoreCase("Business hub")
-//                    || nodeType.equalsIgnoreCase("Region")
-                    || nodeType.equalsIgnoreCase("Service center");
+//            boolean b = nodeType.equalsIgnoreCase("Root")
+//                    || nodeType.equalsIgnoreCase("Business hub")
+////                    || nodeType.equalsIgnoreCase("Region")
+//                    || nodeType.equalsIgnoreCase("Service center");
             if(existingMeter.getMeterStage().equalsIgnoreCase("Unassigned")){
-                handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
+                throw new GlobalExceptionHandler.NotFoundException("Editing allocated meter is not supported");
+//                handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
             }
 
 
@@ -740,35 +741,35 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-    private void handleAllocatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user, UUID nodeId) {
-        if(!nodeType.equalsIgnoreCase("Root")
+//    private void handleAllocatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user, UUID nodeId) {
+//        if(!nodeType.equalsIgnoreCase("Root")
 //                && !nodeType.equalsIgnoreCase("Region")
-                && !nodeType.equalsIgnoreCase("Business hub")
-                && !nodeType.equalsIgnoreCase("Service center")){
-            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-        }
-        // check if operator exist
-            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
-
-            if(meter != null && !meter.getId().equals(existingMeter.getId())) {
-                throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
-            }
-
-            Manufacturer isManufacturer = meterMapper.findManufacturerById(
-                    request.getMeterManufacturer(), user.getOrgId());
-            if (isManufacturer == null){
-                throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
-            }
-            request.setRoot(existingMeter.getRoot());
-            request.setRegion(existingMeter.getRegion());
-            request.setMeterStage("Pending-edited");
-            request.setNodeId(existingMeter.getNodeId());
-            request.setDss(existingMeter.getDss());
-            request.setCin(existingMeter.getCin());
-            request.setAccountNumber(existingMeter.getAccountNumber());
-            request.setTariff(existingMeter.getTariff());
-            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
-    }
+//                && !nodeType.equalsIgnoreCase("Business hub")
+//                && !nodeType.equalsIgnoreCase("Service center")){
+//            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//        }
+//        // check if operator exist
+//            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
+//
+//            if(meter != null && !meter.getId().equals(existingMeter.getId())) {
+//                throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
+//            }
+//
+//            Manufacturer isManufacturer = meterMapper.findManufacturerById(
+//                    request.getMeterManufacturer(), user.getOrgId());
+//            if (isManufacturer == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
+//            }
+//            request.setRoot(existingMeter.getRoot());
+//            request.setRegion(existingMeter.getRegion());
+//            request.setMeterStage("Pending-edited");
+//            request.setNodeId(existingMeter.getNodeId());
+//            request.setDss(existingMeter.getDss());
+//            request.setCin(existingMeter.getCin());
+//            request.setAccountNumber(existingMeter.getAccountNumber());
+//            request.setTariff(existingMeter.getTariff());
+//            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
+//    }
 
     private void handleCreatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user) {
         if(!nodeType.equalsIgnoreCase("Root")
@@ -3272,6 +3273,7 @@ public class MeterServiceImpl implements MeterService {
         List<GenericResp> failedRecords = new ArrayList<>();
         int successCount = 0;
         int total;
+        int updatedCount = 0;
         String nodeType = user.getNodeInfo().getType();
 
             if((!nodeType.equalsIgnoreCase("Root")
@@ -3310,13 +3312,8 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                System.out.print("meters: "+meterNumbers);
-
                 // fetch found meters
                 List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId(), user.getNodeInfo().getNodeId());
-
-                System.out.println("versionBatch: " + versionBatch.size());
-                System.out.println("getSimNumber: " + versionBatch.get(0).getSimNumber());
 
                 Set<String> foundNames = versionBatch.stream()
                         .map(Meter::getMeterNumber)
@@ -3339,8 +3336,8 @@ public class MeterServiceImpl implements MeterService {
                 try {
                     prepareUpdateMeters(versionBatch, user, failedRecords);
 
-                    int updatedCount = updateBatchTransactional(versionBatch, user, failedRecords);
-                    System.out.print("kkkkkkkkkkkkkkkkk:: "+updatedCount);
+                    updatedCount = updateBatchTransactional(versionBatch, user, failedRecords);
+
                     successCount += updatedCount;
 
                 } catch (Exception e) {
@@ -3364,14 +3361,18 @@ public class MeterServiceImpl implements MeterService {
                         result
                 );
             }
-//        } else {
-//            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//        }
-        return ResponseMap.response(
+
+        Map<String, Object> res;
+        res = updatedCount > 0 ? ResponseMap.response(
                 status.getSuccessCode(),
                 successCount + " of " + total + " meters approved successfully",
                 result
+        ) : ResponseMap.response(
+                "131",
+                successCount + " of " + total + " meters approval failed",
+                result
         );
+        return res;
     }
 
     /** Validate and enrich meters before DB update. */
