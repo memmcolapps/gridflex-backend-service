@@ -20,7 +20,7 @@ public interface HesMapper {
             FROM event_log e 
             JOIN event_type et ON e.event_type_id = et.id 
             JOIN meters m ON e.meter_serial = m.meter_number
-            LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+            LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
             <where>
                 <if test="startDate != null">
                     AND e.event_time &gt;= #{startDate}
@@ -148,7 +148,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one p
         JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -163,10 +163,10 @@ public interface HesMapper {
                 AND meter_serial = #{meterNumber}
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node} 
-                OR fn.service_region_id = #{node} 
+            AND (fn.region_region_id = #{node}
+                OR fn.service_region_id = #{node}
                 OR fn.business_region_id = #{node}
-                OR fn.feeder_asset_id = #{node} 
+                OR fn.feeder_asset_id = #{node}
                 OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
@@ -257,7 +257,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -362,7 +362,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -493,7 +493,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_profile p
         JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.node_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}

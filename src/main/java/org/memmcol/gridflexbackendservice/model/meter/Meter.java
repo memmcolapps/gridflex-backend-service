@@ -9,6 +9,7 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCre
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
@@ -80,6 +81,7 @@ public class Meter implements Serializable {
     private SubStationTransformerFeederLine dssInfo;
     private Tariff tariffInfo;
     private FlatNode flatNode;
+    private NodeSummary nodeSummary;
     private List<DebitCreditAdjust> debitCreditAdjustInfo;
     private DebitCreditAdjustVersion debitCreditAdjustVersionInfo;
     private Meter oldMeterInfo;
@@ -511,7 +513,15 @@ public class Meter implements Serializable {
         this.tariffInfo = tariffInfo;
     }
 
-    public FlatNode getFlatNode() {
+    public NodeSummary getNodeSummary() {
+        return nodeSummary;
+    }
+
+    public void setNodeSummary(NodeSummary nodeSummary) {
+        this.nodeSummary = nodeSummary;
+    }
+
+        public FlatNode getFlatNode() {
         return flatNode;
     }
 
