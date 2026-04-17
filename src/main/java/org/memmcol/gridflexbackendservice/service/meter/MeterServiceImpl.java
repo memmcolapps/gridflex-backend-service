@@ -3316,6 +3316,7 @@ public class MeterServiceImpl implements MeterService {
                 List<Meter> versionBatch = meterMapper.getMetersByVersionMeterNumbers(meterNumbers, user.getOrgId(), user.getNodeInfo().getNodeId());
 
                 System.out.println("versionBatch: " + versionBatch.size());
+                System.out.println("getSimNumber: " + versionBatch.get(0).getSimNumber());
 
                 Set<String> foundNames = versionBatch.stream()
                         .map(Meter::getMeterNumber)
@@ -3339,6 +3340,7 @@ public class MeterServiceImpl implements MeterService {
                     prepareUpdateMeters(versionBatch, user, failedRecords);
 
                     int updatedCount = updateBatchTransactional(versionBatch, user, failedRecords);
+                    System.out.print("kkkkkkkkkkkkkkkkk:: "+updatedCount);
                     successCount += updatedCount;
 
                 } catch (Exception e) {
@@ -3529,7 +3531,7 @@ public class MeterServiceImpl implements MeterService {
                     .flatMap(Collection::stream)
                     .toList();
             if (!toUpdate.isEmpty()) {
-                System.out.println(">>>>>>>>>>>toUpdate:::: ");
+                System.out.println(">>>>>>>>>>>toUpdate:::: batch: " + batch.get(0).getSimNumber());
                 meterMapper.updateBatchMeters(toUpdate);
                 meterMapper.updateBatchVersionMeters(toUpdate);
             }
