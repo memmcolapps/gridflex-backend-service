@@ -2393,8 +2393,7 @@ public interface MeterMapper {
             "<foreach item='meterNumber' collection='meterNumbers' open='(' separator=',' close=')'>",
             "#{meterNumber}",
             "</foreach>",
-            "AND (",
-            "m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned', " +
+            "AND (m.meter_stage IN ('Pending-created', 'Pending-allocated', 'Pending-assigned', " +
                     "'Pending-edited', 'Pending-migrated', 'Pending-detached', 'Assign-edited')",
             "OR m.status IN ('Pending-deactivated', 'Pending-activated')",
             ")",
@@ -2724,9 +2723,9 @@ public interface MeterMapper {
             "    </foreach>",
             "  END,",
 
-            "  sin_number = CASE id",
+            "  sim_number = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterId} THEN #{m.sinNumber}",
+            "      WHEN #{m.meterId} THEN #{m.simNumber}",
             "    </foreach>",
             "  END,",
 
@@ -2742,9 +2741,9 @@ public interface MeterMapper {
             "    </foreach>",
             "  END,",
 
-            "  fixed_charge = CASE id",
+            "  fixed_energy = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterId} THEN #{m.meterCharge}",
+            "      WHEN #{m.meterId} THEN #{m.fixedEnergy}",
             "    </foreach>",
             "  END,",
 
@@ -2762,7 +2761,7 @@ public interface MeterMapper {
 
             "  old_krn = CASE id",
             "    <foreach collection='batch' item='m'>",
-            "      WHEN #{m.meterId} THEN #{m.oldkrn}",
+            "      WHEN #{m.meterId} THEN #{m.oldKrn}",
             "    </foreach>",
             "  END,",
 
