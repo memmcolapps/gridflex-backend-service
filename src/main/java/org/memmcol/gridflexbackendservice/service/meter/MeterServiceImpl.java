@@ -40,6 +40,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -287,9 +289,9 @@ public class MeterServiceImpl implements MeterService {
             if(request.getMdMeterInfo().getVoltRatioNum() == null || request.getMdMeterInfo().getVoltRatioNum().isBlank()){
                 throw new GlobalExceptionHandler.NotFoundException("Volt ratio Numerator field is required");
             }
-            if(request.getMdMeterInfo().getMultiplier() == null || request.getMdMeterInfo().getMultiplier().isBlank()){
-                throw new GlobalExceptionHandler.NotFoundException("Multiplier field is required");
-            }
+//            if(request.getMdMeterInfo().getMultiplier() == null || request.getMdMeterInfo().getMultiplier().isBlank()){
+//                throw new GlobalExceptionHandler.NotFoundException("Multiplier field is required");
+//            }
 
             if(request.getMdMeterInfo().getMeterRating() == null || request.getMdMeterInfo().getMeterRating().isBlank()){
                 throw new GlobalExceptionHandler.NotFoundException("Meter rating field is required");
@@ -374,6 +376,13 @@ public class MeterServiceImpl implements MeterService {
         request.getMdMeterInfo().setMeterId(request.getId());
         request.getMdMeterInfo().setOrgId(user.getOrgId());
         request.getMdMeterInfo().setCreatedBy(user.getId());
+        double ctRatioNumerator = Double.parseDouble(request.getMdMeterInfo().getCtRatioNum());
+        double ctRatioDenominator = Double.parseDouble(request.getMdMeterInfo().getCtRatioDenom());
+        double vtRatioNumerator = Double.parseDouble(request.getMdMeterInfo().getVoltRatioNum());
+        double vtRatioDenominator = Double.parseDouble(request.getMdMeterInfo().getVoltRatioDenom());
+        double multiplier = (ctRatioNumerator / ctRatioDenominator) * (vtRatioNumerator / vtRatioDenominator);
+        BigDecimal rounded = BigDecimal.valueOf(multiplier).setScale(2 , RoundingMode.HALF_UP);
+        request.getMdMeterInfo().setMultiplier(rounded.toString());
         request.getMdMeterInfo().setMeterStage("Pending-created");
         request.getMdMeterInfo().setDescription("Newly Added");
 
@@ -626,14 +635,21 @@ public class MeterServiceImpl implements MeterService {
             request.getMdMeterInfo().setOrgId(user.getOrgId());
             request.getMdMeterInfo().setMeterStage(meterStage);
             request.getMdMeterInfo().setCreatedBy(user.getId());
+            double ctRatioNumerator = Double.parseDouble(request.getMdMeterInfo().getCtRatioNum());
+            double ctRatioDenominator = Double.parseDouble(request.getMdMeterInfo().getCtRatioDenom());
+            double vtRatioNumerator = Double.parseDouble(request.getMdMeterInfo().getVoltRatioNum());
+            double vtRatioDenominator = Double.parseDouble(request.getMdMeterInfo().getVoltRatioDenom());
+            double multiplier = (ctRatioNumerator / ctRatioDenominator) * (vtRatioNumerator / vtRatioDenominator);
+            BigDecimal rounded = BigDecimal.valueOf(multiplier).setScale(2, RoundingMode.HALF_UP);
+
             if(existingMeter.getMdMeterInfo() == null) {
                 MDMeterInfo md = new MDMeterInfo();
 
-                md.setCtRatioNum(request.getMdMeterInfo().getCtRatioNum());
-                md.setCtRatioDenom(request.getMdMeterInfo().getCtRatioDenom());
-                md.setVoltRatioNum(request.getMdMeterInfo().getVoltRatioNum());
-                md.setVoltRatioDenom(request.getMdMeterInfo().getVoltRatioDenom());
-                md.setMultiplier(request.getMdMeterInfo().getMultiplier());
+                md.setCtRatioNum(String.valueOf(ctRatioNumerator));
+                md.setCtRatioDenom(String.valueOf(ctRatioDenominator));
+                md.setVoltRatioNum(String.valueOf(vtRatioNumerator));
+                md.setVoltRatioDenom(String.valueOf(vtRatioDenominator));
+                md.setMultiplier(rounded.toString());
                 md.setMeterRating(request.getMdMeterInfo().getMeterRating());
                 md.setInitialReading(request.getMdMeterInfo().getInitialReading());
                 md.setDial(request.getMdMeterInfo().getDial());
@@ -644,6 +660,7 @@ public class MeterServiceImpl implements MeterService {
             }
             MDDesc = buildMDMeterInfoChangeDescription(existingMeter.getMdMeterInfo(), request.getMdMeterInfo());
             request.getMdMeterInfo().setDescription("Pending edited");
+            request.getMdMeterInfo().setMultiplier(rounded.toString());
 
             int mdResult2 = meterMapper.insertMDMeterInfoVersion(request.getMdMeterInfo());
             if (mdResult2 == 0) {
