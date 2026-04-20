@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -34,6 +35,8 @@ public class Organization implements Serializable {
     private Boolean status;
 
     private UserModel operator;
+
+    private List<XYZ> moduleAccess;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
