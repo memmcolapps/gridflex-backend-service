@@ -128,9 +128,15 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
             }
 
-            if(!meter.getNodeId().equals(nodeId)
-                    && !meter.getServiceCenter().equals(nodeId)
-                    && !meter.getRoot().equals(nodeId)){
+//            if(!meter.getNodeId().equals(nodeId)
+//                    && !meter.getServiceCenter().equals(nodeId)
+//                    && !meter.getRoot().equals(nodeId)){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
+
+            if ((meter.getNodeId() == null || !meter.getNodeId().equals(nodeId)) &&
+                    (meter.getServiceCenter() == null || !meter.getServiceCenter().equals(nodeId)) &&
+                    (meter.getRoot() == null || !meter.getRoot().equals(nodeId))) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 

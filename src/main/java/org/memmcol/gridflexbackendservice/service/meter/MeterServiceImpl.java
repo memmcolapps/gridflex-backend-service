@@ -449,8 +449,8 @@ public class MeterServiceImpl implements MeterService {
             }
 
             if(existingMeter.getMeterStage().equalsIgnoreCase("Unassigned")){
-                throw new GlobalExceptionHandler.NotFoundException("Editing allocated meter is not supported");
-//                handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
+//                throw new GlobalExceptionHandler.NotFoundException("Editing allocated meter is not supported");
+                handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
             }
 
 
@@ -478,6 +478,7 @@ public class MeterServiceImpl implements MeterService {
             }
 
             request.setMeterStage(meterStage);
+            System.out.print("meterManufacturer: "+request.getMeterManufacturer());
             int res = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
             result = meterMapper.insertMeterVersion(request);
             if (result == 0 || res == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
@@ -487,7 +488,6 @@ public class MeterServiceImpl implements MeterService {
                     && request.getMeterClass().equalsIgnoreCase("md")){
                 MDDesc = handleMDMeterInfo(request, nodeType, existingMeter, user, meterStage);
             }
-
 
             // Handle smart meter-specific logic
             if (request.getSmartMeterInfo() != null && request.getSmartStatus()){
@@ -611,6 +611,8 @@ public class MeterServiceImpl implements MeterService {
                 smart.setProtocol(request.getSmartMeterInfo().getProtocol());
                 smart.setAuthentication(request.getSmartMeterInfo().getAuthentication());
                 smart.setPassword(request.getSmartMeterInfo().getPassword());
+
+                existingMeter.setSmartMeterInfo(smart);
             }
             SmartDesc = buildSmartMeterInfoChangeDescription(existingMeter.getSmartMeterInfo(), request.getSmartMeterInfo());
             request.getSmartMeterInfo().setDescription("Pending edited");
@@ -756,38 +758,37 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
-//    private void handleAllocatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user, UUID nodeId) {
-//        if(!nodeType.equalsIgnoreCase("Root")
-//                && !nodeType.equalsIgnoreCase("Region")
-//                && !nodeType.equalsIgnoreCase("Business hub")
-//                && !nodeType.equalsIgnoreCase("Service center")){
-//            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//        }
-//        // check if operator exist
-//            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
-//
-//            if(meter != null && !meter.getId().equals(existingMeter.getId())) {
-//                throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
-//            }
-//
-//            Manufacturer isManufacturer = meterMapper.findManufacturerById(
-//                    request.getMeterManufacturer(), user.getOrgId());
-//            if (isManufacturer == null){
-//                throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
-//            }
-//            request.setRoot(existingMeter.getRoot());
-//            request.setRegion(existingMeter.getRegion());
-//            request.setMeterStage("Pending-edited");
-//            request.setNodeId(existingMeter.getNodeId());
-//            request.setDss(existingMeter.getDss());
-//            request.setCin(existingMeter.getCin());
-//            request.setAccountNumber(existingMeter.getAccountNumber());
-//            request.setTariff(existingMeter.getTariff());
+    private void handleAllocatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user, UUID nodeId) {
+        if(!nodeType.equalsIgnoreCase("Root")
+                && !nodeType.equalsIgnoreCase("Region")){
+            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+        }
+        // check if operator exist
+            Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
+
+            if(meter != null && !meter.getId().equals(existingMeter.getId())) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter number (" + request.getMeterNumber() + ") already exist");
+            }
+
+            Manufacturer isManufacturer = meterMapper.findManufacturerById(
+                    request.getMeterManufacturer(), user.getOrgId());
+            if (isManufacturer == null){
+                throw new GlobalExceptionHandler.NotFoundException("Manufacturer " +status.getNotFoundDesc());
+            }
+            request.setRoot(existingMeter.getRoot());
+            request.setRegion(existingMeter.getRegion());
+            request.setMeterStage("Pending-edited");
+            request.setNodeId(existingMeter.getNodeId());
+            request.setDss(existingMeter.getDss());
+            request.setCin(existingMeter.getCin());
+            request.setAccountNumber(existingMeter.getAccountNumber());
+            request.setTariff(existingMeter.getTariff());
 //            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
-//    }
+    }
 
     private void handleCreatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user) {
-        if(!nodeType.equalsIgnoreCase("Region")){
+        if(!nodeType.equalsIgnoreCase("Root")
+                && !nodeType.equalsIgnoreCase("Region") ){
             throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
         }
             Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
@@ -809,7 +810,7 @@ public class MeterServiceImpl implements MeterService {
             request.setCin(existingMeter.getCin());
             request.setAccountNumber(existingMeter.getAccountNumber());
             request.setTariff(existingMeter.getTariff());
-            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
+//            request.setMeterManufacturer(existingMeter.getMeterManufacturer());
     }
 
     @Transactional(readOnly = true)
