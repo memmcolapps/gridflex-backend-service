@@ -102,7 +102,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
-            if(!nodeType.equalsIgnoreCase("Business hub")
+            if(!nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }

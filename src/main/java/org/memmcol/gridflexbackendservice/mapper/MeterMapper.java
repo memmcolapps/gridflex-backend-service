@@ -794,7 +794,7 @@ public interface MeterMapper {
     @Select("SELECT * FROM meters m LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "WHERE m.org_id = #{orgId} AND (m.id = #{meterId} OR m.meter_number = #{meterNumber} " +
             "OR m.sim_number = #{simNumber} OR m.account_number = #{accountNumber} OR m.cin = #{cin})" +
-            "AND m.region = #{nodeId}")
+            "AND (m.region = #{nodeId} OR m.root = #{nodeId})")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "customerId", column = "customer_id"),
