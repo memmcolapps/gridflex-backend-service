@@ -417,6 +417,8 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
+            System.out.print("nodeId: "+nodeId);
+
             // Fetch existing meter and version
             Meter existingMeter = meterMapper.findById(request.getId(), user.getOrgId(), nodeId);
             if (existingMeter == null) {
@@ -437,10 +439,6 @@ public class MeterServiceImpl implements MeterService {
                 handleCreatedMeter(existingMeter, nodeType, request, user);
             }
 
-//            boolean b = nodeType.equalsIgnoreCase("Root")
-//                    || nodeType.equalsIgnoreCase("Business hub")
-////                    || nodeType.equalsIgnoreCase("Region")
-//                    || nodeType.equalsIgnoreCase("Service center");
             if(existingMeter.getMeterStage().equalsIgnoreCase("Unassigned")){
                 throw new GlobalExceptionHandler.NotFoundException("Editing allocated meter is not supported");
 //                handleAllocatedMeter(existingMeter, nodeType, request, user, nodeId);
@@ -772,8 +770,7 @@ public class MeterServiceImpl implements MeterService {
 //    }
 
     private void handleCreatedMeter(Meter existingMeter, String nodeType, Meter request, UserModel user) {
-        if(!nodeType.equalsIgnoreCase("Root")
-                && !nodeType.equalsIgnoreCase("Region")){
+        if(!nodeType.equalsIgnoreCase("Region")){
             throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
         }
             Meter meter = meterMapper.findByMeterNumber(request.getMeterNumber(), request.getOrgId());
@@ -1179,7 +1176,8 @@ public class MeterServiceImpl implements MeterService {
             if(meterStatus == null) throw new GlobalExceptionHandler.NotFoundException("Meter "+status.getNotFoundDesc());
 
             if((!nodeId.equals(meterStatus.getNodeId()) && !nodeType.equalsIgnoreCase("Business hub"))
-//                    || (!nodeId.equals(meterStatus.getRoot()) && !nodeType.equalsIgnoreCase("Root"))
+                    && (!nodeId.equals(meterStatus.getRoot()) && !nodeType.equalsIgnoreCase("Root"))
+                    && (!nodeId.equals(meterStatus.getRegion()) && !nodeType.equalsIgnoreCase("Region"))
                     && (!nodeId.equals(meterStatus.getServiceCenter()) && !nodeType.equalsIgnoreCase("Service center"))) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
@@ -1627,6 +1625,7 @@ public class MeterServiceImpl implements MeterService {
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
             if((!nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Region")
                     && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center"))){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
@@ -1881,12 +1880,12 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getNotFoundDesc()+" or No permission");
             }
 
-//            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
-//                    && (!nodeType.equalsIgnoreCase("Region")
-//                    && !nodeType.equalsIgnoreCase("Root"))){
-//                throw new GlobalExceptionHandler.NotFoundException(
-//                        "You do not have permission to approve created meter");
-//            }
+            if(meter.getMeterStage().equalsIgnoreCase("Pending-allocated")
+                    && (!nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root"))){
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "You do not have permission to approve allocated meter");
+            }
 
             prepareMeterForApproval(meter, user, meterVersionId);
 
@@ -3443,11 +3442,12 @@ public class MeterServiceImpl implements MeterService {
                 meter.getSmartMeterInfo().setOrgId(user.getOrgId());
             }
             if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
+                    || meter.getMeterStage().equalsIgnoreCase("Pending-allocated")
                     && (!user.getNodeInfo().getType().equalsIgnoreCase("Region")
                     && !user.getNodeInfo().getType().equalsIgnoreCase("Root"))){
                 GenericResp resp = new GenericResp();
                 resp.setId(meter.getMeterNumber());
-                resp.setMessage("You do not have permission to approve created meter");
+                resp.setMessage("You do not have permission to approve meter");
                 resp.setData(meter.getMeterNumber());
 
                 failedRecords.add(resp);
