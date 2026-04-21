@@ -478,7 +478,6 @@ public class MeterServiceImpl implements MeterService {
             }
 
             request.setMeterStage(meterStage);
-            System.out.print("meterManufacturer: "+request.getMeterManufacturer());
             int res = meterMapper.updateMeter(meterStage, request.getId(), request.getUpdatedAt(), request.getStatus());
             result = meterMapper.insertMeterVersion(request);
             if (result == 0 || res == 0) throw new GlobalExceptionHandler.NotFoundException(meterName + " " + status.getUpdateFailureDesc());
@@ -1147,19 +1146,19 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Customer is either not found");
             }
 
-            if((!isCustomer.getNodeId().equals(nodeId)
-                    || !isCustomer.getRegion().equals(nodeId)
-                    || !isCustomer.getServiceCenter().equals(nodeId)
-                    || !isCustomer.getRoot().equals(nodeId))
+            if(nodeType == null
+                    || !nodeType.equalsIgnoreCase("Root")
                     && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")){
+                    && !nodeType.equalsIgnoreCase("Region")){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
-            if(!isCustomer.getNodeId().equals(nodeId) && !isCustomer.getServiceCenter().equals(nodeId)){
-                throw new GlobalExceptionHandler.NotFoundException("Customer do not belong to "+nodeType+" business hub");
+            if ((isCustomer.getNodeId() == null || !isCustomer.getNodeId().equals(nodeId)) &&
+                    (isCustomer.getServiceCenter() == null || !isCustomer.getServiceCenter().equals(nodeId)) &&
+                    (isCustomer.getRoot() == null || !isCustomer.getRoot().equals(nodeId)) &&
+                    (isCustomer.getRegion() == null || !isCustomer.getRegion().equals(nodeId))) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission on this customer");
             }
 
             List<Tariff> allTariffs = tariffMapper.GetTariffs(um.getOrgId());
