@@ -94,7 +94,7 @@ public interface DebitCreditAdjustmentMapper {
     Meter getMeterById(UUID meterId);
 
     @Select("SELECT * FROM liability_cause WHERE id = #{liabilityCauseId} " +
-            "AND org_id = #{orgId} AND approve_status = 'Approved' OR approve_status = 'Pending-edited'")
+            "AND org_id = #{orgId} AND (approve_status = 'Approved' OR approve_status = 'Pending-edited')")
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "org_id", property = "orgId"),

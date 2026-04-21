@@ -102,7 +102,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
-            if(!nodeType.equalsIgnoreCase("Root")
+
+            System.out.println("Region: "+nodeType);
+
+            if(nodeType == null || !nodeType.equalsIgnoreCase("Root")
                     && !nodeType.equalsIgnoreCase("Region")
                     && !nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")){
@@ -128,16 +131,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
             }
 
-//            if(!meter.getNodeId().equals(nodeId)
-//                    && !meter.getServiceCenter().equals(nodeId)
-//                    && !meter.getRoot().equals(nodeId)){
-//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//            }
-
             if ((meter.getNodeId() == null || !meter.getNodeId().equals(nodeId)) &&
                     (meter.getServiceCenter() == null || !meter.getServiceCenter().equals(nodeId)) &&
-                    (meter.getRoot() == null || !meter.getRoot().equals(nodeId))) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+                    (meter.getRoot() == null || !meter.getRoot().equals(nodeId)) &&
+                    (meter.getRegion() == null || !meter.getRegion().equals(nodeId))) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission on this meter");
             }
 
             LiabilityCause liabilityCause = mapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
