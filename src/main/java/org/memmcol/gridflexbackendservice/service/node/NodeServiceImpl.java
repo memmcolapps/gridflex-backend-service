@@ -662,17 +662,16 @@ public class NodeServiceImpl implements NodeService {
             UserModel um = handleUserValidation();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
-            String nodeName = um.getNodeInfo().getType();
+            String nodeType = um.getNodeInfo().getType();
 
             List<NodeSummary> result;
-//            if(nodeName.equalsIgnoreCase("Region")
-//                    || nodeName.equalsIgnoreCase("root")){
-//                result = nodeMapper.getAllRegionFeeder(um.getOrgId());
-//            } else {
-                System.out.println("nodeId: "+nodeId);
-                System.out.println("nodeName: "+nodeName);
-                System.out.println("orgId: "+um.getOrgId());
-                result = nodeMapper.getFeedersUnderNode(um.getOrgId(), nodeId);
+
+                if(nodeType.equalsIgnoreCase("Region")
+                        || nodeType.equalsIgnoreCase("Root")) {
+                    result = nodeMapper.getAllRegionFeeder(um.getOrgId());
+                } else {
+                    result = nodeMapper.getFeedersUnderNode(um.getOrgId(), nodeId);
+                }
 //                throw new GlobalExceptionHandler.NotFoundException("User does not belong to any hierarchy");
 //            }
 
