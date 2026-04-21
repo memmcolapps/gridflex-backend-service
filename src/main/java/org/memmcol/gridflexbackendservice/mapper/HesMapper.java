@@ -34,9 +34,12 @@ public interface HesMapper {
                 <if test="meterModel != null">
                     AND e.meter_model = #{meterModel}
                 </if>
-                <if test="meterNumber != null">
-                    AND e.meter_serial = #{meterNumber}
-                </if>
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND e.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
             AND m.org_id = #{orgId}
             AND (fn.region_region_id = #{node} 
                         OR fn.service_region_id = #{node} 
@@ -124,7 +127,7 @@ public interface HesMapper {
     List<Event> getEvents(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("meterNumber") String meterNumber,
+            @Param("meterNumber") List<String> meterNumber,
             @Param("eventTypeName") String eventTypeName,
             @Param("meterModel") String meterModel,
             @Param("page") int page,
@@ -159,8 +162,12 @@ public interface HesMapper {
             <if test="meterModel != null">
                 AND model_number = #{meterModel}
             </if>
-            <if test="meterNumber != null">
-                AND meter_serial = #{meterNumber}
+     
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
             </if>
             AND m.org_id = #{orgId}
             AND (fn.region_region_id = #{node}
@@ -249,7 +256,7 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getProfileChannelOne(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getProfileChannelOne(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -268,8 +275,11 @@ public interface HesMapper {
             <if test="meterModel != null">
                 AND model_number = #{meterModel}
             </if>
-            <if test="meterNumber != null">
-                AND meter_serial = #{meterNumber}
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
             </if>
         AND m.org_id = #{orgId}
         AND (fn.region_region_id = #{node} 
@@ -353,7 +363,7 @@ public interface HesMapper {
     })
     List<Profile> getProfileChannelTwo(
             LocalDateTime startDate, LocalDateTime endDate,
-            String meterNumber, String meterModel,
+            List<String> meterNumber, String meterModel,
             UUID orgId, int page, int size, String node);
 
 
@@ -373,8 +383,11 @@ public interface HesMapper {
              <if test="meterModel != null">
                 AND meter_model = #{meterModel}
             </if>
-            <if test="meterNumber != null">
-                AND meter_serial = #{meterNumber}
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
             </if>
         AND m.org_id = #{orgId}
         AND (fn.region_region_id = #{node} 
@@ -485,7 +498,7 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getDailyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getDailyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -504,8 +517,11 @@ public interface HesMapper {
             <if test="meterModel != null">
                 AND meter_model = #{meterModel}
             </if>
-            <if test="meterNumber != null">
-                AND meter_serial = #{meterNumber}
+           <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
             </if>
             AND m.org_id = #{orgId}
             AND (fn.region_region_id = #{node} 
@@ -616,7 +632,7 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getMonthlyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getMonthlyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
