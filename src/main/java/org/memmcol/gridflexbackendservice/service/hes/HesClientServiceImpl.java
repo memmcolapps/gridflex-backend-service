@@ -144,7 +144,7 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, String meterNumber,
+    public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber,
                                        String profile, String model,int page, int size, String search, String node) {
         try {
 
@@ -168,14 +168,26 @@ public class HesClientServiceImpl implements HesService {
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
 
-            // SEARCH ON ANY FIELD
+//            // SEARCH ON ANY FIELD
+//            List<Profile> filteredProfiles = profiles.stream()
+//                    .filter(e -> searchLower.isEmpty() ||
+//                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
+//                            (e.getMeterModel() != null && e.getMeterModel().toLowerCase().equalsIgnoreCase(searchLower)) ||
+//                            (e.getReceivedAt() != null && e.getReceivedAt().toString().equalsIgnoreCase(searchLower)) ||
+//                            (e.getMeterHealthIndicator() != null && e.getMeterHealthIndicator().toLowerCase().equalsIgnoreCase(searchLower))
+//                    )
+//                    .collect(Collectors.toList());
             List<Profile> filteredProfiles = profiles.stream()
-                    .filter(e -> searchLower.isEmpty() ||
-                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getMeterModel() != null && e.getMeterModel().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getReceivedAt() != null && e.getReceivedAt().toString().equalsIgnoreCase(searchLower)) ||
-                            (e.getMeterHealthIndicator() != null && e.getMeterHealthIndicator().toLowerCase().equalsIgnoreCase(searchLower))
-                    )
+                    .filter(e -> {
+                        if (searchLower.isEmpty()) return true;
+
+                        return contains(e.getMeterNumber(), searchLower)
+                                || contains(e.getMeterModel(), searchLower)
+                                || contains(e.getMeterHealthIndicator(), searchLower)
+                                || containsDate(e.getReceivedAt(), searchLower)
+                                || contains(e.getMeter() != null ? e.getMeter().getAccountNumber() : null, searchLower)
+                                || containsNested(e, searchLower);
+                    })
                     .collect(Collectors.toList());
 
             // Pagination logic
@@ -206,9 +218,40 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    private boolean contains(String field, String search) {
+        return field != null && field.toLowerCase().contains(search);
+    }
+
+    private boolean containsDate(LocalDateTime date, String search) {
+        return date != null && date.toString().toLowerCase().contains(search);
+    }
+
+    private boolean containsNested(Profile e, String search) {
+        if (e.getMeter() == null || e.getMeter().getFlatNode() == null) return false;
+
+        var fn = e.getMeter().getFlatNode();
+
+        return contains(fn.getFeederName(), search)
+                || contains(fn.getRegionName(), search)
+                || contains(fn.getBusinessName(), search)
+                || contains(fn.getServiceName(), search);
+    }
+
+    private boolean containsEventTypeName(Event e, String search) {
+        return e.getEventType() != null
+                && e.getEventType().getName() != null
+                && e.getEventType().getName().toLowerCase().contains(search);
+    }
+
+    private boolean containsEventTypeDescription(Event e, String search) {
+        return e.getEventType() != null
+                && e.getEventType().getDescription() != null
+                && e.getEventType().getDescription().toLowerCase().contains(search);
+    }
+
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, String meterNumber, String eventTypeName, String model, String search, int page, int size, String node) {
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String eventTypeName, String model, String search, int page, int size, String node) {
         try {
             UserModel um = handleUserValidation();
             List<Event> events;
@@ -222,15 +265,17 @@ public class HesClientServiceImpl implements HesService {
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
 
-            // SEARCH ON ANY FIELD
+            // ✅ FILTER (flexible + safe)
             List<Event> filteredEvents = events.stream()
-                    .filter(e -> searchLower.isEmpty() ||
-                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventName() != null && e.getEventName().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventType().getName() != null && e.getEventType().getName().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventType().getDescription() != null && e.getEventType().getDescription().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getEventTime() != null && e.getEventTime().toString().equalsIgnoreCase(searchLower))
-                    )
+                    .filter(e -> {
+                        if (searchLower.isEmpty()) return true;
+
+                        return contains(e.getMeterNumber(), searchLower)
+                                || contains(e.getEventName(), searchLower)
+                                || containsEventTypeName(e, searchLower)
+                                || containsEventTypeDescription(e, searchLower)
+                                || containsDate(e.getEventTime(), searchLower);
+                    })
                     .collect(Collectors.toList());
 
             // Pagination logic

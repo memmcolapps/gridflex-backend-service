@@ -4486,7 +4486,6 @@ public class MeterServiceImpl implements MeterService {
                 meter.setMeterClass("Three-Phase");
             }
 
-
 //            validateMeterRequest(meter, user);
 
             // --- Default Meter Fields ---
@@ -4501,13 +4500,33 @@ public class MeterServiceImpl implements MeterService {
 
     private String validateRequiredFields(Meter meter) {
 
-        if (meter.getOldTariffIndex() == null) return "old tariff index is required";
-        if (meter.getNewTariffIndex() == null) return "new tariff index is required";
-        if (meter.getMeterNumber() == null || meter.getMeterNumber().trim().isEmpty()) return "meter number is required";
-        if (meter.getMeterCategory() == null || meter.getMeterCategory().trim().isEmpty()) return "meter category is required";
-        if (meter.getMeterClass() == null || meter.getMeterClass().trim().isEmpty()) return "meter class is required";
-        if (meter.getMeterType() == null || meter.getMeterType().trim().isEmpty()) return "meter type is required";
+        if (meter.getOldTariffIndex() == null) return "Old tariff index is required";
+        if (meter.getNewTariffIndex() == null) return "New tariff index is required";
+        if (meter.getMeterNumber() == null || meter.getMeterNumber().trim().isEmpty()) return "Meter number is required";
+        if (meter.getMeterCategory() == null || meter.getMeterCategory().trim().isEmpty()) return "Meter category is required";
+        if (meter.getMeterClass() == null || meter.getMeterClass().trim().isEmpty()) return "Meter class is required";
+        if (meter.getMeterType() == null || meter.getMeterType().trim().isEmpty()) return "Meter type is required";
+        if (meter.getOldKrn() == null || meter.getOldKrn().trim().isEmpty()) return "Old krn index is required";
+        if (meter.getNewKrn() == null || meter.getNewKrn().trim().isEmpty()) return "New krn index is required";
+        if (meter.getOldSgc() == null || meter.getOldSgc().trim().isEmpty()) return "Old sgc index is required";
+        if (meter.getNewSgc() == null || meter.getNewSgc().trim().isEmpty()) return "New sgc index is required";
 
+        if(meter.getSmartStatus()){
+            if (meter.getSmartMeterInfo().getMeterModel() == null || meter.getSmartMeterInfo().getMeterModel().trim().isEmpty()) return "Meter model is required";
+            if (meter.getSmartMeterInfo().getProtocol() == null || meter.getSmartMeterInfo().getProtocol().trim().isEmpty()) return "Protocol is required";
+            if (meter.getSmartMeterInfo().getAuthentication() == null || meter.getSmartMeterInfo().getAuthentication().trim().isEmpty()) return "Authentication is required";
+            if (meter.getSmartMeterInfo().getPassword() == null || meter.getSmartMeterInfo().getPassword().trim().isEmpty()) return "Password is required";
+        }
+
+        if(meter.getMeterClass().equalsIgnoreCase("MD")){
+            if (meter.getMdMeterInfo().getCtRatioNum() == null || meter.getMdMeterInfo().getCtRatioNum().trim().isEmpty()) return "CT ration num is required";
+            if (meter.getMdMeterInfo().getCtRatioDenom() == null || meter.getMdMeterInfo().getCtRatioDenom().trim().isEmpty()) return "CT ration denom is required";
+            if (meter.getMdMeterInfo().getVoltRatioNum() == null || meter.getMdMeterInfo().getVoltRatioNum().trim().isEmpty()) return "Volt ration num is required";
+            if (meter.getMdMeterInfo().getVoltRatioDenom() == null || meter.getMdMeterInfo().getVoltRatioDenom().trim().isEmpty()) return "Volt ratio denom is required";
+            if (meter.getMdMeterInfo().getMeterRating() == null || meter.getMdMeterInfo().getMeterRating().trim().isEmpty()) return "Meter rating is required";
+            if (meter.getMdMeterInfo().getInitialReading() == null || meter.getMdMeterInfo().getInitialReading().trim().isEmpty()) return "Initial reading is required";
+            if (meter.getMdMeterInfo().getDial() == null || meter.getMdMeterInfo().getDial().trim().isEmpty()) return "Dial is required";
+        }
         return null;
     }
 
@@ -4522,14 +4541,24 @@ public class MeterServiceImpl implements MeterService {
                 m.getSmartMeterInfo().setOrgId(user.getOrgId());
                 m.getSmartMeterInfo().setMeterStage("Pending-created");
                 m.getSmartMeterInfo().setDescription("Newly Added");
+
                 smartInfos.add(m.getSmartMeterInfo());
             }
             if (m.getMdMeterInfo() != null) {
+                double ctRatioNumerator = Double.parseDouble(m.getMdMeterInfo().getCtRatioNum());
+                double ctRatioDenominator = Double.parseDouble(m.getMdMeterInfo().getCtRatioDenom());
+                double vtRatioNumerator = Double.parseDouble(m.getMdMeterInfo().getVoltRatioNum());
+                double vtRatioDenominator = Double.parseDouble(m.getMdMeterInfo().getVoltRatioDenom());
+                double multiplier = (ctRatioNumerator / ctRatioDenominator) * (vtRatioNumerator / vtRatioDenominator);
+                BigDecimal rounded = BigDecimal.valueOf(multiplier).setScale(2, RoundingMode.HALF_UP);
+
                 m.getMdMeterInfo().setMeterId(m.getId());
                 m.getMdMeterInfo().setCreatedBy(user.getId());
                 m.getMdMeterInfo().setOrgId(user.getOrgId());
                 m.getMdMeterInfo().setMeterStage("Pending-created");
                 m.getMdMeterInfo().setDescription("Newly Added");
+                m.getMdMeterInfo().setMultiplier(rounded.toString());
+
                 mdInfos.add(m.getMdMeterInfo());
             }
         }
@@ -4693,12 +4722,12 @@ public class MeterServiceImpl implements MeterService {
                     meter.getMdMeterInfo().setCtRatioDenom(getStringCellValue(row.getCell(18)));
                     meter.getMdMeterInfo().setVoltRatioNum(getStringCellValue(row.getCell(19)));
                     meter.getMdMeterInfo().setVoltRatioDenom(getStringCellValue(row.getCell(20)));
-                    meter.getMdMeterInfo().setMultiplier(getStringCellValue(row.getCell(21)));
-                    meter.getMdMeterInfo().setMeterRating(getStringCellValue(row.getCell(22)));
-                    meter.getMdMeterInfo().setInitialReading(getStringCellValue(row.getCell(23)));
-                    meter.getMdMeterInfo().setDial(getStringCellValue(row.getCell(24)));
-                    meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(25)));
-                    meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(26)));
+//                    meter.getMdMeterInfo().setMultiplier(getStringCellValue(row.getCell(21)));
+                    meter.getMdMeterInfo().setMeterRating(getStringCellValue(row.getCell(21)));
+                    meter.getMdMeterInfo().setInitialReading(getStringCellValue(row.getCell(22)));
+                    meter.getMdMeterInfo().setDial(getStringCellValue(row.getCell(23)));
+                    meter.getMdMeterInfo().setLatitude(getStringCellValue(row.getCell(24)));
+                    meter.getMdMeterInfo().setLongitude(getStringCellValue(row.getCell(25)));
                 }
 
                 meters.add(meter);
