@@ -154,6 +154,7 @@ public class AuthServiceImpl implements AuthService {
 
 	@Transactional
 	public Map<String, Object>  handleGenerateOtp(String username) {
+
 		String otp = String.format("%04d", random.nextInt(10000));
 
 		String emailServiceUrl = "http://localhost:8084/api/send";

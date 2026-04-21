@@ -286,11 +286,15 @@ public class  SecurityConfig {
 		// Authorization
 		http.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(
+						"/auth/service/generate-otp/**",
+						"/auth/service/forget-password/**"
+				).permitAll()
+				.requestMatchers(
 						basePath + "/auth/service/test",
 						basePath + "/auth/service/admin/login/**",
 						basePath + "/auth/service/logout/**",
-						basePath + "/auth/service/generate-otp/**",
-						basePath + "/auth/service/forget-password/**",
+//						basePath + "/auth/service/generate-otp/**",
+//						basePath + "/auth/service/forget-password/**",
 						basePath + "/actuator/prometheus",
 						basePath + "/service/alerts",
 						basePath + "/service/reports/summary",
