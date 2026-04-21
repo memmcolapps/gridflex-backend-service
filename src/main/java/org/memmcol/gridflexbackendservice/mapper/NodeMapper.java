@@ -238,11 +238,30 @@ public interface NodeMapper {
     """)
     Boolean existsByRegionEmail(@Param("email") String email);
 
-    @Select("""
-            SELECT * FROM vw_node_summary 
-            WHERE parent_id = #{regionNodeId} 
-              AND org_id = #{id} AND UPPER(type) = UPPER('business hub')
-            """)
+//    @Select("""
+//            SELECT * FROM vw_node_summary
+//            WHERE parent_id = #{regionNodeId}
+//              AND org_id = #{id} AND LOWER(TRIM(type)) LIKE '%business%'
+//            """)
+@Select("""
+    WITH RECURSIVE node_tree AS (
+        SELECT node_id, parent_id, type, name, asset_id, org_id, 0 AS depth
+        FROM vw_node_summary
+        WHERE node_id = #{regionNodeId}
+          AND org_id = #{orgId}
+
+        UNION ALL
+
+        SELECT v.node_id, v.parent_id, v.type, v.name, v.asset_id, v.org_id, nt.depth + 1
+        FROM vw_node_summary v
+        INNER JOIN node_tree nt
+            ON v.parent_id = nt.node_id
+        WHERE v.org_id = #{orgId}
+    )
+    SELECT *
+    FROM node_tree
+    WHERE LOWER(TRIM(type)) LIKE '%business%'
+""")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "orgId", column = "org_id"),
@@ -252,7 +271,7 @@ public interface NodeMapper {
             @Result(property = "phoneNo", column = "phone_number"),
             @Result(property = "contactPerson", column = "contact_person"),
     })
-    List<RegionBhubServiceCenter> getBhubByOrgId(UUID regionNodeId, UUID id);
+    List<RegionBhubServiceCenter> getBhubByOrgId(UUID regionNodeId, UUID orgId);
 
     @Select("""
             SELECT * FROM substation_trans_feeder_lines
@@ -298,7 +317,7 @@ public interface NodeMapper {
         )
         SELECT *
         FROM node_tree
-        WHERE LOWER(type) = 'feeder line'
+        WHERE LOWER(TRIM(type)) LIKE '%feeder%'
     """)
     @Results({
             @Result(property = "id", column = "id"),
@@ -310,19 +329,69 @@ public interface NodeMapper {
     })
     List<NodeSummary> getFeedersUnderNode(UUID orgId, UUID nodeId);
 
+//    @Select("""
+//            SELECT node_id, parent_id, type, name, asset_id, org_id FROM vw_node_summary
+//            WHERE org_id = #{orgId} AND UPPER(type) = UPPER('feeder line')
+//            """)
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "assetId", column = "asset_id"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "createdAt", column = "created_at"),
+//            @Result(property = "updatedAt", column = "updated_at")
+//    })
+//    List<NodeSummary> getAllRegionFeeder(UUID orgId);
+
+
+//@Select("""
+//        WITH RECURSIVE node_tree AS (
+//            SELECT node_id, parent_id, type, name, asset_id, org_id
+//            FROM vw_node_summary
+//            WHERE node_id = #{nodeId}
+//              AND org_id = #{orgId}
+//
+//            UNION ALL
+//
+//            SELECT v.node_id, v.parent_id, v.type, v.name, v.asset_id, v.org_id
+//            FROM vw_node_summary v
+//            INNER JOIN node_tree nt
+//                ON v.parent_id = nt.node_id
+//            WHERE v.org_id = #{orgId}
+//        )
+//        SELECT *
+//        FROM node_tree
+//        WHERE LOWER(type) = Lower('feeder line')
+//    """)
+
     @Select("""
-            SELECT node_id, parent_id, type, name, asset_id, org_id FROM vw_node_summary
-            WHERE org_id = #{orgId} AND parent_id = #{nodeId}
-            """)
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "assetId", column = "asset_id"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
-    })
-    List<NodeSummary> getAllRegionFeeder(UUID orgId);
+    WITH RECURSIVE node_tree AS (
+        SELECT node_id, parent_id, type, name, asset_id, org_id, 0 AS depth
+        FROM vw_node_summary
+        WHERE node_id = #{nodeId}
+          AND org_id = #{orgId}
+
+        UNION ALL
+
+        SELECT v.node_id, v.parent_id, v.type, v.name, v.asset_id, v.org_id, nt.depth + 1
+        FROM vw_node_summary v
+        INNER JOIN node_tree nt
+            ON v.parent_id = nt.node_id
+        WHERE v.org_id = #{orgId}
+    )
+    SELECT *
+    FROM node_tree
+    WHERE LOWER(TRIM(type)) LIKE '%feeder%'
+""")
+@Results({
+        @Result(property = "id", column = "id"),
+        @Result(property = "orgId", column = "org_id"),
+        @Result(property = "assetId", column = "asset_id"),
+        @Result(property = "nodeId", column = "node_id"),
+        @Result(property = "createdAt", column = "created_at"),
+        @Result(property = "updatedAt", column = "updated_at")
+})
+List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
 
     @Select("""
             SELECT name, asset_id, type FROM substation_trans_feeder_lines

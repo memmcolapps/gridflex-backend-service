@@ -639,7 +639,8 @@ public class NodeServiceImpl implements NodeService {
 
             List<RegionBhubServiceCenter> result;
 
-            if(nodeType.equalsIgnoreCase("Region")) {
+            if(nodeType.equalsIgnoreCase("Region")
+                    || nodeType.equalsIgnoreCase("Root")) {
                 result = nodeMapper.getBhubByOrgId(userRegionId, user.getOrgId());
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
@@ -668,7 +669,7 @@ public class NodeServiceImpl implements NodeService {
 
                 if(nodeType.equalsIgnoreCase("Region")
                         || nodeType.equalsIgnoreCase("Root")) {
-                    result = nodeMapper.getAllRegionFeeder(um.getOrgId());
+                    result = nodeMapper.getAllRegionFeeder(um.getOrgId(), nodeId);
                 } else {
                     result = nodeMapper.getFeedersUnderNode(um.getOrgId(), nodeId);
                 }
