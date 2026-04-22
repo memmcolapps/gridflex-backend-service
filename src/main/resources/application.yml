@@ -31,9 +31,9 @@ external:
   token-gen:
     base-url: http://169.239.189.91:19071
   hes-realtime:
-    base-url: http://172.16.2.46:9061/api/realtime
+    base-url: http://172.16.10.60:9061/api/realtime
   dlms-write-ops:
-    base-url: http://localhost:9061/api/dlms
+    base-url: http://172.16.10.60:9061/api/dlms
  
 #spring:
 #  application:
