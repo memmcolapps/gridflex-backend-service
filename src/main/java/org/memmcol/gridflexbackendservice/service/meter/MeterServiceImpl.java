@@ -822,7 +822,7 @@ public class MeterServiceImpl implements MeterService {
             UserModel um = handleUserValidation();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
-            String nodeName = um.getNodeInfo().getType();
+            String nodeType = um.getNodeInfo().getType();
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
@@ -845,10 +845,14 @@ public class MeterServiceImpl implements MeterService {
             if (cachedUser != null) {
                 return ResponseMap.response(status.getSuccessCode(), "Cached Meters " + status.getDesc(), cachedUser);
             }
+
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
+            }
             List<Meter> meters;
             List<NodeSummary> result;
-            if(nodeName.equalsIgnoreCase("Region")
-                    || nodeName.equalsIgnoreCase("Root")){
+            if(nodeType.equalsIgnoreCase("Region")
+                    || nodeType.equalsIgnoreCase("Root")){
                 // Fetch all users
                 if (type.trim().equalsIgnoreCase("pending-state")) {
                     meters = meterMapper.getMetersVersion(um.getOrgId(), page, size, nodeId);

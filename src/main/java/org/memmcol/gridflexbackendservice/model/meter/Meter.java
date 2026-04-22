@@ -72,9 +72,11 @@ public class Meter implements Serializable {
     private Customer customer;
     private MeterAssignLocation meterAssignLocation;
     private MDMeterInfo mdMeterInfo;
+    private MDMeterInfo mdMeterVersionInfo;
     private PaymentMode paymentMode;
     private Manufacturer manufacturer;
     private SmartMeterInfo smartMeterInfo;
+    private SmartMeterInfo smartMeterVersionInfo;
     private RegionBhubServiceCenter regionInfo;
     private RegionBhubServiceCenter nodeInfo;
     private SubStationTransformerFeederLine feederInfo;
@@ -567,5 +569,21 @@ public class Meter implements Serializable {
 
     public void setOutstandingBalance(BigDecimal outstandingBalance) {
         this.outstandingBalance = outstandingBalance;
+    }
+
+    public MDMeterInfo getMdMeterVersionInfo() {
+        return mdMeterVersionInfo;
+    }
+
+    public void setMdMeterVersionInfo(MDMeterInfo mdMeterVersionInfo) {
+        this.mdMeterVersionInfo = mdMeterVersionInfo;
+    }
+
+    public SmartMeterInfo getSmartMeterVersionInfo() {
+        return smartMeterVersionInfo;
+    }
+
+    public void setSmartMeterVersionInfo(SmartMeterInfo smartMeterVersionInfo) {
+        this.smartMeterVersionInfo = smartMeterVersionInfo;
     }
 }

@@ -296,14 +296,17 @@ public class CustomerServiceImpl implements CustomerService {
 //            if (cachedCustomer != null) {
 //                return ResponseMap.response(status.getSuccessCode(), "Cached Customers " + status.getDesc(), cachedCustomer);
 //            }
-//            if(nodeType.equalsIgnoreCase("Service center")){
-                Customer customer = new Customer();
-                resolveNodeHierarchy(customer, nodeId, um.getOrgId());
+////            if(nodeType.equalsIgnoreCase("Service center")){
+//                Customer customer = new Customer();
+//                resolveNodeHierarchy(customer, nodeId, um.getOrgId());
+//
+////            }
 
-//            }
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
+            }
 
             List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), page, size, nodeId);
-
 
             // Apply filtering
             Stream<Customer> userStream = customers.stream();
