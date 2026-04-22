@@ -14,6 +14,7 @@ import com.itextpdf.layout.properties.UnitValue;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
+import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.AdjustmentComputationResult;
@@ -67,6 +68,9 @@ public class VendingServiceImpl implements VendingService {
     private VendMapper vendMapper;
 
     @Autowired
+    private NodeMapper nodeMapper;
+
+    @Autowired
     private TokenGenClientService tokenGenClient;
 
     @Autowired
@@ -80,7 +84,8 @@ public class VendingServiceImpl implements VendingService {
 
         if(!nodeType.equalsIgnoreCase("Business hub")
                 && !nodeType.equalsIgnoreCase("Service center")
-                && !nodeType.equalsIgnoreCase("Region")) {
+                && !nodeType.equalsIgnoreCase("Region")
+                && !nodeType.equalsIgnoreCase("Root")) {
             throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
         }
 
@@ -462,7 +467,8 @@ public class VendingServiceImpl implements VendingService {
 
             if(!nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")) {
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -1135,7 +1141,8 @@ public class VendingServiceImpl implements VendingService {
 
             if(!nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")) {
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -1232,7 +1239,8 @@ public class VendingServiceImpl implements VendingService {
 
            if(!nodeType.equalsIgnoreCase("Business hub")
                    && !nodeType.equalsIgnoreCase("Service center")
-                   && !nodeType.equalsIgnoreCase("Region")) {
+                   && !nodeType.equalsIgnoreCase("Region")
+                   && !nodeType.equalsIgnoreCase("Root")) {
                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
            }
 
@@ -1273,7 +1281,8 @@ public class VendingServiceImpl implements VendingService {
 
             if(!nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")) {
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
             Meter meterResult = vendMapper.getMeter(
@@ -1356,7 +1365,8 @@ public class VendingServiceImpl implements VendingService {
 
             if(!nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")) {
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
             Meter meterResult = vendMapper.getMeter(
@@ -1443,7 +1453,8 @@ public class VendingServiceImpl implements VendingService {
 
             if(!nodeType.equalsIgnoreCase("Business hub")
                     && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")) {
+                    && !nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
@@ -1533,6 +1544,9 @@ public class VendingServiceImpl implements VendingService {
 //        }
 
 //        resolveBulkNodeHierarchy(Transaction );
+//        if(nodeType.equalsIgnoreCase("Service center")){
+//            nodeId = nodeMapper.getParentNode(user.getOrgId(), nodeId);
+//        }
 
         try {
             int offset = page * size;

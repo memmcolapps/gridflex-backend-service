@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
+import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
@@ -61,6 +62,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
     @Autowired
     private DebitCreditAdjustmentMapper mapper;
+
+    @Autowired
+    private NodeMapper nodeMapper;
 
     @Autowired
     private ResponseProperties status;
@@ -129,6 +133,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             Meter meter = mapper.getMeterById(request.getMeterId());
             if (meter == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
+            }
+
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
             }
 
             if ((meter.getNodeId() == null || !meter.getNodeId().equals(nodeId)) &&
@@ -350,6 +358,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
             }
 
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
+            }
+
             if((meter.getNodeId() == null || !meter.getNodeId().equals(nodeId)) &&
                     (meter.getServiceCenter() == null || !meter.getServiceCenter().equals(nodeId)) &&
                     (meter.getRoot() == null || !meter.getRoot().equals(nodeId)) &&
@@ -480,12 +492,28 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
-            if(nodeType == null || !nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")){
+            Meter meter = mapper.getMeterById(meterId);
+            if (meter == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Meter not found or not assigned");
+            }
+
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
+            }
+
+            if((meter.getNodeId() == null || !meter.getNodeId().equals(nodeId)) &&
+                    (meter.getServiceCenter() == null || !meter.getServiceCenter().equals(nodeId)) &&
+                    (meter.getRoot() == null || !meter.getRoot().equals(nodeId)) &&
+                    (meter.getRegion() == null || !meter.getRegion().equals(nodeId))) {
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
+
+//            if(nodeType == null || !nodeType.equalsIgnoreCase("Root")
+//                    && !nodeType.equalsIgnoreCase("Region")
+//                    && !nodeType.equalsIgnoreCase("Business hub")
+//                    && !nodeType.equalsIgnoreCase("Service center")){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
             if (!type.equalsIgnoreCase("debit") &&
                     !type.equalsIgnoreCase("credit")) {
@@ -1659,6 +1687,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
+            }
 
             List<Meter> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer

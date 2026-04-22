@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.node.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
@@ -543,6 +544,12 @@ List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
             @Result(property = "createdAt", column = "created_at"),
     })
     NodeSummary nodeSummary(UUID parentId, UUID orgId);
+
+    @Select("SELECT parent_id FROM vw_node_summary WHERE org_id = #{orgId} AND node_id = #{nodeId} LIMIT 1")
+    @Results({
+            @Result(property = "parentId", column = "parent_id"),
+    })
+    UUID getParentNode(UUID orgId, UUID nodeId);
 
 //    @Select("""
 //    SELECT 1
