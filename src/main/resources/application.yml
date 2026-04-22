@@ -27,6 +27,14 @@ spring:
 #  dlms-write-ops:
 #    base-url: http://127.0.0.1:9061/api/dlms
 
+external:
+  token-gen:
+    base-url: http://169.239.189.91:19071
+  hes-realtime:
+    base-url: http://172.16.10.60:9061/api/realtime
+  dlms-write-ops:
+    base-url: http://172.16.10.60:9061/api/dlms
+ 
 #spring:
 #  application:
 #    name: authorization-service

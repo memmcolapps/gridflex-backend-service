@@ -42,8 +42,8 @@ public class HesAuthServiceImpl {
             @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance,
             @Value("${external.hes-endpoint.base-url}") String baseUrl) {
 
-//        this.authWebClient = builder.baseUrl("http://172.16.2.46:9061").build();
-        this.authWebClient = builder.baseUrl("http://127.0.0.1:9061").build();
+        this.authWebClient = builder.baseUrl(baseUrl).build();
+//        this.authWebClient = builder.baseUrl("http://127.0.0.1:9061").build();
         this.realtimeWebClient = realtimeWebClient;
         this.debtCache = hazelcastInstance.getMap("hesTokenCache");
     }
@@ -55,7 +55,6 @@ public class HesAuthServiceImpl {
         System.out.println("getAccessToken");
         if (accessToken == null || Instant.now().isAfter(expiryTime)) {
             if (refreshToken != null) {
-                System.out.println("refreshToken");
                 refreshAccessToken();
             } else {
                 System.out.println("accessToken");
@@ -67,7 +66,7 @@ public class HesAuthServiceImpl {
 
     private void authenticate() {
         AuthResponse response = authWebClient.post()
-                .uri("/api/auth/token")
+                .uri("/auth/token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of("clientId", clientId, "clientSecret", clientSecret))
                 .retrieve()
@@ -91,7 +90,7 @@ public class HesAuthServiceImpl {
     private void refreshAccessToken() {
         RefreshData response = authWebClient.post()  // ← use authWebClient here too
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/auth/refresh")
+                        .path("/auth/refresh")
                         .queryParam("refreshToken", refreshToken)
                         .build())
                 .retrieve()
