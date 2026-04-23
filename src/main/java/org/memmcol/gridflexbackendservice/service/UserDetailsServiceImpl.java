@@ -70,18 +70,22 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		groupMap.put("permissions", permissionMap);
 
 		// Add each permission as GrantedAuthority
-//		authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // Optional: Default role
+////		authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // Optional: Default role
 		authorities.add(new SimpleGrantedAuthority("PERM_EDIT_" + permissions.getEdit().toString().toUpperCase()));
 		authorities.add(new SimpleGrantedAuthority("PERM_DISABLE_" + permissions.getDisable().toString().toUpperCase()));
 		authorities.add(new SimpleGrantedAuthority("PERM_APPROVE_" + permissions.getApprove().toString().toUpperCase()));
 		authorities.add(new SimpleGrantedAuthority("PERM_VIEW_" + permissions.getView().toString().toUpperCase()));
-
+//		authorities.add(new SimpleGrantedAuthority("PERM_EDIT"));
+//		authorities.add(new SimpleGrantedAuthority("PERM_DISABLE"));
+//		authorities.add(new SimpleGrantedAuthority("PERM_APPROVE"));
+//		authorities.add(new SimpleGrantedAuthority("PERM_VIEW"));
 
 		List<Map<String, Object>> modulesList = new ArrayList<>();
 		if (userDTO.getGroups().getModules() != null) {
 			for (ModuleWithSubModules moduleDTO : userDTO.getGroups().getModules()) {
 				Map<String, Object> moduleMap = new HashMap<>();
 				Map<String, Object> simpleModule = new HashMap<>();
+
 				simpleModule.put("name", moduleDTO.getName());
 				simpleModule.put("access", moduleDTO.getAccess());
 				moduleMap.put("module", simpleModule);
@@ -91,6 +95,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 					for (SubModuleWithPermissions subDTO : moduleDTO.getSubModules()) {
 						Map<String, Object> submoduleMap = new HashMap<>();
 						Map<String, Object> simpleSubModule = new HashMap<>();
+						simpleSubModule.put("code", generateCode(subDTO.getName()));
 						simpleSubModule.put("name", subDTO.getName());
 						simpleSubModule.put("access", subDTO.getAccess());
 						submoduleMap.put("submodule", simpleSubModule);
@@ -121,6 +126,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 				authorities,
 				permissionsJson
 		);
+	}
+
+	private String generateCode(String name) {
+		return name.toUpperCase().replace(" ", "_");
 	}
 }
 

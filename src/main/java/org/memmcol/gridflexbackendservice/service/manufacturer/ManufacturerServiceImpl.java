@@ -11,6 +11,7 @@ import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -65,6 +66,12 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
             String desc = capitalizeFirstLetter(request.getName()) + "newly created";
             UserModel um = handleUserValidation();
+            String nodeType = um.getNodeInfo().getType();
+            if(!nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")
+            ){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
@@ -127,6 +134,13 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = capitalizeFirstLetter(request.getName()) + "edited";
             UserModel um = handleUserValidation();
+            String nodeType = um.getNodeInfo().getType();
+
+            if(!nodeType.equalsIgnoreCase("Region")
+                    && !nodeType.equalsIgnoreCase("Root")
+            ){
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
 
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findById(request.getId(), um.getOrgId());

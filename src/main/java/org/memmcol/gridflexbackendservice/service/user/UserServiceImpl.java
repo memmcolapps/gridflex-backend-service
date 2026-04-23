@@ -16,6 +16,7 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,10 @@ public class UserServiceImpl implements  UserService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             UserModel operator = request.getUser();
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
@@ -126,6 +131,10 @@ public class UserServiceImpl implements  UserService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             UserModel operator = request.getUser();
 
@@ -356,6 +365,10 @@ public class UserServiceImpl implements  UserService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             UserGroup verify = userMapper.getUserGroup(groupId);
             if(verify != null){
@@ -440,7 +453,10 @@ public class UserServiceImpl implements  UserService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
 
+            HandlePermission.perm(nodeType);
             // check if operator exist
             UserModel isOperator = userMapper.findById(userId, um.getOrgId());
             if (isOperator == null) {
@@ -472,7 +488,10 @@ public class UserServiceImpl implements  UserService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
 
+            HandlePermission.perm(nodeType);
             UUID orgId =  um.getOrgId();
 
             Group group = new Group();
@@ -568,6 +587,9 @@ public class UserServiceImpl implements  UserService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
             UUID orgId =  um.getOrgId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Group group = new Group();
             group.setId(request.getId());

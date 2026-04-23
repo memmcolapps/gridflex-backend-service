@@ -29,6 +29,7 @@ import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -103,6 +104,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             int result;
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             LiabilityCause isExist = debtMapper.getLiabilityCauseByName(request.getName(), request.getCode(), um.getOrgId());
 
@@ -146,11 +151,14 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
             LiabilityCause isExist = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
 
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
+            HandlePermission.perm(nodeType);
 
 //            if (isExist.getName().equalsIgnoreCase(request.getName())) {
 //                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " (" + request.getName() + ") "+status.getExistDesc());
@@ -269,6 +277,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseVersionById(liabilityCauseId, um.getOrgId());
             if(liabilityCause == null) {
@@ -358,6 +370,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             PercentageRange isExist = debtMapper.getPercentageByCode(request.getCode(), um.getOrgId());
             if (isExist != null) {
@@ -428,6 +444,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
             PercentageRange isExist = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
 
             if (isExist == null) {
@@ -571,6 +591,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             PercentageRange percentage = debtMapper.getPercentageVersionById(percentageId, um.getOrgId());
             if(percentage == null) {
@@ -652,6 +676,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
+
             LiabilityCause liabilityCause = debtMapper.getLiabilityCauseById(id, um.getOrgId());
             if(liabilityCause == null){
                 throw new GlobalExceptionHandler.NotFoundException("Liability cause "+status.getNotFoundDesc());
@@ -709,6 +738,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
             PercentageRange percentage = debtMapper.getPercentageById(id, um.getOrgId());
             if(percentage == null){
                 throw new GlobalExceptionHandler.NotFoundException(pr+" "+status.getNotFoundDesc());
@@ -771,6 +804,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
+
+        UUID nodeId = user.getNodeInfo().getNodeId();
+        String nodeType = user.getNodeInfo().getType();
+
+        HandlePermission.perm(nodeType);
+
         int successCount = 0;
 
         if (lcs == null || lcs.isEmpty()) {
