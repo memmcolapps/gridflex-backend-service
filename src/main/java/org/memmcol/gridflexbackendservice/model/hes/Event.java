@@ -10,20 +10,20 @@ import java.util.UUID;
 
 public class Event implements Serializable {
 
-    int id;
-    String meterNumber;
-    String meterModel;
-    String eventTypeId;
-    String eventCode;
-    LocalDateTime eventTime;
-    String currentThreshold;
-    String eventName;
+    private int id;
+    private String meterNumber;
+    private String meterModel;
+    private String eventTypeId;
+    private String eventCode;
+    private LocalDateTime eventTime;
+    private String currentThreshold;
+    private String eventName;
     int criticalLevel;
-    LocalDateTime createdAt;
-
+    private LocalDateTime createdAt;
     private String event;
+    private String eventType;
 
-    private EventType eventType;
+    private EventType eventTypeModel;
 
     private Meter meter;
 
@@ -107,12 +107,20 @@ public class Event implements Serializable {
         this.event = event;
     }
 
-    public EventType getEventType() {
+    public String getEventType() {
         return eventType;
     }
 
-    public void setEventType(EventType eventType) {
+    public void setEventType(String eventType) {
         this.eventType = eventType;
+    }
+
+    public EventType getEventTypeModel() {
+        return eventTypeModel;
+    }
+
+    public void setEventTypeModel(EventType eventTypeModel) {
+        this.eventTypeModel = eventTypeModel;
     }
 
     public String getCurrentThreshold() {

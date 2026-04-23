@@ -9,7 +9,8 @@ import java.util.Map;
 public class EndpointRegistry {
 
     private static final Map<String, List<String>> MAPPING = Map.of(
-            "Meter Management", List.of("/meter/**", "/dashboard/service/data-management/**"),
+            "Meter Management", List.of("/meter/**", "/dashboard/service/data-management/**",
+                    "/manufacturer/**"),
             "Band Management", List.of("/band/**"),
             "Tariff", List.of("/tariff/**"),
             "Debt Management", List.of("/debt-setting/**", "/debit-credit-adjustment/**"),

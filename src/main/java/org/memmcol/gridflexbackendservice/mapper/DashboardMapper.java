@@ -171,8 +171,6 @@ public interface DashboardMapper {
     @Results({
             @Result(property = "connectionType", column = "connection_type"),
             @Result(property = "meterNo", column = "meter_no"),
-//            @Result(property = "onlineTime", column = "online_time"),
-//            @Result(property = "offlineTime", column = "offline_time"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
@@ -181,26 +179,28 @@ public interface DashboardMapper {
 
     @Select("""
         <script>
-            SELECT e.*, et.*
-            FROM event_log e 
-            JOIN event_type et ON e.event_type_id = et.id 
-            JOIN meters m ON e.meter_serial = m.meter_number
+            SELECT e.*
+            FROM vw_event_details e
+            JOIN meters m ON e.meter_no = m.meter_number
             WHERE m.org_id = #{orgId}
             ORDER BY event_time DESC LIMIT 5
         </script>
     """)
     @Results({
-            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_no", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
             @Result(column = "event_name", property = "eventName"),
+            @Result(column = "event_type", property = "eventType"),
+            @Result(column = "event", property = "event"),
             @Result(column = "event_time", property = "eventTime"),
             @Result(column = "event_type_id", property = "eventTypeId"),
-            @Result(column = "currentThreshold", property = "current_threshold"),
-            @Result(column = "eventCode", property = "event_code"),
+            @Result(column = "critical_level", property = "criticalLevel"),
+//            @Result(column = "currentThreshold", property = "current_threshold"),
+//            @Result(column = "eventCode", property = "event_code"),
 
-            @Result(property = "eventType.name", column = "name"),
-            @Result(property = "eventType.description", column = "description"),
-            @Result(property = "eventType.obisCode", column = "obis_code"),
+//            @Result(property = "eventType.name", column = "name"),
+//            @Result(property = "eventType.description", column = "description"),
+//            @Result(property = "eventType.obisCode", column = "obis_code"),
     })
     List<Event> getEventsReport(UUID orgId);
 }
