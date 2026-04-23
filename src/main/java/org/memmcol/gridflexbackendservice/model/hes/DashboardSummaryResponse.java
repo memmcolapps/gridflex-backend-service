@@ -43,8 +43,11 @@ public record DashboardSummaryResponse(
             String currentThreshold,
             String eventName,
             LocalDateTime createdAt,
-            String eventTypeName,
-            String obisCode,
-            String description
+            String eventType,
+            String event,
+            int criticalLevel
+//            String eventTypeName,
+//            String obisCode,
+//            String description
     ) {}
 }

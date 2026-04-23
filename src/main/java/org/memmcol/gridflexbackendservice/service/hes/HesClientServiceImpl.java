@@ -239,14 +239,14 @@ public class HesClientServiceImpl implements HesService {
 
     private boolean containsEventTypeName(Event e, String search) {
         return e.getEventType() != null
-                && e.getEventType().getName() != null
-                && e.getEventType().getName().toLowerCase().contains(search);
+                && e.getEventTypeModel().getName() != null
+                && e.getEventTypeModel().getName().toLowerCase().contains(search);
     }
 
     private boolean containsEventTypeDescription(Event e, String search) {
         return e.getEventType() != null
-                && e.getEventType().getDescription() != null
-                && e.getEventType().getDescription().toLowerCase().contains(search);
+                && e.getEventTypeModel().getDescription() != null
+                && e.getEventTypeModel().getDescription().toLowerCase().contains(search);
     }
 
     @Transactional(readOnly = true)
@@ -261,6 +261,8 @@ public class HesClientServiceImpl implements HesService {
             } else {
                 events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
+            System.out.println("id: "+events.get(0).getId());
+            System.out.println("event: "+events.get(0).getEvent());
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();

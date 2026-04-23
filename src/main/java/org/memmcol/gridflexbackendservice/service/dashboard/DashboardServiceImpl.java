@@ -777,12 +777,14 @@ public class DashboardServiceImpl implements  DashboardService{
                                     e.getCurrentThreshold(),
                                     e.getEventName(),
                                     e.getCreatedAt(),
-                                    e.getEventType().getName(),
-                                    e.getEventType().getObisCode(),
-                                    e.getEventType().getDescription()
+                                    e.getEventType(),
+                                    e.getEvent(),
+                                    e.getCriticalLevel()
+//                                    e.getEventTypeModel().getName(),
+//                                    e.getEventTypeModel().getObisCode(),
+//                                    e.getEventTypeModel().getDescription()
                             ))
                             .toList();
-
 
             // FINAL RESPONSE
             DashboardSummaryResponse resp = new DashboardSummaryResponse(

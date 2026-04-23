@@ -96,12 +96,10 @@ public interface HesMapper {
     @Results({
             @Result(column = "meter_no", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
-            @Result(column = "event", property = "eventName"),
             @Result(column = "event_time", property = "eventTime"),
-            @Result(column = "event_type", property = "event"),
+            @Result(column = "event", property = "event"),
+            @Result(column = "event_type", property = "eventType"),
             @Result(column = "event_type_id", property = "eventTypeId"),
-//            @Result(column = "currentThreshold", property = "current_threshold"),
-//            @Result(column = "eventCode", property = "event_code"),
             @Result(column = "critical_level", property = "criticalLevel"),
 
 //            @Result(property = "eventType.name", column = "name"),
@@ -1126,15 +1124,17 @@ public interface HesMapper {
 
     @Select("""
         <script>
-            SELECT * FROM vw_meter_summary m
-            JOIN  meters_connection_event mc ON mc.meter_no = m.meter_number
+            SELECT DISTINCT ON (m.meter_id) *
+            FROM vw_meter_summary m
+            JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
+            LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
             WHERE m.org_id = #{orgId}
-            ORDER BY m.updated_at DESC
+            ORDER BY m.meter_id, m.updated_at DESC
             <if test="size != 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
         </script>
-    """)
+        """)
     @Results({
             @Result(property = "connectionType", column = "connection_type"),
             @Result(property = "meterNo", column = "meter_no"),
@@ -1169,6 +1169,39 @@ public interface HesMapper {
             @Result(property = "meter.meterManufacturerName", column = "manufacturer_name"),
             @Result(property = "meter.region", column = "region"),
             @Result(property = "meter.smartMeterInfo.meterModel", column = "smart_meter_model"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
     List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId);
 

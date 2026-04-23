@@ -107,6 +107,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                         System.out.println("access--10");
                         // STEP 2: enforce permissions
                         if (!hasActionPermission(uri, method, groupPermissions)) {
+                            System.out.println("mammmmmmmmmmmmmmmm");
                             return false;
                         }
 
