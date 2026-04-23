@@ -46,7 +46,9 @@ public interface OrganizationMapper {
             @Result(property = "businessName", column = "business_name"),
             @Result(property = "postalCode", column = "postal_code"),
             @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "moduleAccess", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getXyzByOrgId"))
     })
     List<Organization> getOrganizations(@Param("size") int size, @Param("offset") int offset);
 
@@ -58,7 +60,9 @@ public interface OrganizationMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "operator", column = "user_id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getOperator"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getOperator")),
+            @Result(property = "moduleAccess", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getXyzByOrgId"))
     })
     Organization getOrganizationById(@Param("id") UUID id);
 
@@ -125,6 +129,15 @@ public interface OrganizationMapper {
 
     @Select("SELECT COUNT(*) FROM organizations")
     long getOrganizationCount();
+
+    @Select("SELECT * FROM xyz WHERE org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "module", column = "module"),
+            @Result(property = "status", column = "status")
+    })
+    List<XYZ> getXyzByOrgId(@Param("orgId") UUID orgId);
 
 }
 

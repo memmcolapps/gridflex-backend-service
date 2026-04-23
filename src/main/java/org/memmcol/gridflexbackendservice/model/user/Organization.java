@@ -144,4 +144,12 @@ public class Organization implements Serializable {
     public void setOperator(UserModel operator) {
         this.operator = operator;
     }
+
+    public List<XYZ> getModuleAccess() {
+        return moduleAccess;
+    }
+
+    public void setModuleAccess(List<XYZ> moduleAccess) {
+        this.moduleAccess = moduleAccess;
+    }
 }
