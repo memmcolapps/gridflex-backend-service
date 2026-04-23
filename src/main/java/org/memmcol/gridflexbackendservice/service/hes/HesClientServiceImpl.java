@@ -251,7 +251,7 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String eventTypeName, String model, String search, int page, int size, String node) {
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, int eventTypeId, String model, String search, int page, int size, String node) {
         try {
             UserModel um = handleUserValidation();
             List<Event> events;
@@ -259,13 +259,13 @@ public class HesClientServiceImpl implements HesService {
             if(startDate == null || endDate == null) {
                 events = new ArrayList<>();
             } else {
-                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeName, model, page, size, um.getOrgId(), node);
+                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
 
-            // ✅ FILTER (flexible + safe)
+            // FILTER (flexible + safe)
             List<Event> filteredEvents = events.stream()
                     .filter(e -> {
                         if (searchLower.isEmpty()) return true;

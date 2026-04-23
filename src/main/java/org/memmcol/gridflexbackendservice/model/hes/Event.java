@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.model.hes;
 
+import jakarta.persistence.Id;
 import org.apache.ibatis.annotations.Result;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 
@@ -17,7 +18,10 @@ public class Event implements Serializable {
     LocalDateTime eventTime;
     String currentThreshold;
     String eventName;
+    int criticalLevel;
     LocalDateTime createdAt;
+
+    private String event;
 
     private EventType eventType;
 
@@ -95,6 +99,14 @@ public class Event implements Serializable {
         this.eventTime = eventTime;
     }
 
+    public String getEvent() {
+        return event;
+    }
+
+    public void setEvent(String event) {
+        this.event = event;
+    }
+
     public EventType getEventType() {
         return eventType;
     }
@@ -109,5 +121,13 @@ public class Event implements Serializable {
 
     public void setCurrentThreshold(String currentThreshold) {
         this.currentThreshold = currentThreshold;
+    }
+
+    public int getCriticalLevel() {
+        return criticalLevel;
+    }
+
+    public void setCriticalLevel(int criticalLevel) {
+        this.criticalLevel = criticalLevel;
     }
 }

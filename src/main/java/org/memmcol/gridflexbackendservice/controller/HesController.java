@@ -111,14 +111,14 @@ public class HesController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
-            @RequestParam(value = "meterNumber") List<String> meterNumber,
-            @RequestParam(value = "eventTypeName", required = false) String eventTypeName,
+            @RequestParam(value = "meterNumber", required = false) List<String> meterNumber,
+            @RequestParam(value = "eventTypeId", required = false) int eventTypeId,
             @RequestParam(value = "model", required = false) String model,
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "node") String node
     ) {
         try {
-            Map<String, Object> result = hesService.event(startDate, endDate, meterNumber, eventTypeName, model, search, page, size, node);
+            Map<String, Object> result = hesService.event(startDate, endDate, meterNumber, eventTypeId, model, search, page, size, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
