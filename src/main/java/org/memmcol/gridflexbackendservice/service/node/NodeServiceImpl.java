@@ -13,6 +13,7 @@ import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -73,6 +74,10 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
+
             String type = request.getType().toLowerCase();
 
             Node node = new Node();
@@ -168,6 +173,10 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
+
             String type = request.getType().toLowerCase();
 
             Node node = new Node();
@@ -280,6 +289,10 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Node node = new Node();
             node.setId(request.getNodeId());
@@ -392,6 +405,9 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Node node = new Node();
             node.setId(request.getNodeId());

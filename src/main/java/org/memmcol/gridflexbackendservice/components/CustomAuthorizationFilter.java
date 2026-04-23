@@ -88,7 +88,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         // Enforce custom header validation for paths like logout and forget-password
         if (path.contains("/auth/service/generate-otp") || path.contains("/auth/service/forget-password")) {
             String apiKey = request.getHeader(ADMIN_HEADER_KEY);
-            System.out.println("apiKey:: "+apiKey);
+//            System.out.println("apiKey:: "+apiKey);
 
             if (apiKey == null || (!apiKey.equals(ADMIN_HEADER_VALUE) && !apiKey.equals(USER_HEADER_VALUE))) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -105,13 +105,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         } else {
-            System.out.println("token required:: "+HttpHeaders.AUTHORIZATION);
+//            System.out.println("token required:: "+HttpHeaders.AUTHORIZATION);
             // Token-based authorization for other paths
             String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
 
-//                System.out.println("authorizationHeader:: "+authorizationHeader);
+//                System.out.println("authorizationHeader1:: "+authorizationHeader);
                 try {
                     String token = authorizationHeader.substring("Bearer ".length());
 
@@ -126,18 +126,30 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                     DecodedJWT decodedJWT = verifier.verify(token);
 
                     String username = decodedJWT.getSubject();
-
+                    System.out.println("authorizationHeader2:: "+authorizationHeader);
                     String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
                     Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
 
                     String permissionTreeJson = decodedJWT.getClaim("permission_tree").toString();
+                    System.out.println("authorizationHeader3:: "+authorizationHeader);
+                    CustomUserPrincipal principal =
+                            new CustomUserPrincipal(username, permissionTreeJson);
 
-                    CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    principal,
+                                    null,
+                                    authorities
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    System.out.println("authorizationHeader4:: "+authorizationHeader);
+//                    CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
+//                    UsernamePasswordAuthenticationToken authToken =
+//                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
+//                    SecurityContextHolder.getContext().setAuthentication(authToken);
 
                     filterChain.doFilter(request, response);
 

@@ -26,6 +26,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -419,12 +420,7 @@ public class MeterServiceImpl implements MeterService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if((!nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center"))){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
 
             System.out.print("nodeId: "+nodeId);
 
@@ -1150,19 +1146,23 @@ public class MeterServiceImpl implements MeterService {
                 throw new GlobalExceptionHandler.NotFoundException("Customer is either not found");
             }
 
-            if(nodeType == null
-                    || !nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
             }
+
+//            if(nodeType == null
+//                    || !nodeType.equalsIgnoreCase("Root")
+//                    && !nodeType.equalsIgnoreCase("Business hub")
+//                    && !nodeType.equalsIgnoreCase("Service center")
+//                    && !nodeType.equalsIgnoreCase("Region")){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
             if ((isCustomer.getNodeId() == null || !isCustomer.getNodeId().equals(nodeId)) &&
                     (isCustomer.getServiceCenter() == null || !isCustomer.getServiceCenter().equals(nodeId)) &&
                     (isCustomer.getRoot() == null || !isCustomer.getRoot().equals(nodeId)) &&
                     (isCustomer.getRegion() == null || !isCustomer.getRegion().equals(nodeId))) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission on this customer");
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
             List<Tariff> allTariffs = tariffMapper.GetTariffs(um.getOrgId());
@@ -1645,12 +1645,8 @@ public class MeterServiceImpl implements MeterService {
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
-            if((!nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center"))){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+
+            HandlePermission.perm(nodeType);
 
             // verify if meter exist
             Meter meterById = meterMapper.findById(meterId, um.getOrgId(), nodeId);
@@ -1888,12 +1884,7 @@ public class MeterServiceImpl implements MeterService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if((!nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center"))){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
 
             Meter meter = meterMapper.findByIdApproveVersion(meterVersionId, user.getOrgId(), nodeId);
 

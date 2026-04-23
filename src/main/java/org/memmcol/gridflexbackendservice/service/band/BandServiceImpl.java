@@ -20,6 +20,7 @@ import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -97,6 +98,10 @@ public class BandServiceImpl implements BandService {
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
             UUID orgId = um.getOrgId();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Band isExist = bandMapper.getBand(band.getName(), orgId);
             if (isExist != null) {
@@ -155,7 +160,10 @@ public class BandServiceImpl implements BandService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
 
+            HandlePermission.perm(nodeType);
             Band isExist = bandMapper.getBandById(band.getBandId(), um.getOrgId());
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
@@ -211,6 +219,10 @@ public class BandServiceImpl implements BandService {
         try {
             //check if organization user have access
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             // verify band in band version table
             Band band = bandMapper.getBandVersionById(bandId, um.getOrgId());
@@ -299,6 +311,9 @@ public class BandServiceImpl implements BandService {
     public Map<String, Object> getBands(String type) {
         try {
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
 
 //            String cacheKey = "bands_"+um.getOrgId()+type;
 //            Object cachedBand = bandCache.get(cacheKey);
@@ -374,6 +389,12 @@ public class BandServiceImpl implements BandService {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
+
             Band band = bandMapper.getBandById(bandId, um.getOrgId());
             if(band == null){
                 throw new GlobalExceptionHandler.NotFoundException("Band "+status.getNotFoundDesc());
@@ -452,6 +473,8 @@ public class BandServiceImpl implements BandService {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
+        String nodeType = user.getNodeInfo().getType();
+        HandlePermission.perm(nodeType);
         int successCount = 0;
 
         if (bands == null || bands.isEmpty()) {

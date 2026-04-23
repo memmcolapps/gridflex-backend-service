@@ -28,6 +28,7 @@ import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -109,12 +110,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             System.out.println("Region: "+nodeType);
 
-            if(nodeType == null || !nodeType.equalsIgnoreCase("Root")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
 
             if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0){
                 throw new GlobalExceptionHandler.NotFoundException("Amount must be greater than zero");
@@ -810,12 +806,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         UUID nodeId = user.getNodeInfo().getNodeId();
         String nodeType = user.getNodeInfo().getType();
 
-        if (!nodeType.equalsIgnoreCase("Business hub")
-                && !nodeType.equalsIgnoreCase("Service center")
-                && !nodeType.equalsIgnoreCase("Region")
-                && !nodeType.equalsIgnoreCase("Root")) {
-            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-        }
+        HandlePermission.perm(nodeType);
 
         String filename = Optional.ofNullable(file.getOriginalFilename())
                 .orElseThrow(() -> new IOException("File has no name"));

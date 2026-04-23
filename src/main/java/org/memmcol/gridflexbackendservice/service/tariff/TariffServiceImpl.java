@@ -20,6 +20,7 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -96,6 +97,10 @@ public class TariffServiceImpl implements TariffService {
             int result;
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Tariff isExist = tariffMapper.getTariffByName(tariff.getName(), um.getOrgId());
             if (isExist != null) {
@@ -142,6 +147,10 @@ public class TariffServiceImpl implements TariffService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Tariff tariff = tariffMapper.getTariffVersionById(tariffVersionId, um.getOrgId());
             if(tariff == null) {
@@ -234,6 +243,10 @@ public class TariffServiceImpl implements TariffService {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Tariff tariff = tariffMapper.getTariff(id, um.getOrgId());
 
@@ -448,6 +461,10 @@ public class TariffServiceImpl implements TariffService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
 
             Tariff isExist = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
             if (isExist == null) {
@@ -544,6 +561,11 @@ public class TariffServiceImpl implements TariffService {
         UserModel user = handleUserValidation();
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
+
+        UUID nodeId = user.getNodeInfo().getNodeId();
+        String nodeType = user.getNodeInfo().getType();
+
+        HandlePermission.perm(nodeType);
         int successCount = 0;
 
         if (tariffs == null || tariffs.isEmpty()) {

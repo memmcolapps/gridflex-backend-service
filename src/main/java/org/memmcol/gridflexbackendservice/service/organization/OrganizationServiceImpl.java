@@ -11,6 +11,7 @@ import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -96,6 +97,11 @@ public class OrganizationServiceImpl implements OrganizationService {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeType = um.getNodeInfo().getType();
+
+            HandlePermission.perm(nodeType);
+
             Organization originalData = organizationMapper.getOrganizationById(um.getOrgId());
 //            if (originalData.getBusinessName().equalsIgnoreCase(organization.getBusinessName())) {
 //                throw new GlobalExceptionHandler.NotFoundException("Organization ("+organization.getBusinessName()+") "+status.getExistDesc());

@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -151,6 +152,7 @@ public class MeterController {
         }
     }
 
+//    @PreAuthorize("hasAuthority('PERM_VIEW')")
     @GetMapping("/all")
     public ResponseEntity<?> getAllMeters(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
