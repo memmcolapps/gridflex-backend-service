@@ -28,6 +28,7 @@ import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.service.debit_credit_adjustment.CreditDebitAdjustmentSettlementService;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,12 +83,7 @@ public class VendingServiceImpl implements VendingService {
         UUID nodeId = user.getNodeInfo().getNodeId();
         String nodeType = user.getNodeInfo().getType();
 
-        if(!nodeType.equalsIgnoreCase("Business hub")
-                && !nodeType.equalsIgnoreCase("Service center")
-                && !nodeType.equalsIgnoreCase("Region")
-                && !nodeType.equalsIgnoreCase("Root")) {
-            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-        }
+        HandlePermission.perm(nodeType);
 
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
@@ -1139,12 +1135,7 @@ public class VendingServiceImpl implements VendingService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
 
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), kctToken.getMeterNumber(),
@@ -1237,12 +1228,7 @@ public class VendingServiceImpl implements VendingService {
            UUID nodeId = user.getNodeInfo().getNodeId();
            String nodeType = user.getNodeInfo().getType();
 
-           if(!nodeType.equalsIgnoreCase("Business hub")
-                   && !nodeType.equalsIgnoreCase("Service center")
-                   && !nodeType.equalsIgnoreCase("Region")
-                   && !nodeType.equalsIgnoreCase("Root")) {
-               throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-           }
+           HandlePermission.perm(nodeType);
 
            MeterView meter = vendMapper.getMeterRecord(
                    kctToken.getMeterNumber(), kctToken.getAccountNumber(),
@@ -1279,12 +1265,7 @@ public class VendingServiceImpl implements VendingService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), nodeId);
             if (meterResult == null) {
@@ -1363,12 +1344,7 @@ public class VendingServiceImpl implements VendingService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), clearCredit.getMeterNumber(),
                     clearCredit.getAccountNumber(), nodeId);
@@ -1451,12 +1427,7 @@ public class VendingServiceImpl implements VendingService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")
-                    && !nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
 
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), kctToken.getMeterNumber(),
@@ -1597,10 +1568,12 @@ public class VendingServiceImpl implements VendingService {
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Business hub")
-                    && !nodeType.equalsIgnoreCase("Service center")) {
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+            HandlePermission.perm(nodeType);
+
+//            if(!nodeType.equalsIgnoreCase("Business hub")
+//                    && !nodeType.equalsIgnoreCase("Service center")) {
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
             Transaction transaction = vendMapper.getCreditTokenTransaction(id, user.getOrgId());//getVendingReceipt(id, tokenType);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
