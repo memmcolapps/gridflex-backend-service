@@ -14,12 +14,52 @@ import java.util.UUID;
 @Mapper
 public interface HesMapper {
 
+//    @Select("""
+//        <script>
+//            SELECT e.*, et.*, m.*, fn.*
+//            FROM event_log e
+//            JOIN event_type et ON e.event_type_id = et.id
+//            JOIN event_code_lookup ecl ON e.event_type_id = ecl.id
+//            JOIN meters m ON e.meter_serial = m.meter_number
+//            LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+//            <where>
+//                <if test="startDate != null">
+//                    AND e.event_time &gt;= #{startDate}
+//                </if>
+//                <if test="endDate != null">
+//                    AND e.event_time &lt;= #{endDate}
+//                </if>
+//                <if test="eventTypeId != null">
+//                    AND et.id = #{eventTypeId}
+//                </if>
+//                <if test="meterModel != null">
+//                    AND e.meter_model = #{meterModel}
+//                </if>
+//            <if test="meterNumber != null and meterNumber.size() > 0">
+//                AND e.meter_serial IN
+//                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+//                    #{meter}
+//                </foreach>
+//            </if>
+//            AND m.org_id = #{orgId}
+//            AND (fn.region_region_id = #{node}
+//                        OR fn.service_region_id = #{node}
+//                        OR fn.business_region_id = #{node}
+//                        OR fn.feeder_asset_id = #{node}
+//                        OR fn.dss_asset_id = #{node})
+//            </where>
+//            ORDER BY event_time DESC
+//            <if test="size > 0">
+//                LIMIT #{size} OFFSET #{page} * #{size}
+//            </if>
+//        </script>
+//    """)
+
     @Select("""
         <script>
-            SELECT e.*, et.*, m.*, fn.*
-            FROM event_log e 
-            JOIN event_type et ON e.event_type_id = et.id 
-            JOIN meters m ON e.meter_serial = m.meter_number
+            SELECT e.*, m.*, fn.*
+            FROM vw_event_details e
+            JOIN meters m ON e.meter_no = m.meter_number
             LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
             <where>
                 <if test="startDate != null">
@@ -28,14 +68,14 @@ public interface HesMapper {
                 <if test="endDate != null">
                     AND e.event_time &lt;= #{endDate}
                 </if>
-                <if test="eventTypeName != null">
-                    AND et.name = #{eventTypeName}
+                <if test="eventTypeId != null">
+                    AND e.event_type_id = #{eventTypeId}
                 </if>
                 <if test="meterModel != null">
                     AND e.meter_model = #{meterModel}
                 </if>
             <if test="meterNumber != null and meterNumber.size() > 0">
-                AND e.meter_serial IN
+                AND e.meter_no IN
                 <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
                     #{meter}
                 </foreach>
@@ -54,17 +94,19 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_no", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
-            @Result(column = "event_name", property = "eventName"),
+            @Result(column = "event", property = "eventName"),
             @Result(column = "event_time", property = "eventTime"),
+            @Result(column = "event_type", property = "event"),
             @Result(column = "event_type_id", property = "eventTypeId"),
-            @Result(column = "currentThreshold", property = "current_threshold"),
-            @Result(column = "eventCode", property = "event_code"),
+//            @Result(column = "currentThreshold", property = "current_threshold"),
+//            @Result(column = "eventCode", property = "event_code"),
+            @Result(column = "critical_level", property = "criticalLevel"),
 
-            @Result(property = "eventType.name", column = "name"),
-            @Result(property = "eventType.description", column = "description"),
-            @Result(property = "eventType.obisCode", column = "obis_code"),
+//            @Result(property = "eventType.name", column = "name"),
+//            @Result(property = "eventType.description", column = "description"),
+//            @Result(property = "eventType.obisCode", column = "obis_code"),
 
 //            @Result(property = "meter.id", column = "id"),
             @Result(property = "meter.orgId", column = "org_id"),
@@ -128,7 +170,7 @@ public interface HesMapper {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("meterNumber") List<String> meterNumber,
-            @Param("eventTypeName") String eventTypeName,
+            @Param("eventTypeId") int eventTypeId,
             @Param("meterModel") String meterModel,
             @Param("page") int page,
             @Param("size") int size,
