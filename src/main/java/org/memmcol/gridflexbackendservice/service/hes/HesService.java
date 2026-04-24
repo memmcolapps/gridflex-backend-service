@@ -32,6 +32,6 @@ public interface HesService {
     Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
             String businessHub, String manufacturer, String meterStatus, int page, int size);
 
-
+    Map<String, Object> profileEventsInfo(String type);
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
 }

@@ -714,4 +714,27 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Override
+    public Map<String, Object> profileEventsInfo(String type) {
+        try {
+            handleUserValidation();
+
+            Object resp;
+            if (type.equalsIgnoreCase("profile")) {
+                resp = hesMapper.getProfileEvents();
+            } else if (type.equalsIgnoreCase("event")) {
+                resp = hesMapper.getEventType();
+            }else {
+                return ResponseMap.response(
+                        status.getFailCode(),
+                        "Invalid type. Use 'profile' or 'event'",
+                        null
+                );
+            }
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+        } catch (Exception e){
+            throw e;
+        }
+    }
 }
