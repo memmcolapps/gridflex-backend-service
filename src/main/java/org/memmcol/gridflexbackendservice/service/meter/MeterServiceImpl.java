@@ -1196,6 +1196,10 @@ public class MeterServiceImpl implements MeterService {
 //            boolean meterStatus = meterMapper.hasAssignedMeter(user.getOrgId(), request.getMeterNumber());
             if(meterStatus == null) throw new GlobalExceptionHandler.NotFoundException("Meter "+status.getNotFoundDesc());
 
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(user.getOrgId(), nodeId);
+            }
+
             if((!nodeId.equals(meterStatus.getNodeId()) && !nodeType.equalsIgnoreCase("Business hub"))
                     && (!nodeId.equals(meterStatus.getRoot()) && !nodeType.equalsIgnoreCase("Root"))
                     && (!nodeId.equals(meterStatus.getRegion()) && !nodeType.equalsIgnoreCase("Region"))
@@ -1242,7 +1246,7 @@ public class MeterServiceImpl implements MeterService {
                 // Validate main meter record
                 Meter mainMeter = meterMapper.getMeter(user.getOrgId(), null, request.getMeterNumber(), null, null, request.getSimNumber(), nodeId);
                 if (mainMeter == null) {
-                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc()+"or user does not belong to the business meter is allocated");
+                    throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc()+" or user does not belong to the business hub meter is allocated");
                 }
 
                 if (mainMeter.getMeterStage().contains("Pending") || mainMeter.getStatus().contains("Pending")) {
@@ -1508,6 +1512,10 @@ public class MeterServiceImpl implements MeterService {
 
             if(meterById.getMeterStage().contains("Pending") || meterById.getStatus().contains("Pending")) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter have a pending state that needs to be cleared");
+            }
+
+            if(nodeType.equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(user.getOrgId(), nodeId);
             }
 
             if(!nodeId.equals(meterById.getNodeId())
@@ -4890,7 +4898,9 @@ public class MeterServiceImpl implements MeterService {
         try {
             UserModel user = handleUserValidation();
             Map<String, Object> result;
-            if(!user.getNodeInfo().getType().equalsIgnoreCase("Business hub")
+            if(!user.getNodeInfo().getType().equalsIgnoreCase("Root")
+                    || !user.getNodeInfo().getType().equalsIgnoreCase("Region")
+                    || !user.getNodeInfo().getType().equalsIgnoreCase("Business hub")
                     || !user.getNodeInfo().getType().equalsIgnoreCase("Service center")){
                 // Determine file type
                 String filename = Optional.ofNullable(file.getOriginalFilename())
