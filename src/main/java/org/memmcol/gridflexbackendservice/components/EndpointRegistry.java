@@ -9,7 +9,7 @@ import java.util.Map;
 public class EndpointRegistry {
 
     private static final Map<String, List<String>> MAPPING = Map.of(
-            "METER_MANAGEMENT", List.of("/meter/**", "/dashboard/service/data-management/**"),
+            "METER_MANAGEMENT", List.of("/meter/**"),
             "BAND_MANAGEMENT", List.of("/band/**"),
             "TARIFF", List.of("/tariff/**"),
             "DEBT_MANAGEMENT", List.of("/debt-setting/**", "/debit-credit-adjustment/**"),
@@ -18,9 +18,6 @@ public class EndpointRegistry {
             "VENDING", List.of("/vending/**", "/dashboard/service/vending/**"),
             "HES", List.of("/hes/**", "/dashboard/service/hes/**"),
             "ORGANIZATION", List.of("/organization/**", "/node/**")
-//            "/audit-log/service/**",
-//            "/dashboard/service/data-management/**"
-
     );
 
     public List<String> getEndpoints(String code) {
