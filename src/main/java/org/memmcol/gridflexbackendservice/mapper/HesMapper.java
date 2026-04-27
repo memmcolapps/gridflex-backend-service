@@ -54,6 +54,12 @@ public interface HesMapper {
 //            </if>
 //        </script>
 //    """)
+    //                <if test="eventTypeId != null">
+//                    AND e.event_type_id = #{eventTypeId}
+//                </if>
+//                <if test="meterModel != null">
+//                    AND e.meter_model = #{meterModel}
+//                </if>
 
     @Select("""
         <script>
@@ -68,18 +74,25 @@ public interface HesMapper {
                 <if test="endDate != null">
                     AND e.event_time &lt;= #{endDate}
                 </if>
-                <if test="eventTypeId != null">
-                    AND e.event_type_id = #{eventTypeId}
+            
+                <if test="meterModel != null and meterModel.size() > 0">
+                    AND e.meter_model IN
+                    <foreach item="em" collection="meterModel" open="(" separator="," close=")">
+                        #{em}
+                    </foreach>
                 </if>
-                <if test="meterModel != null">
-                    AND e.meter_model = #{meterModel}
+                <if test="eventTypeId != null and eventTypeId.size() > 0">
+                    AND e.event_type_id IN
+                    <foreach item="ev" collection="eventTypeId" open="(" separator="," close=")">
+                        CAST(#{ev} AS BIGINT)
+                    </foreach>
                 </if>
-            <if test="meterNumber != null and meterNumber.size() > 0">
-                AND e.meter_no IN
-                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
-                    #{meter}
-                </foreach>
-            </if>
+                <if test="meterNumber != null and meterNumber.size() > 0">
+                    AND e.meter_no IN
+                    <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                        #{meter}
+                    </foreach>
+                </if>
             AND m.org_id = #{orgId}
             AND (fn.region_region_id = #{node} 
                         OR fn.service_region_id = #{node} 
@@ -168,8 +181,8 @@ public interface HesMapper {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("meterNumber") List<String> meterNumber,
-            @Param("eventTypeId") int eventTypeId,
-            @Param("meterModel") String meterModel,
+            @Param("eventTypeId") List<Long> eventTypeId,
+            @Param("meterModel") List<String> meterModel,
             @Param("page") int page,
             @Param("size") int size,
             UUID orgId, String node);
@@ -199,10 +212,13 @@ public interface HesMapper {
             <if test="endDate != null">
                 AND received_at &lt;= #{endDate}
             </if>
-            <if test="meterModel != null">
-                AND model_number = #{meterModel}
+        
+            <if test="meterModel != null and meterModel.size() > 0">
+                AND model_number IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
             </if>
-     
             <if test="meterNumber != null and meterNumber.size() > 0">
                 AND p.meter_serial IN
                 <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
@@ -296,7 +312,12 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getProfileChannelOne(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getProfileChannelOne(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<String> meterNumber,
+            List<String> meterModel,
+            UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -312,8 +333,12 @@ public interface HesMapper {
             <if test="endDate != null">
                 AND received_at &lt;= #{endDate}
             </if>
-            <if test="meterModel != null">
-                AND model_number = #{meterModel}
+        
+         <if test="meterModel != null and meterModel.size() > 0">
+                AND model_number IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
             </if>
             <if test="meterNumber != null and meterNumber.size() > 0">
                 AND p.meter_serial IN
@@ -403,7 +428,7 @@ public interface HesMapper {
     })
     List<Profile> getProfileChannelTwo(
             LocalDateTime startDate, LocalDateTime endDate,
-            List<String> meterNumber, String meterModel,
+            List<String> meterNumber, List<String> meterModel,
             UUID orgId, int page, int size, String node);
 
 
@@ -420,8 +445,11 @@ public interface HesMapper {
             <if test="endDate != null">
                 AND received_at &lt;= #{endDate}
             </if>
-             <if test="meterModel != null">
-                AND meter_model = #{meterModel}
+              <if test="meterModel != null and meterModel.size() > 0">
+                AND model_number IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
             </if>
             <if test="meterNumber != null and meterNumber.size() > 0">
                 AND p.meter_serial IN
@@ -538,7 +566,8 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getDailyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getDailyBillingProfile(LocalDateTime startDate, LocalDateTime endDate,
+                                         List<String> meterNumber, List<String> meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""
@@ -554,8 +583,11 @@ public interface HesMapper {
             <if test="endDate != null">
                 AND received_at &lt;= #{endDate}
             </if>
-            <if test="meterModel != null">
-                AND meter_model = #{meterModel}
+            <if test="meterModel != null and meterModel.size() > 0">
+                AND model_number IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
             </if>
            <if test="meterNumber != null and meterNumber.size() > 0">
                 AND p.meter_serial IN
@@ -672,7 +704,11 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile> getMonthlyBillingProfile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, String meterModel, UUID orgId, int page, int size, String node);
+    List<Profile> getMonthlyBillingProfile(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<String> meterNumber,
+            List<String> meterModel, UUID orgId, int page, int size, String node);
 
 
     @Select("""

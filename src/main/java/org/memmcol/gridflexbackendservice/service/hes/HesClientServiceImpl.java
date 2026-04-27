@@ -145,7 +145,7 @@ public class HesClientServiceImpl implements HesService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber,
-                                       String profile, String model,int page, int size, String search, String node) {
+                                       String profile, List<String> model,int page, int size, String search, String node) {
         try {
 
             UserModel um = handleUserValidation();
@@ -251,7 +251,7 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, int eventTypeId, String model, String search, int page, int size, String node) {
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, String search, int page, int size, String node) {
         try {
             UserModel um = handleUserValidation();
             List<Event> events;
