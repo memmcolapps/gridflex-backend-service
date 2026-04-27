@@ -118,7 +118,7 @@ public class SecurityConfig {
 
 		http.authorizeHttpRequests(auth -> auth
 
-				// public endpoints
+				// public endpoints - do not required authentication token to be accessible
 				.requestMatchers(
 						"/auth/service/admin/login",
 						"/auth/service/generate-otp/**",

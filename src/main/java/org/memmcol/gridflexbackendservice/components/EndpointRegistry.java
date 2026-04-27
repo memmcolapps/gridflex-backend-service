@@ -8,6 +8,7 @@ import java.util.Map;
 @Component
 public class EndpointRegistry {
 
+    // There route required permission to be accessible
     private static final Map<String, List<String>> MAPPING = Map.of(
             "METER_MANAGEMENT", List.of("/meter/**"),
             "BAND_MANAGEMENT", List.of("/band/**"),

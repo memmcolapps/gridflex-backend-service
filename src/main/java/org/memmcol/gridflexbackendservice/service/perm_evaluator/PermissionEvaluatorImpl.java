@@ -24,6 +24,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     private final AntPathMatcher matcher = new AntPathMatcher();
 
+    // These endpoint do not required permission to be accessible
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/audit-log/service/**",
             "/dashboard/service/data-management/**"
