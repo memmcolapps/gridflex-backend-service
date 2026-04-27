@@ -558,7 +558,7 @@ public class UserServiceImpl implements  UserService {
                         /// Create and insert submodule
                         userMapper.insertSubModule(subModule);
                     } else {
-                        throw  new GlobalExceptionHandler.NotFoundException("Module '" + moduleWithSubs.getName() + status.getNotFoundDesc());
+                        throw  new GlobalExceptionHandler.NotFoundException("Module " + moduleWithSubs.getName() + " " + status.getNotFoundDesc());
                     }
                 }
 

@@ -10,7 +10,7 @@ public class EndpointRegistry {
 
     // There route required permission to be accessible
     private static final Map<String, List<String>> MAPPING = Map.of(
-            "METER_MANAGEMENT", List.of("/meter/**"),
+            "METER_MANAGEMENT", List.of("/meter/**", "/manufacturer/service/**"),
             "BAND_MANAGEMENT", List.of("/band/**"),
             "TARIFF", List.of("/tariff/**"),
             "DEBT_MANAGEMENT", List.of("/debt-setting/**", "/debit-credit-adjustment/**"),
