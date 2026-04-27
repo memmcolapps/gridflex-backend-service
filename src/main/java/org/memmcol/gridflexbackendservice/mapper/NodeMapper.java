@@ -246,14 +246,14 @@ public interface NodeMapper {
 //            """)
 @Select("""
     WITH RECURSIVE node_tree AS (
-        SELECT node_id, parent_id, type, name, asset_id, org_id, 0 AS depth
+        SELECT node_id, parent_id, type, name, asset_id, region_id, org_id, 0 AS depth
         FROM vw_node_summary
         WHERE node_id = #{regionNodeId}
           AND org_id = #{orgId}
 
         UNION ALL
 
-        SELECT v.node_id, v.parent_id, v.type, v.name, v.asset_id, v.org_id, nt.depth + 1
+        SELECT v.node_id, v.parent_id, v.type, v.name, v.asset_id, v.region_id, v.org_id, nt.depth + 1
         FROM vw_node_summary v
         INNER JOIN node_tree nt
             ON v.parent_id = nt.node_id
