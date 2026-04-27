@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.mapper;
 import org.apache.ibatis.annotations.*;
 import org.memmcol.gridflexbackendservice.model.hes.Event;
 import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
+import org.memmcol.gridflexbackendservice.model.hes.MeterLastCommunication;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.vend.Transaction;
@@ -175,6 +176,19 @@ public interface DashboardMapper {
             @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
     List<MeterConnEvent> getCommReport(UUID orgId);
+
+    @Select("""
+        SELECT DISTINCT mc.meter_no AS meterNo, MAX(mc.online_time) AS lastOnline
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        WHERE m.org_id = #{orgId}
+        GROUP BY mc.meter_no
+    """)
+    @Results({
+            @Result(property = "meterNo", column = "meterNo"),
+            @Result(property = "lastOnline", column = "lastOnline"),
+    })
+    List<MeterLastCommunication> getCommSummary(UUID orgId);
 
 
     @Select("""

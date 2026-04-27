@@ -8,6 +8,7 @@ import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.hes.DashboardSummaryResponse;
 import org.memmcol.gridflexbackendservice.model.hes.Event;
 import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
+import org.memmcol.gridflexbackendservice.model.hes.MeterLastCommunication;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
@@ -763,6 +764,19 @@ public class DashboardServiceImpl implements  DashboardService{
                             ))
                             .toList();
 
+            // COMMUNICATION SUMMARY
+            List<MeterLastCommunication> meterLastCommunications = dashboardMapper.getCommSummary(user.getOrgId());
+
+            List<DashboardSummaryResponse.CommunicationSummaryPoint> communicationSummary = new ArrayList<>();
+            communicationSummary.add(createSummaryPoint("24 hrs", "Last 24 Hours", now, 1, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("48 hrs", "Last 2 Days", now, 2, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("1 wk", "Last 7 Days", now, 7, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("2 wk", "Last 14 Days", now, 14, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("1 mon", "Last 30 Days", now, 30, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("2 mon", "Last 60 Days", now, 60, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("6 mon", "Last 180 Days", now, 180, meterLastCommunications));
+            communicationSummary.add(createSummaryPoint("12 mon", "Last 1 Year", now, 365, meterLastCommunications));
+
             // COMMUNICATION EVENTS
             List<Event> eventReport = dashboardMapper.getEventsReport(user.getOrgId());
 
@@ -791,15 +805,26 @@ public class DashboardServiceImpl implements  DashboardService{
                     meterSummary,
                     communicationLogs,
                     eventsReport,
-                    communicationReport
+                    communicationReport,
+                    communicationSummary
             );
 
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
-        } catch (Exception exception) {
+} catch (Exception exception) {
             genericHandler.logIncidentReport("fetching hes dashboard service failed");
             genericHandler.logAndSaveException(exception, "fetching hes dashboard");
             throw exception;
         }
+    }
+
+
+    private DashboardSummaryResponse.CommunicationSummaryPoint createSummaryPoint(
+            String timeRange, String label, LocalDateTime now, int daysBack, List<MeterLastCommunication> meterLastCommunications) {
+        LocalDateTime cutoff = now.minusDays(daysBack);
+        long count = meterLastCommunications.stream()
+                .filter(m -> m.getLastOnline() != null && m.getLastOnline().isAfter(cutoff))
+                .count();
+        return new DashboardSummaryResponse.CommunicationSummaryPoint(timeRange, label, count);
     }
 }

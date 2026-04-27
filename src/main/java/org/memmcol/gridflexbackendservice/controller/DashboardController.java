@@ -57,7 +57,7 @@ public class DashboardController {
 
     }
 
-    @GetMapping("/hes")
+@GetMapping("/hes")
     public ResponseEntity<?> dashboard() {
         try {
             Map<String, Object> result = service.hesDashboard();

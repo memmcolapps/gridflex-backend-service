@@ -8,7 +8,8 @@ public record DashboardSummaryResponse(
         List<CommunicationLogPoint> communicationLogs,
         List<EventLogs> eventLogs,
 //        DataSchedulerRate schedulerRate,
-        List<CommunicationReportRow> communicationReport
+        List<CommunicationReportRow> communicationReport,
+        List<CommunicationSummaryPoint> communicationSummary
 ) {
     public record MeterSummary(
             int totalSmartMeters,
@@ -34,7 +35,7 @@ public record DashboardSummaryResponse(
             LocalDateTime updatedAt      // "1 min ago", "2 hours ago"
     ) {}
 
-    public record EventLogs(
+public record EventLogs(
             String meterNumber,
             String meterModel,
             String eventTypeId,
@@ -49,5 +50,11 @@ public record DashboardSummaryResponse(
 //            String eventTypeName,
 //            String obisCode,
 //            String description
+    ) {}
+
+    public record CommunicationSummaryPoint(
+            String timeRange,
+            String label,
+            long meterCount
     ) {}
 }
