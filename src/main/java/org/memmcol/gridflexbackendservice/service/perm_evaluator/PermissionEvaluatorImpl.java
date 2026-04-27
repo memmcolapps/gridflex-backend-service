@@ -25,9 +25,15 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     private final AntPathMatcher matcher = new AntPathMatcher();
 
     // These endpoint do not required permission to be accessible
-    private static final List<String> PUBLIC_ENDPOINTS = List.of(
-            "/audit-log/service/**",
-            "/dashboard/service/data-management/**"
+//    private static final List<String> PUBLIC_ENDPOINTS = List.of(
+//            "/audit-log/service/**",
+//            "/dashboard/service/data-management/**"
+//    );
+
+    // These endpoints required permission at least to be true for access
+    private static final List<String> GLOBAL_PERMISSION_ENDPOINTS = List.of(
+            "/dashboard/service/data-management/**",
+            "/audit-log/service/**"
     );
 
     @Override
@@ -52,12 +58,22 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
         try {
 
-            boolean isPublic = PUBLIC_ENDPOINTS.stream()
+//            boolean isPublic = PUBLIC_ENDPOINTS.stream()
+//                    .anyMatch(pattern -> matcher.match(pattern, uri));
+//
+//            if (isPublic) {
+//                System.out.println("PUBLIC ENDPOINT - ACCESS GRANTED");
+//                return true;
+//            }
+//
+            boolean isGlobalEndpoint = GLOBAL_PERMISSION_ENDPOINTS.stream()
                     .anyMatch(pattern -> matcher.match(pattern, uri));
 
-            if (isPublic) {
-                System.out.println("PUBLIC ENDPOINT - ACCESS GRANTED");
-                return true;
+            if (isGlobalEndpoint) {
+                System.out.println("GLOBAL ENDPOINT MATCHED");
+
+                // Only check permission (NOT module)
+                return hasActionPermission(uri, method, extractPermissions(authentication));
             }
 
             System.out.println("access--3");
@@ -140,6 +156,23 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
         }
         System.out.println("access--12");
         return false;
+    }
+
+    private Map<String, Object> extractPermissions(Authentication authentication) {
+        try {
+            CustomUserPrincipal user = (CustomUserPrincipal) authentication.getPrincipal();
+
+            List<Map<String, Object>> permissionTree =
+                    objectMapper.readValue(user.getPermissionTreeJson(), List.class);
+
+            if (!permissionTree.isEmpty()) {
+                return (Map<String, Object>) permissionTree.get(0).get("permissions");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
