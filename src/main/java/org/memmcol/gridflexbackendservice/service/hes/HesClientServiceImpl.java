@@ -261,8 +261,8 @@ public class HesClientServiceImpl implements HesService {
             } else {
                 events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
-            System.out.println("id: "+events.get(0).getId());
-            System.out.println("event: "+events.get(0).getEvent());
+//            System.out.println("id: "+events.get(0).getId());
+////            System.out.println("event: "+events.get(0).getEvent());
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
