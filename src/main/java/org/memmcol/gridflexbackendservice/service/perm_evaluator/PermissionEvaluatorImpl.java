@@ -24,6 +24,11 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     private final AntPathMatcher matcher = new AntPathMatcher();
 
+    private static final List<String> PUBLIC_ENDPOINTS = List.of(
+            "/audit-log/service/**",
+            "/dashboard/service/data-management/**"
+    );
+
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {
 
@@ -43,7 +48,17 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
         String uri = request.getRequestURI();
         String method = request.getMethod();
 
+
         try {
+
+            boolean isPublic = PUBLIC_ENDPOINTS.stream()
+                    .anyMatch(pattern -> matcher.match(pattern, uri));
+
+            if (isPublic) {
+                System.out.println("PUBLIC ENDPOINT - ACCESS GRANTED");
+                return true;
+            }
+
             System.out.println("access--3");
             List<Map<String, Object>> permissionTree =
                     objectMapper.readValue(user.getPermissionTreeJson(), List.class);
@@ -85,13 +100,14 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                         if (!Boolean.TRUE.equals(subAccess)) continue;
                         System.out.println("access--8");
                         String submoduleName = (String) subInfo.get("name");
-//                        String code = (String) subInfo.get("code");
+                        String code = (String) subInfo.get("code");
+                        System.out.println("code: " + code);
                         if (submoduleName == null) continue;
                         System.out.println("access--9: "+uri);
                         System.out.println("access--19: "+submoduleName);
                         // STEP 1: match endpoint
-//                        List<String> endpoints = endpointRegistry.getEndpoints(code);
-                        List<String> endpoints = endpointRegistry.getEndpoints(submoduleName);
+                        List<String> endpoints = endpointRegistry.getEndpoints(code);
+//                        List<String> endpoints = endpointRegistry.getEndpoints(submoduleName);
                         System.out.println("endpoints: "+endpoints);
                         if (endpoints == null || endpoints.isEmpty()) continue;
 
