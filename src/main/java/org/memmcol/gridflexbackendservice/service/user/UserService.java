@@ -28,4 +28,6 @@ public interface UserService {
     Map<String, Object> updateGroupPermission(CreateGroupRequest createGroupRequest);
 
     Map<String, Object> updateUserGroup(CreateUserRequest request);
+
+    Map<String, Object> getOrgModule();
 }

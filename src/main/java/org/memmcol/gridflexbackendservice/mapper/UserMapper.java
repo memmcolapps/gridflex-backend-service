@@ -267,4 +267,7 @@ public interface UserMapper {
 
     @Select("SELECT firstname, lastname FROM users WHERE id = #{org_id}")
     UserModel getUser(UUID org_id);
+
+    @Select("SELECT * FROM xyz WHERE org_id = #{orgId}")
+    List<XYZ> getOrgAccessModule(UUID orgId);
 }

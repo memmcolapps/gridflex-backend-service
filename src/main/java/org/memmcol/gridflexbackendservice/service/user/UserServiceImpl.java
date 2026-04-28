@@ -716,6 +716,19 @@ public class UserServiceImpl implements  UserService {
 
     }
 
+    @Override
+    public Map<String, Object> getOrgModule() {
+        try {
+            UserModel um = handleUserValidation();
+
+            List<XYZ> resp = userMapper.getOrgAccessModule(um.getOrgId());
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+        } catch (Exception e){
+            throw e;
+        }
+    }
+
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();
