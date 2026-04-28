@@ -146,6 +146,20 @@ public interface DebtSettingMapper {
     })
     int updateLiabilityCause(String approveStatus, UUID liabilityCauseId, LocalDateTime updatedAt);
 
+//    @Update({
+//            "<script>",
+//            "UPDATE liability_cause",
+//            "SET "+
+//                    " <if test='approveStatus != null'> approve_status = #{approveStatus},</if>"+
+//                    "  updated_at = #{updatedAt}"+
+//                    "  name = #{name}"+
+//                    "  code = #{code}"+
+//                    " WHERE id = #{liabilityCauseId} "+
+//                    "</script>"
+//    })
+//    int editLiabilityCause(String approveStatus, UUID liabilityCauseId, LocalDateTime updatedAt, String name, String code);
+
+
     @Delete("DELETE FROM liability_cause WHERE id = #{id} AND (approve_status = 'Pending-created' OR approve_status = 'Pending-edited' " +
             "OR approve_status = 'Pending-activated' OR approve_status = 'Pending-deactivated')")
     int deleteLiabilityCause(UUID liabilityCauseId);

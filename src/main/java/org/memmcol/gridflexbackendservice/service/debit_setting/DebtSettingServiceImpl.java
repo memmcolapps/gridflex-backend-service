@@ -840,23 +840,23 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
                 continue;
             }
-            List<String> lcCodes = batch.stream()
-                    .map(b -> b.getCode().trim())
-                    .filter(num -> !num.isEmpty())
-                    .toList();
-
-            if (lcCodes.isEmpty()) {
-                batch.forEach(req -> {
-                    GenericResp resp = new GenericResp();
-                    resp.setId("");
-                    resp.setMessage("Missing liability cause code");
-                    resp.setData(req.getName());
-
-                    failedRecords.add(resp);
-                });
-
-                continue;
-            }
+//            List<String> lcCodes = batch.stream()
+//                    .map(b -> b.getCode().trim())
+//                    .filter(num -> !num.isEmpty())
+//                    .toList();
+//
+//            if (lcCodes.isEmpty()) {
+//                batch.forEach(req -> {
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId("");
+//                    resp.setMessage("Missing liability cause code");
+//                    resp.setData(req.getName());
+//
+//                    failedRecords.add(resp);
+//                });
+//
+//                continue;
+//            }
 
             // One DB call to fetch all corresponding version records
             List<LiabilityCause> versionBatch = debtMapper.getLiabilityCauseBulkVersion(lcNames, user.getOrgId());
@@ -981,6 +981,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
                 desc = "Liability cause approved";
                 debtMapper.updateBatchLcs(toUpdate);
                 debtMapper.updateBatchVersionLcs(toUpdate);
+                log.info("wwwwwwwwwww: {}", toUpdate.size());
             }
 
             //  Audit success

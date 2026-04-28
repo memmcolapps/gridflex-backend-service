@@ -62,7 +62,9 @@ public interface OrganizationMapper {
             @Result(property = "operator", column = "user_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getOperator")),
             @Result(property = "moduleAccess", column = "id",
-                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getXyzByOrgId"))
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getXyzByOrgId")),
+            @Result(property = "moduleAccess", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
     })
     Organization getOrganizationById(@Param("id") UUID id);
 
