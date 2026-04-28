@@ -717,15 +717,27 @@ public class DashboardServiceImpl implements  DashboardService{
         return Map.of();
     }
 
-    @Transactional(readOnly = true)
+@Transactional(readOnly = true)
     public Map<String, Object> hesDashboard() {
 
         try {
             UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            boolean isRoot = "Root".equalsIgnoreCase(nodeType);
+
 
             // METER SUMMARY
-            int total = dashboardMapper.countAll(user.getOrgId());
-            int online = dashboardMapper.getActiveMeterCount("ONLINE");
+            int total;
+            int online;
+            if (isRoot) {
+                total = dashboardMapper.countAllByOrgId(user.getOrgId());
+                online = dashboardMapper.getActiveMeterCountByOrgId(user.getOrgId(), "ONLINE");
+            } else {
+                total = dashboardMapper.countAllByNodeId(user.getOrgId(), nodeId);
+                online = dashboardMapper.getActiveMeterCountByNodeId(user.getOrgId(), nodeId, "ONLINE");
+            }
             int offline = Math.max(total - online, 0);
 
             DashboardSummaryResponse.MeterSummary meterSummary =
@@ -735,7 +747,12 @@ public class DashboardServiceImpl implements  DashboardService{
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime fromTime = now.minusHours(24);
 
-            List<MeterConnEvent> recentEvents = dashboardMapper.findRecentEvents(fromTime);
+            List<MeterConnEvent> recentEvents;
+            if (isRoot) {
+                recentEvents = dashboardMapper.findRecentEventsByOrgId(user.getOrgId(), fromTime);
+            } else {
+                recentEvents = dashboardMapper.findRecentEventsByNodeId(user.getOrgId(), nodeId, fromTime);
+            }
 
             List<DashboardSummaryResponse.CommunicationLogPoint> communicationLogs = new ArrayList<>();
             for (int i = 4; i <= 24; i += 4) {
@@ -752,20 +769,31 @@ public class DashboardServiceImpl implements  DashboardService{
             }
 
             // COMMUNICATION REPORT
-            List<MeterConnEvent> commReport = dashboardMapper.getCommReport(user.getOrgId());
+            List<MeterConnEvent> commReport;
+            if (isRoot) {
+                commReport = dashboardMapper.getCommReport(user.getOrgId());
+            } else {
+                commReport = dashboardMapper.getCommReportByNodeId(user.getOrgId(), nodeId);
+            }
 
             List<DashboardSummaryResponse.CommunicationReportRow> communicationReport =
                     commReport.stream()
                             .map(e -> new DashboardSummaryResponse.CommunicationReportRow(
                                     e.getMeterNo(),
-                                    e.getMeter().getSmartMeterInfo().getMeterModel(),
+                                    e.getMeter() != null && e.getMeter().getSmartMeterInfo() != null 
+                                        ? e.getMeter().getSmartMeterInfo().getMeterModel() : null,
                                     e.getConnectionType(),
                                     e.getUpdatedAt()
                             ))
                             .toList();
 
             // COMMUNICATION SUMMARY
-            List<MeterLastCommunication> meterLastCommunications = dashboardMapper.getCommSummary(user.getOrgId());
+            List<MeterLastCommunication> meterLastCommunications;
+            if (isRoot) {
+                meterLastCommunications = dashboardMapper.getCommSummary(user.getOrgId());
+            } else {
+                meterLastCommunications = dashboardMapper.getCommSummaryByNodeId(user.getOrgId(), nodeId);
+            }
 
             List<DashboardSummaryResponse.CommunicationSummaryPoint> communicationSummary = new ArrayList<>();
             communicationSummary.add(createSummaryPoint("24 hrs", "Last 24 Hours", now, 1, meterLastCommunications));
@@ -778,7 +806,12 @@ public class DashboardServiceImpl implements  DashboardService{
             communicationSummary.add(createSummaryPoint("12 mon", "Last 1 Year", now, 365, meterLastCommunications));
 
             // COMMUNICATION EVENTS
-            List<Event> eventReport = dashboardMapper.getEventsReport(user.getOrgId());
+            List<Event> eventReport;
+            if (isRoot) {
+                eventReport = dashboardMapper.getEventsReport(user.getOrgId());
+            } else {
+                eventReport = dashboardMapper.getEventsReportByNodeId(user.getOrgId(), nodeId);
+            }
 
             List<DashboardSummaryResponse.EventLogs> eventsReport =
                     eventReport.stream()
@@ -794,9 +827,6 @@ public class DashboardServiceImpl implements  DashboardService{
                                     e.getEventType(),
                                     e.getEvent(),
                                     e.getCriticalLevel()
-//                                    e.getEventTypeModel().getName(),
-//                                    e.getEventTypeModel().getObisCode(),
-//                                    e.getEventTypeModel().getDescription()
                             ))
                             .toList();
 

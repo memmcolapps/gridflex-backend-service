@@ -144,12 +144,37 @@ public interface DashboardMapper {
     @Select("SELECT COUNT(*) FROM smart_meter_info WHERE org_id = #{orgId}")
     int countAll(UUID orgId);
 
+    @Select("SELECT COUNT(*) FROM smart_meter_info sm " +
+            "JOIN meters m ON sm.meter_id = m.id " +
+            "WHERE m.org_id = #{orgId}")
+    int countAllByOrgId(UUID orgId);
+
+    @Select("SELECT COUNT(*) FROM smart_meter_info sm " +
+            "JOIN meters m ON sm.meter_id = m.id " +
+            "WHERE m.org_id = #{orgId} " +
+            "AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId} " +
+            "OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})")
+    int countAllByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId);
+
     @Select("SELECT COUNT(*) FROM meters_connection_event mc " +
             "JOIN meters m ON m.meter_number = mc.meter_no " +
             "AND mc.connection_type = #{online}")
     int getActiveMeterCount(String online);
 
-    @Select("""
+    @Select("SELECT COUNT(*) FROM meters_connection_event mc " +
+            "JOIN meters m ON m.meter_number = mc.meter_no " +
+            "AND mc.connection_type = #{online} " +
+            "AND m.org_id = #{orgId}")
+    int getActiveMeterCountByOrgId(@Param("orgId") UUID orgId, @Param("online") String online);
+
+    @Select("SELECT COUNT(*) FROM meters_connection_event mc " +
+            "JOIN meters m ON m.meter_number = mc.meter_no " +
+            "AND mc.connection_type = #{online} " +
+            "AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId} " +
+            "OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})")
+    int getActiveMeterCountByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId, @Param("online") String online);
+
+@Select("""
         SELECT m 
         FROM meters_connection_event m 
         WHERE m.online_time = #{fromTime}
@@ -157,8 +182,41 @@ public interface DashboardMapper {
     """)
     List<MeterConnEvent> findRecentEvents(@Param("fromTime") LocalDateTime fromTime);
 
-    //  JOIN smart_meter_info sm ON m.id = sm.meter_id
     @Select("""
+        SELECT mc.*
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        WHERE m.org_id = #{orgId}
+        AND mc.online_time >= #{fromTime}
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "onlineTime", column = "online_time"),
+            @Result(property = "offlineTime", column = "offline_time"),
+    })
+    List<MeterConnEvent> findRecentEventsByOrgId(@Param("orgId") UUID orgId, @Param("fromTime") LocalDateTime fromTime);
+
+    @Select("""
+        SELECT mc.*
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        WHERE (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}
+            OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})
+        AND mc.online_time >= #{fromTime}
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "onlineTime", column = "online_time"),
+            @Result(property = "offlineTime", column = "offline_time"),
+    })
+    List<MeterConnEvent> findRecentEventsByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId, @Param("fromTime") LocalDateTime fromTime);
+
+    //  JOIN smart_meter_info sm ON m.id = sm.meter_id
+@Select("""
     <script>
         SELECT mc.*, sm.meter_model
         FROM meters_connection_event mc
@@ -178,6 +236,26 @@ public interface DashboardMapper {
     List<MeterConnEvent> getCommReport(UUID orgId);
 
     @Select("""
+    <script>
+        SELECT mc.*, sm.meter_model
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        WHERE (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}
+            OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})
+        ORDER BY mc.updated_at DESC
+        LIMIT 5
+    </script>
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNo", column = "meter_no"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
+    })
+    List<MeterConnEvent> getCommReportByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId);
+
+@Select("""
         SELECT DISTINCT mc.meter_no AS meterNo, MAX(mc.online_time) AS lastOnline
         FROM meters_connection_event mc
         JOIN meters m ON mc.meter_no = m.meter_number
@@ -190,8 +268,22 @@ public interface DashboardMapper {
     })
     List<MeterLastCommunication> getCommSummary(UUID orgId);
 
-
     @Select("""
+        SELECT DISTINCT mc.meter_no AS meterNo, MAX(mc.online_time) AS lastOnline
+        FROM meters_connection_event mc
+        JOIN meters m ON mc.meter_no = m.meter_number
+        WHERE (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}
+            OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})
+        GROUP BY mc.meter_no
+    """)
+    @Results({
+            @Result(property = "meterNo", column = "meterNo"),
+            @Result(property = "lastOnline", column = "lastOnline"),
+    })
+    List<MeterLastCommunication> getCommSummaryByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId);
+
+
+@Select("""
         <script>
             SELECT e.*
             FROM vw_event_details e
@@ -209,12 +301,28 @@ public interface DashboardMapper {
             @Result(column = "event_time", property = "eventTime"),
             @Result(column = "event_type_id", property = "eventTypeId"),
             @Result(column = "critical_level", property = "criticalLevel"),
-//            @Result(column = "currentThreshold", property = "current_threshold"),
-//            @Result(column = "eventCode", property = "event_code"),
-
-//            @Result(property = "eventType.name", column = "name"),
-//            @Result(property = "eventType.description", column = "description"),
-//            @Result(property = "eventType.obisCode", column = "obis_code"),
     })
     List<Event> getEventsReport(UUID orgId);
+
+    @Select("""
+        <script>
+            SELECT e.*
+            FROM vw_event_details e
+            JOIN meters m ON e.meter_no = m.meter_number
+            WHERE (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}
+                OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})
+            ORDER BY event_time DESC LIMIT 5
+        </script>
+    """)
+    @Results({
+            @Result(column = "meter_no", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "event_name", property = "eventName"),
+            @Result(column = "event_type", property = "eventType"),
+            @Result(column = "event", property = "event"),
+            @Result(column = "event_time", property = "eventTime"),
+            @Result(column = "event_type_id", property = "eventTypeId"),
+            @Result(column = "critical_level", property = "criticalLevel"),
+    })
+    List<Event> getEventsReportByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId);
 }
