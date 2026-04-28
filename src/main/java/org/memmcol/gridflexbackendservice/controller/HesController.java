@@ -204,15 +204,15 @@ public class HesController {
         }
     }
 
-    @GetMapping("/profile-events")
-    public ResponseEntity<?> profileEvents() {
-        try {
-            Map<String, Object> result = hesService.profileEvents();
-            return ResponseEntity.ok(result);
-        } catch (GlobalExceptionHandler.SQLServerException e) {
-            return handleException(e);
-        }
-    }
+//    @GetMapping("/profile-events")
+//    public ResponseEntity<?> profileEvents() {
+//        try {
+//            Map<String, Object> result = hesService.profileEvents();
+//            return ResponseEntity.ok(result);
+//        } catch (GlobalExceptionHandler.SQLServerException e) {
+//            return handleException(e);
+//        }
+//    }
 
     //---------- Test schedule Api-----------
     @PostMapping("/trigger")

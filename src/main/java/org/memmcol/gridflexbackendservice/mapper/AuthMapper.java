@@ -257,9 +257,20 @@ public interface AuthMapper {
             @Result(property = "businessType", column = "business_type"),
             @Result(property = "businessContact", column = "business_contact"),
             @Result(property = "businessNumber", column = "business_number"),
-            @Result(property = "registrationNumber", column = "registration_number")
+            @Result(property = "registrationNumber", column = "registration_number"),
+            @Result(property = "moduleAccess", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
     })
     Organization getOrganizationById(UUID orgId);
+
+    @Select("SELECT * FROM xyz WHERE org_id = #{orgId}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "module", column = "module"),
+            @Result(property = "status", column = "status")
+    })
+    List<XYZ> getXyzByOrgId(@Param("orgId") UUID orgId);
 
     @Update("UPDATE users SET Active = false WHERE Email = #{email}")
     void updateLogoutState(String email);
@@ -335,8 +346,8 @@ public interface AuthMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-//            @Result(property = "nodes", column = "node_id",
-//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
+            @Result(property = "moduleAccess", column = "org_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
     })
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     UserModel findAuthByUserId(UUID userId, UUID orgId);
@@ -368,8 +379,9 @@ public interface AuthMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-//            @Result(property = "nodes", column = "node_id",
-//                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getHierarchyById"))
+            @Result(property = "moduleAccess", column = "org_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
     })
     List<UserModel> findAllUsers(UUID orgId, int page, int size);
+
 }

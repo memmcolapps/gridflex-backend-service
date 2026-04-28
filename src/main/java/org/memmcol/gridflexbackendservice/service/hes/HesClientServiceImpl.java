@@ -562,17 +562,17 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
-    @Override
-    public Map<String, Object> profileEvents() {
-        try {
-            handleUserValidation();
-            List<Schedule> resp = hesMapper.getProfileEvents();
-
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-        } catch (Exception e){
-            throw e;
-        }
-    }
+//    @Override
+//    public Map<String, Object> profileEvents() {
+//        try {
+//            handleUserValidation();
+//            List<Schedule> resp = hesMapper.getProfileEvents();
+//
+//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+//        } catch (Exception e){
+//            throw e;
+//        }
+//    }
 
     @Transactional
     @Override
@@ -626,6 +626,7 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> triggerEvent(String jobGroup, String jobName) {
         String token = auth.getAccessToken();
@@ -668,6 +669,7 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
                                            String businessHub, String manufacturer, String meterStatus, int page, int size) {
@@ -714,27 +716,89 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> profileEventsInfo(String type) {
         try {
             handleUserValidation();
 
-            Object resp;
             if (type.equalsIgnoreCase("profile")) {
-                resp = hesMapper.getProfileEvents();
-            } else if (type.equalsIgnoreCase("event")) {
-                resp = hesMapper.getEventType();
-            }else {
+            List<Schedule> profiles = hesMapper.getProfileEvents();
+
+            for (Schedule p : profiles) {
+                p.setProfileType(mapProfileKey(p));
+            }
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    profiles
+            );
+        } else if (type.equalsIgnoreCase("event")) {
+
+                Object resp = hesMapper.getEventType();
+
+                return ResponseMap.response(
+                        status.getSuccessCode(),
+                        status.getDesc(),
+                        resp
+                );
+
+            } else {
                 return ResponseMap.response(
                         status.getFailCode(),
-                        "Invalid type. Use 'profile' or 'event'",
+                        "Type not supported. Use 'profile' or 'event'",
                         null
                 );
             }
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw e;
         }
     }
+
+    private String mapProfileKey(Schedule p) {
+
+        if (p.getObisCode() == null) return null;
+
+        switch (p.getObisCode()) {
+
+            case "1.0.99.1.0.255":
+                return "load-profile-one";
+
+            case "1.0.99.2.0.255":
+                return "load-profile-two";
+
+            case "0.0.98.2.0.255":
+                return "daily-billing-profile";
+
+            case "0.0.98.1.0.255":
+                return "monthly-billing-profile";
+
+            default:
+                return null;
+        }
+    }
+//    public Map<String, Object> profileEventsInfo(String type) {
+//        try {
+//            handleUserValidation();
+//
+//            Object resp;
+//            if (type.equalsIgnoreCase("profile")) {
+//                resp = hesMapper.getProfileEvents();
+//
+//            } else if (type.equalsIgnoreCase("event")) {
+//                resp = hesMapper.getEventType();
+//            }else {
+//                return ResponseMap.response(
+//                        status.getFailCode(),
+//                        "Type not supported. Use 'profile' or 'event'",
+//                        null
+//                );
+//            }
+//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+//        } catch (Exception e){
+//            throw e;
+//        }
+//    }
 }
