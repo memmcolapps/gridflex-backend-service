@@ -23,7 +23,7 @@ public interface HesService {
 
     Map<String, Object> setSchedule(String jobGroup, String timeInterval, String unit, String jobName);
 
-    Map<String, Object> profileEvents();
+//    Map<String, Object> profileEvents();
 
     Map<String, Object> setCron(String jobGroup, String jobName, String cronExpression);
 

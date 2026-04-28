@@ -27,6 +27,7 @@ public class Schedule implements Serializable {
     private String repeatHours;
     private String lastRunTime;
     private String obisCode;
+    private String profileType;
     private Organization organization;
 //    private EventType eventType;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -194,6 +195,14 @@ public class Schedule implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getProfileType() {
+        return profileType;
+    }
+
+    public void setProfileType(String profileType) {
+        this.profileType = profileType;
     }
 
     public enum ScheduleStatus {
