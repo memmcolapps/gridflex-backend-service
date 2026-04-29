@@ -14,58 +14,11 @@ import java.util.UUID;
 @Mapper
 public interface HesMapper {
 
-//    @Select("""
-//        <script>
-//            SELECT e.*, et.*, m.*, fn.*
-//            FROM event_log e
-//            JOIN event_type et ON e.event_type_id = et.id
-//            JOIN event_code_lookup ecl ON e.event_type_id = ecl.id
-//            JOIN meters m ON e.meter_serial = m.meter_number
-//            LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
-//            <where>
-//                <if test="startDate != null">
-//                    AND e.event_time &gt;= #{startDate}
-//                </if>
-//                <if test="endDate != null">
-//                    AND e.event_time &lt;= #{endDate}
-//                </if>
-//                <if test="eventTypeId != null">
-//                    AND et.id = #{eventTypeId}
-//                </if>
-//                <if test="meterModel != null">
-//                    AND e.meter_model = #{meterModel}
-//                </if>
-//            <if test="meterNumber != null and meterNumber.size() > 0">
-//                AND e.meter_serial IN
-//                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
-//                    #{meter}
-//                </foreach>
-//            </if>
-//            AND m.org_id = #{orgId}
-//            AND (fn.region_region_id = #{node}
-//                        OR fn.service_region_id = #{node}
-//                        OR fn.business_region_id = #{node}
-//                        OR fn.feeder_asset_id = #{node}
-//                        OR fn.dss_asset_id = #{node})
-//            </where>
-//            ORDER BY event_time DESC
-//            <if test="size > 0">
-//                LIMIT #{size} OFFSET #{page} * #{size}
-//            </if>
-//        </script>
-//    """)
-    //                <if test="eventTypeId != null">
-//                    AND e.event_type_id = #{eventTypeId}
-//                </if>
-//                <if test="meterModel != null">
-//                    AND e.meter_model = #{meterModel}
-//                </if>
-
     @Select("""
         <script>
             SELECT e.*, m.*, fn.*
             FROM vw_event_details e
-            JOIN meters m ON e.meter_no = m.meter_number
+            LEFT JOIN meters m ON e.meter_no = m.meter_number
             LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
             <where>
                 <if test="startDate != null">
@@ -100,8 +53,8 @@ public interface HesMapper {
                         OR fn.feeder_asset_id = #{node} 
                         OR fn.dss_asset_id = #{node})
             </where>
-            ORDER BY event_time DESC
-            <if test="size > 0">
+            ORDER BY e.critical_level DESC, e.event_time DESC
+            <if test="size != 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
         </script>
@@ -233,7 +186,7 @@ public interface HesMapper {
                 OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
-           <if test="size > 0">
+           <if test="size != 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
         </script>
@@ -354,7 +307,7 @@ public interface HesMapper {
                     OR fn.dss_asset_id = #{node})
         </where>
         ORDER BY p.received_at DESC
-            <if test="size > 0">
+            <if test="size != 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
             </if>
         </script>

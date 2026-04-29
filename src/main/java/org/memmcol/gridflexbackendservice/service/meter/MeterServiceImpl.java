@@ -343,8 +343,7 @@ public class MeterServiceImpl implements MeterService {
                 || clazz.equalsIgnoreCase("three-phase")){
             request.setMeterClass("Three-Phase");
         }
-        System.out.print(">>>>>>>>>>>>>>>>>>::: "+clazz);
-//        System.out.print(">>>>>>>>>>>>>>>>>>::: "+request.getMeterClass());
+
         if (!clazz.equalsIgnoreCase("md") &&
                 !clazz.equalsIgnoreCase("single-phase") &&
                 !clazz.equalsIgnoreCase("three-phase")) {
@@ -4474,8 +4473,6 @@ public class MeterServiceImpl implements MeterService {
             if (meter.getMeterType().equalsIgnoreCase("Electricity")){
                 meter.setMeterType("Electricity");
             }
-
-//            String clazz = meter.getClazz
 
             if (meter.getMeterClass().equalsIgnoreCase("single phase")
                     || meter.getMeterClass().equalsIgnoreCase("singlephase")
