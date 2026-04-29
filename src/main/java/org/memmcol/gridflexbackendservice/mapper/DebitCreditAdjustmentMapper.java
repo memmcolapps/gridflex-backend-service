@@ -292,7 +292,10 @@ public interface DebitCreditAdjustmentMapper {
         ) adj_total
                       ON adj_total.id = ca.id
         WHERE UPPER(ca.type) = UPPER(#{type})
-        ORDER BY p.created_at ASC;
+        ORDER BY
+             COALESCE(p.parent_id, p.id),   -- group parent + children
+              p.parent_id NULLS FIRST,       -- parent first
+              p.created_at ASC;              -- then chronological
     """)
     @Results({
             @Result(column = "id", property = "id"),

@@ -504,13 +504,6 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
 
-//            if(nodeType == null || !nodeType.equalsIgnoreCase("Root")
-//                    && !nodeType.equalsIgnoreCase("Region")
-//                    && !nodeType.equalsIgnoreCase("Business hub")
-//                    && !nodeType.equalsIgnoreCase("Service center")){
-//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//            }
-
             if (!type.equalsIgnoreCase("debit") &&
                     !type.equalsIgnoreCase("credit")) {
 

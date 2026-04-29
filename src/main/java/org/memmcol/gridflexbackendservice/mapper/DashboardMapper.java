@@ -287,9 +287,9 @@ public interface DashboardMapper {
         <script>
             SELECT e.*
             FROM vw_event_details e
-            JOIN meters m ON e.meter_no = m.meter_number
+            LEFT JOIN meters m ON e.meter_no = m.meter_number
             WHERE m.org_id = #{orgId}
-            ORDER BY event_time DESC LIMIT 5
+            ORDER BY e.critical_level DESC, e.event_time DESC LIMIT 5
         </script>
     """)
     @Results({
@@ -308,10 +308,10 @@ public interface DashboardMapper {
         <script>
             SELECT e.*
             FROM vw_event_details e
-            JOIN meters m ON e.meter_no = m.meter_number
+            LEFT JOIN meters m ON e.meter_no = m.meter_number
             WHERE (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}
                 OR m.dss = #{nodeId} OR m.feeder = #{nodeId} OR m.root = #{nodeId})
-            ORDER BY event_time DESC LIMIT 5
+            ORDER BY e.critical_level DESC, e.event_time DESC LIMIT 5
         </script>
     """)
     @Results({

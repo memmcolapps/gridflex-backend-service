@@ -190,16 +190,17 @@ public class HesClientServiceImpl implements HesService {
                     })
                     .collect(Collectors.toList());
 
-            // Pagination logic
+            List<Profile> paginatedProfiles = filteredProfiles;
             int totalProfiles = filteredProfiles.size();
-            List<Profile> paginatedProfiles;
-            if (size == 0) {
-                paginatedProfiles = filteredProfiles; // Return all users
-            } else {
-                int fromIndex = Math.min(page * size, totalProfiles);
-                int toIndex = Math.min(fromIndex + size, totalProfiles);
-                paginatedProfiles = filteredProfiles.subList(fromIndex, toIndex);
-            }
+//            int totalProfiles = filteredProfiles.size();
+//            List<Profile> paginatedProfiles;
+//            if (size == 0) {
+//                paginatedProfiles = filteredProfiles; // Return all users
+//            } else {
+//                int fromIndex = Math.min(page * size, totalProfiles);
+//                int toIndex = Math.min(fromIndex + size, totalProfiles);
+//                paginatedProfiles = filteredProfiles.subList(fromIndex, toIndex);
+//            }
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -261,8 +262,6 @@ public class HesClientServiceImpl implements HesService {
             } else {
                 events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
-//            System.out.println("id: "+events.get(0).getId());
-////            System.out.println("event: "+events.get(0).getEvent());
 
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
@@ -274,22 +273,15 @@ public class HesClientServiceImpl implements HesService {
 
                         return contains(e.getMeterNumber(), searchLower)
                                 || contains(e.getEventName(), searchLower)
-                                || containsEventTypeName(e, searchLower)
+//                                || containsEventTypeName(e, searchLower)
                                 || containsEventTypeDescription(e, searchLower)
                                 || containsDate(e.getEventTime(), searchLower);
                     })
                     .collect(Collectors.toList());
 
             // Pagination logic
+            List<Event> paginatedEvents = filteredEvents;
             int totalTariffs = filteredEvents.size();
-            List<Event> paginatedEvents;
-            if (size == 0) {
-                paginatedEvents = filteredEvents; // Return all users
-            } else {
-                int fromIndex = Math.min(page * size, totalTariffs);
-                int toIndex = Math.min(fromIndex + size, totalTariffs);
-                paginatedEvents = filteredEvents.subList(fromIndex, toIndex);
-            }
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
