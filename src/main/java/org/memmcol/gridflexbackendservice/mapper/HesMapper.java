@@ -197,14 +197,18 @@ public interface HesMapper {
             @Result(column = "model_number", property = "meterModel"),
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
             @Result(column = "meter_health_indicator", property = "meterHealthIndicator"),
-            @Result(column = "total_instantaneous_active_power", property = "totalInstantaneousActivePower"),
-            @Result(column = "total_instantaneous_apparent_power", property = "totalInstantaneousApparentPower"),
-            @Result(column = "l1_current_harmonic_thd", property = "l1CurrentHarmonicThd"),
-            @Result(column = "l2_current_harmonic_thd", property = "l2CurrentHarmonicThd"),
-            @Result(column = "l3_current_harmonic_thd", property = "l3CurrentHarmonicThd"),
-            @Result(column = "l1_voltage_harmonic_thd", property = "l1VoltageHarmonicThd"),
-            @Result(column = "l2_voltage_harmonic_thd", property = "l2VoltageHarmonicThd"),
-            @Result(column = "l3_voltage_harmonic_thd", property = "l3VoltageHarmonicThd"),
+            @Result(column = "instantaneous_voltage_l1", property = "instantaneousVoltageL1"),
+            @Result(column = "instantaneous_voltage_l2", property = "instantaneousVoltageL2"),
+            @Result(column = "instantaneous_voltage_l3", property = "instantaneousVoltageL3"),
+            @Result(column = "instantaneous_current_l1", property = "instantaneousCurrentL1"),
+            @Result(column = "instantaneous_current_l2", property = "instantaneousCurrentL2"),
+            @Result(column = "instantaneous_current_l3", property = "instantaneousCurrentL3"),
+            @Result(column = "instantaneous_active_power", property = "instantaneousActivePower"),
+            @Result(column = "instantaneous_reactive_import", property = "instantaneousReactiveImport"),
+            @Result(column = "instantaneous_reactive_export", property = "instantaneousReactiveExport"),
+            @Result(column = "instantaneous_power_factor", property = "instantaneousPowerFactor"),
+            @Result(column = "instantaneous_apparent_power", property = "instantaneousApparentPower"),
+            @Result(column = "instantaneous_net_frequency", property = "instantaneousNetFrequency"),
             @Result(column = "received_at", property = "receivedAt"),
 
             @Result(property = "meter.id", column = "id"),
@@ -276,6 +280,123 @@ public interface HesMapper {
     @Select("""
         <script>
         SELECT p.*, m.*, fn.*
+        FROM profile_channel_one_hh p
+        JOIN meters m ON p.meter_serial = m.meter_number
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        <where>
+            <if test="startDate != null">
+                AND received_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND received_at &lt;= #{endDate}
+            </if>
+        
+            <if test="meterModel != null and meterModel.size() > 0">
+                AND model_number IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
+            </if>
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
+            AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node}
+                OR fn.service_region_id = #{node}
+                OR fn.business_region_id = #{node}
+                OR fn.feeder_asset_id = #{node}
+                OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY p.received_at DESC
+           <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
+    @Results({
+            @Result(column = "m.org_id", property = "orgId"),
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "model_number", property = "meterModel"),
+            @Result(column = "entry_timestamp", property = "entryTimestamp"),
+            @Result(column = "active_energy_import", property = "meterHealthIndicator"),
+            @Result(column = "active_energy_import_ongrid", property = "activeEnergyImportOngrid"),
+            @Result(column = "active_energy_import_offgrid", property = "activeEnergyImportOffgrid"),
+            @Result(column = "active_energy_export", property = "activeEnergyExport"),
+            @Result(column = "active_energy_export_ongrid", property = "activeEnergyExportOngrid"),
+            @Result(column = "active_energy_export_offgrid", property = "activeEnergyExportOffgrid"),
+            @Result(column = "received_at", property = "receivedAt"),
+
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+    })
+    List<Profile> getProfileChannelOneHouseHold(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<String> meterNumber,
+            List<String> meterModel,
+            UUID orgId, int page, int size, String node);
+
+    @Select("""
+        <script>
+        SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         JOIN meters m ON p.meter_serial = m.meter_number
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
@@ -317,8 +438,18 @@ public interface HesMapper {
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
-            @Result(column = "total_import_active_energy", property = "totalImportActiveEnergy"),
-            @Result(column = "total_export_active_energy", property = "totalExportActiveEnergy"),
+            @Result(column = "meter_health_indicator", property = "meterHealthIndicator"),
+            @Result(column = "active_energy_import", property = "activeEnergyImport"),
+            @Result(column = "import_active_energy_import_rate1", property = "importActiveEnergyImportRate1"),
+            @Result(column = "import_active_energy_import_rate2", property = "importActiveEnergyImportRate2"),
+            @Result(column = "import_active_energy_import_rate3", property = "importActiveEnergyImportRate3"),
+            @Result(column = "import_active_energy_import_rate4", property = "importActiveEnergyImportRate4"),
+            @Result(column = "import_active_energy_combined_total", property = "importActiveEnergyCombinedTotal"),
+            @Result(column = "active_energy_export", property = "totalExportActiveEnergy"),
+            @Result(column = "reactive_energy_import", property = "reactiveEnergyImport"),
+            @Result(column = "reactive_energy_export", property = "reactiveEnergyExport"),
+            @Result(column = "apparent_energy_import", property = "apparentEnergyImport"),
+            @Result(column = "apparent_energy_export", property = "apparentEnergyExport"),
             @Result(column = "received_at", property = "receivedAt"),
 
             @Result(property = "meter.id", column = "id"),
@@ -384,6 +515,119 @@ public interface HesMapper {
             List<String> meterNumber, List<String> meterModel,
             UUID orgId, int page, int size, String node);
 
+    @Select("""
+        <script>
+        SELECT p.*, m.*, fn.*
+        FROM profile_channel_two_hh p
+        JOIN meters m ON p.meter_serial = m.meter_number
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        <where>
+            <if test="startDate != null">
+                AND received_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND received_at &lt;= #{endDate}
+            </if>
+        
+         <if test="meterModel != null and meterModel.size() > 0">
+                AND model_number IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
+            </if>
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
+        AND m.org_id = #{orgId}
+        AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY p.received_at DESC
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
+    @Results({
+            @Result(column = "m.org_id", property = "orgId"),
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "entry_timestamp", property = "entryTimestamp"),
+            @Result(column = "voltage_l1", property = "voltageL1"),
+            @Result(column = "voltage_l2", property = "voltageL2"),
+            @Result(column = "current_l1", property = "currentL1"),
+            @Result(column = "current_l2", property = "currentL2"),
+            @Result(column = "current_l3", property = "currentL3"),
+            @Result(column = "received_at", property = "receivedAt"),
+
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+    })
+    List<Profile> getProfileChannelTwoHouseHold(
+            LocalDateTime startDate, LocalDateTime endDate,
+            List<String> meterNumber, List<String> meterModel,
+            UUID orgId, int page, int size, String node);
 
     @Select("""
         <script>
@@ -399,7 +643,7 @@ public interface HesMapper {
                 AND received_at &lt;= #{endDate}
             </if>
               <if test="meterModel != null and meterModel.size() > 0">
-                AND model_number IN
+                AND meter_model IN
                 <foreach item="model" collection="meterModel" open="(" separator="," close=")">
                     #{model}
                 </foreach>
@@ -429,36 +673,16 @@ public interface HesMapper {
             @Result(column = "meter_model", property = "meterModel"),
 
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
-            @Result(column = "meter_health_indicator", property = "meterHealthIndicator"),
-            @Result(column = "total_instantaneous_active_power", property = "totalInstantaneousActivePower"),
-            @Result(column = "total_instantaneous_apparent_power", property = "totalInstantaneousApparentPower"),
-            @Result(column = "l1_current_harmony_thd", property = "l1CurrentHarmonyThd"),
-            @Result(column = "l2_current_harmony_thd", property = "l2CurrentHarmonyThd"),
-            @Result(column = "l3_current_harmony_thd", property = "l3CurrentHarmonyThd"),
-            @Result(column = "l1_voltage_harmony_thd", property = "l1VoltageHarmonyThd"),
-            @Result(column = "l2_voltage_harmony_thd", property = "l2VoltageHarmonyThd"),
-            @Result(column = "l3_voltage_harmony_thd", property = "l3VoltageHarmonyThd"),
-
-            @Result(column = "total_absolute_active_energy", property = "totalAbsoluteActiveEnergy"),
-            @Result(column = "export_active_energy", property = "exportActiveEnergy"),
-            @Result(column = "import_active_energy", property = "importActiveEnergy"),
-            @Result(column = "import_reactive_energy", property = "importReactiveEnergy"),
-            @Result(column = "export_reactive_energy", property = "exportReactiveEnergy"),
-            @Result(column = "remaining_credit_amount", property = "remainingCreditAmount"),
-            @Result(column = "import_active_md", property = "importActiveMd"),
             @Result(column = "t1_active_energy", property = "t1ActiveEnergy"),
             @Result(column = "t2_active_energy", property = "t2ActiveEnergy"),
             @Result(column = "t3_active_energy", property = "t3ActiveEnergy"),
             @Result(column = "t4_active_energy", property = "t4ActiveEnergy"),
             @Result(column = "total_active_energy", property = "totalActiveEnergy"),
             @Result(column = "total_apparent_energy", property = "totalApparentEnergy"),
-            @Result(column = "t1_total_active_energy", property = "t1TotalApparentEnergy"),
-            @Result(column = "t2total_active_energy", property = "t2TotalApparentEnergy"),
-            @Result(column = "t3total_active_energy", property = "t3TotalApparentEnergy"),
-            @Result(column = "t4total_active_energy", property = "t4TotalApparentEnergy"),
-            @Result(column = "active_maximum_demand", property = "activeMaximumDemand"),
-            @Result(column = "total_apparent_demand", property = "totalApparentDemand"),
-            @Result(column = "total_apparent_demand_time", property = "totalApparentDemandTime"),
+            @Result(column = "t1_total_apparent_energy", property = "t1TotalApparentEnergy"),
+            @Result(column = "t2_total_active_energy", property = "t2TotalApparentEnergy"),
+            @Result(column = "t3_total_apparent_energy", property = "t3TotalApparentEnergy"),
+            @Result(column = "t4_total_apparent_energy", property = "t4TotalApparentEnergy"),
             @Result(column = "received_at", property = "receivedAt"),
 
             @Result(property = "meter.id", column = "id"),
@@ -526,7 +750,118 @@ public interface HesMapper {
     @Select("""
         <script>
         SELECT p.*, m.*, fn.*
-        FROM monthly_billing_profile p
+        FROM daily_billing_data_hh p
+        JOIN meters m ON p.meter_serial = m.meter_number
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        <where>
+            <if test="startDate != null">
+                AND received_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND received_at &lt;= #{endDate}
+            </if>
+              <if test="meterModel != null and meterModel.size() > 0">
+                AND meter_model IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
+            </if>
+            <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
+        AND m.org_id = #{orgId}
+        AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY p.received_at DESC
+            <if test="size != 0">
+                LIMIT #{size} OFFSET #{page} * #{size}
+            </if>
+        </script>
+    """)
+    @Results({
+            @Result(column = "m.org_id", property = "orgId"),
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+
+            @Result(column = "entry_timestamp", property = "entryTimestamp"),
+            @Result(column = "credit_ongrid", property = "creditOngrid"),
+            @Result(column = "credit_offgrid", property = "creditffgrid"),
+
+            @Result(column = "received_at", property = "receivedAt"),
+
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+    })
+    List<Profile> getDailyBillingDataHouseHold(LocalDateTime startDate, LocalDateTime endDate,
+                                         List<String> meterNumber, List<String> meterModel, UUID orgId, int page, int size, String node);
+
+
+    @Select("""
+        <script>
+        SELECT p.*, m.*, fn.*
+        FROM monthly_billing_data_hh p
         JOIN meters m ON p.meter_serial = m.meter_number
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
@@ -537,7 +872,7 @@ public interface HesMapper {
                 AND received_at &lt;= #{endDate}
             </if>
             <if test="meterModel != null and meterModel.size() > 0">
-                AND model_number IN
+                AND meter_model IN
                 <foreach item="model" collection="meterModel" open="(" separator="," close=")">
                     #{model}
                 </foreach>
@@ -567,23 +902,118 @@ public interface HesMapper {
             @Result(column = "meter_model", property = "meterModel"),
 
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
-            @Result(column = "meter_health_indicator", property = "meterHealthIndicator"),
-            @Result(column = "total_instantaneous_active_power", property = "totalInstantaneousActivePower"),
-            @Result(column = "total_instantaneous_apparent_power", property = "totalInstantaneousApparentPower"),
-            @Result(column = "l1_current_harmony_thd", property = "l1CurrentHarmonyThd"),
-            @Result(column = "l2_current_harmony_thd", property = "l2CurrentHarmonyThd"),
-            @Result(column = "l3_current_harmony_thd", property = "l3CurrentHarmonyThd"),
-            @Result(column = "l1_voltage_harmony_thd", property = "l1VoltageHarmonyThd"),
-            @Result(column = "l2_voltage_harmony_thd", property = "l2VoltageHarmonyThd"),
-            @Result(column = "l3_voltage_harmony_thd", property = "l3VoltageHarmonyThd"),
+            @Result(column = "credit_ongrid", property = "creditOngrid"),
+            @Result(column = "credit_offgrid", property = "creditffgrid"),
+            @Result(column = "received_at", property = "receivedAt"),
 
-            @Result(column = "total_absolute_active_energy", property = "totalAbsoluteActiveEnergy"),
-            @Result(column = "export_active_energy", property = "exportActiveEnergy"),
-            @Result(column = "import_active_energy", property = "importActiveEnergy"),
-            @Result(column = "import_reactive_energy", property = "importReactiveEnergy"),
-            @Result(column = "export_reactive_energy", property = "exportReactiveEnergy"),
-            @Result(column = "remaining_credit_amount", property = "remainingCreditAmount"),
-            @Result(column = "import_active_md", property = "importActiveMd"),
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+    })
+    List<Profile> getMonthlyBillingDataHouseHold(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<String> meterNumber,
+            List<String> meterModel, UUID orgId, int page, int size, String node);
+
+    @Select("""
+        <script>
+        SELECT p.*, m.*, fn.*
+        FROM monthly_billing_profile p
+        JOIN meters m ON p.meter_serial = m.meter_number
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        <where>
+            <if test="startDate != null">
+                AND received_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND received_at &lt;= #{endDate}
+            </if>
+            <if test="meterModel != null and meterModel.size() > 0">
+                AND meter_model IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
+            </if>
+           <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
+            AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY p.received_at DESC
+        <if test="size != 0">
+            LIMIT #{size} OFFSET #{page}
+        </if>
+        </script>
+    """)
+    @Results({
+            @Result(column = "m.org_id", property = "orgId"),
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+
+            @Result(column = "entry_timestamp", property = "entryTimestamp"),
             @Result(column = "t1_active_energy", property = "t1ActiveEnergy"),
             @Result(column = "t2_active_energy", property = "t2ActiveEnergy"),
             @Result(column = "t3_active_energy", property = "t3ActiveEnergy"),
@@ -591,10 +1021,11 @@ public interface HesMapper {
             @Result(column = "total_active_energy", property = "totalActiveEnergy"),
             @Result(column = "total_apparent_energy", property = "totalApparentEnergy"),
             @Result(column = "t1_total_active_energy", property = "t1TotalApparentEnergy"),
-            @Result(column = "t2total_active_energy", property = "t2TotalApparentEnergy"),
-            @Result(column = "t3total_active_energy", property = "t3TotalApparentEnergy"),
-            @Result(column = "t4total_active_energy", property = "t4TotalApparentEnergy"),
+            @Result(column = "t2_total_active_energy", property = "t2TotalApparentEnergy"),
+            @Result(column = "t3_total_active_energy", property = "t3TotalApparentEnergy"),
+            @Result(column = "t4_total_active_energy", property = "t4TotalApparentEnergy"),
             @Result(column = "active_maximum_demand", property = "activeMaximumDemand"),
+            @Result(column = "total_maximum_demand_time", property = "totalMaximumDemandTime"),
             @Result(column = "total_apparent_demand", property = "totalApparentDemand"),
             @Result(column = "total_apparent_demand_time", property = "totalApparentDemandTime"),
             @Result(column = "received_at", property = "receivedAt"),
@@ -658,6 +1089,241 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
     List<Profile> getMonthlyBillingProfile(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<String> meterNumber,
+            List<String> meterModel, UUID orgId, int page, int size, String node);
+
+
+
+    @Select("""
+        <script>
+        SELECT p.*, m.*, fn.*
+        FROM daily_billing_energy_hh p
+        JOIN meters m ON p.meter_serial = m.meter_number
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        <where>
+            <if test="startDate != null">
+                AND received_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND received_at &lt;= #{endDate}
+            </if>
+            <if test="meterModel != null and meterModel.size() > 0">
+                AND meter_model IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
+            </if>
+           <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
+            AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY p.received_at DESC
+        <if test="size != 0">
+            LIMIT #{size} OFFSET #{page}
+        </if>
+        </script>
+    """)
+    @Results({
+            @Result(column = "m.org_id", property = "orgId"),
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+
+            @Result(column = "entry_timestamp", property = "entryTimestamp"),
+            @Result(column = "active_energy_import", property = "activeEnergyImport"),
+            @Result(column = "active_energy_export", property = "activeEnergyExport"),
+            @Result(column = "active_energy_import_ongrid", property = "activeEnergyImportOngrid"),
+            @Result(column = "active_energy_import_offgrid", property = "activeEnergyImportOffgrid"),
+            @Result(column = "active_energy_export_ongrid", property = "activeEnergyExportOngrid"),
+            @Result(column = "active_energy_export_offgrid", property = "activeEnergyExportOffgrid"),
+            @Result(column = "received_at", property = "receivedAt"),
+
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+    })
+    List<Profile> getDailyBillingEnergyHouseHold(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            List<String> meterNumber,
+            List<String> meterModel, UUID orgId, int page, int size, String node);
+
+
+    @Select("""
+        <script>
+        SELECT p.*, m.*, fn.*
+        FROM monthly_billing_energy_hh p
+        JOIN meters m ON p.meter_serial = m.meter_number
+        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        <where>
+            <if test="startDate != null">
+                AND received_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND received_at &lt;= #{endDate}
+            </if>
+            <if test="meterModel != null and meterModel.size() > 0">
+                AND meter_model IN
+                <foreach item="model" collection="meterModel" open="(" separator="," close=")">
+                    #{model}
+                </foreach>
+            </if>
+           <if test="meterNumber != null and meterNumber.size() > 0">
+                AND p.meter_serial IN
+                <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
+                    #{meter}
+                </foreach>
+            </if>
+            AND m.org_id = #{orgId}
+            AND (fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
+        </where>
+        ORDER BY p.received_at DESC
+        <if test="size != 0">
+            LIMIT #{size} OFFSET #{page}
+        </if>
+        </script>
+    """)
+    @Results({
+            @Result(column = "m.org_id", property = "orgId"),
+            @Result(column = "meter_serial", property = "meterNumber"),
+            @Result(column = "meter_model", property = "meterModel"),
+
+            @Result(column = "entry_timestamp", property = "entryTimestamp"),
+            @Result(column = "active_energy_import", property = "activeEnergyImport"),
+            @Result(column = "active_energy_export", property = "activeEnergyExport"),
+            @Result(column = "active_energy_import_ongrid", property = "activeEnergyImportOngrid"),
+            @Result(column = "active_energy_import_offgrid", property = "activeEnergyImportOffgrid"),
+            @Result(column = "active_energy_export_ongrid", property = "activeEnergyExportOngrid"),
+            @Result(column = "active_energy_export_offgrid", property = "activeEnergyExportOffgrid"),
+            @Result(column = "received_at", property = "receivedAt"),
+
+            @Result(property = "meter.id", column = "id"),
+            @Result(property = "meter.orgId", column = "org_id"),
+            @Result(property = "meter.customerId", column = "customer_id"),
+            @Result(property = "meter.meterId", column = "meter_id"),
+            @Result(property = "meter.assetId", column = "asset_id"),
+            @Result(property = "meter.meterNumber", column = "meter_number"),
+            @Result(property = "meter.accountNumber", column = "account_number"),
+            @Result(property = "meter.nodeId", column = "node_id"),
+            @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.simNumber", column = "sim_number"),
+            @Result(property = "meter.smartStatus", column = "smart_status"),
+            @Result(property = "meter.meterStage", column = "meter_stage"),
+            @Result(property = "meter.fixedEnergy", column = "fixed_energy"),
+            @Result(property = "meter.meterCategory", column = "meter_category"),
+            @Result(property = "meter.meterClass", column = "meter_class"),
+            @Result(property = "meter.meterType", column = "meter_type"),
+            @Result(property = "meter.oldSgc", column = "old_sgc"),
+            @Result(property = "meter.newSgc", column = "new_sgc"),
+            @Result(property = "meter.oldKrn", column = "old_krn"),
+            @Result(property = "meter.newKrn", column = "new_krn"),
+            @Result(property = "meter.oldTariffIndex", column = "old_tariff_index"),
+            @Result(property = "meter.newTariffIndex", column = "new_tariff_index"),
+            @Result(property = "meter.createdAt", column = "created_at"),
+            @Result(property = "meter.updatedAt", column = "updated_at"),
+
+            @Result(property = "meter.flatNode.rootId", column = "root_id"),
+            @Result(property = "meter.flatNode.rootName", column = "root_name"),
+
+            @Result(property = "meter.flatNode.regionId", column = "region_id"),
+            @Result(property = "meter.flatNode.regionName", column = "region_name"),
+            @Result(property = "meter.flatNode.regionNodeId", column = "region_node_id"),
+            @Result(property = "meter.flatNode.regionParentId", column = "region_parent_id"),
+            @Result(property = "meter.flatNode.regionRegionId", column = "region_region_id"),
+
+            @Result(property = "meter.flatNode.businessId", column = "business_id"),
+            @Result(property = "meter.flatNode.businessNodeId", column = "business_node_id"),
+            @Result(property = "meter.flatNode.businessParentId", column = "business_parent_id"),
+            @Result(property = "meter.flatNode.businessRegionId", column = "business_region_id"),
+            @Result(property = "meter.flatNode.businessName", column = "business_name"),
+
+            @Result(property = "meter.flatNode.serviceId", column = "service_id"),
+            @Result(property = "meter.flatNode.serviceNodeId", column = "service_node_id"),
+            @Result(property = "meter.flatNode.serviceParentId", column = "service_parent_id"),
+            @Result(property = "meter.flatNode.serviceRegionId", column = "service_region_id"),
+            @Result(property = "meter.flatNode.serviceName", column = "service_name"),
+
+            @Result(property = "meter.flatNode.feederId", column = "feeder_id"),
+            @Result(property = "meter.flatNode.feederNodeId", column = "feeder_node_id"),
+            @Result(property = "meter.flatNode.feederParentId", column = "feeder_parent_id"),
+            @Result(property = "meter.flatNode.feederAssetId", column = "feeder_asset_id"),
+            @Result(property = "meter.flatNode.feederName", column = "feeder_name"),
+
+            @Result(property = "meter.flatNode.dssId", column = "dss_id"),
+            @Result(property = "meter.flatNode.dssNodeId", column = "dss_node_id"),
+            @Result(property = "meter.flatNode.dssParentId", column = "dss_parent_id"),
+            @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
+            @Result(property = "meter.flatNode.dssName", column = "dss_name"),
+    })
+    List<Profile> getMonthlyBillingEnergyHouseHold(
             LocalDateTime startDate,
             LocalDateTime endDate,
             List<String> meterNumber,
