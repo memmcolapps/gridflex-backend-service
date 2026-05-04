@@ -763,10 +763,11 @@ public class HesClientServiceImpl implements HesService {
 
     private String mapProfileKey(Schedule p) {
 
-        if (p.getObisCode() == null) return null;
+//        if (p.getObisCode() == null) return null;
         if (p.getJobName() == null) return null;
+        System.out.println(">>>>:"+p.getJobName());
 
-        switch (p.getObisCode()) {
+        switch (p.getJobName()) {
 
             case "Channel1Job"://"1.0.99.1.0.255":
                 return "load-profile-one";
@@ -792,26 +793,4 @@ public class HesClientServiceImpl implements HesService {
                 return null;
         }
     }
-//    public Map<String, Object> profileEventsInfo(String type) {
-//        try {
-//            handleUserValidation();
-//
-//            Object resp;
-//            if (type.equalsIgnoreCase("profile")) {
-//                resp = hesMapper.getProfileEvents();
-//
-//            } else if (type.equalsIgnoreCase("event")) {
-//                resp = hesMapper.getEventType();
-//            }else {
-//                return ResponseMap.response(
-//                        status.getFailCode(),
-//                        "Type not supported. Use 'profile' or 'event'",
-//                        null
-//                );
-//            }
-//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-//        } catch (Exception e){
-//            throw e;
-//        }
-//    }
 }
