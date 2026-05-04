@@ -16,24 +16,33 @@ public class Profile implements Serializable {
 
     // Profile channel one
     private String meterHealthIndicator;
-    private String totalInstantaneousActivePower;
-    private String totalInstantaneousApparentPower;
-    private String l1CurrentHarmonicThd;
-    private String l2CurrentHarmonicThd;
-    private String l3CurrentHarmonicThd;
-    private String l1VoltageHarmonicThd;
-    private String l2VoltageHarmonicThd;
-    private String l3VoltageHarmonicThd;
+    private String instantaneousVoltageL1;
+    private String instantaneousVoltageL2;
+    private String instantaneousVoltageL3;
+    private String instantaneousCurrentL1;
+    private String instantaneousCurrentL2;
+    private String instantaneousCurrentL3;
+    private String instantaneousActivePower;
+    private String instantaneousReactiveImport;
+    private String instantaneousReactiveExport;
+    private String instantaneousPowerFactor;
+    private String instantaneousApparentPower;
+    private String instantaneousNetFrequency;
+
+    // Profile channel Two
+    private String activeEnergyImport;
+    private String importActiveEnergyImportRate1;
+    private String importActiveEnergyImportRate2;
+    private String importActiveEnergyImportRate3;
+    private String importActiveEnergyImportRate4;
+    private String importActiveEnergyCombinedTotal;
+    private String reactiveEnergyImport;
+    private String reactiveEnergyExport;
+    private String apparentEnergyImport;
+    private String apparentEnergyExport;
 
     // Daily and Monthly billing profile
     private String totalAbsoluteActiveEnergy;
-    private String exportActiveEnergy;
-    private String importActiveEnergy;
-    private String importReactiveEnergy;
-    private String exportReactiveEnergy;
-    private String remainingCreditAmount;
-    private String importActiveMd;
-    private String importActiveMdTime;
     private String t1ActiveEnergy;
     private String t2ActiveEnergy;
     private String t3ActiveEnergy;
@@ -45,8 +54,27 @@ public class Profile implements Serializable {
     private String t3TotalApparentEnergy;
     private String t4TotalApparentEnergy;
     private String activeMaximumDemand;
+    private String activeMaximumDemandTime;
     private String totalApparentDemand;
     private String totalApparentDemandTime;
+
+    // Profile channel one / daily / monthly data & energy household
+    private String activeEnergyImportOngrid;
+    private String activeEnergyImportOffgrid;
+    private String activeEnergyExport;
+    private String activeEnergyExportOngrid;
+    private String activeEnergyExportOffgrid;
+
+    // Profile channel two household
+    private String voltageL1;
+    private String voltageL2;
+    private String currentL1;
+    private String currentL2;
+    private String currentL3;
+
+    // Daily / Monthly billing data house
+    private String creditOngrid;
+    private String creditffgrid;
 
     private Meter meter;
 
@@ -114,68 +142,180 @@ public class Profile implements Serializable {
         this.meterHealthIndicator = meterHealthIndicator;
     }
 
-    public String getTotalInstantaneousActivePower() {
-        return totalInstantaneousActivePower;
+    public String getInstantaneousVoltageL1() {
+        return instantaneousVoltageL1;
     }
 
-    public void setTotalInstantaneousActivePower(String totalInstantaneousActivePower) {
-        this.totalInstantaneousActivePower = totalInstantaneousActivePower;
+    public void setInstantaneousVoltageL1(String instantaneousVoltageL1) {
+        this.instantaneousVoltageL1 = instantaneousVoltageL1;
     }
 
-    public String getTotalInstantaneousApparentPower() {
-        return totalInstantaneousApparentPower;
+    public String getInstantaneousVoltageL2() {
+        return instantaneousVoltageL2;
     }
 
-    public void setTotalInstantaneousApparentPower(String totalInstantaneousApparentPower) {
-        this.totalInstantaneousApparentPower = totalInstantaneousApparentPower;
+    public void setInstantaneousVoltageL2(String instantaneousVoltageL2) {
+        this.instantaneousVoltageL2 = instantaneousVoltageL2;
     }
 
-    public String getL1CurrentHarmonicThd() {
-        return l1CurrentHarmonicThd;
+    public String getInstantaneousVoltageL3() {
+        return instantaneousVoltageL3;
     }
 
-    public void setL1CurrentHarmonicThd(String l1CurrentHarmonicThd) {
-        this.l1CurrentHarmonicThd = l1CurrentHarmonicThd;
+    public void setInstantaneousVoltageL3(String instantaneousVoltageL3) {
+        this.instantaneousVoltageL3 = instantaneousVoltageL3;
     }
 
-    public String getL2CurrentHarmonicThd() {
-        return l2CurrentHarmonicThd;
+    public String getInstantaneousCurrentL1() {
+        return instantaneousCurrentL1;
     }
 
-    public void setL2CurrentHarmonicThd(String l2CurrentHarmonicThd) {
-        this.l2CurrentHarmonicThd = l2CurrentHarmonicThd;
+    public void setInstantaneousCurrentL1(String instantaneousCurrentL1) {
+        this.instantaneousCurrentL1 = instantaneousCurrentL1;
     }
 
-    public String getL3CurrentHarmonicThd() {
-        return l3CurrentHarmonicThd;
+    public String getInstantaneousCurrentL2() {
+        return instantaneousCurrentL2;
     }
 
-    public void setL3CurrentHarmonicThd(String l3CurrentHarmonicThd) {
-        this.l3CurrentHarmonicThd = l3CurrentHarmonicThd;
+    public void setInstantaneousCurrentL2(String instantaneousCurrentL2) {
+        this.instantaneousCurrentL2 = instantaneousCurrentL2;
     }
 
-    public String getL1VoltageHarmonicThd() {
-        return l1VoltageHarmonicThd;
+    public String getInstantaneousCurrentL3() {
+        return instantaneousCurrentL3;
     }
 
-    public void setL1VoltageHarmonicThd(String l1VoltageHarmonicThd) {
-        this.l1VoltageHarmonicThd = l1VoltageHarmonicThd;
+    public void setInstantaneousCurrentL3(String instantaneousCurrentL3) {
+        this.instantaneousCurrentL3 = instantaneousCurrentL3;
     }
 
-    public String getL2VoltageHarmonicThd() {
-        return l2VoltageHarmonicThd;
+    public String getInstantaneousActivePower() {
+        return instantaneousActivePower;
     }
 
-    public void setL2VoltageHarmonicThd(String l2VoltageHarmonicThd) {
-        this.l2VoltageHarmonicThd = l2VoltageHarmonicThd;
+    public void setInstantaneousActivePower(String instantaneousActivePower) {
+        this.instantaneousActivePower = instantaneousActivePower;
     }
 
-    public String getL3VoltageHarmonicThd() {
-        return l3VoltageHarmonicThd;
+    public String getInstantaneousReactiveImport() {
+        return instantaneousReactiveImport;
     }
 
-    public void setL3VoltageHarmonicThd(String l3VoltageHarmonicThd) {
-        this.l3VoltageHarmonicThd = l3VoltageHarmonicThd;
+    public void setInstantaneousReactiveImport(String instantaneousReactiveImport) {
+        this.instantaneousReactiveImport = instantaneousReactiveImport;
+    }
+
+    public String getInstantaneousReactiveExport() {
+        return instantaneousReactiveExport;
+    }
+
+    public void setInstantaneousReactiveExport(String instantaneousReactiveExport) {
+        this.instantaneousReactiveExport = instantaneousReactiveExport;
+    }
+
+    public String getInstantaneousPowerFactor() {
+        return instantaneousPowerFactor;
+    }
+
+    public void setInstantaneousPowerFactor(String instantaneousPowerFactor) {
+        this.instantaneousPowerFactor = instantaneousPowerFactor;
+    }
+
+    public String getInstantaneousApparentPower() {
+        return instantaneousApparentPower;
+    }
+
+    public void setInstantaneousApparentPower(String instantaneousApparentPower) {
+        this.instantaneousApparentPower = instantaneousApparentPower;
+    }
+
+    public String getInstantaneousNetFrequency() {
+        return instantaneousNetFrequency;
+    }
+
+    public void setInstantaneousNetFrequency(String instantaneousNetFrequency) {
+        this.instantaneousNetFrequency = instantaneousNetFrequency;
+    }
+
+    public String getActiveEnergyImport() {
+        return activeEnergyImport;
+    }
+
+    public void setActiveEnergyImport(String activeEnergyImport) {
+        this.activeEnergyImport = activeEnergyImport;
+    }
+
+    public String getImportActiveEnergyImportRate1() {
+        return importActiveEnergyImportRate1;
+    }
+
+    public void setImportActiveEnergyImportRate1(String importActiveEnergyImportRate1) {
+        this.importActiveEnergyImportRate1 = importActiveEnergyImportRate1;
+    }
+
+    public String getImportActiveEnergyImportRate2() {
+        return importActiveEnergyImportRate2;
+    }
+
+    public void setImportActiveEnergyImportRate2(String importActiveEnergyImportRate2) {
+        this.importActiveEnergyImportRate2 = importActiveEnergyImportRate2;
+    }
+
+    public String getImportActiveEnergyImportRate3() {
+        return importActiveEnergyImportRate3;
+    }
+
+    public void setImportActiveEnergyImportRate3(String importActiveEnergyImportRate3) {
+        this.importActiveEnergyImportRate3 = importActiveEnergyImportRate3;
+    }
+
+    public String getImportActiveEnergyImportRate4() {
+        return importActiveEnergyImportRate4;
+    }
+
+    public void setImportActiveEnergyImportRate4(String importActiveEnergyImportRate4) {
+        this.importActiveEnergyImportRate4 = importActiveEnergyImportRate4;
+    }
+
+    public String getImportActiveEnergyCombinedTotal() {
+        return importActiveEnergyCombinedTotal;
+    }
+
+    public void setImportActiveEnergyCombinedTotal(String importActiveEnergyCombinedTotal) {
+        this.importActiveEnergyCombinedTotal = importActiveEnergyCombinedTotal;
+    }
+
+    public String getReactiveEnergyImport() {
+        return reactiveEnergyImport;
+    }
+
+    public void setReactiveEnergyImport(String reactiveEnergyImport) {
+        this.reactiveEnergyImport = reactiveEnergyImport;
+    }
+
+    public String getReactiveEnergyExport() {
+        return reactiveEnergyExport;
+    }
+
+    public void setReactiveEnergyExport(String reactiveEnergyExport) {
+        this.reactiveEnergyExport = reactiveEnergyExport;
+    }
+
+    public String getApparentEnergyImport() {
+        return apparentEnergyImport;
+    }
+
+    public void setApparentEnergyImport(String apparentEnergyImport) {
+        this.apparentEnergyImport = apparentEnergyImport;
+    }
+
+    public String getApparentEnergyExport() {
+        return apparentEnergyExport;
+    }
+
+    public void setApparentEnergyExport(String apparentEnergyExport) {
+        this.apparentEnergyExport = apparentEnergyExport;
     }
 
     public String getTotalAbsoluteActiveEnergy() {
@@ -184,62 +324,6 @@ public class Profile implements Serializable {
 
     public void setTotalAbsoluteActiveEnergy(String totalAbsoluteActiveEnergy) {
         this.totalAbsoluteActiveEnergy = totalAbsoluteActiveEnergy;
-    }
-
-    public String getExportActiveEnergy() {
-        return exportActiveEnergy;
-    }
-
-    public void setExportActiveEnergy(String exportActiveEnergy) {
-        this.exportActiveEnergy = exportActiveEnergy;
-    }
-
-    public String getImportActiveEnergy() {
-        return importActiveEnergy;
-    }
-
-    public void setImportActiveEnergy(String importActiveEnergy) {
-        this.importActiveEnergy = importActiveEnergy;
-    }
-
-    public String getImportReactiveEnergy() {
-        return importReactiveEnergy;
-    }
-
-    public void setImportReactiveEnergy(String importReactiveEnergy) {
-        this.importReactiveEnergy = importReactiveEnergy;
-    }
-
-    public String getExportReactiveEnergy() {
-        return exportReactiveEnergy;
-    }
-
-    public void setExportReactiveEnergy(String exportReactiveEnergy) {
-        this.exportReactiveEnergy = exportReactiveEnergy;
-    }
-
-    public String getRemainingCreditAmount() {
-        return remainingCreditAmount;
-    }
-
-    public void setRemainingCreditAmount(String remainingCreditAmount) {
-        this.remainingCreditAmount = remainingCreditAmount;
-    }
-
-    public String getImportActiveMd() {
-        return importActiveMd;
-    }
-
-    public void setImportActiveMd(String importActiveMd) {
-        this.importActiveMd = importActiveMd;
-    }
-
-    public String getImportActiveMdTime() {
-        return importActiveMdTime;
-    }
-
-    public void setImportActiveMdTime(String importActiveMdTime) {
-        this.importActiveMdTime = importActiveMdTime;
     }
 
     public String getT1ActiveEnergy() {
@@ -330,6 +414,14 @@ public class Profile implements Serializable {
         this.activeMaximumDemand = activeMaximumDemand;
     }
 
+    public String getActiveMaximumDemandTime() {
+        return activeMaximumDemandTime;
+    }
+
+    public void setActiveMaximumDemandTime(String activeMaximumDemandTime) {
+        this.activeMaximumDemandTime = activeMaximumDemandTime;
+    }
+
     public String getTotalApparentDemand() {
         return totalApparentDemand;
     }
@@ -344,6 +436,102 @@ public class Profile implements Serializable {
 
     public void setTotalApparentDemandTime(String totalApparentDemandTime) {
         this.totalApparentDemandTime = totalApparentDemandTime;
+    }
+
+    public String getActiveEnergyImportOngrid() {
+        return activeEnergyImportOngrid;
+    }
+
+    public void setActiveEnergyImportOngrid(String activeEnergyImportOngrid) {
+        this.activeEnergyImportOngrid = activeEnergyImportOngrid;
+    }
+
+    public String getActiveEnergyImportOffgrid() {
+        return activeEnergyImportOffgrid;
+    }
+
+    public void setActiveEnergyImportOffgrid(String activeEnergyImportOffgrid) {
+        this.activeEnergyImportOffgrid = activeEnergyImportOffgrid;
+    }
+
+    public String getActiveEnergyExport() {
+        return activeEnergyExport;
+    }
+
+    public void setActiveEnergyExport(String activeEnergyExport) {
+        this.activeEnergyExport = activeEnergyExport;
+    }
+
+    public String getActiveEnergyExportOngrid() {
+        return activeEnergyExportOngrid;
+    }
+
+    public void setActiveEnergyExportOngrid(String activeEnergyExportOngrid) {
+        this.activeEnergyExportOngrid = activeEnergyExportOngrid;
+    }
+
+    public String getActiveEnergyExportOffgrid() {
+        return activeEnergyExportOffgrid;
+    }
+
+    public void setActiveEnergyExportOffgrid(String activeEnergyExportOffgrid) {
+        this.activeEnergyExportOffgrid = activeEnergyExportOffgrid;
+    }
+
+    public String getVoltageL1() {
+        return voltageL1;
+    }
+
+    public void setVoltageL1(String voltageL1) {
+        this.voltageL1 = voltageL1;
+    }
+
+    public String getVoltageL2() {
+        return voltageL2;
+    }
+
+    public void setVoltageL2(String voltageL2) {
+        this.voltageL2 = voltageL2;
+    }
+
+    public String getCurrentL1() {
+        return currentL1;
+    }
+
+    public void setCurrentL1(String currentL1) {
+        this.currentL1 = currentL1;
+    }
+
+    public String getCurrentL2() {
+        return currentL2;
+    }
+
+    public void setCurrentL2(String currentL2) {
+        this.currentL2 = currentL2;
+    }
+
+    public String getCurrentL3() {
+        return currentL3;
+    }
+
+    public void setCurrentL3(String currentL3) {
+        this.currentL3 = currentL3;
+    }
+
+    public String getCreditOngrid() {
+        return creditOngrid;
+    }
+
+    public void setCreditOngrid(String creditOngrid) {
+        this.creditOngrid = creditOngrid;
+    }
+
+    public String getCreditffgrid() {
+        return creditffgrid;
+    }
+
+    public void setCreditffgrid(String creditffgrid) {
+        this.creditffgrid = creditffgrid;
     }
 
     public Meter getMeter() {

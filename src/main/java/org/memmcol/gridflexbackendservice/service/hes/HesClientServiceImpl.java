@@ -157,10 +157,22 @@ public class HesClientServiceImpl implements HesService {
                 profiles = hesMapper.getProfileChannelOne(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("load-profile-two")) {
                 profiles = hesMapper.getProfileChannelTwo(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
-            } else if(profile.equalsIgnoreCase("daily-billing-profile")) {
+            } else if(profile.equalsIgnoreCase("load-profile-one-household")) {
+                profiles = hesMapper.getProfileChannelOneHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            } else if(profile.equalsIgnoreCase("load-profile-two-household")) {
+                profiles = hesMapper.getProfileChannelTwoHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            }else if(profile.equalsIgnoreCase("daily-billing-profile")) {
                 profiles = hesMapper.getDailyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("monthly-billing-profile")) {
                 profiles = hesMapper.getMonthlyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            } else if(profile.equalsIgnoreCase("daily-billing-data-household")) {
+                profiles = hesMapper.getDailyBillingDataHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            } else if(profile.equalsIgnoreCase("monthly-billing-data-household")) {
+                profiles = hesMapper.getMonthlyBillingDataHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            }else if(profile.equalsIgnoreCase("daily-billing-energy-household")) {
+                profiles = hesMapper.getDailyBillingEnergyHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            } else if(profile.equalsIgnoreCase("monthly-billing-energy-household")) {
+                profiles = hesMapper.getMonthlyBillingEnergyHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Unsupported type");
             }
@@ -752,21 +764,30 @@ public class HesClientServiceImpl implements HesService {
     private String mapProfileKey(Schedule p) {
 
         if (p.getObisCode() == null) return null;
+        if (p.getJobName() == null) return null;
 
         switch (p.getObisCode()) {
 
-            case "1.0.99.1.0.255":
+            case "Channel1Job"://"1.0.99.1.0.255":
                 return "load-profile-one";
-
-            case "1.0.99.2.0.255":
+            case "Channel2Job"://"1.0.99.2.0.255":
                 return "load-profile-two";
-
-            case "0.0.98.2.0.255":
+            case "DailyBillingJob": //"0.0.98.2.0.255":
                 return "daily-billing-profile";
-
-            case "0.0.98.1.0.255":
+            case "MonthlyBillingJob"://"0.0.98.1.0.255":
                 return "monthly-billing-profile";
-
+            case "MonthlyBillingDataHouseHoldJob": //"0.0.99.1.0.255":
+                return "monthly-billing-data-household";
+            case "MonthlyBillingEnergyHouseHoldJob": //"0.0.98.1.0.255":
+                return "monthly-billing-energy-household";
+            case "DailyBillingDataHouseHoldJob": //"0.0.99.2.0.255":
+                return "daily-billing-data-household";
+            case "DailyBillingEnergyHouseHoldJob": //"0.0.98.2.0.255":
+                return "daily-billing-energy-household";
+            case "Channel1JobHouseHold": //"0.1.99.1.0.255":
+                return "load-profile-one-household";
+            case "Channel2JobHouseHold": //"0.2.24.3.0.255":
+                return "load-profile-two-household";
             default:
                 return null;
         }
