@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
@@ -1860,5 +1861,19 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
     List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId);
+
+    @Select("""
+        SELECT om.* FROM obis_mapping om
+        JOIN vw_meter_summary ms ON om.model = ms.smart_meter_model
+        WHERE ms.meter_number = #{meterNumber}
+        AND LOWER(om.description) LIKE '%' || LOWER(#{type}) || '%'
+    """)
+    @Results({
+            @Result(property = "obisCodeCombined", column = "obis_code_combined"),
+            @Result(property = "obisCode", column = "obis_code"),
+            @Result(property = "model", column = "model"),
+            @Result(property = "description", column = "description"),
+    })
+    List<ObisMapping> getObisCodeByMeterModel(String meterNumber, String type);
 
 }

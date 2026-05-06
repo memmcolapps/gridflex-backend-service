@@ -319,6 +319,19 @@ public class HesController {
         }
     }
 
+    @GetMapping("/dlms/read-meter")
+    public ResponseEntity<?> readMeter(
+            @RequestParam String serial,
+            @RequestParam String type
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.readMeter(serial, type);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 //    /**
 //     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
 //     */
