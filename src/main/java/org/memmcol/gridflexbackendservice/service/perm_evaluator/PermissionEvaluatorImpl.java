@@ -33,7 +33,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     // These endpoints required permission at least to be true for access
     private static final List<String> GLOBAL_PERMISSION_ENDPOINTS = List.of(
             "/dashboard/service/data-management/**",
-            "/audit-log/service/**"
+            "/audit-log/service/**",
+            "/uploads/**"
     );
 
     @Override
