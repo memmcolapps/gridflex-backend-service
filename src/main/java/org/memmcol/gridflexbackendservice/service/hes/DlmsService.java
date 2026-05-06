@@ -15,4 +15,6 @@ public interface DlmsService {
     Map<String, Object> setApn(String serial, String apn);
 
     Map<String, Object> setIpPort(String serial, String ip, int port);
+
+    Map<String, Object> readMeter(String serial, String type);
 }
