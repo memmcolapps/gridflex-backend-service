@@ -62,7 +62,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				"/service/trigger/monthly",
 				"/band/service/clear-cache",
                 "/auth/service/test",
-                "/data-collection/schedules"
+                "/data-collection/schedules",
+                "/uploads"
 //				"/meter/service/virtual/export",
 //				"/meter/service/export"
 		);
@@ -73,7 +74,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
         // If the path is exempt, skip the authorization filter
         if (isExempt) {
-            System.out.println("Requested path (exempt): " + path);
             filterChain.doFilter(request, response);
             return;
         }
@@ -126,14 +126,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                     DecodedJWT decodedJWT = verifier.verify(token);
 
                     String username = decodedJWT.getSubject();
-                    System.out.println("authorizationHeader2:: "+authorizationHeader);
                     String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
                     Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
 
                     String permissionTreeJson = decodedJWT.getClaim("permission_tree").toString();
-                    System.out.println("authorizationHeader3:: "+authorizationHeader);
+
                     CustomUserPrincipal principal =
                             new CustomUserPrincipal(username, permissionTreeJson);
 
@@ -145,7 +144,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                             );
 
                     SecurityContextHolder.getContext().setAuthentication(auth);
-                    System.out.println("authorizationHeader4:: "+authorizationHeader);
 //                    CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
 //                    UsernamePasswordAuthenticationToken authToken =
 //                            new UsernamePasswordAuthenticationToken(principal, null, authorities);

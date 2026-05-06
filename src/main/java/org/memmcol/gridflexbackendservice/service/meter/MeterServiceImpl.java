@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -62,6 +63,9 @@ public class MeterServiceImpl implements MeterService {
 
     @Autowired
     private ResponseProperties status;
+
+    @Value("${file.base-address}"+"${app.base-path}")
+    private String uploadDir;
 
 //    @Autowired
 //    private AuditRepository auditRepository;
@@ -920,6 +924,18 @@ public class MeterServiceImpl implements MeterService {
             }
 
             List<Meter> filteredMeters = meterStream.toList();
+            if (type.equalsIgnoreCase("assigned") || type.equalsIgnoreCase("pending-state")) {
+                filteredMeters.forEach(meter -> {
+                    if (meter.getImage() != null) {
+                        meter.setImage(uploadDir + meter.getImage());
+                    }
+                });
+            }
+//            filteredMeters.forEach(meter -> {
+//                if (meter.getImage() != null && !meter.getImage().isEmpty()) {
+//                    meter.setImage(uploadDir + meter.getImage());
+//                }
+//            });
 
             // Pagination logic
             int totalMeters = filteredMeters.size();
