@@ -62,8 +62,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				"/service/trigger/monthly",
 				"/band/service/clear-cache",
                 "/auth/service/test",
-                "/data-collection/schedules",
-                "/uploads"
+                "/data-collection/schedules"
+//                "/uploads"
 //				"/meter/service/virtual/export",
 //				"/meter/service/export"
 		);
