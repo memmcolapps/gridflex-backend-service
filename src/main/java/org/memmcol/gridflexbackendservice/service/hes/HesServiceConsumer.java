@@ -107,23 +107,47 @@ public class HesServiceConsumer {
      * Optionally you can keep a reference to the subscription for cancellation.
      */
 
+//    public SseEmitter startParameterizedStream(RealTimeReadRequest req, String token) {
+//
+//        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+//
+//        System.out.println("token-: " + token);
+//
+//        Flux<MeterStreamEvent> flux = webClient.post()
+//                .uri("/stream")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .accept(MediaType.TEXT_EVENT_STREAM) // ✅ FIX
+////                .accept(MediaType.TEXT_EVENT_STREAM)
+////                .headers(headers -> {
+////                    if (token != null) {
+////                        headers.set("Authorization", token); // optional
+////                    }
+////                })
+//                .bodyValue(req)
+//                .retrieve()
+//                .bodyToFlux(MeterStreamEvent.class)
+//                .doOnError(error -> {
+//                    System.out.println("❌ SSE Error: " + error.getMessage());
+//                    emitter.completeWithError(error);
+//                });
+//
+//        flux.subscribe(event -> {
+//            try {
+//                emitter.send(SseEmitter.event().data(event));
+//            } catch (Exception e) {
+//                emitter.completeWithError(e);
+//            }
+//        });
+//
+//        return emitter;
+//    }
+
     public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
-
-        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
-
-        ServletRequestAttributes attr =
-                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-        String token = null;
-        if (attr != null) {
-            token = attr.getRequest().getHeader("Authorization");
-        }
-
-        System.out.println("TOKEN: " + token);
 
         UserModel user = handleUserValidation();
         req.setOrgId(user.getOrgId());
 
+        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
 
 //        Flux<MeterStreamEvent> flux = webClient.post()
@@ -136,12 +160,12 @@ public class HesServiceConsumer {
 
         Flux<MeterStreamEvent> flux = webClient.post()
                 .uri("/stream")
-                .header("Authorization", token) // ✅ THIS FIXES IT
-                .attribute("org.springframework.web.reactive.function.client.ClientRequest.LOG_ID", "true")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
                 .bodyToFlux(MeterStreamEvent.class)
+                .doOnNext(event -> System.out.println("EVENT: " + event))
                 .doOnError(e -> {
                     System.out.println("### Param SSE failed: " + e.getMessage());
                     emitter.completeWithError(e); // ✅ propagate error
@@ -171,6 +195,8 @@ public class HesServiceConsumer {
         return emitter; // ✅ REQUIRED
     }
 
+
+    ///------------------------------------------
     //    public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
 //        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
 ////        String token = auth.getAccessToken();

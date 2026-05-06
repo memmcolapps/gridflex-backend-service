@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.ibatis.annotations.Update;
 import org.memmcol.gridflexbackendservice.model.hes.Cron;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
@@ -8,6 +9,7 @@ import org.memmcol.gridflexbackendservice.service.hes.*;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -165,14 +167,16 @@ public class HesController {
      * POST /meter-stream/subscribe-params
      * Body: FilterStreamRequest JSON
      */
-    @PostMapping("/stream")
-    public SseEmitter subscribeWithParams(@RequestBody RealTimeReadRequest req) {
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeWithParams(
+            @RequestBody RealTimeReadRequest req,
+            HttpServletRequest httpRequest) {
         // Create a tenant-scoped emitter (validate tenant inside)
 //        SseEmitter emitter = emitterService.subscribe();
 
         // Start the parameterized upstream stream; it will forward to emitterService for this org
 //        hesServiceConsumer.startParameterizedStream(req);
-
+        String token = httpRequest.getHeader("Authorization");
         return hesServiceConsumer.startParameterizedStream(req);
     }
 

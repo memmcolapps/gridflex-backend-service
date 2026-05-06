@@ -34,7 +34,9 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     private static final List<String> GLOBAL_PERMISSION_ENDPOINTS = List.of(
             "/dashboard/service/data-management/**",
             "/audit-log/service/**",
-            "/uploads/**"
+            "/uploads/**",
+            "/service/stream",
+            "/api/realtime/stream"
     );
 
     @Override

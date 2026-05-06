@@ -132,8 +132,8 @@ public class SecurityConfig {
 						"/service/trigger/monthly",
 						"/band/service/clear-cache",
 						"/data-collection/schedules/**",
-						"/api/realtime/stream",
-						"/uploads/**"
+						"/api/realtime/stream"
+//						"/uploads/**"
 				).permitAll()
 
 				// protected endpoints
