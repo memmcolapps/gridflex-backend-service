@@ -38,20 +38,6 @@ public class HesController {
     @Autowired
     HesServiceConsumer hesServiceConsumer;
 
-//    public MeterForwardController(TenantMeterEmitterService emitterService) {
-//        this.emitterService = emitterService;
-//    }
-
-//    @GetMapping("/dashboard")
-//    public ResponseEntity<?> dashboard() {
-//        try {
-//            Map<String, Object> result = hesService.dashboard();
-//            return ResponseEntity.ok(result);
-//        } catch (GlobalExceptionHandler.SQLServerException e) {
-//            return handleException(e);
-//        }
-//    }
-
     @GetMapping("/communication/report")
     public ResponseEntity<?> report(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
