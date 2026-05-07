@@ -255,7 +255,6 @@ public class UserServiceImpl implements  UserService {
 //            }
             List<UserModel> enrichedUsers = new ArrayList<>();
 
-//            List<UserModel> users = userMapper.findAllUsers(); // Fetch all users
             List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId(), page, size);
 
             for (UserModel user : users) {
