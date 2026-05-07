@@ -34,4 +34,6 @@ public interface HesService {
 
     Map<String, Object> profileEventsInfo(String type);
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);
+
+    Map<String, Object> getOnlineMeter();
 }

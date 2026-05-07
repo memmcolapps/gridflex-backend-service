@@ -1876,4 +1876,13 @@ public interface HesMapper {
     })
     List<ObisMapping> getObisCodeByMeterModel(String meterNumber, String type);
 
+    @Select("""
+        SELECT meter_number, connection_type FROM vw_meter_summary WHERE org_id = #{orgId} AND LOWER(connection_type) = 'online'
+    """)
+    @Results({
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "meterNumber", column = "meter_number"),
+    })
+    List<MeterView> getOnlineMeter(UUID orgId);
+
 }

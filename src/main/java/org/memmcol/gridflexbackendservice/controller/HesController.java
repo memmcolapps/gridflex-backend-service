@@ -336,6 +336,16 @@ public class HesController {
         }
     }
 
+    @GetMapping("/online-meter")
+    public ResponseEntity<?> getOnlineMeter() {
+        try {
+            Map<String, Object> result = hesService.getOnlineMeter();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 //    /**
 //     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
 //     */

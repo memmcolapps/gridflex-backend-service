@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -791,6 +792,26 @@ public class HesClientServiceImpl implements HesService {
                 return "load-profile-two-household";
             default:
                 return null;
+        }
+    }
+
+
+    @Transactional
+    @Override
+    public Map<String, Object> getOnlineMeter() {
+        try {
+            UserModel um = handleUserValidation();
+            UUID orgId = um.getOrgId();
+            List<MeterView> resp = hesMapper.getOnlineMeter(orgId);
+
+            return ResponseMap.response(
+               status.getSuccessCode(),
+               status.getDesc(),
+               resp
+            );
+
+        } catch (Exception e) {
+            throw e;
         }
     }
 }
