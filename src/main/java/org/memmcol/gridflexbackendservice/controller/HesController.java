@@ -140,7 +140,7 @@ public class HesController {
     @GetMapping("/meter-status/stream")
     public SseEmitter stream() {
         // In production, validate tenantId from JWT/session
-        return emitterService.subscribe();
+        return emitterService.streamMeterStatus();
     }
 
     /**
@@ -162,7 +162,7 @@ public class HesController {
 
         // Start the parameterized upstream stream; it will forward to emitterService for this org
 //        hesServiceConsumer.startParameterizedStream(req);
-        String token = httpRequest.getHeader("Authorization");
+
         return hesServiceConsumer.startParameterizedStream(req);
     }
 
