@@ -95,6 +95,10 @@ public class MeterView implements Serializable {
     //---------Debt percentage----------
     private PercentageRange percentageRange;
 
+    //---------Meter connection----------
+    private String connectionType;
+
+
     // --- Metadata ---
     private Date createdAt;
     private Date updatedAt;
@@ -595,4 +599,11 @@ public class MeterView implements Serializable {
         this.adjustmentStatus = adjustmentStatus;
     }
 
+    public String getConnectionType() {
+        return connectionType;
+    }
+
+    public void setConnectionType(String connectionType) {
+        this.connectionType = connectionType;
+    }
 }
