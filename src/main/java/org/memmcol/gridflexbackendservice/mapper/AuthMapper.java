@@ -278,7 +278,8 @@ public interface AuthMapper {
     @Update("UPDATE users SET password = #{password} WHERE Email = #{email}")
     int resetPassword(String email, String password);
 
-    @Select("SELECT * FROM groups g INNER JOIN user_groups ug ON g.id = ug.group_id WHERE ug.user_id = #{userId}")
+    @Select("SELECT * FROM groups g " +
+            "INNER JOIN user_groups ug ON g.id = ug.group_id WHERE ug.user_id = #{userId}")
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "groupTitle", column = "title"),
@@ -346,8 +347,8 @@ public interface AuthMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-            @Result(property = "moduleAccess", column = "org_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
+            @Result(property = "business", column = "org_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getOrganizationById"))
     })
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     UserModel findAuthByUserId(UUID userId, UUID orgId);
@@ -379,8 +380,8 @@ public interface AuthMapper {
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "groups", column = "id",
                     many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.findGroupsWithPermissionsByUserId")),
-            @Result(property = "moduleAccess", column = "org_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
+            @Result(property = "business", column = "org_id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getOrganizationById"))
     })
     List<UserModel> findAllUsers(UUID orgId, int page, int size);
 

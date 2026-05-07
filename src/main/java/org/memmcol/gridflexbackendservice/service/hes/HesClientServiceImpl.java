@@ -217,7 +217,7 @@ public class HesClientServiceImpl implements HesService {
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
             response.put("data", paginatedProfiles);
-            response.put("totalData", totalProfiles);
+            response.put("totalData", profiles.size());
             response.put("page", page);
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedProfiles.size() / size));
@@ -298,7 +298,7 @@ public class HesClientServiceImpl implements HesService {
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
             response.put("data", paginatedEvents);
-            response.put("totalData", totalTariffs);
+            response.put("totalData", events.size());
             response.put("page", page);
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
