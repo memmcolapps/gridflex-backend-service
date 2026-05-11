@@ -10,7 +10,9 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.http.MediaType;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -21,7 +23,10 @@ import reactor.core.publisher.Flux;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
@@ -38,9 +43,198 @@ public class HesServiceConsumer {
     @Autowired
     private HesAuthServiceImpl auth;
 
-    @Autowired
-    private TenantMeterEmitterService emitterService;
-    private UserMapper userMapper;
+    /**
+     * Tenant emitters
+     */
+    private final Map<String, ArrayList<SseEmitter>> tenantEmitters =
+            new ConcurrentHashMap<>();
+
+    /**
+     * CACHE:
+     * meterNo -> orgId
+     */
+    private final Map<String, UUID> meterOrgCache =
+            new ConcurrentHashMap<>();
+
+    public SseEmitter streamMeterStatus() {
+
+        UserModel user = handleUserValidation();
+        UUID orgId = user.getOrgId();
+        String orgKey = orgId.toString();
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        tenantEmitters.computeIfAbsent(orgKey, k -> new ArrayList<>()).add(emitter);
+
+        emitter.onCompletion(() -> {
+            tenantEmitters.get(orgKey).remove(emitter);
+            System.out.println("### Client disconnected");
+        });
+
+        emitter.onTimeout(() -> {
+            tenantEmitters.get(orgKey).remove(emitter);
+            System.out.println("### SSE timeout");
+            emitter.complete();
+        });
+        emitter.onError((ex) -> {
+            tenantEmitters.get(user.getOrgId().toString()).remove(emitter);
+            System.out.println("### SSE emitter error: "+ ex.getMessage());
+        });
+
+        /**
+         * Consume downstream SSE
+         */
+        Flux<ServerSentEvent<MeterStreamEvent>> flux = webClient.get()
+                .uri("/meter-status/stream")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .retrieve()
+                .bodyToFlux(
+                        new ParameterizedTypeReference<ServerSentEvent<MeterStreamEvent>>() {}
+                )
+                .retryWhen(
+                        Retry.fixedDelay(3, Duration.ofSeconds(2))
+                )
+                .doOnSubscribe(sub ->
+                        System.out.println("### Connected to downstream SSE"))
+                .doOnError(error -> {
+                    System.out.println("### Downstream SSE ERROR: "
+                            + error.getMessage());
+
+                    emitter.completeWithError(error);
+                })
+                .doOnComplete(() -> {
+                    System.out.println("### Downstream SSE completed");
+                    emitter.complete();
+                });
+
+        /**
+         * Subscribe to downstream events
+         */
+        flux.subscribe(event -> {
+
+            try {
+
+                MeterStreamEvent data = event.data();
+
+                if (data == null) {
+                    return;
+                }
+                String meterNo = data.getMeterNo();
+
+                System.out.println("### RECEIVED EVENT: " + data.getMeterNo());
+
+                /**
+                 * CACHE LOOKUP
+                 *
+                 * If meterNo exists in cache:
+                 *     use cached orgId
+                 *
+                 * Else:
+                 *     query DB once
+                 *     store in cache
+                 */
+                UUID meterOrgId = meterOrgCache.computeIfAbsent(
+                        meterNo,
+                        key -> meterMapper.findOrgIdByMeterId(key)
+                );
+
+                /**
+                 * Skip meters not belonging to organization
+                 */
+                if (meterOrgId == null ||
+                        !meterOrgId.equals(orgId)) {
+
+                    System.out.println("### SKIPPED EVENT FOR METER: "
+                            + data.getMeterNo());
+
+                    return;
+                }
+
+                assert event.id() != null;
+                assert event.event() != null;
+                /**
+                 * SEND ONLY ORGANIZATION EVENTS
+                 */
+                emitter.send(
+                        SseEmitter.event()
+                                .id(event.id())
+                                .name(event.event())
+                                .data(data)
+                );
+//                }
+
+            } catch (Exception ex) {
+
+                System.out.println("### EMITTER ERROR: "+ ex.getMessage());
+
+                emitter.completeWithError(ex);
+            }
+
+        });
+
+        emitter.onCompletion(() ->
+                System.out.println("### Client disconnected"));
+
+        emitter.onTimeout(() -> {
+            System.out.println("### SSE timeout");
+            emitter.complete();
+        });
+
+        emitter.onError(error -> {
+            System.out.println("### SSE emitter error: "
+                    + error.getMessage());
+        });
+
+        return emitter;
+    }
+
+    public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
+
+        UserModel user = handleUserValidation();
+        req.setOrgId(user.getOrgId());
+
+        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+
+
+        Flux<MeterStreamEvent> flux = webClient.post()
+                .uri("/stream")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .retrieve()
+                .bodyToFlux(MeterStreamEvent.class)
+                .doOnNext(event -> System.out.println("EVENT: " + event))
+                .doOnError(e -> {
+                    System.out.println("### Param SSE failed: " + e.getMessage());
+                    emitter.completeWithError(e); // ✅ propagate error
+                })
+                .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2))); // ✅ safe retry
+
+        flux.subscribe(event -> {
+            try {
+                if (req.getOrgId() != null) {
+
+                    UUID orgId = meterMapper.findOrgIdByMeterId(event.getMeterNo());
+
+                    if (orgId != null && orgId.equals(req.getOrgId())) {
+
+                        // ✅ THIS is what sends to frontend
+                        emitter.send(SseEmitter.event().data(event));
+                    }
+
+                } else {
+                    throw new RuntimeException("Organization does not exist");
+                }
+            } catch (Exception ex) {
+                emitter.completeWithError(ex);
+            }
+        });
+
+        return emitter; // ✅ REQUIRED
+    }
+
+}
+
+
 //    @Autowired
 //    private org.memmcol.gridflexbackendservice.components.HandleValidUser handleValidUser;
 
@@ -100,12 +294,12 @@ public class HesServiceConsumer {
 //    }
 
 
-    /**
-     * Start a parameterized upstream stream for the given request and forward filtered events to tenant subscribers.
-     *
-     * This method doesn't return a Flux; instead it pushes events to emitterService directly.
-     * Optionally you can keep a reference to the subscription for cancellation.
-     */
+/**
+ * Start a parameterized upstream stream for the given request and forward filtered events to tenant subscribers.
+ *
+ * This method doesn't return a Flux; instead it pushes events to emitterService directly.
+ * Optionally you can keep a reference to the subscription for cancellation.
+ */
 
 //    public SseEmitter startParameterizedStream(RealTimeReadRequest req, String token) {
 //
@@ -142,62 +336,11 @@ public class HesServiceConsumer {
 //        return emitter;
 //    }
 
-    public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
-
-        UserModel user = handleUserValidation();
-        req.setOrgId(user.getOrgId());
-
-        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
-
-//        Flux<MeterStreamEvent> flux = webClient.post()
-//                .uri("/stream")
-//                .header("Authorization", token)
-//                .bodyValue(req)
-//                .accept(MediaType.TEXT_EVENT_STREAM)
-//                .retrieve()
-//                .bodyToFlux(MeterStreamEvent.class);
-
-        Flux<MeterStreamEvent> flux = webClient.post()
-                .uri("/stream")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(req)
-                .accept(MediaType.TEXT_EVENT_STREAM)
-                .retrieve()
-                .bodyToFlux(MeterStreamEvent.class)
-                .doOnNext(event -> System.out.println("EVENT: " + event))
-                .doOnError(e -> {
-                    System.out.println("### Param SSE failed: " + e.getMessage());
-                    emitter.completeWithError(e); // ✅ propagate error
-                })
-                .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2))); // ✅ safe retry
-
-        flux.subscribe(event -> {
-            try {
-                if (req.getOrgId() != null) {
-
-                    UUID orgId = meterMapper.findOrgIdByMeterId(event.getMeterNo());
-
-                    if (orgId != null && orgId.equals(req.getOrgId())) {
-
-                        // ✅ THIS is what sends to frontend
-                        emitter.send(SseEmitter.event().data(event));
-                    }
-
-                } else {
-                    throw new RuntimeException("Organization does not exist");
-                }
-            } catch (Exception ex) {
-                emitter.completeWithError(ex);
-            }
-        });
-
-        return emitter; // ✅ REQUIRED
-    }
 
 
-    ///------------------------------------------
-    //    public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
+
+///------------------------------------------
+//    public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
 //        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
 ////        String token = auth.getAccessToken();
 //        UserModel user = handleUserValidation();
@@ -238,4 +381,3 @@ public class HesServiceConsumer {
 //            }
 //        });
 //    }
-}

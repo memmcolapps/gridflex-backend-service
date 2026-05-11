@@ -5,7 +5,6 @@ import com.hazelcast.map.IMap;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
-import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
@@ -22,12 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -798,11 +795,19 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional
     @Override
-    public Map<String, Object> getOnlineMeter() {
+    public Map<String, Object> getOnlineMeter(String type) {
         try {
             UserModel um = handleUserValidation();
             UUID orgId = um.getOrgId();
-            List<MeterView> resp = hesMapper.getOnlineMeter(orgId);
+            String type2 = "";
+            if(!type.equalsIgnoreCase("md") && !type.equalsIgnoreCase("Non-md")){
+                throw new GlobalExceptionHandler.NotFoundException("Type not supported. Use 'md' or 'Non-md'.");
+            }
+            if(type.equalsIgnoreCase("Non-md")){
+                type = "THREE-PHASE";
+                type2 = "SINGLE-PHASE";
+            }
+            List<MeterView> resp = hesMapper.getOnlineMeter(orgId, type.toUpperCase(), type2);
 
             return ResponseMap.response(
                status.getSuccessCode(),
@@ -814,4 +819,6 @@ public class HesClientServiceImpl implements HesService {
             throw e;
         }
     }
+
+
 }
