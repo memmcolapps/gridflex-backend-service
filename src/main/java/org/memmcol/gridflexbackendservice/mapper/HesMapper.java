@@ -6,7 +6,6 @@ import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
-import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -1877,12 +1876,14 @@ public interface HesMapper {
     List<ObisMapping> getObisCodeByMeterModel(String meterNumber, String type);
 
     @Select("""
-        SELECT meter_number, connection_type FROM vw_meter_summary WHERE org_id = #{orgId} AND LOWER(connection_type) = 'online'
+        SELECT meter_number, connection_type FROM vw_meter_summary 
+               WHERE org_id = #{orgId} AND LOWER(connection_type) = 'online' 
+             AND UPPER(meter_class) IN (#{type}, #{type2})
     """)
     @Results({
             @Result(property = "connectionType", column = "connection_type"),
             @Result(property = "meterNumber", column = "meter_number"),
     })
-    List<MeterView> getOnlineMeter(UUID orgId);
+    List<MeterView> getOnlineMeter(UUID orgId, String type, String type2);
 
 }
