@@ -232,6 +232,15 @@ public class DlmsServiceImpl implements DlmsService {
     private Map<String, Object>
     fetchSingleObis(String serial, ObisMapping obisInfo, String token, String type) {
         Map<String, Object> resp = fetchSingleObisRaw(serial, obisInfo, token, type);
+
+        if ("relay".equalsIgnoreCase(type)){
+            Object valueObj = resp.get("value");
+
+            if (valueObj instanceof Boolean){
+                boolean value = (Boolean) valueObj;
+                resp.put("message", value ? "Relay Close" : "Relay Open");
+            }
+        }
         return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
     }
 
@@ -253,5 +262,108 @@ public class DlmsServiceImpl implements DlmsService {
                 )
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
+    }
+
+    @Override
+    public Map<String, Object> setToken(String serial, String credit) {
+        String token = auth.getAccessToken();
+
+        try {
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/setToken")
+                            .queryParam("serial", serial)
+                            .queryParam("credit", credit)
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set token service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("set token service failed");
+            genericHandler.logAndSaveException(e, "set token service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("set token service failed");
+            genericHandler.logAndSaveException(e, "set token");
+            throw e;
+        }
+    }
+
+    @Override
+    public Map<String, Object> setRelayControl(String serial, boolean state) {
+        String token = auth.getAccessToken();
+
+        try {
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/controlRelay")
+                            .queryParam("serial", serial)
+                            .queryParam("state", state)
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set relay control service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("relay control service failed");
+            genericHandler.logAndSaveException(e, "relay control service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("relay control service failed");
+            genericHandler.logAndSaveException(e, "relay control");
+            throw e;
+        }
+    }
+
+
+    @Override
+    public Map<String, Object> setRelayMode(String serial, int mode) {
+        String token = auth.getAccessToken();
+
+        try {
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/setRelayMode")
+                            .queryParam("serial", serial)
+                            .queryParam("mode", mode)
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set relay mode service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("relay mode service failed");
+            genericHandler.logAndSaveException(e, "relay mode service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("relay mode service failed");
+            genericHandler.logAndSaveException(e, "relay mode");
+            throw e;
+        }
     }
 }
