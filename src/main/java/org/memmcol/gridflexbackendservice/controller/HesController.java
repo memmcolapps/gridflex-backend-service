@@ -332,6 +332,47 @@ public class HesController {
         }
     }
 
+
+    @PostMapping("/dlms/set-token")
+    public ResponseEntity<?> setToken(
+            @RequestParam String serial,
+            @RequestParam String credit
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setToken(serial, credit);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @PostMapping("/dlms/relay-control")
+    public ResponseEntity<?> setRelayControl(
+            @RequestParam String serial,
+            @RequestParam boolean state
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setRelayControl(serial, state);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+
+    @PostMapping("/dlms/relay-mode")
+    public ResponseEntity<?> setRelayMode(
+            @RequestParam String serial,
+            @RequestParam int mode
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setRelayMode(serial, mode);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
 //    /**
 //     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
 //     */
