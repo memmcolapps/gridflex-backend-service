@@ -1066,9 +1066,6 @@ public interface MeterMapper {
                         AND m.node_id IS NULL
                     ORDER BY m.created_at DESC
                
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1131,10 +1128,6 @@ public interface MeterMapper {
                             'Assign-edited'
                       )
                     ORDER BY m.created_at DESC
-                    
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1210,10 +1203,6 @@ public interface MeterMapper {
                             'Assign-edited'
                       )
                     ORDER BY m.created_at DESC
-                    
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1311,10 +1300,6 @@ public interface MeterMapper {
                       )
                       AND m.type != 'VIRTUAL'
                     ORDER BY m.created_at DESC
-                    
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1391,10 +1376,6 @@ public interface MeterMapper {
                       )
                       AND m.type != 'VIRTUAL'
                     ORDER BY m.created_at DESC
-                    
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1464,10 +1445,6 @@ public interface MeterMapper {
                         AND m.node_id IS NOT NULL
                         AND m.type = 'VIRTUAL'
                     ORDER BY m.created_at DESC
-                
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1537,10 +1514,6 @@ public interface MeterMapper {
                         OR m.substation = #{substation} OR m.region = #{nodeId} OR m.root = #{nodeId})
                       AND m.type = 'VIRTUAL'
                     ORDER BY m.created_at DESC
-                
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1606,10 +1579,6 @@ public interface MeterMapper {
                     WHERE m.org_id = #{orgId}
                         AND (m.region = #{nodeId} OR m.root = #{nodeId})
                         ORDER BY m.created_at DESC
-                    
-                        <if test="size != 0">
-                            LIMIT #{size} OFFSET #{page} * #{size}
-                        </if>
                 </script>
             """)
     @Results({
@@ -1676,10 +1645,6 @@ public interface MeterMapper {
                     OR m.dss = #{nodeId} OR m.service_center = #{nodeId} 
                     OR m.substation = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId})
                     ORDER BY m.created_at DESC
-                
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1755,9 +1720,6 @@ public interface MeterMapper {
                           )
                     ORDER BY m.created_at DESC
                     
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({
@@ -1827,10 +1789,6 @@ public interface MeterMapper {
                             OR m.status IN ('Pending-deactivated', 'Pending-activated')
                           )
                     ORDER BY m.created_at DESC
-                    
-                    <if test="size != 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({

@@ -40,6 +40,17 @@ public class Profile implements Serializable {
     private String reactiveEnergyExport;
     private String apparentEnergyImport;
     private String apparentEnergyExport;
+    private String voltAngleL1L2;
+    private String voltAngleL1L3;
+
+    // Profile channel Three
+    private String activePowerL1;
+    private String activePowerL2;
+    private String activePowerL3;
+    private String activeFactorL1;
+    private String activeFactorL2;
+    private String activeFactorL3;
+    private String gridFrequency;
 
     // Daily and Monthly billing profile
     private String totalAbsoluteActiveEnergy;
@@ -540,5 +551,77 @@ public class Profile implements Serializable {
 
     public void setMeter(Meter meter) {
         this.meter = meter;
+    }
+
+    public String getVoltAngleL1L2() {
+        return voltAngleL1L2;
+    }
+
+    public void setVoltAngleL1L2(String voltAngleL1L2) {
+        this.voltAngleL1L2 = voltAngleL1L2;
+    }
+
+    public String getVoltAngleL1L3() {
+        return voltAngleL1L3;
+    }
+
+    public void setVoltAngleL1L3(String voltAngleL1L3) {
+        this.voltAngleL1L3 = voltAngleL1L3;
+    }
+
+    public String getActivePowerL1() {
+        return activePowerL1;
+    }
+
+    public void setActivePowerL1(String activePowerL1) {
+        this.activePowerL1 = activePowerL1;
+    }
+
+    public String getActivePowerL2() {
+        return activePowerL2;
+    }
+
+    public void setActivePowerL2(String activePowerL2) {
+        this.activePowerL2 = activePowerL2;
+    }
+
+    public String getActivePowerL3() {
+        return activePowerL3;
+    }
+
+    public void setActivePowerL3(String activePowerL3) {
+        this.activePowerL3 = activePowerL3;
+    }
+
+    public String getActiveFactorL1() {
+        return activeFactorL1;
+    }
+
+    public void setActiveFactorL1(String activeFactorL1) {
+        this.activeFactorL1 = activeFactorL1;
+    }
+
+    public String getActiveFactorL2() {
+        return activeFactorL2;
+    }
+
+    public void setActiveFactorL2(String activeFactorL2) {
+        this.activeFactorL2 = activeFactorL2;
+    }
+
+    public String getActiveFactorL3() {
+        return activeFactorL3;
+    }
+
+    public void setActiveFactorL3(String activeFactorL3) {
+        this.activeFactorL3 = activeFactorL3;
+    }
+
+    public String getGridFrequency() {
+        return gridFrequency;
+    }
+
+    public void setGridFrequency(String gridFrequency) {
+        this.gridFrequency = gridFrequency;
     }
 }

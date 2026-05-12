@@ -471,9 +471,6 @@ public interface VendMapper {
 
                     ORDER BY created_at DESC
 
-                    <if test="limit != 0">
-                        LIMIT #{limit} OFFSET #{offset}
-                    </if>
                 </script>
             """)
     @Results({

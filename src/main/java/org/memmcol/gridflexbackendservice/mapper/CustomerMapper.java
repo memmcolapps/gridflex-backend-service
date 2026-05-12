@@ -158,9 +158,7 @@ public interface CustomerMapper {
                 AND (node_id = #{nodeId} OR region = #{nodeId} 
                     OR service_center = #{nodeId} OR root = #{nodeId})
                 ORDER BY created_at DESC
-                <if test="size > 0">
-                    LIMIT #{size} OFFSET #{page} * #{size}
-                </if>
+            
             </script>
             """)
     @Results({
