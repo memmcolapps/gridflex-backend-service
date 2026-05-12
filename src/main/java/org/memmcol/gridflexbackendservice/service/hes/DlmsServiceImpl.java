@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -188,11 +189,12 @@ public class DlmsServiceImpl implements DlmsService {
     }
 
     @Override
+    @Transactional
     public Map<String, Object> readMeter(String serial, String type) {
         String token = auth.getAccessToken();
 
         try {
-            List<ObisMapping> obisInfo = hesMapper.getObisCodeByMeterModel(serial, type);
+            List<ObisMapping> obisInfo = hesMapper.getObisCodeByMeter(serial, type);
 
             if (obisInfo == null || obisInfo.isEmpty()) {
                 throw new RuntimeException("No OBIS mapping found for type: " + type);
@@ -265,6 +267,7 @@ public class DlmsServiceImpl implements DlmsService {
     }
 
     @Override
+    @Transactional
     public Map<String, Object> setToken(String serial, String credit) {
         String token = auth.getAccessToken();
 
@@ -299,6 +302,7 @@ public class DlmsServiceImpl implements DlmsService {
     }
 
     @Override
+    @Transactional
     public Map<String, Object> setRelayControl(String serial, boolean state) {
         String token = auth.getAccessToken();
 
@@ -334,6 +338,7 @@ public class DlmsServiceImpl implements DlmsService {
 
 
     @Override
+    @Transactional
     public Map<String, Object> setRelayMode(String serial, int mode) {
         String token = auth.getAccessToken();
 

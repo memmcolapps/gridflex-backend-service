@@ -1863,18 +1863,29 @@ public interface HesMapper {
     List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId);
 
     @Select("""
-        SELECT om.* FROM obis_mapping om
-        JOIN vw_meter_summary ms ON om.model = ms.smart_meter_model
-        WHERE ms.meter_number = #{meterNumber}
-        AND LOWER(om.description) LIKE '%' || LOWER(#{type}) || '%'
+        SELECT * FROM vw_meter_obis_mapping
+        WHERE meter_number = #{meterNumber}
+        AND LOWER(operation_code) = LOWER(#{type})
     """)
     @Results({
-            @Result(property = "obisCodeCombined", column = "obis_code_combined"),
-            @Result(property = "obisCode", column = "obis_code"),
-            @Result(property = "model", column = "model"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterModel", column = "meter_model"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "meterClass", column = "meter_class"),
             @Result(property = "description", column = "description"),
+            @Result(property = "classId", column = "class_id"),
+            @Result(property = "obisCode", column = "obis_code"),
+            @Result(property = "attributeIndex", column = "attribute_index"),
+            @Result(property = "dataType", column = "data_type"),
+            @Result(property = "unit", column = "unit"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "obisCodeCombined", column = "obis_code_combined"),
+            @Result(property = "groupName", column = "group_name"),
+            @Result(property = "dataIndex", column = "data_index"),
+            @Result(property = "obisType", column = "obis_type"),
+            @Result(property = "operationCode", column = "operation_code")
     })
-    List<ObisMapping> getObisCodeByMeterModel(String meterNumber, String type);
+    List<ObisMapping> getObisCodeByMeter(String meterNumber, String type);
 
     @Select("""
         SELECT meter_number, connection_type FROM vw_meter_summary WHERE org_id = #{orgId} AND LOWER(connection_type) = 'online'
