@@ -194,11 +194,12 @@ public class DlmsServiceImpl implements DlmsService {
 
     @Transactional
     @Override
+    @Transactional
     public Map<String, Object> readMeter(String serial, String type) {
         String token = auth.getAccessToken();
 
         try {
-            List<ObisMapping> obisInfo = hesMapper.getObisCodeByMeterModel(serial, type);
+            List<ObisMapping> obisInfo = hesMapper.getObisCodeByMeter(serial, type);
 
             if (obisInfo == null || obisInfo.isEmpty()) {
                 throw new RuntimeException("No OBIS mapping found for type: " + type);
@@ -272,6 +273,7 @@ public class DlmsServiceImpl implements DlmsService {
 
     @Transactional
     @Override
+    @Transactional
     public Map<String, Object> setToken(String serial, String credit) {
         String token = auth.getAccessToken();
 
@@ -307,6 +309,7 @@ public class DlmsServiceImpl implements DlmsService {
 
     @Transactional
     @Override
+    @Transactional
     public Map<String, Object> setRelayControl(String serial, boolean state) {
         String token = auth.getAccessToken();
 
@@ -342,6 +345,7 @@ public class DlmsServiceImpl implements DlmsService {
 
 
     @Override
+    @Transactional
     public Map<String, Object> setRelayMode(String serial, int mode) {
         String token = auth.getAccessToken();
 
