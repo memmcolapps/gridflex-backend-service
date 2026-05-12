@@ -202,7 +202,7 @@ public class HesClientServiceImpl implements HesService {
                     })
                     .collect(Collectors.toList());
 
-            List<Profile> paginatedProfiles = filteredProfiles;
+            List<Profile> paginatedProfiles;
 //            int totalProfiles = filteredProfiles.size();
             int totalProfiles = filteredProfiles.size();
 //            List<Profile> paginatedProfiles;
@@ -292,16 +292,16 @@ public class HesClientServiceImpl implements HesService {
                     .collect(Collectors.toList());
 
             // Pagination logic
-            List<Event> paginatedEvents = filteredEvents;
+            List<Event> paginatedEvents;
             int totalEvents = filteredEvents.size();
-            int totalProfiles = filteredEvents.size();
+//            int totalProfiles = filteredEvents.size();
 //            List<Profile> paginatedProfiles;
             if (size == 0) {
-                paginatedEvents = paginatedEvents;
+                paginatedEvents = filteredEvents;
             } else {
-                int fromIndex = Math.min(page * size, totalProfiles);
-                int toIndex = Math.min(fromIndex + size, totalProfiles);
-                paginatedEvents = paginatedEvents.subList(fromIndex, toIndex);
+                int fromIndex = Math.min(page * size, totalEvents);
+                int toIndex = Math.min(fromIndex + size, totalEvents);
+                paginatedEvents = filteredEvents.subList(fromIndex, toIndex);
             }
 
             // Prepare response with pagination metadata
