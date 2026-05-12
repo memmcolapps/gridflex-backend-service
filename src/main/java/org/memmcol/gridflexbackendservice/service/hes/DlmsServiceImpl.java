@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -41,6 +42,7 @@ public class DlmsServiceImpl implements DlmsService {
     @Autowired
     private HesMapper hesMapper;
 
+    @Transactional
     @Override
     public Map<String, Object> setClock(String serial, LocalDateTime dateTime) {
         String token = auth.getAccessToken();
@@ -77,6 +79,7 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> setCtpt(String serial,
                                        long ctNumerator,
@@ -118,6 +121,7 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> setApn(String serial, String apn) {
         String token = auth.getAccessToken();
@@ -152,6 +156,7 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> setIpPort(String serial, String ip, int port) {
         String token = auth.getAccessToken();
@@ -187,6 +192,7 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> readMeter(String serial, String type) {
         String token = auth.getAccessToken();
@@ -264,6 +270,7 @@ public class DlmsServiceImpl implements DlmsService {
                 .block();
     }
 
+    @Transactional
     @Override
     public Map<String, Object> setToken(String serial, String credit) {
         String token = auth.getAccessToken();
@@ -298,6 +305,7 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> setRelayControl(String serial, boolean state) {
         String token = auth.getAccessToken();

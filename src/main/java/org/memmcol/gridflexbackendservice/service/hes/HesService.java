@@ -37,5 +37,7 @@ public interface HesService {
 
     Map<String, Object> getOnlineMeter(String type);
 
+    Map<String, Object> getObisMappingData(String type);
+
 //    Map<String, Object> bulkUpload(MultipartFile file) throws IOException;;
 }

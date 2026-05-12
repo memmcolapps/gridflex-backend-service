@@ -46,24 +46,6 @@ public class HesController {
     @Autowired
     HesServiceConsumer hesServiceConsumer;
 
-
-    private static final String[] HEADERS = {
-            "description",
-            "class_id",
-            "obis_code",
-            "attribute_index",
-            "data_type",
-            "unit",
-            "access_permission",
-            "ratio",
-            "meter_type",
-            "obis_code_combined",
-            "group_name",
-            "scaler",
-            "data_index",
-            "obis_type",
-    };
-
     @GetMapping("/communication/report")
     public ResponseEntity<?> report(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
@@ -392,6 +374,16 @@ public class HesController {
     ) {
         try {
             Map<String, Object> result = dlmsService.setRelayMode(serial, mode);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/obis-data")
+    public ResponseEntity<?> getObisMappingData(@RequestParam String type) {
+        try {
+            Map<String, Object> result = hesService.getObisMappingData(type);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

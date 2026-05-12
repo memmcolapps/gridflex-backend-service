@@ -23,4 +23,5 @@ public interface DlmsService {
     Map<String, Object> setRelayControl(String serial, boolean state);
 
     Map<String, Object> setRelayMode(String serial, int mode);
+
 }

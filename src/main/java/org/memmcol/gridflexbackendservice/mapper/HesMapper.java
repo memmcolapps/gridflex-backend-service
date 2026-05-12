@@ -1877,7 +1877,7 @@ public interface HesMapper {
 
     @Select("""
         SELECT meter_number, connection_type FROM vw_meter_summary 
-               WHERE org_id = #{orgId} AND LOWER(connection_type) = 'online' 
+               WHERE org_id = #{orgId} AND UPPER(connection_type) = 'ONLINE' 
              AND UPPER(meter_class) IN (#{type}, #{type2})
     """)
     @Results({
@@ -1886,4 +1886,16 @@ public interface HesMapper {
     })
     List<MeterView> getOnlineMeter(UUID orgId, String type, String type2);
 
+    @Select("""
+    SELECT obis_code, obis_code_combined, description, group_name, obis_type, meter_type 
+        FROM obis_mapping_data WHERE UPPER(obis_type) = UPPER(#{type})
+    """)
+    @Results({
+            @Result(property = "obisCode", column = "obis_code"),
+            @Result(property = "obisCodeCombined", column = "obis_code_combined"),
+            @Result(property = "groupName", column = "group_name"),
+            @Result(property = "obisType", column = "obis_type"),
+            @Result(property = "meterType", column = "meter_type"),
+    })
+    List<ObisMappingData> getObisMappingData(String type);
 }

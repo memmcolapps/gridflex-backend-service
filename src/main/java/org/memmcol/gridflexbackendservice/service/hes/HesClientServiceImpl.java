@@ -820,5 +820,52 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
+    @Transactional
+    @Override
+    public Map<String, Object> getObisMappingData(String type) {
+        try {
+            UserModel um = handleUserValidation();
+
+            if(!type.equalsIgnoreCase("md") && !type.equalsIgnoreCase("Non-md")){
+                throw new GlobalExceptionHandler.NotFoundException("Type not supported. Use 'md' or 'Non-md'.");
+            }
+
+            List<ObisMappingData> obis = hesMapper.getObisMappingData(type);
+
+            // GROUP BY groupName
+            Map<String, List<ObisMappingData>> groupedData =
+                    obis.stream()
+                            .collect(Collectors.groupingBy(
+                                    item -> formatGroupName(item.getGroupName()),
+                                    LinkedHashMap::new,
+                                    Collectors.toList()
+                            ));
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    groupedData
+            );
+
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+    private String formatGroupName(String name) {
+
+        String[] parts = name.trim().split("\\s+");
+
+        StringBuilder formatted = new StringBuilder(parts[0]);
+
+        for (int i = 1; i < parts.length; i++) {
+
+            formatted.append(
+                    parts[i].substring(0, 1).toUpperCase()
+                            + parts[i].substring(1)
+            );
+        }
+
+        return formatted.toString();
+    }
 
 }
