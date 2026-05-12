@@ -54,9 +54,7 @@ public interface HesMapper {
                         OR fn.dss_asset_id = #{node})
             </where>
             ORDER BY e.critical_level DESC, e.event_time DESC
-            <if test="size != 0">
-                LIMIT #{size} OFFSET #{page} * #{size}
-            </if>
+    
         </script>
     """)
     @Results({
