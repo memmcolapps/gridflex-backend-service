@@ -359,9 +359,7 @@ public interface AuthMapper {
                 SELECT * FROM users 
                 WHERE org_id = #{orgId} 
                 ORDER BY created_at DESC
-                <if test="size > 0">
-                    LIMIT #{size} OFFSET #{page}  * #{size}
-                </if> 
+            
             </script>
             """)
     @Results({

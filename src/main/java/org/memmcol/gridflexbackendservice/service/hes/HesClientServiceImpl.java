@@ -159,7 +159,9 @@ public class HesClientServiceImpl implements HesService {
                 profiles = hesMapper.getProfileChannelOneHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("load-profile-two-household")) {
                 profiles = hesMapper.getProfileChannelTwoHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
-            }else if(profile.equalsIgnoreCase("daily-billing-profile")) {
+            } else if(profile.equalsIgnoreCase("load-profile-three-household")) {
+                profiles = hesMapper.getProfileChannelThreeHouseHold(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
+            } else if(profile.equalsIgnoreCase("daily-billing-profile")) {
                 profiles = hesMapper.getDailyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
             } else if(profile.equalsIgnoreCase("monthly-billing-profile")) {
                 profiles = hesMapper.getMonthlyBillingProfile(startDate, endDate, meterNumber, model, um.getOrgId(), page, size, node);
@@ -201,21 +203,21 @@ public class HesClientServiceImpl implements HesService {
                     .collect(Collectors.toList());
 
             List<Profile> paginatedProfiles = filteredProfiles;
-            int totalProfiles = filteredProfiles.size();
 //            int totalProfiles = filteredProfiles.size();
+            int totalProfiles = filteredProfiles.size();
 //            List<Profile> paginatedProfiles;
-//            if (size == 0) {
-//                paginatedProfiles = filteredProfiles; // Return all users
-//            } else {
-//                int fromIndex = Math.min(page * size, totalProfiles);
-//                int toIndex = Math.min(fromIndex + size, totalProfiles);
-//                paginatedProfiles = filteredProfiles.subList(fromIndex, toIndex);
-//            }
+            if (size == 0) {
+                paginatedProfiles = filteredProfiles; // Return all users
+            } else {
+                int fromIndex = Math.min(page * size, totalProfiles);
+                int toIndex = Math.min(fromIndex + size, totalProfiles);
+                paginatedProfiles = filteredProfiles.subList(fromIndex, toIndex);
+            }
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
             response.put("data", paginatedProfiles);
-            response.put("totalData", profiles.size());
+            response.put("totalData", totalProfiles);
             response.put("page", page);
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedProfiles.size() / size));
@@ -291,12 +293,21 @@ public class HesClientServiceImpl implements HesService {
 
             // Pagination logic
             List<Event> paginatedEvents = filteredEvents;
-            int totalTariffs = filteredEvents.size();
+            int totalEvents = filteredEvents.size();
+            int totalProfiles = filteredEvents.size();
+//            List<Profile> paginatedProfiles;
+            if (size == 0) {
+                paginatedEvents = paginatedEvents;
+            } else {
+                int fromIndex = Math.min(page * size, totalProfiles);
+                int toIndex = Math.min(fromIndex + size, totalProfiles);
+                paginatedEvents = paginatedEvents.subList(fromIndex, toIndex);
+            }
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
             response.put("data", paginatedEvents);
-            response.put("totalData", events.size());
+            response.put("totalData", totalEvents);
             response.put("page", page);
             response.put("size", size);
             response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
@@ -495,13 +506,13 @@ public class HesClientServiceImpl implements HesService {
             // Pagination logic
             int totalComm = filteredComm.size();
             List<Schedule> paginatedEvents;
-//            if (size == 0) {
+            if (size == 0) {
                 paginatedEvents = filteredComm; // Return all users
-//            } else {
-//                int fromIndex = Math.min(page * size, totalComm);
-//                int toIndex = Math.min(fromIndex + size, totalComm);
-//                paginatedEvents = filteredComm.subList(fromIndex, toIndex);
-//            }
+            } else {
+                int fromIndex = Math.min(page * size, totalComm);
+                int toIndex = Math.min(fromIndex + size, totalComm);
+                paginatedEvents = filteredComm.subList(fromIndex, toIndex);
+            }
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -851,6 +862,7 @@ public class HesClientServiceImpl implements HesService {
             throw e;
         }
     }
+
     private String formatGroupName(String name) {
 
         String[] parts = name.trim().split("\\s+");

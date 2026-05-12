@@ -116,9 +116,6 @@ public interface TariffMapper {
                 SELECT * FROM tariffs 
                 WHERE org_id = #{orgId} 
                 ORDER BY created_at DESC
-                <if test="size > 0">
-                    LIMIT #{size} OFFSET #{page} * #{size}
-                </if>
             </script>
             """)
     @Results({
@@ -140,9 +137,6 @@ public interface TariffMapper {
                         OR approve_status = 'Pending-deactivated'
                     )
                     ORDER BY created_at DESC
-                    <if test="size > 0">
-                        LIMIT #{size} OFFSET #{page} * #{size}
-                    </if>
                 </script>
             """)
     @Results({

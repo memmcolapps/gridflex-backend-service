@@ -931,28 +931,21 @@ public class MeterServiceImpl implements MeterService {
                     }
                 });
             }
-//            filteredMeters.forEach(meter -> {
-//                if (meter.getImage() != null && !meter.getImage().isEmpty()) {
-//                    meter.setImage(uploadDir + meter.getImage());
-//                }
-//            });
 
             // Pagination logic
             int totalMeters = filteredMeters.size();
-            List<Meter> paginatedMeters;
+            List<Meter> paginatedMeters = filteredMeters;
 
-//             if (size <= 0) {
-//                 paginatedMeters = filteredMeters; // Return all users
-//                 page = 0;
-//             } else {
-//                 int fromIndex = Math.min(page * size, totalMeters);
-//                 int toIndex = Math.min(fromIndex + size, totalMeters);
-//                 paginatedMeters = filteredMeters.subList(fromIndex, toIndex);
-//             }
+             if (size <= 0) {
+                 paginatedMeters = filteredMeters;
+                 page = 0;
+             } else {
+                 int fromIndex = Math.min(page * size, totalMeters);
+                 int toIndex = Math.min(fromIndex + size, totalMeters);
+                 paginatedMeters = filteredMeters.subList(fromIndex, toIndex);
+             }
 
-                paginatedMeters = filteredMeters; // Return all users
-
-            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalMeters / size);
+//            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalMeters / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
