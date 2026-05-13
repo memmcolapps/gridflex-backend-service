@@ -24,7 +24,10 @@ import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -189,46 +192,68 @@ public class HesServiceConsumer {
     public SseEmitter startParameterizedStream(RealTimeReadRequest req) {
 
         UserModel user = handleUserValidation();
-        req.setOrgId(user.getOrgId());
+        UUID orgId = user.getOrgId();
+        req.setOrgId(orgId);
 
-        System.out.println("### Starting PARAMETERIZED stream for org " + req.getOrgId());
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        // Validate ownership ONCE up-front instead of hitting the DB per event.
+        // Any meter not owned by this org is stripped from the upstream request.
+        List<String> requestedMeters = req.getMeters() == null ? List.of() : req.getMeters();
+        Set<String> allowedMeters = new HashSet<>(requestedMeters.size());
+        for (String meter : requestedMeters) {
+            UUID owner = meterOrgCache.computeIfAbsent(meter, meterMapper::findOrgIdByMeterId);
+            if (owner != null && owner.equals(orgId)) {
+                allowedMeters.add(meter);
+            }
+        }
+        if (allowedMeters.isEmpty()) {
+            throw new RuntimeException("No requested meters belong to this organization");
+        }
+        req.setMeters(new ArrayList<>(allowedMeters));
 
+        System.out.println("### Starting PARAMETERIZED stream for org " + orgId
+                + " meters=" + allowedMeters.size());
 
-        Flux<MeterStreamEvent> flux = webClient.post()
+        // Finite timeout so a dead stream eventually closes the client connection.
+        SseEmitter emitter = new SseEmitter(Duration.ofSeconds(140).toMillis());
+
+        // Use ServerSentEvent<String> so event names ("reading"/"heartbeat"/"warning"/"completed")
+        // and raw JSON payloads pass through verbatim — without forcing each event payload into
+        // MeterStreamEvent, which only matches "reading".
+        Flux<ServerSentEvent<String>> flux = webClient.post()
                 .uri("/stream")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
-                .bodyToFlux(MeterStreamEvent.class)
-                .doOnNext(event -> System.out.println("EVENT: " + event))
-                .doOnError(e -> {
-                    System.out.println("### Param SSE failed: " + e.getMessage());
-                    emitter.completeWithError(e); // ✅ propagate error
-                });
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {});
 
-        flux.subscribe(event -> {
-            try {
-                if (req.getOrgId() != null) {
-
-                    UUID orgId = meterMapper.findOrgIdByMeterId(event.getMeterNo());
-
-                    if (orgId != null && orgId.equals(req.getOrgId())) {
-
-                        // ✅ THIS is what sends to frontend
-                        emitter.send(SseEmitter.event().data(event));
+        flux.subscribe(
+                sse -> {
+                    try {
+                        String eventName = sse.event() == null ? "message" : sse.event();
+                        String data = sse.data();
+                        if (data == null) {
+                            return;
+                        }
+                        emitter.send(SseEmitter.event()
+                                .name(eventName)
+                                .data(data, MediaType.APPLICATION_JSON));
+                    } catch (Exception ex) {
+                        System.out.println("### Forward error: " + ex.getMessage());
+                        emitter.completeWithError(ex);
                     }
-
-                } else {
-                    throw new RuntimeException("Organization does not exist");
+                },
+                err -> {
+                    System.out.println("### Param SSE failed: " + err.getMessage());
+                    emitter.completeWithError(err);
+                },
+                () -> {
+                    System.out.println("### Param SSE completed");
+                    emitter.complete();
                 }
-            } catch (Exception ex) {
-                emitter.completeWithError(ex);
-            }
-        });
+        );
 
-        return emitter; // ✅ REQUIRED
+        return emitter;
     }
 
 }

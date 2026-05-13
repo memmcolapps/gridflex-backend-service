@@ -15,6 +15,8 @@ public class MeterStreamEvent {
     private String desc;
     private String value;
     private String statusmessage;
+    private Long elapsedMs;
+    private Boolean batch;
 
     public MeterStreamEvent(String system, LocalDateTime now, String connected) {
         this.meterNo = system;
@@ -101,5 +103,20 @@ public class MeterStreamEvent {
     public void setStatusmessage(String statusmessage) {
         this.statusmessage = statusmessage;
     }
-}
 
+    public Long getElapsedMs() {
+        return elapsedMs;
+    }
+
+    public void setElapsedMs(Long elapsedMs) {
+        this.elapsedMs = elapsedMs;
+    }
+
+    public Boolean getBatch() {
+        return batch;
+    }
+
+    public void setBatch(Boolean batch) {
+        this.batch = batch;
+    }
+}
