@@ -194,7 +194,6 @@ public class DlmsServiceImpl implements DlmsService {
 
     @Transactional
     @Override
-    @Transactional
     public Map<String, Object> readMeter(String serial, String type) {
         String token = auth.getAccessToken();
 
@@ -273,7 +272,6 @@ public class DlmsServiceImpl implements DlmsService {
 
     @Transactional
     @Override
-    @Transactional
     public Map<String, Object> setToken(String serial, String credit) {
         String token = auth.getAccessToken();
 
@@ -309,7 +307,6 @@ public class DlmsServiceImpl implements DlmsService {
 
     @Transactional
     @Override
-    @Transactional
     public Map<String, Object> setRelayControl(String serial, boolean state) {
         String token = auth.getAccessToken();
 
