@@ -206,8 +206,7 @@ public class HesServiceConsumer {
                 .doOnError(e -> {
                     System.out.println("### Param SSE failed: " + e.getMessage());
                     emitter.completeWithError(e); // ✅ propagate error
-                })
-                .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2))); // ✅ safe retry
+                });
 
         flux.subscribe(event -> {
             try {
