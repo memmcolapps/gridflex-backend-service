@@ -500,6 +500,7 @@ public class UserServiceImpl implements  UserService {
             group.setOrgId(orgId);
             group.setStatus(true);
 
+            System.out.print("request.getGroupTitle(): " + request.getGroupTitle());
             /// Check if group already exist (No duplication title allowed)
             String isGroupTitle = userMapper.checkGroupName(request.getGroupTitle(), um.getOrgId());
             if(isGroupTitle != null) {
@@ -544,10 +545,12 @@ public class UserServiceImpl implements  UserService {
                         userMapper.insertSubModule(subModule);
                     }
                 } else {
+                    String result = formatName(moduleWithSubs.getName());
+
                     if(moduleWithSubs.getName().equalsIgnoreCase("hes")
-                            || moduleWithSubs.getName().equalsIgnoreCase("vending")
-                            || moduleWithSubs.getName().equalsIgnoreCase("billing")
-                            || moduleWithSubs.getName().equalsIgnoreCase("user management")) {
+                            || result.equalsIgnoreCase("vending")
+                            || result.equalsIgnoreCase("billing")
+                            || result.equalsIgnoreCase("user management")) {
                         SubModule subModule = new SubModule();
                         subModule.setName(moduleWithSubs.getName());
                         subModule.setAccess(moduleWithSubs.getAccess());
@@ -577,6 +580,14 @@ public class UserServiceImpl implements  UserService {
             throw exception;
         }
 
+    }
+
+    public static String formatName(String value) {
+
+        return Arrays.stream(value.split("_"))
+                .map(word -> word.substring(0, 1).toUpperCase()
+                        + word.substring(1).toLowerCase())
+                .collect(Collectors.joining(" "));
     }
 
     @Transactional
@@ -693,6 +704,7 @@ public class UserServiceImpl implements  UserService {
                 groupDTO.setId(group.getId());
                 groupDTO.setGroupTitle(group.getGroupTitle());
                 groupDTO.setOrgId(group.getOrgId());
+                groupDTO.setStatus(group.getStatus());
 
                 Permission permissions = userMapper.findPermissionsByGroup(group.getId(), um.getOrgId());
 

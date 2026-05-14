@@ -200,6 +200,7 @@ public interface UserMapper {
             @Result(property = "id", column = "id"),
             @Result(property = "groupTitle", column = "title"),
             @Result(property = "orgId", column = "org_id"),
+            @Result(property = "status", column = "status"),
     })
     List<Group> getGroups(UUID orgId);
     @Select("""
