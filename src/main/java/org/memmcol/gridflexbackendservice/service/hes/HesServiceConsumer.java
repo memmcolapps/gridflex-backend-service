@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.codec.ServerSentEvent;
@@ -45,6 +46,9 @@ public class HesServiceConsumer {
 
     @Autowired
     private HesAuthServiceImpl auth;
+
+    @Value("${external.hes-realtime.obis-chunk-size:1}")
+    private int realtimeObisChunkSize;
 
     /**
      * Tenant emitters
@@ -219,13 +223,20 @@ public class HesServiceConsumer {
         // Use ServerSentEvent<String> so event names ("reading"/"heartbeat"/"warning"/"completed")
         // and raw JSON payloads pass through verbatim — without forcing each event payload into
         // MeterStreamEvent, which only matches "reading".
-        Flux<ServerSentEvent<String>> flux = webClient.post()
-                .uri("/stream")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(req)
-                .accept(MediaType.TEXT_EVENT_STREAM)
-                .retrieve()
-                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {});
+        List<List<String>> obisChunks = partition(req.getObisString(), Math.max(1, realtimeObisChunkSize));
+        if (obisChunks.isEmpty()) {
+            throw new RuntimeException("At least one OBIS code is required");
+        }
+
+        Flux<ServerSentEvent<String>> flux = Flux.range(0, obisChunks.size())
+                .concatMap(index -> webClient.post()
+                        .uri("/stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(copyRequest(req, obisChunks.get(index)))
+                        .accept(MediaType.TEXT_EVENT_STREAM)
+                        .retrieve()
+                        .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                        .filter(sse -> !"completed".equals(sse.event())));
 
         flux.subscribe(
                 sse -> {
@@ -249,11 +260,44 @@ public class HesServiceConsumer {
                 },
                 () -> {
                     System.out.println("### Param SSE completed");
-                    emitter.complete();
+                    try {
+                        emitter.send(SseEmitter.event()
+                                .name("completed")
+                                .data(Map.of(
+                                        "statusmessage", "Realtime read completed.",
+                                        "meters", req.getMeters().size(),
+                                        "obis", req.getObisString().size()
+                                ), MediaType.APPLICATION_JSON));
+                        emitter.complete();
+                    } catch (Exception ex) {
+                        emitter.completeWithError(ex);
+                    }
                 }
         );
 
         return emitter;
+    }
+
+    private RealTimeReadRequest copyRequest(RealTimeReadRequest source, List<String> obisChunk) {
+        RealTimeReadRequest copy = new RealTimeReadRequest();
+        copy.setOrgId(source.getOrgId());
+        copy.setMeterType(source.getMeterType());
+        copy.setMeters(source.getMeters());
+        copy.setObisString(obisChunk);
+        return copy;
+    }
+
+    private List<List<String>> partition(List<String> values, int chunkSize) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+
+        List<List<String>> chunks = new ArrayList<>();
+        for (int from = 0; from < values.size(); from += chunkSize) {
+            int to = Math.min(from + chunkSize, values.size());
+            chunks.add(values.subList(from, to));
+        }
+        return chunks;
     }
 
 }

@@ -35,7 +35,8 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             "/dashboard/service/data-management/**",
             "/audit-log/service/**",
             "/uploads/**",
-            "/service/stream",
+            "/hes/service/stream",
+            "/hes/service/meter-status/stream",
             "/api/realtime/stream"
     );
 
