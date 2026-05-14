@@ -704,6 +704,7 @@ public class UserServiceImpl implements  UserService {
                 groupDTO.setId(group.getId());
                 groupDTO.setGroupTitle(group.getGroupTitle());
                 groupDTO.setOrgId(group.getOrgId());
+                groupDTO.setStatus(group.getStatus());
 
                 Permission permissions = userMapper.findPermissionsByGroup(group.getId(), um.getOrgId());
 
