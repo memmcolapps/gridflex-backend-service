@@ -239,7 +239,7 @@ public class DlmsServiceImpl implements DlmsService {
     fetchSingleObis(String serial, ObisMapping obisInfo, String token, String type) {
         Map<String, Object> resp = fetchSingleObisRaw(serial, obisInfo, token, type);
 
-        if ("relay".equalsIgnoreCase(type)){
+        if ("read_relay_status".equalsIgnoreCase(type)){
             Object valueObj = resp.get("value");
 
             if (valueObj instanceof Boolean){
