@@ -47,9 +47,9 @@ public class Profile implements Serializable {
     private String activePowerL1;
     private String activePowerL2;
     private String activePowerL3;
-    private String activeFactorL1;
-    private String activeFactorL2;
-    private String activeFactorL3;
+    private String powerFactorL1;
+    private String powerFactorL2;
+    private String powerFactorL3;
     private String gridFrequency;
 
     // Daily and Monthly billing profile
@@ -593,28 +593,28 @@ public class Profile implements Serializable {
         this.activePowerL3 = activePowerL3;
     }
 
-    public String getActiveFactorL1() {
-        return activeFactorL1;
+    public String getPowerFactorL1() {
+        return powerFactorL1;
     }
 
-    public void setActiveFactorL1(String activeFactorL1) {
-        this.activeFactorL1 = activeFactorL1;
+    public void setPowerFactorL1(String powerFactorL1) {
+        this.powerFactorL1 = powerFactorL1;
     }
 
-    public String getActiveFactorL2() {
-        return activeFactorL2;
+    public String getPowerFactorL2() {
+        return powerFactorL2;
     }
 
-    public void setActiveFactorL2(String activeFactorL2) {
-        this.activeFactorL2 = activeFactorL2;
+    public void setPowerFactorL2(String powerFactorL2) {
+        this.powerFactorL2 = powerFactorL2;
     }
 
-    public String getActiveFactorL3() {
-        return activeFactorL3;
+    public String getPowerFactorL3() {
+        return powerFactorL3;
     }
 
-    public void setActiveFactorL3(String activeFactorL3) {
-        this.activeFactorL3 = activeFactorL3;
+    public void setPowerFactorL3(String powerFactorL3) {
+        this.powerFactorL3 = powerFactorL3;
     }
 
     public String getGridFrequency() {
