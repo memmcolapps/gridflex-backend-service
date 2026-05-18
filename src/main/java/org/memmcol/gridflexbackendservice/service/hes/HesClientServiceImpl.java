@@ -271,7 +271,11 @@ public class HesClientServiceImpl implements HesService {
 
             if(startDate == null || endDate == null) {
                 events = new ArrayList<>();
-            } else {
+            }
+            else if (eventTypeId.equals(9)){
+                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
+            }
+            else {
                 events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
 

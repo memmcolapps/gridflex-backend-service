@@ -423,9 +423,8 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
-            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "model_number", property = "meterModel"),
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
             @Result(column = "meter_health_indicator", property = "meterHealthIndicator"),
             @Result(column = "active_energy_import", property = "activeEnergyImport"),
@@ -541,9 +540,8 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
-            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "model_number", property = "meterModel"),
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
             @Result(column = "voltage_l1", property = "voltageL1"),
             @Result(column = "voltage_l2", property = "voltageL2"),
@@ -655,9 +653,8 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
-            @Result(column = "meter_model", property = "meterModel"),
+            @Result(column = "model_number", property = "meterModel"),
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
             @Result(column = "active_power_l1", property = "activePowerL1"),
             @Result(column = "active_power_l2", property = "activePowerL2"),
@@ -767,7 +764,6 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
 
@@ -882,7 +878,6 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
 
@@ -990,7 +985,6 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
 
@@ -1099,7 +1093,6 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
 
@@ -1222,7 +1215,6 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
 
@@ -1336,7 +1328,6 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "m.org_id", property = "orgId"),
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
 

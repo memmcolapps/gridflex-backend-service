@@ -235,8 +235,7 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
-    private Map<String, Object>
-    fetchSingleObis(String serial, ObisMapping obisInfo, String token, String type) {
+    private Map<String, Object> fetchSingleObis(String serial, ObisMapping obisInfo, String token, String type) {
         Map<String, Object> resp = fetchSingleObisRaw(serial, obisInfo, token, type);
 
         if ("read_relay_status".equalsIgnoreCase(type)){
@@ -280,7 +279,7 @@ public class DlmsServiceImpl implements DlmsService {
                     .uri(uriBuilder -> uriBuilder
                             .path("/setToken")
                             .queryParam("serial", serial)
-                            .queryParam("credit", credit)
+                            .queryParam("token", credit)
                             .build())
                     .headers(h -> h.setBearerAuth(token))
                     .retrieve()
@@ -339,7 +338,6 @@ public class DlmsServiceImpl implements DlmsService {
             throw e;
         }
     }
-
 
     @Override
     @Transactional
