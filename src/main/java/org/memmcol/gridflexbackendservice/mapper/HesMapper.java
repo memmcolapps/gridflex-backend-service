@@ -1977,4 +1977,8 @@ public interface HesMapper {
             @Result(property = "meterType", column = "meter_type"),
     })
     List<ObisMappingData> getObisMappingData(String type);
+
+    List<Event> getManagementTokenEvents(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, int page, int size, UUID orgId, String node);
+
+    List<Event> getRechargeTokenEvents(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, int page, int size, UUID orgId, String node);
 }
