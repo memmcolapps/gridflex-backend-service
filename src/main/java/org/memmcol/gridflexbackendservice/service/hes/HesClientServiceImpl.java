@@ -788,7 +788,7 @@ public class HesClientServiceImpl implements HesService {
             case "Channel2Job"://"1.0.99.2.0.255":
                 return "load-profile-two";
             case "Channel3JobHouseHold"://"1.0.99.2.0.255":
-                return "load-profile-three";
+                return "load-profile-three-household";
             case "DailyBillingJob": //"0.0.98.2.0.255":
                 return "daily-billing-profile";
             case "MonthlyBillingJob"://"0.0.98.1.0.255":
