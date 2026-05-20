@@ -61,13 +61,13 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-            @Result(column = "src_table", property = "srcTable"),
+//            @Result(column = "src_table", property = "srcTable"),
             @Result(column = "meter_no", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
             @Result(column = "event_time", property = "eventTime"),
             @Result(column = "event", property = "event"),
             @Result(column = "event_type", property = "eventType"),
-            @Result(column = "event_type_id", property = "eventTypeId"),
+//            @Result(column = "event_type_id", property = "eventTypeId"),
             @Result(column = "critical_level", property = "criticalLevel"),
 
             @Result(column = "recharge_token", property = "rechargeToken"),
@@ -167,10 +167,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
         
             <if test="meterModel != null and meterModel.size() > 0">
@@ -192,7 +192,7 @@ public interface HesMapper {
                 OR fn.feeder_asset_id = #{node}
                 OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -289,10 +289,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
         
             <if test="meterModel != null and meterModel.size() > 0">
@@ -314,7 +314,7 @@ public interface HesMapper {
                 OR fn.feeder_asset_id = #{node}
                 OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -428,7 +428,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -520,10 +520,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
         
          <if test="meterModel != null and meterModel.size() > 0">
@@ -545,7 +545,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -633,10 +633,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
         
          <if test="meterModel != null and meterModel.size() > 0">
@@ -658,7 +658,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -745,10 +745,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
               <if test="meterModel != null and meterModel.size() > 0">
                 AND meter_model IN
@@ -769,7 +769,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -859,10 +859,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
               <if test="meterModel != null and meterModel.size() > 0">
                 AND meter_model IN
@@ -883,7 +883,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -966,10 +966,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
             <if test="meterModel != null and meterModel.size() > 0">
                 AND meter_model IN
@@ -990,7 +990,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -1074,10 +1074,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
             <if test="meterModel != null and meterModel.size() > 0">
                 AND meter_model IN
@@ -1098,7 +1098,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -1196,10 +1196,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
             <if test="meterModel != null and meterModel.size() > 0">
                 AND meter_model IN
@@ -1220,7 +1220,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
@@ -1309,10 +1309,10 @@ public interface HesMapper {
         LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
         <where>
             <if test="startDate != null">
-                AND received_at &gt;= #{startDate}
+                AND entry_timestamp &gt;= #{startDate}
             </if>
             <if test="endDate != null">
-                AND received_at &lt;= #{endDate}
+                AND entry_timestamp &lt;= #{endDate}
             </if>
             <if test="meterModel != null and meterModel.size() > 0">
                 AND meter_model IN
@@ -1333,7 +1333,7 @@ public interface HesMapper {
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
-        ORDER BY p.received_at DESC
+        ORDER BY p.entry_timestamp DESC
         </script>
     """)
     @Results({
