@@ -13,7 +13,7 @@ public interface HesService {
     Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber,
                                 String profile, List<String> model, int page, int size, String search, String unit);
 
-    Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, String search, int page, int size, String unit);
+    Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, Long eventTypeId, List<String> model, String search, int page, int size, String unit);
 
     Map<String, Object> modelEventType();
 

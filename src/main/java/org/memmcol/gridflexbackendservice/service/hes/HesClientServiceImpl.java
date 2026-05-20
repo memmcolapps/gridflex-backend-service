@@ -264,19 +264,14 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, String search, int page, int size, String node) {
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, Long eventTypeId, List<String> model, String search, int page, int size, String node) {
         try {
             UserModel um = handleUserValidation();
             List<Event> events;
 
             if(startDate == null || endDate == null) {
                 events = new ArrayList<>();
-            } else if (eventTypeId.get(0) == 9){
-                events = hesMapper.getManagementTokenEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
-            } else if (eventTypeId.get(0) == 10){
-                events = hesMapper.getRechargeTokenEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
-            }
-            else {
+            } else {
                 events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
 
@@ -779,7 +774,6 @@ public class HesClientServiceImpl implements HesService {
 
 //        if (p.getObisCode() == null) return null;
         if (p.getJobName() == null) return null;
-        System.out.println(">>>>:"+p.getJobName());
 
         switch (p.getJobName()) {
 
