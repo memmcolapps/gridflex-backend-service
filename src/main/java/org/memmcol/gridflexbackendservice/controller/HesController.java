@@ -108,7 +108,7 @@ public class HesController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
             @RequestParam(value = "meterNumber", required = false) List<String> meterNumber,
-            @RequestParam(value = "eventTypeId", required = false) List<Long> eventTypeId,
+            @RequestParam(value = "eventTypeId", required = false) Long eventTypeId,
             @RequestParam(value = "model", required = false) List<String> model,
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "node") String node

@@ -11,6 +11,7 @@ import java.util.UUID;
 public class Event implements Serializable {
 
     private int id;
+    private String srcTable;
     private String meterNumber;
     private String meterModel;
     private String eventTypeId;
@@ -23,9 +24,23 @@ public class Event implements Serializable {
     private String event;
     private String eventType;
 
+    private String rechargeAmountKwh;
+    private String rechargeToken;
+
+    private String manageTokenType;
+    private String manageToken;
+
     private EventType eventTypeModel;
 
     private Meter meter;
+
+    public String getSrcTable() {
+        return srcTable;
+    }
+
+    public void setSrcTable(String srcTable) {
+        this.srcTable = srcTable;
+    }
 
     public int getId() {
         return id;
@@ -137,5 +152,37 @@ public class Event implements Serializable {
 
     public void setCriticalLevel(int criticalLevel) {
         this.criticalLevel = criticalLevel;
+    }
+
+    public String getRechargeAmountKwh() {
+        return rechargeAmountKwh;
+    }
+
+    public void setRechargeAmountKwh(String rechargeAmountKwh) {
+        this.rechargeAmountKwh = rechargeAmountKwh;
+    }
+
+    public String getManageTokenType() {
+        return manageTokenType;
+    }
+
+    public void setManageTokenType(String manageTokenType) {
+        this.manageTokenType = manageTokenType;
+    }
+
+    public String getManageToken() {
+        return manageToken;
+    }
+
+    public void setManageToken(String manageToken) {
+        this.manageToken = manageToken;
+    }
+
+    public String getRechargeToken() {
+        return rechargeToken;
+    }
+
+    public void setRechargeToken(String rechargeToken) {
+        this.rechargeToken = rechargeToken;
     }
 }
