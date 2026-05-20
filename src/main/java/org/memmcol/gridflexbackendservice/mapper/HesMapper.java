@@ -14,6 +14,13 @@ import java.util.UUID;
 @Mapper
 public interface HesMapper {
 
+//     <if test="eventTypeId != null and eventTypeId.size() > 0">
+//    AND e.event_type_id IN
+//                    <foreach item="ev" collection="eventTypeId" open="(" separator="," close=")">
+//    CAST(#{ev} AS BIGINT)
+//                    </foreach>
+//                </if>
+
     @Select("""
         <script>
             SELECT e.*, m.*, fn.*
@@ -34,12 +41,7 @@ public interface HesMapper {
                         #{em}
                     </foreach>
                 </if>
-                <if test="eventTypeId != null and eventTypeId.size() > 0">
-                    AND e.event_type_id IN
-                    <foreach item="ev" collection="eventTypeId" open="(" separator="," close=")">
-                        CAST(#{ev} AS BIGINT)
-                    </foreach>
-                </if>
+               
                 <if test="meterNumber != null and meterNumber.size() > 0">
                     AND e.meter_no IN
                     <foreach item="meter" collection="meterNumber" open="(" separator="," close=")">
@@ -47,6 +49,7 @@ public interface HesMapper {
                     </foreach>
                 </if>
             AND m.org_id = #{orgId}
+            AND e.event_type_id = #{eventTypeId}
             AND (fn.region_region_id = #{node} 
                         OR fn.service_region_id = #{node} 
                         OR fn.business_region_id = #{node}
@@ -58,6 +61,7 @@ public interface HesMapper {
         </script>
     """)
     @Results({
+            @Result(column = "src_table", property = "srcTable"),
             @Result(column = "meter_no", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
             @Result(column = "event_time", property = "eventTime"),
@@ -65,6 +69,11 @@ public interface HesMapper {
             @Result(column = "event_type", property = "eventType"),
             @Result(column = "event_type_id", property = "eventTypeId"),
             @Result(column = "critical_level", property = "criticalLevel"),
+
+            @Result(column = "recharge_token", property = "rechargeToken"),
+            @Result(column = "recharge_amount_kwh", property = "rechargeAmountKwh"),
+            @Result(column = "manage_token", property = "manageToken"),
+            @Result(column = "manage_token_type", property = "manageTokenType"),
 
 //            @Result(property = "eventType.name", column = "name"),
 //            @Result(property = "eventType.description", column = "description"),
@@ -132,7 +141,7 @@ public interface HesMapper {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("meterNumber") List<String> meterNumber,
-            @Param("eventTypeId") List<Long> eventTypeId,
+            @Param("eventTypeId") Long eventTypeId,
             @Param("meterModel") List<String> meterModel,
             @Param("page") int page,
             @Param("size") int size,
@@ -1977,4 +1986,8 @@ public interface HesMapper {
             @Result(property = "meterType", column = "meter_type"),
     })
     List<ObisMappingData> getObisMappingData(String type);
+
+    List<Event> getManagementTokenEvents(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, int page, int size, UUID orgId, String node);
+
+    List<Event> getRechargeTokenEvents(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, int page, int size, UUID orgId, String node);
 }

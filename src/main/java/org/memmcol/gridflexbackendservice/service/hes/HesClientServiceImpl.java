@@ -264,18 +264,14 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, String search, int page, int size, String node) {
+    public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, Long eventTypeId, List<String> model, String search, int page, int size, String node) {
         try {
             UserModel um = handleUserValidation();
             List<Event> events;
 
             if(startDate == null || endDate == null) {
                 events = new ArrayList<>();
-            }
-//            else if (eventTypeId.equals(9)){
-//                events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
-//            }
-            else {
+            } else {
                 events = hesMapper.getEvents(startDate, endDate, meterNumber, eventTypeId, model, page, size, um.getOrgId(), node);
             }
 
@@ -778,7 +774,6 @@ public class HesClientServiceImpl implements HesService {
 
 //        if (p.getObisCode() == null) return null;
         if (p.getJobName() == null) return null;
-        System.out.println(">>>>:"+p.getJobName());
 
         switch (p.getJobName()) {
 
@@ -787,7 +782,7 @@ public class HesClientServiceImpl implements HesService {
             case "Channel2Job"://"1.0.99.2.0.255":
                 return "load-profile-two";
             case "Channel3JobHouseHold"://"1.0.99.2.0.255":
-                return "load-profile-three";
+                return "load-profile-three-household";
             case "DailyBillingJob": //"0.0.98.2.0.255":
                 return "daily-billing-profile";
             case "MonthlyBillingJob"://"0.0.98.1.0.255":
