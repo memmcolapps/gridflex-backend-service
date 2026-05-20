@@ -38,6 +38,7 @@ public class MeterView implements Serializable {
     private Boolean smartStatus;
     private String unit;
     private String vat;
+    private String businessName;
 
     // --- Tariff and Band Info ---
     private UUID tariffId;
@@ -97,6 +98,13 @@ public class MeterView implements Serializable {
 
     //---------Meter connection----------
     private String connectionType;
+
+
+    // --- Consumption ---
+    private BigDecimal initialAmount;
+    private Date vendingCreatedAt;
+    private String averageDailyConsumption;
+    private String averageMonthlyConsumption;
 
 
     // --- Metadata ---
@@ -605,5 +613,45 @@ public class MeterView implements Serializable {
 
     public void setConnectionType(String connectionType) {
         this.connectionType = connectionType;
+    }
+
+    public BigDecimal getInitialAmount() {
+        return initialAmount;
+    }
+
+    public void setInitialAmount(BigDecimal initialAmount) {
+        this.initialAmount = initialAmount;
+    }
+
+    public Date getVendingCreatedAt() {
+        return vendingCreatedAt;
+    }
+
+    public void setVendingCreatedAt(Date vendingCreatedAt) {
+        this.vendingCreatedAt = vendingCreatedAt;
+    }
+
+    public String getAverageDailyConsumption() {
+        return averageDailyConsumption;
+    }
+
+    public void setAverageDailyConsumption(String averageDailyConsumption) {
+        this.averageDailyConsumption = averageDailyConsumption;
+    }
+
+    public String getAverageMonthlyConsumption() {
+        return averageMonthlyConsumption;
+    }
+
+    public void setAverageMonthlyConsumption(String averageMonthlyConsumption) {
+        this.averageMonthlyConsumption = averageMonthlyConsumption;
+    }
+
+    public String getBusinessName() {
+        return businessName;
+    }
+
+    public void setBusinessName(String businessName) {
+        this.businessName = businessName;
     }
 }
