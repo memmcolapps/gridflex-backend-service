@@ -1,4 +1,4 @@
-
+DROP VIEW IF EXISTS public.vw_event_details;
 --1. public.vw_meter_consumption
 CREATE OR REPLACE VIEW public.vw_meter_consumption
  AS
@@ -356,49 +356,163 @@ SELECT u.src_table,
        u.recharge_token,
        u.recharge_amount_kwh,
        u.manage_token,
-       u.manage_token_type,
+       u.manage_token_type_code,
+       u.mgt_token_type_description,
+       u.reason_description,
+       u.reason_of_operation_code,
+       u.total_absolute_active_kwh,
+       u.balance_kwh,
        COALESCE(ecl.critical_level, 1) AS critical_level
 FROM ( SELECT 'EVENT_LOG'::text AS src_table,
                event_log.id,
-              event_log.meter_serial AS meter_no,
-              event_log.meter_model,
-              event_log.event_time,
+              event_log.meter_serial::text AS meter_no,
+               event_log.meter_model::text AS meter_model,
+               event_log.event_time,
               event_log.event_type_id,
-              event_log.event_code,
-              NULL::text AS recharge_token,
+              event_log.event_code::text AS event_code,
+               NULL::text AS recharge_token,
                NULL::numeric AS recharge_amount_kwh,
                NULL::text AS manage_token,
-               NULL::text AS manage_token_type
+               NULL::text AS manage_token_type_code,
+               NULL::text AS mgt_token_type_description,
+               NULL::text AS reason_description,
+               NULL::text AS reason_of_operation_code,
+               NULL::numeric AS total_absolute_active_kwh,
+               NULL::numeric AS balance_kwh
        FROM event_log
        UNION ALL
        SELECT 'RECHARGE'::text AS src_table,
                household_recharge_token_event.id,
-              household_recharge_token_event.meter_serial AS meter_no,
-              household_recharge_token_event.meter_model,
-              household_recharge_token_event.event_time,
+              household_recharge_token_event.meter_serial::text AS meter_serial,
+               household_recharge_token_event.meter_model::text AS meter_model,
+               household_recharge_token_event.event_time,
               household_recharge_token_event.event_type_id,
-              household_recharge_token_event.event_code,
-              household_recharge_token_event.recharge_token,
-              household_recharge_token_event.recharge_amount_kwh,
-              NULL::text AS text,
-               NULL::text AS text
+              household_recharge_token_event.event_code::text AS event_code,
+               household_recharge_token_event.recharge_token::text AS recharge_token,
+               household_recharge_token_event.recharge_amount_kwh::numeric AS recharge_amount_kwh,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::numeric AS "numeric",
+               NULL::numeric AS "numeric"
        FROM household_recharge_token_event
        UNION ALL
        SELECT 'MANAGEMENT'::text AS src_table,
                household_management_token_event.id,
-              household_management_token_event.meter_serial AS meter_no,
-              household_management_token_event.meter_model,
-              household_management_token_event.event_time,
+              household_management_token_event.meter_serial::text AS meter_serial,
+               household_management_token_event.meter_model::text AS meter_model,
+               household_management_token_event.event_time,
               household_management_token_event.event_type_id,
-              household_management_token_event.event_code,
-              NULL::text AS text,
+              household_management_token_event.event_code::text AS event_code,
+               NULL::text AS text,
                NULL::numeric AS "numeric",
-               household_management_token_event.manage_token,
-              household_management_token_event.manage_token_type
-       FROM household_management_token_event) u
+               household_management_token_event.manage_token::text AS manage_token,
+               household_management_token_event.manage_token_type_code::text AS manage_token_type_code,
+               household_management_token_event.mgt_token_type_description::text AS mgt_token_type_description,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::numeric AS "numeric",
+               NULL::numeric AS "numeric"
+       FROM household_management_token_event
+       UNION ALL
+       SELECT 'CONTROL'::text AS src_table,
+               household_control_event.id,
+              household_control_event.meter_serial::text AS meter_serial,
+               household_control_event.meter_model::text AS meter_model,
+               household_control_event.event_time,
+              household_control_event.event_type_id,
+              household_control_event.event_code::text AS event_code,
+               NULL::text AS text,
+               NULL::numeric AS "numeric",
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               household_control_event.reason_description::text AS reason_description,
+               household_control_event.reason_of_operation_code::text AS reason_of_operation_code,
+               NULL::numeric AS "numeric",
+               NULL::numeric AS "numeric"
+       FROM household_control_event
+       UNION ALL
+       SELECT 'FRAUD'::text AS src_table,
+               household_fraud_event.id,
+              household_fraud_event.meter_serial::text AS meter_serial,
+               household_fraud_event.meter_model::text AS meter_model,
+               household_fraud_event.event_time,
+              household_fraud_event.event_type_id,
+              household_fraud_event.event_code::text AS event_code,
+               NULL::text AS text,
+               NULL::numeric AS "numeric",
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               NULL::text AS text,
+               household_fraud_event.total_absolute_active_kwh::numeric AS total_absolute_active_kwh,
+               household_fraud_event.balance_kwh::numeric AS balance_kwh
+       FROM household_fraud_event) u
          LEFT JOIN event_type et ON et.id = u.event_type_id
-         LEFT JOIN event_code_lookup ecl ON ecl.event_type_id = u.event_type_id AND ecl.code = u.event_code;
+         LEFT JOIN event_code_lookup ecl ON ecl.event_type_id = u.event_type_id
+                    AND ecl.code::text = u.event_code
+                    AND ecl.meter_model::text ~~* u.meter_model;
 
+-- CREATE OR REPLACE VIEW public.vw_event_details
+--  AS
+-- SELECT u.src_table,
+--        u.id,
+--        u.meter_no,
+--        u.meter_model,
+--        u.event_time,
+--        u.event_type_id,
+--        et.name AS event_type,
+--        ecl.event_name AS event,
+--        u.recharge_token,
+--        u.recharge_amount_kwh,
+--        u.manage_token,
+--        u.manage_token_type,
+--        COALESCE(ecl.critical_level, 1) AS critical_level
+-- FROM ( SELECT 'EVENT_LOG'::text AS src_table,
+--                event_log.id,
+--               event_log.meter_serial AS meter_no,
+--               event_log.meter_model,
+--               event_log.event_time,
+--               event_log.event_type_id,
+--               event_log.event_code,
+--               NULL::text AS recharge_token,
+--                NULL::numeric AS recharge_amount_kwh,
+--                NULL::text AS manage_token,
+--                NULL::text AS manage_token_type
+--        FROM event_log
+--        UNION ALL
+--        SELECT 'RECHARGE'::text AS src_table,
+--                household_recharge_token_event.id,
+--               household_recharge_token_event.meter_serial AS meter_no,
+--               household_recharge_token_event.meter_model,
+--               household_recharge_token_event.event_time,
+--               household_recharge_token_event.event_type_id,
+--               household_recharge_token_event.event_code,
+--               household_recharge_token_event.recharge_token,
+--               household_recharge_token_event.recharge_amount_kwh,
+--               NULL::text AS text,
+--                NULL::text AS text
+--        FROM household_recharge_token_event
+--        UNION ALL
+--        SELECT 'MANAGEMENT'::text AS src_table,
+--                household_management_token_event.id,
+--               household_management_token_event.meter_serial AS meter_no,
+--               household_management_token_event.meter_model,
+--               household_management_token_event.event_time,
+--               household_management_token_event.event_type_id,
+--               household_management_token_event.event_code,
+--               NULL::text AS text,
+--                NULL::numeric AS "numeric",
+--                household_management_token_event.manage_token,
+--               household_management_token_event.manage_token_type
+--        FROM household_management_token_event) u
+--          LEFT JOIN event_type et ON et.id = u.event_type_id
+--          LEFT JOIN event_code_lookup ecl ON ecl.event_type_id = u.event_type_id AND ecl.code = u.event_code;
+--
 
 --10. public.vw_12month_monthly_avg_consumption
 CREATE OR REPLACE VIEW public.vw_12month_monthly_avg_consumption

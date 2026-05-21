@@ -732,6 +732,29 @@ public class MeterController {
         }
     }
 
+    @GetMapping("/meterInfo-lookup")
+    public ResponseEntity<Map<String, Object>> meterInfoLookUp(
+            @RequestParam String meterNumber
+    ) {
+
+        Map<String, Object> response = service.meterInfoLookUp(meterNumber);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/readMeter-lookup")
+    public ResponseEntity<Map<String, Object>> readMeterLookUp(
+            @RequestParam String meterNumber,
+            @RequestParam String readClock,
+            @RequestParam String readCredit,
+            @RequestParam String readRelayStatus
+    ) {
+
+        Map<String, Object>  response = service.readMeterLookUp(meterNumber, readClock,readCredit,readRelayStatus);
+
+        return ResponseEntity.ok(response);
+    }
+
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }

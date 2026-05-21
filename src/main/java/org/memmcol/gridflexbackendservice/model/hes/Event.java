@@ -27,8 +27,13 @@ public class Event implements Serializable {
     private String rechargeAmountKwh;
     private String rechargeToken;
 
-    private String manageTokenType;
+    private String manageTokenTypeCode;
     private String manageToken;
+    private String mgtTokenTypeDescription;
+    private String reasonDescription;
+    private String reasonOfOperationCode;
+    private String totalAbsoluteActiveKwh;
+    private String balanceKwh;
 
     private EventType eventTypeModel;
 
@@ -162,12 +167,52 @@ public class Event implements Serializable {
         this.rechargeAmountKwh = rechargeAmountKwh;
     }
 
-    public String getManageTokenType() {
-        return manageTokenType;
+    public String getManageTokenTypeCode() {
+        return manageTokenTypeCode;
     }
 
-    public void setManageTokenType(String manageTokenType) {
-        this.manageTokenType = manageTokenType;
+    public void setManageTokenTypeCode(String manageTokenTypeCode) {
+        this.manageTokenTypeCode = manageTokenTypeCode;
+    }
+
+    public String getMgtTokenTypeDescription() {
+        return mgtTokenTypeDescription;
+    }
+
+    public void setMgtTokenTypeDescription(String mgtTokenTypeDescription) {
+        this.mgtTokenTypeDescription = mgtTokenTypeDescription;
+    }
+
+    public String getReasonDescription() {
+        return reasonDescription;
+    }
+
+    public void setReasonDescription(String reasonDescription) {
+        this.reasonDescription = reasonDescription;
+    }
+
+    public String getReasonOfOperationCode() {
+        return reasonOfOperationCode;
+    }
+
+    public void setReasonOfOperationCode(String reasonOfOperationCode) {
+        this.reasonOfOperationCode = reasonOfOperationCode;
+    }
+
+    public String getTotalAbsoluteActiveKwh() {
+        return totalAbsoluteActiveKwh;
+    }
+
+    public void setTotalAbsoluteActiveKwh(String totalAbsoluteActiveKwh) {
+        this.totalAbsoluteActiveKwh = totalAbsoluteActiveKwh;
+    }
+
+    public String getBalanceKwh() {
+        return balanceKwh;
+    }
+
+    public void setBalanceKwh(String balanceKwh) {
+        this.balanceKwh = balanceKwh;
     }
 
     public String getManageToken() {

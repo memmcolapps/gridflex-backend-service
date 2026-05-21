@@ -9,13 +9,11 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
-import org.memmcol.gridflexbackendservice.mapper.CustomerMapper;
-import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
-import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
-import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
+import org.memmcol.gridflexbackendservice.mapper.*;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustVersion;
+import org.memmcol.gridflexbackendservice.model.hes.ObisMapping;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
@@ -23,7 +21,9 @@ import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
+import org.memmcol.gridflexbackendservice.service.hes.HesAuthServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HandlePermission;
@@ -34,12 +34,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -75,6 +79,16 @@ public class MeterServiceImpl implements MeterService {
 
     @Autowired
     private NodeMapper nodeMapper;
+
+    @Autowired
+    private HesAuthServiceImpl auth;
+
+    @Autowired
+    private MeterMapper hesMapper;
+
+    @Qualifier("dlmsWriteOpsClient")
+    @Autowired
+    private WebClient dlmsWriteOpsClient;
 
     @Autowired
     private MeterMapper meterMapper;
@@ -6126,6 +6140,142 @@ public class MeterServiceImpl implements MeterService {
         //save to audit (mongodb)
         AuditLog auditLog = buildAuditLog(user, "Pending Assigned", meterName, m, metadata, "");
         safeAuditService.saveAudit(auditLog);
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> meterInfoLookUp(String meterNumber) {
+
+        try {
+
+            // 1. RETURN DB DATA IMMEDIATELY
+            MeterView meter = meterMapper.getMeterLookUp(meterNumber);
+
+            if (meter == null) {
+                return ResponseMap.response(status.getNotFoundCode(),"Meter not found",null);
+            }
+            meter.setAddress("");
+
+            return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getRegDesc(), meter);
+
+        } catch (Exception exception) {
+
+            log.error("Meter lookup failed: {}", exception.getMessage(), exception);
+
+            genericHandler.logIncidentReport("Meter lookup service failed");
+            genericHandler.logAndSaveException(exception, "meter lookup");
+
+            throw exception;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> readMeterLookUp(String meterNumber,String readClock,String readCredit,String readRelayStatus) {
+
+        String token = auth.getAccessToken();
+
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        try {
+
+            List<ObisMapping> obisList = new ArrayList<>();
+
+            addIfValid(obisList, getFirstObis(meterNumber, readClock));
+            addIfValid(obisList, getFirstObis(meterNumber, readCredit));
+            addIfValid(obisList, getFirstObis(meterNumber, readRelayStatus));
+
+            for (ObisMapping obis : obisList) {
+
+                try {
+                    Map<String, Object> response =
+                            dlmsWriteOpsClient.get()
+                                    .uri(uriBuilder -> uriBuilder
+                                            .path("/obis")
+                                            .queryParam("serial", meterNumber)
+                                            .queryParam("obis", obis.getObisCodeCombined())
+                                            .build())
+                                    .headers(h -> h.setBearerAuth(token))
+                                    .retrieve()
+                                    .onStatus(HttpStatusCode::isError,
+                                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                                    .map(body -> new RuntimeException(
+                                                            "read meter service error: " + body))
+                                    )
+                                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                                    .block();
+
+
+                    if (response != null) {
+
+                        response.put("operationAction", obis.getOperationCode());
+                        response.put("status", "SUCCESS");
+
+                        if ("read_relay_status".equalsIgnoreCase(obis.getOperationCode())) {
+
+                            Object valueObj = response.get("value");
+
+                            if (valueObj instanceof Boolean) {
+
+                                boolean value = (Boolean) valueObj;
+
+                                response.put("relayStatus", value ? "Relay Closed" : "Relay Open");
+                            }
+                        }
+
+                        data.add(response);
+                    }
+
+                } catch (Exception ex) {
+
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("operationAction", obis.getOperationCode());
+                    error.put("obisCode", obis.getObisCodeCombined());
+                    error.put("status", "FAILED");
+                    error.put("error", ex.getMessage());
+
+                    data.add(error);
+                }
+            }
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getRegDesc(),
+                    data
+            );
+
+        } catch (Exception exception) {
+
+            log.error("Read Meter lookup failed: {}", exception.getMessage(), exception);
+
+            genericHandler.logIncidentReport("Read Meter lookup service failed");
+            genericHandler.logAndSaveException(exception, "Read meter lookup");
+
+            throw exception;
+        }
+    }
+
+    private ObisMapping getFirstObis(String meterNumber, String operationCode) {
+        List<ObisMapping> list =
+                hesMapper.getObisByOperation(meterNumber, operationCode);
+
+        return (list == null || list.isEmpty()) ? null : list.get(0);
+    }
+
+    private void addIfValid(List<ObisMapping> list, ObisMapping obis) {
+
+        if (obis == null) {
+            return;
+        }
+
+        if (obis.getObisCodeCombined() == null ||
+                obis.getObisCodeCombined().isBlank()) {
+
+            log.warn("Skipping invalid OBIS mapping: {}", obis.getOperationCode());
+            return;
+        }
+
+        list.add(obis);
     }
 
     private List<AssignMeterToCustomer> processAssignExcel(InputStream inputStream) throws IOException {
