@@ -104,7 +104,7 @@ public class MeterView implements Serializable {
     // --- Consumption ---
     private BigDecimal lastVendingAmount;
     private BigDecimal lastEnergyPurchase;
-    private Date lastVendingDate;
+    private String lastVendingDate;
     private String averageDailyUsage;
     private String averageMonthlyUsage;
 
@@ -633,11 +633,11 @@ public class MeterView implements Serializable {
         this.lastEnergyPurchase = lastEnergyPurchase;
     }
 
-    public Date getLastVendingDate() {
+    public String getLastVendingDate() {
         return lastVendingDate;
     }
 
-    public void setLastVendingDate(Date lastVendingDate) {
+    public void setLastVendingDate(String lastVendingDate) {
         this.lastVendingDate = lastVendingDate;
     }
 
