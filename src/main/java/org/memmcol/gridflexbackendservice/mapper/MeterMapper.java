@@ -3862,17 +3862,60 @@ public interface MeterMapper {
     })
     void markCustomersInactive(@Param("customerIds") List<String> customerIds);
 
+//    @Select("""
+//        SELECT
+//            vs.*,
+//            COALESCE(vt.initial_amount, 0) AS initial_amount,
+//            COALESCE(vt.unit, 0) AS unit,
+//            vt.created_at AS last_vending_date,
+//            COALESCE(vd.avg_30day_consumption, 0.0::DOUBLE PRECISION) AS average_daily_consumption,
+//            COALESCE(vm.avg_12month_consumption, 0.0::DOUBLE PRECISION) AS average_monthly_consumption
+//        FROM vw_meter_summary vs
+//        LEFT JOIN vending_transactions vt
+//            ON vs.meter_id = vt.meter_id
+//        LEFT JOIN LATERAL (
+//            SELECT *
+//            FROM vw_30day_daily_avg_consumption d
+//            WHERE d.meter_serial = vs.meter_number
+//            ORDER BY d.entry_timestamp DESC
+//            LIMIT 1
+//        ) vd ON TRUE
+//        LEFT JOIN LATERAL (
+//            SELECT *
+//            FROM vw_12month_monthly_avg_consumption m
+//            WHERE m.meter_serial = vs.meter_number
+//            ORDER BY m.month DESC
+//            LIMIT 1
+//        ) vm ON TRUE
+//        WHERE vs.meter_number = #{meterNo}
+//        AND vs.meter_stage = 'Assigned'
+//        ORDER BY vt.created_at DESC NULLS LAST
+//        LIMIT 1;
+//    """)
     @Select("""
         SELECT
             vs.*,
+        
             COALESCE(vt.initial_amount, 0) AS initial_amount,
             COALESCE(vt.unit, 0) AS unit,
-            vt.created_at AS created_at,
-            COALESCE(vd.avg_30day_consumption, 0.0::DOUBLE PRECISION) AS average_daily_consumption,
-            COALESCE(vm.avg_12month_consumption, 0.0::DOUBLE PRECISION) AS average_monthly_consumption
+            vt.created_at AS last_vending_date,
+        
+            COALESCE(vd.avg_30day_consumption, 0.0) AS average_daily_consumption,
+            COALESCE(vm.avg_12month_consumption, 0.0) AS average_monthly_consumption
+        
         FROM vw_meter_summary vs
-        LEFT JOIN vending_transactions vt
-            ON vs.meter_id = vt.meter_id
+        
+        LEFT JOIN LATERAL (
+            SELECT
+                v.initial_amount,
+                v.unit,
+                v.created_at
+            FROM vending_transactions v
+            WHERE v.meter_id = vs.meter_id
+            ORDER BY v.created_at DESC
+            LIMIT 1
+        ) vt ON TRUE
+        
         LEFT JOIN LATERAL (
             SELECT *
             FROM vw_30day_daily_avg_consumption d
@@ -3880,6 +3923,7 @@ public interface MeterMapper {
             ORDER BY d.entry_timestamp DESC
             LIMIT 1
         ) vd ON TRUE
+        
         LEFT JOIN LATERAL (
             SELECT *
             FROM vw_12month_monthly_avg_consumption m
@@ -3887,27 +3931,27 @@ public interface MeterMapper {
             ORDER BY m.month DESC
             LIMIT 1
         ) vm ON TRUE
+        
         WHERE vs.meter_number = #{meterNo}
-        AND vs.meter_stage = 'Assigned'
-        ORDER BY vt.created_at DESC NULLS LAST
-        LIMIT 1;
-    """)
+          AND vs.meter_stage = 'Assigned';
+      """)
     @Results({
-            @Result(property = "meterId", column = "meter_id"),
-            @Result(property = "customerId", column = "customer_id"),
             @Result(property = "customerFullname", column = "customer_fullname"),
             @Result(property = "meterNumber", column = "meter_number"),
-            @Result(property = "meterAccountNumber", column = "meter_account_number"),
             @Result(property = "businessName", column = "bhub_name"),
+            @Result(property = "connectionType", column = "connection_type"),
+            @Result(property = "bandName", column = "band_name"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "manufacturerName", column = "manufacturer_name"),
 
             // vending
-            @Result(property = "initialAmount", column = "initial_amount"),
-            @Result(property = "unit", column = "unit"),
-            @Result(property = "vendingCreatedAt", column = "created_at"),
+            @Result(property = "lastVendingAmount", column = "initial_amount"),
+            @Result(property = "lastEnergyPurchase", column = "unit"),
+            @Result(property = "lastVendingDate", column = "last_vending_date"),
 
             // analytics
-            @Result(property = "averageDailyConsumption", column = "average_daily_consumption"),
-            @Result(property = "averageMonthlyConsumption", column = "average_monthly_consumption"),
+            @Result(property = "averageDailyUsage", column = "average_daily_consumption"),
+            @Result(property = "averageMonthlyUsage", column = "average_monthly_consumption"),
     })
     MeterView getMeterLookUp(String meterNo);
 

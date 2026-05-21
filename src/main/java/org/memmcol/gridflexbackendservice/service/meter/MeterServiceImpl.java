@@ -6142,6 +6142,7 @@ public class MeterServiceImpl implements MeterService {
         safeAuditService.saveAudit(auditLog);
     }
 
+    @Transactional
     @Override
     public Map<String, Object> meterInfoLookUp(String meterNumber) {
 
@@ -6153,6 +6154,7 @@ public class MeterServiceImpl implements MeterService {
             if (meter == null) {
                 return ResponseMap.response(status.getNotFoundCode(),"Meter not found",null);
             }
+            meter.setAddress("");
 
             return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getRegDesc(), meter);
 
@@ -6167,6 +6169,7 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Transactional
     @Override
     public Map<String, Object> readMeterLookUp(String meterNumber,String readClock,String readCredit,String readRelayStatus) {
 

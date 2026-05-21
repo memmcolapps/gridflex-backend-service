@@ -39,6 +39,7 @@ public class MeterView implements Serializable {
     private String unit;
     private String vat;
     private String businessName;
+    private String manufacturerName;
 
     // --- Tariff and Band Info ---
     private UUID tariffId;
@@ -101,10 +102,11 @@ public class MeterView implements Serializable {
 
 
     // --- Consumption ---
-    private BigDecimal initialAmount;
-    private Date vendingCreatedAt;
-    private String averageDailyConsumption;
-    private String averageMonthlyConsumption;
+    private BigDecimal lastVendingAmount;
+    private BigDecimal lastEnergyPurchase;
+    private Date lastVendingDate;
+    private String averageDailyUsage;
+    private String averageMonthlyUsage;
 
 
     // --- Metadata ---
@@ -293,6 +295,38 @@ public class MeterView implements Serializable {
 
     public void setSmartStatus(Boolean smartStatus) {
         this.smartStatus = smartStatus;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public String getVat() {
+        return vat;
+    }
+
+    public void setVat(String vat) {
+        this.vat = vat;
+    }
+
+    public String getBusinessName() {
+        return businessName;
+    }
+
+    public void setBusinessName(String businessName) {
+        this.businessName = businessName;
+    }
+
+    public String getManufacturerName() {
+        return manufacturerName;
+    }
+
+    public void setManufacturerName(String manufacturerName) {
+        this.manufacturerName = manufacturerName;
     }
 
     public UUID getTariffId() {
@@ -519,12 +553,108 @@ public class MeterView implements Serializable {
         this.liabilityCode = liabilityCode;
     }
 
+    public String getDebitPaymentMode() {
+        return debitPaymentMode;
+    }
+
+    public void setDebitPaymentMode(String debitPaymentMode) {
+        this.debitPaymentMode = debitPaymentMode;
+    }
+
+    public String getDebitPaymentPlan() {
+        return debitPaymentPlan;
+    }
+
+    public void setDebitPaymentPlan(String debitPaymentPlan) {
+        this.debitPaymentPlan = debitPaymentPlan;
+    }
+
+    public String getCreditPaymentMode() {
+        return creditPaymentMode;
+    }
+
+    public void setCreditPaymentMode(String creditPaymentMode) {
+        this.creditPaymentMode = creditPaymentMode;
+    }
+
+    public String getCreditPaymentPlan() {
+        return creditPaymentPlan;
+    }
+
+    public void setCreditPaymentPlan(String creditPaymentPlan) {
+        this.creditPaymentPlan = creditPaymentPlan;
+    }
+
+    public String getAdjustmentStatus() {
+        return adjustmentStatus;
+    }
+
+    public void setAdjustmentStatus(String adjustmentStatus) {
+        this.adjustmentStatus = adjustmentStatus;
+    }
+
     public String getMeterManufacturer() {
         return meterManufacturer;
     }
 
     public void setMeterManufacturer(String meterManufacturer) {
         this.meterManufacturer = meterManufacturer;
+    }
+
+    public PercentageRange getPercentageRange() {
+        return percentageRange;
+    }
+
+    public void setPercentageRange(PercentageRange percentageRange) {
+        this.percentageRange = percentageRange;
+    }
+
+    public String getConnectionType() {
+        return connectionType;
+    }
+
+    public void setConnectionType(String connectionType) {
+        this.connectionType = connectionType;
+    }
+
+    public BigDecimal getLastVendingAmount() {
+        return lastVendingAmount;
+    }
+
+    public void setLastVendingAmount(BigDecimal lastVendingAmount) {
+        this.lastVendingAmount = lastVendingAmount;
+    }
+
+    public BigDecimal getLastEnergyPurchase() {
+        return lastEnergyPurchase;
+    }
+
+    public void setLastEnergyPurchase(BigDecimal lastEnergyPurchase) {
+        this.lastEnergyPurchase = lastEnergyPurchase;
+    }
+
+    public Date getLastVendingDate() {
+        return lastVendingDate;
+    }
+
+    public void setLastVendingDate(Date lastVendingDate) {
+        this.lastVendingDate = lastVendingDate;
+    }
+
+    public String getAverageDailyUsage() {
+        return averageDailyUsage;
+    }
+
+    public void setAverageDailyUsage(String averageDailyUsage) {
+        this.averageDailyUsage = averageDailyUsage;
+    }
+
+    public String getAverageMonthlyUsage() {
+        return averageMonthlyUsage;
+    }
+
+    public void setAverageMonthlyUsage(String averageMonthlyUsage) {
+        this.averageMonthlyUsage = averageMonthlyUsage;
     }
 
     public Date getCreatedAt() {
@@ -541,117 +671,5 @@ public class MeterView implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    public String getVat() {
-        return vat;
-    }
-
-    public void setVat(String vat) {
-        this.vat = vat;
-    }
-
-    public String getCreditPaymentPlan() {
-        return creditPaymentPlan;
-    }
-
-    public void setCreditPaymentPlan(String creditPaymentPlan) {
-        this.creditPaymentPlan = creditPaymentPlan;
-    }
-
-    public String getCreditPaymentMode() {
-        return creditPaymentMode;
-    }
-
-    public void setCreditPaymentMode(String creditPaymentMode) {
-        this.creditPaymentMode = creditPaymentMode;
-    }
-
-    public String getDebitPaymentPlan() {
-        return debitPaymentPlan;
-    }
-
-    public void setDebitPaymentPlan(String debitPaymentPlan) {
-        this.debitPaymentPlan = debitPaymentPlan;
-    }
-
-    public String getDebitPaymentMode() {
-        return debitPaymentMode;
-    }
-
-    public void setDebitPaymentMode(String debitPaymentMode) {
-        this.debitPaymentMode = debitPaymentMode;
-    }
-
-    public PercentageRange getPercentageRange() {
-        return percentageRange;
-    }
-
-    public void setPercentageRange(PercentageRange percentageRange) {
-        this.percentageRange = percentageRange;
-    }
-
-    public String getAdjustmentStatus() {
-        return adjustmentStatus;
-    }
-
-    public void setAdjustmentStatus(String adjustmentStatus) {
-        this.adjustmentStatus = adjustmentStatus;
-    }
-
-    public String getConnectionType() {
-        return connectionType;
-    }
-
-    public void setConnectionType(String connectionType) {
-        this.connectionType = connectionType;
-    }
-
-    public BigDecimal getInitialAmount() {
-        return initialAmount;
-    }
-
-    public void setInitialAmount(BigDecimal initialAmount) {
-        this.initialAmount = initialAmount;
-    }
-
-    public Date getVendingCreatedAt() {
-        return vendingCreatedAt;
-    }
-
-    public void setVendingCreatedAt(Date vendingCreatedAt) {
-        this.vendingCreatedAt = vendingCreatedAt;
-    }
-
-    public String getAverageDailyConsumption() {
-        return averageDailyConsumption;
-    }
-
-    public void setAverageDailyConsumption(String averageDailyConsumption) {
-        this.averageDailyConsumption = averageDailyConsumption;
-    }
-
-    public String getAverageMonthlyConsumption() {
-        return averageMonthlyConsumption;
-    }
-
-    public void setAverageMonthlyConsumption(String averageMonthlyConsumption) {
-        this.averageMonthlyConsumption = averageMonthlyConsumption;
-    }
-
-    public String getBusinessName() {
-        return businessName;
-    }
-
-    public void setBusinessName(String businessName) {
-        this.businessName = businessName;
     }
 }
