@@ -7,6 +7,7 @@ import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCre
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjustVersion;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
+import org.memmcol.gridflexbackendservice.model.hes.ObisMapping;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
 import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
@@ -3861,8 +3862,85 @@ public interface MeterMapper {
     })
     void markCustomersInactive(@Param("customerIds") List<String> customerIds);
 
+    @Select("""
+        SELECT
+            vs.*,
+            COALESCE(vt.initial_amount, 0) AS initial_amount,
+            COALESCE(vt.unit, 0) AS unit,
+            vt.created_at AS created_at,
+            COALESCE(vd.avg_30day_consumption, 0.0::DOUBLE PRECISION) AS average_daily_consumption,
+            COALESCE(vm.avg_12month_consumption, 0.0::DOUBLE PRECISION) AS average_monthly_consumption
+        FROM vw_meter_summary vs
+        LEFT JOIN vending_transactions vt
+            ON vs.meter_id = vt.meter_id
+        LEFT JOIN LATERAL (
+            SELECT *
+            FROM vw_30day_daily_avg_consumption d
+            WHERE d.meter_serial = vs.meter_number
+            ORDER BY d.entry_timestamp DESC
+            LIMIT 1
+        ) vd ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT *
+            FROM vw_12month_monthly_avg_consumption m
+            WHERE m.meter_serial = vs.meter_number
+            ORDER BY m.month DESC
+            LIMIT 1
+        ) vm ON TRUE
+        WHERE vs.meter_number = #{meterNo}
+        AND vs.meter_stage = 'Assigned'
+        ORDER BY vt.created_at DESC NULLS LAST
+        LIMIT 1;
+    """)
+    @Results({
+            @Result(property = "meterId", column = "meter_id"),
+            @Result(property = "customerId", column = "customer_id"),
+            @Result(property = "customerFullname", column = "customer_fullname"),
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterAccountNumber", column = "meter_account_number"),
+            @Result(property = "businessName", column = "bhub_name"),
+
+            // vending
+            @Result(property = "initialAmount", column = "initial_amount"),
+            @Result(property = "unit", column = "unit"),
+            @Result(property = "vendingCreatedAt", column = "created_at"),
+
+            // analytics
+            @Result(property = "averageDailyConsumption", column = "average_daily_consumption"),
+            @Result(property = "averageMonthlyConsumption", column = "average_monthly_consumption"),
+    })
+    MeterView getMeterLookUp(String meterNo);
+
+
+    @Select("""
+        SELECT * FROM vw_meter_obis_mapping
+        WHERE meter_number = #{meterNumber}
+        AND LOWER(operation_code) = LOWER(#{operationCode})
+    """)
+    @Results({
+            @Result(property = "meterNumber", column = "meter_number"),
+            @Result(property = "meterModel", column = "meter_model"),
+            @Result(property = "meterStage", column = "meter_stage"),
+            @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "description", column = "description"),
+            @Result(property = "classId", column = "class_id"),
+            @Result(property = "obisCode", column = "obis_code"),
+            @Result(property = "attributeIndex", column = "attribute_index"),
+            @Result(property = "dataType", column = "data_type"),
+            @Result(property = "unit", column = "unit"),
+            @Result(property = "meterType", column = "meter_type"),
+            @Result(property = "obisCodeCombined", column = "obis_code_combined"),
+            @Result(property = "groupName", column = "group_name"),
+            @Result(property = "dataIndex", column = "data_index"),
+            @Result(property = "obisType", column = "obis_type"),
+            @Result(property = "operationCode", column = "operation_code")
+    })
+    List<ObisMapping> getObisByOperation(
+            @Param("meterNumber") String meterNumber,
+            @Param("operationCode") String operationCode
+    );
 //    @Update("""
-//        UPDATE customers
+//        UPDATE customersn
 //        SET status = 'Active'
 //        WHERE customer_id IN
 //        <foreach item='customerId' collection='customerIds' open='(' separator=',' close=')'>

@@ -29,6 +29,10 @@ public interface MeterService {
 
     Map<String, Object> allocateMeter(String meterNumber, String regionId);
 
+    Map<String, Object> meterInfoLookUp(String meterNumber);
+
+    Map<String, Object> readMeterLookUp(String meterNumber,String readClock,String readCredit,String readRelayStatus);
+
     Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer assignMeterToCustomer, MultipartFile image);
 
     Map<String, Object> migrate(PaymentMode paymentMode);
