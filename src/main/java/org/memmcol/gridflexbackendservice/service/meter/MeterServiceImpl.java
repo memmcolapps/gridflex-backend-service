@@ -6155,6 +6155,7 @@ public class MeterServiceImpl implements MeterService {
                 return ResponseMap.response(status.getNotFoundCode(),"Meter not found",null);
             }
             meter.setAddress("");
+//            Object o = meter.getLastVendingDate() == null ? meter.setLastVendingDate("000") : meter.getLastVendingDate();
 
             return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getRegDesc(), meter);
 
