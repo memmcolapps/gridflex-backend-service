@@ -132,7 +132,9 @@ public class SecurityConfig {
 						"/service/trigger/monthly",
 						"/band/service/clear-cache",
 						"/data-collection/schedules/**",
-						"/api/realtime/stream"
+						"/api/realtime/stream",
+						"/meter/service/meterInfo-lookup",
+						"/meter/service/readMeter-lookup"
 //						"/uploads/**"
 				).permitAll()
 
