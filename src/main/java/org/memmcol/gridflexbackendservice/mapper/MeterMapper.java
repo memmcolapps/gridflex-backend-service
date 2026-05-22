@@ -3898,7 +3898,7 @@ public interface MeterMapper {
         
             COALESCE(vt.initial_amount, 0) AS initial_amount,
             COALESCE(vt.unit, 0) AS unit,
-            vt.created_at AS last_vending_date,
+            COALESCE(vt.created_at, '1000-01-01 00:00:00') AS last_vending_date,
         
             COALESCE(vd.avg_30day_consumption, 0.0) AS average_daily_consumption,
             COALESCE(vm.avg_12month_consumption, 0.0) AS average_monthly_consumption
@@ -3942,7 +3942,9 @@ public interface MeterMapper {
             @Result(property = "connectionType", column = "connection_type"),
             @Result(property = "bandName", column = "band_name"),
             @Result(property = "meterClass", column = "meter_class"),
+            @Result(property = "meterCategory", column = "meter_category"),
             @Result(property = "manufacturerName", column = "manufacturer_name"),
+            @Result(property = "meterModel", column = "smart_meter_model"),
 
             // vending
             @Result(property = "lastVendingAmount", column = "initial_amount"),
