@@ -1,4 +1,17 @@
+DROP VIEW IF EXISTS public.vw_meter_consumption;
+DROP VIEW IF EXISTS public.vw_meter_non_md_consumption;
+DROP VIEW IF EXISTS public.vw_vending_transactions_summary;
+DROP VIEW IF EXISTS public.vw_meter_summary;
+DROP VIEW IF EXISTS public.vw_overall_feeder_consumption
+DROP VIEW IF EXISTS public.vw_meter_event_summary;
+DROP VIEW IF EXISTS public.vw_node_summary
 DROP VIEW IF EXISTS public.vw_event_details;
+DROP VIEW IF EXISTS public.vw_meter_obis_mapping;
+DROP VIEW IF EXISTS public.vw_12month_monthly_avg_consumption;
+DROP VIEW IF EXISTS public.vw_30day_daily_avg_consumption;
+DROP VIEW IF EXISTS public.vw_daily_energy_consumption;
+DROP VIEW IF EXISTS public.vw_monthly_energy_consumption;
+DROP VIEW IF EXISTS public.vw_flatten_node_records;
 --1. public.vw_meter_consumption
 CREATE OR REPLACE VIEW public.vw_meter_consumption
  AS
