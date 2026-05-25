@@ -12,88 +12,145 @@ jobs:
 
     steps:
       # =====================
-      # Checkout source code
+      # Checkout
       # =====================
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # =====================
-      # Setup Java
+      # Java Setup
       # =====================
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
 
       # =====================
-      # Build application
+      # Build
       # =====================
       - name: Build with Maven
         run: |
-          chmod +x ./mvnw
-          ./mvnw clean package -DskipTests
+          chmod +x mvnw
+          ./mvnw package -DskipTests
+
+      # =====================
+      # Resolve JAR
+      # =====================
+      - name: Resolve JAR
+        run: |
+          JAR_FILE=$(find target -name "*.jar" ! -name "*original*.jar" | head -n 1)
+
+          if [ -z "$JAR_FILE" ]; then
+            echo "No JAR found"
+            exit 1
+          fi
+
+          echo "JAR_FILE=$JAR_FILE" >> $GITHUB_ENV
+          echo "Found: $JAR_FILE"
 
       # =====================================================
-      # STAGING DEPLOYMENT (branch: staging)
+      # SSH SETUP (STAGING)
       # =====================================================
-      - name: Setup SSH Agent (Staging)
+      - name: Setup SSH (Staging)
         if: github.ref == 'refs/heads/staging'
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Staging Server
+      # =====================================================
+      # DEPLOY STAGING
+      # =====================================================
+      - name: Deploy Staging
         if: github.ref == 'refs/heads/staging'
         run: |
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} << EOF
-              sudo mkdir -p /opt/java-webservices
-              sudo chown -R \$USER:\$USER /opt/java-webservices
-              pkill -f 'gridflex-backend-service.jar' || true
-          EOF
+          SERVER="${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}"
+          REMOTE_PATH="/opt/java-webservices/gridflex-backend-service.jar"
 
-          scp -o StrictHostKeyChecking=no target/*.jar \
-            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
+          echo "Creating remote directory..."
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/java-webservices"
 
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} << EOF
-              nohup java -jar \
-                -Dspring.profiles.active=staging \
-                /opt/java-webservices/gridflex-backend-service.jar \
-                > /opt/java-webservices/gridflex-staging.log 2>&1 &
+          echo "Uploading JAR..."
+          rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
+            "$JAR_FILE" \
+            $SERVER:$REMOTE_PATH
+
+          echo "Deploying (safe SSH execution)..."
+          ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
+
+            set -e
+
+            echo "Stopping app safely..."
+
+            PID=$(ps -ef | grep gridflex-backend-service.jar | grep -v grep | awk '{print $2}')
+
+            if [ -n "$PID" ]; then
+              echo "Killing PID: $PID"
+              kill -9 $PID || true
+            else
+              echo "No running process found"
+            fi
+
+            echo "Starting app..."
+
+            nohup java -Dspring.profiles.active=staging \
+              -jar /opt/java-webservices/gridflex-backend-service.jar \
+              > /opt/java-webservices/gridflex-staging.log 2>&1 &
+
+            echo "Deployment complete"
           EOF
 
       # =====================================================
-      # PRODUCTION DEPLOYMENT (branch: main)
+      # SSH SETUP (PRODUCTION)
       # =====================================================
-      - name: Setup SSH Agent (Production)
+      - name: Setup SSH (Production)
         if: github.ref == 'refs/heads/main'
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Production Server
+      # =====================================================
+      # DEPLOY PRODUCTION
+      # =====================================================
+      - name: Deploy Production
         if: github.ref == 'refs/heads/main'
         run: |
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} << EOF
-              mkdir -p /opt/java-webservices
-              chown -R \$USER:\$USER /opt/java-webservices
-              pkill -f 'gridflex-backend-service.jar' || true
+          SERVER="${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}"
+          REMOTE_PATH="/opt/java-webservices/gridflex-backend-service.jar"
+
+          echo "Creating remote directory..."
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/java-webservices"
+
+          echo "Uploading JAR..."
+          rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
+            "$JAR_FILE" \
+            $SERVER:$REMOTE_PATH
+
+          echo "Deploying (safe SSH execution)..."
+          ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
+
+            set -e
+
+            echo "Stopping app safely..."
+
+            PID=$(ps -ef | grep gridflex-backend-service.jar | grep -v grep | awk '{print $2}')
+
+            if [ -n "$PID" ]; then
+              echo "Killing PID: $PID"
+              kill -9 $PID || true
+            else
+              echo "No running process found"
+            fi
+
+            echo "Starting app..."
+
+            nohup java -Dspring.profiles.active=prod \
+              -jar /opt/java-webservices/gridflex-backend-service.jar \
+              > /opt/java-webservices/gridflex-prod.log 2>&1 &
+
+            echo "Deployment complete"
           EOF
-
-          scp -o StrictHostKeyChecking=no target/*.jar \
-            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
-
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} << EOF
-              nohup java -jar \
-                -Dspring.profiles.active=prod \
-                /opt/java-webservices/gridflex-backend-service.jar \
-                > /opt/java-webservices/gridflex-prod.log 2>&1 &
-          EOF
-
 
 
 #name: Deploy Spring Boot to Server
@@ -101,6 +158,7 @@ jobs:
 #on:
 #  push:
 #    branches:
+#      - staging
 #      - main
 #
 #jobs:
@@ -108,27 +166,87 @@ jobs:
 #    runs-on: ubuntu-latest
 #
 #    steps:
+#      # =====================
+#      # Checkout source code
+#      # =====================
 #      - name: Checkout code
 #        uses: actions/checkout@v3
 #
+#      # =====================
+#      # Setup Java
+#      # =====================
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: temurin
+#          java-version: '17'
+#
+#      # =====================
+#      # Build application
+#      # =====================
 #      - name: Build with Maven
 #        run: |
 #          chmod +x ./mvnw
 #          ./mvnw clean package -DskipTests
 #
-#      - name: Set up SSH agent
+#      # =====================================================
+#      # STAGING DEPLOYMENT (branch: staging)
+#      # =====================================================
+#      - name: Setup SSH Agent (Staging)
+#        if: github.ref == 'refs/heads/staging'
 #        uses: webfactory/ssh-agent@v0.9.0
 #        with:
-#          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
 #
-#      - name: Copy JAR to server
+#      - name: Deploy to Staging Server
+#        if: github.ref == 'refs/heads/staging'
 #        run: |
-#          scp -o StrictHostKeyChecking=no target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
-#
-#      - name: Run app on server
-#        run: |
-#          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-#            pkill -f 'gridflex-backend-service.jar' || true
-#            nohup java -jar /opt/java-webservices/gridflex-backend-service.jar > /opt/java-webservices/gridflex.log 2>&1 &
+#          ssh -o StrictHostKeyChecking=no \
+#            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} << EOF
+#              sudo mkdir -p /opt/java-webservices
+#              sudo chown -R \$USER:\$USER /opt/java-webservices
+#              pkill -f 'gridflex-backend-service.jar' || true
 #          EOF
 #
+#          scp -o StrictHostKeyChecking=no target/*.jar \
+#            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
+#
+#          ssh -o StrictHostKeyChecking=no \
+#            ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} << EOF
+#              nohup java -jar \
+#                -Dspring.profiles.active=staging \
+#                /opt/java-webservices/gridflex-backend-service.jar \
+#                > /opt/java-webservices/gridflex-staging.log 2>&1 &
+#          EOF
+#
+#      # =====================================================
+#      # PRODUCTION DEPLOYMENT (branch: main)
+#      # =====================================================
+#      - name: Setup SSH Agent (Production)
+#        if: github.ref == 'refs/heads/main'
+#        uses: webfactory/ssh-agent@v0.9.0
+#        with:
+#          ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+#
+#      - name: Deploy to Production Server
+#        if: github.ref == 'refs/heads/main'
+#        run: |
+#          ssh -o StrictHostKeyChecking=no \
+#            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} << EOF
+#              mkdir -p /opt/java-webservices
+#              chown -R \$USER:\$USER /opt/java-webservices
+#              pkill -f 'gridflex-backend-service.jar' || true
+#          EOF
+#
+#          scp -o StrictHostKeyChecking=no target/*.jar \
+#            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/opt/java-webservices/gridflex-backend-service.jar
+#
+#          ssh -o StrictHostKeyChecking=no \
+#            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} << EOF
+#              nohup java -jar \
+#                -Dspring.profiles.active=prod \
+#                /opt/java-webservices/gridflex-backend-service.jar \
+#                > /opt/java-webservices/gridflex-prod.log 2>&1 &
+#          EOF
+#
+
