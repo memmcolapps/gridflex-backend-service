@@ -29,8 +29,8 @@ public interface ManufacturerMapper {
     })
     Manufacturer find(String name);
 
-    @Insert("INSERT INTO manufacturers (manufacturer_id, name, state, contact_person, email, phone_no, org_id, created_at, updated_at, city, street, house_no) " +
-            "VALUES (#{manufacturerId}, #{name}, #{state}, #{contactPerson}, #{email}, #{phoneNo}, #{orgId}, #{createdAt}, #{updatedAt}, #{city}, #{street}, #{houseNo})")
+    @Insert("INSERT INTO manufacturers (manufacturer_id, name, state, contact_person,phone_no, org_id, created_at, updated_at, city, street, house_no) " +
+            "VALUES (#{manufacturerId}, #{name}, #{state}, #{contactPerson}, #{phoneNo}, #{orgId}, #{createdAt}, #{updatedAt}, #{city}, #{street}, #{houseNo})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertManufacturer(Manufacturer isManufacturer);
 
