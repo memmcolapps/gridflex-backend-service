@@ -35,9 +35,9 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             "/dashboard/service/data-management/**",
             "/audit-log/service/**",
             "/uploads/**",
-            "/hes/service/stream",
-            "/hes/service/meter-status/stream",
-            "/api/realtime/stream"
+//            "/hes/service/stream",
+//            "/hes/service/meter-status/stream",
+            "/api/realtime/**"
     );
 
     @Override
