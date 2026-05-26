@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.hes.Event;
 import org.memmcol.gridflexbackendservice.model.hes.MeterConnEvent;
 import org.memmcol.gridflexbackendservice.model.hes.MeterLastCommunication;
@@ -10,6 +11,7 @@ import org.memmcol.gridflexbackendservice.model.vend.Transaction;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Mapper
@@ -325,4 +327,9 @@ public interface DashboardMapper {
             @Result(column = "critical_level", property = "criticalLevel"),
     })
     List<Event> getEventsReportByNodeId(@Param("orgId") UUID orgId, @Param("nodeId") UUID nodeId);
+
+    @Select("""
+        SELECT name FROM bands WHERE org_id = #{orgId}
+    """)
+    List<Band> getBands(UUID orgId);
 }

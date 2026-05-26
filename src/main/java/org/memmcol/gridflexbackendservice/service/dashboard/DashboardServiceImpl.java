@@ -717,7 +717,7 @@ public class DashboardServiceImpl implements  DashboardService{
         return Map.of();
     }
 
-@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public Map<String, Object> hesDashboard() {
 
         try {
@@ -846,6 +846,25 @@ public class DashboardServiceImpl implements  DashboardService{
             genericHandler.logAndSaveException(exception, "fetching hes dashboard");
             throw exception;
         }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> getBands() {
+        try {
+            UserModel user = handleUserValidation();
+            UUID nodeId = user.getNodeInfo().getNodeId();
+            String nodeType = user.getNodeInfo().getType();
+
+            List<Band> bandName = dashboardMapper.getBands(user.getOrgId());
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), bandName);
+        } catch (Exception exception) {
+            genericHandler.logIncidentReport("fetching band dashboard service failed");
+            genericHandler.logAndSaveException(exception, "fetching band hes dashboard");
+            throw exception;
+        }
+
     }
 
 

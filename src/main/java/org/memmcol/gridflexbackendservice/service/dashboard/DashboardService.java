@@ -10,4 +10,6 @@ public interface DashboardService {
     Map<String, Object> billingDashboard();
 
     Map<String, Object> hesDashboard();
+
+    Map<String, Object> getBands();
 }
