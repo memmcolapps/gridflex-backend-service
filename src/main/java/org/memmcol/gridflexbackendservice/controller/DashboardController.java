@@ -31,6 +31,16 @@ public class DashboardController {
         }
     }
 
+    @GetMapping("/vending/bands")
+    public ResponseEntity<?> getBand() {
+        try {
+            Map<String, Object> result = service.getBands();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+
+    }
 
     @GetMapping("/vending")
     public ResponseEntity<?> vending(

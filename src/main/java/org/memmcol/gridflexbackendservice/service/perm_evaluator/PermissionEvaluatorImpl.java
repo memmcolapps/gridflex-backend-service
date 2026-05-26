@@ -43,8 +43,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {
 
-        System.out.println("access--1");
-
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
@@ -80,7 +78,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
                 return hasActionPermission(uri, method, extractPermissions(authentication));
             }
 
-            System.out.println("access--3");
             List<Map<String, Object>> permissionTree =
                     objectMapper.readValue(user.getPermissionTreeJson(), List.class);
 
@@ -104,14 +101,13 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
                     Boolean moduleAccess = (Boolean) moduleInfo.get("access");
                     if (!Boolean.TRUE.equals(moduleAccess)) continue;
-                    System.out.println("access--6");
+
                     List<Map<String, Object>> submodules =
                             (List<Map<String, Object>>) module.get("submodules");
 
                     if (submodules == null) continue;
 
                     for (Map<String, Object> sub : submodules) {
-                        System.out.println("access--7");
                         Map<String, Object> subInfo =
                                 (Map<String, Object>) sub.get("submodule");
 
@@ -119,13 +115,9 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 //                        System.out.println("access--71: "+subInfo);
                         Boolean subAccess = (Boolean) subInfo.get("access");
                         if (!Boolean.TRUE.equals(subAccess)) continue;
-                        System.out.println("access--8");
                         String submoduleName = (String) subInfo.get("name");
                         String code = (String) subInfo.get("code");
-                        System.out.println("code: " + code);
                         if (submoduleName == null) continue;
-                        System.out.println("access--9: "+uri);
-                        System.out.println("access--19: "+submoduleName);
                         // STEP 1: match endpoint
                         List<String> endpoints = endpointRegistry.getEndpoints(code);
 //                        List<String> endpoints = endpointRegistry.getEndpoints(submoduleName);
@@ -141,7 +133,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 //                                submoduleName.toLowerCase().replace(" ", "-"))) {
 //                            continue;
 //                        }
-                        System.out.println("access--10");
                         // STEP 2: enforce permissions
                         if (!hasActionPermission(uri, method, groupPermissions)) {
                             return false;
