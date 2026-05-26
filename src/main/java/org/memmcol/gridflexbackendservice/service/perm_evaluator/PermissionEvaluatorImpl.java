@@ -26,9 +26,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     // These endpoint do not required permission to be accessible
 //    private static final List<String> PUBLIC_ENDPOINTS = List.of(
-//            "/audit-log/service/**",
-//            "/dashboard/service/data-management/**"
-//    );
+//////            "/audit-log/service/**",
+//////            "/dashboard/service/data-management/**"
+//////            "/hes/service/meter-status/stream/**"
+////    );
 
     // These endpoints required permission at least to be true for access
     private static final List<String> GLOBAL_PERMISSION_ENDPOINTS = List.of(
@@ -42,6 +43,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {
+
+        if (matcher.match("/hes/service/meter-status/stream", request.getRequestURI())) {
+            return true;
+        }
 
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
@@ -67,7 +72,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 //                System.out.println("PUBLIC ENDPOINT - ACCESS GRANTED");
 //                return true;
 //            }
-//
+////
             boolean isGlobalEndpoint = GLOBAL_PERMISSION_ENDPOINTS.stream()
                     .anyMatch(pattern -> matcher.match(pattern, uri));
 
