@@ -853,8 +853,6 @@ public class DashboardServiceImpl implements  DashboardService{
     public Map<String, Object> getBands() {
         try {
             UserModel user = handleUserValidation();
-            UUID nodeId = user.getNodeInfo().getNodeId();
-            String nodeType = user.getNodeInfo().getType();
 
             List<Band> bandName = dashboardMapper.getBands(user.getOrgId());
 
