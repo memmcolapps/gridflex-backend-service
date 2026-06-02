@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.UUID;
 
 @Configuration
-@MapperScan("org.memmcol.gridflexbackendservice.mapper")
+@MapperScan({"org.memmcol.gridflexbackendservice.mapper", "org.memmcol.gridflexbackendservice.thirdPartyService.mapper"})
 public class MapperConfig {
 
     @Bean
