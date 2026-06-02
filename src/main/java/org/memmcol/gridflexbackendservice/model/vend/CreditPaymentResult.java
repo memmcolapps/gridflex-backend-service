@@ -1,4 +1,4 @@
-package org.memmcol.gridflexbackendservice.service.vend;
+package org.memmcol.gridflexbackendservice.model.vend;
 
 import lombok.Builder;
 import lombok.Data;
