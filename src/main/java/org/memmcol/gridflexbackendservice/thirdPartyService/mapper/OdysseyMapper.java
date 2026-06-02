@@ -1,7 +1,157 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
+import org.apache.ibatis.annotations.Select;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.MeterReadingModel;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.OdysseyPaymentModel;
+
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 @Mapper
 public interface OdysseyMapper {
+
+    @Select("""
+                SELECT
+                    ms.meter_id,
+                    ms.meter_number,
+                    ms.meter_account_number,
+                	ms.customer_fullname,
+                	ms.connection_type,
+                	md.latitude,
+                	md.longitude,
+                
+                    latest.energy_consumption AS energy_consumption_kwh,
+                    latest.entry_timestamp,
+                
+                    interval_data.time_interval_minutes,
+                
+                    debt.balance_after_adjustment AS debt,
+                    credit.balance_after_adjustment AS credit
+                
+                FROM (
+                    SELECT DISTINCT
+                        meter_id,
+                        meter_number,
+                        meter_account_number,
+                        customer_fullname,
+                        connection_type
+                    FROM vw_meter_summary
+                    WHERE meter_stage= 'Assigned'
+                ) ms
+                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id
+                -- latest energy reading
+                LEFT JOIN LATERAL (
+                    SELECT
+                        de.energy_consumption,
+                        de.entry_timestamp
+                    FROM vw_daily_energy_consumption de
+                    WHERE de.meter_serial = ms.meter_number
+                      AND de.entry_timestamp BETWEEN
+                          #{startDate} AND #{endDate}
+                    ORDER BY de.entry_timestamp DESC
+                    LIMIT 1
+                ) latest ON TRUE
+                
+                -- time interval
+                LEFT JOIN LATERAL (
+                    SELECT
+                        ROUND(EXTRACT(
+                            EPOCH FROM (MAX(de.entry_timestamp) - MIN(de.entry_timestamp))
+                        ) / 60, 2) AS time_interval_minutes
+                    FROM vw_daily_energy_consumption de
+                    WHERE de.meter_serial = ms.meter_number
+                      AND de.entry_timestamp BETWEEN
+                          #{startDate} AND #{endDate}
+                ) interval_data ON TRUE
+                
+                -- latest DEBT (NO SUM)
+                LEFT JOIN LATERAL (
+                    SELECT
+                        balance_after_adjustment
+                    FROM vw_meter_summary m2
+                    WHERE m2.meter_number = ms.meter_number
+                      AND m2.adjustment_type = 'debit'
+                    ORDER BY m2.created_at DESC
+                    LIMIT 1
+                ) debt ON TRUE
+                
+                -- latest CREDIT (NO SUM)
+                LEFT JOIN LATERAL (
+                    SELECT
+                        balance_after_adjustment
+                    FROM vw_meter_summary m3
+                    WHERE m3.meter_number = ms.meter_number
+                      AND m3.adjustment_type = 'credit'
+                    ORDER BY m3.created_at DESC
+                    LIMIT 1
+                ) credit ON TRUE
+                WHERE latest.entry_timestamp IS NOT NULL;
+        """)
+    @Results({
+            @Result(property = "meterId", column = "meter_number"),
+            @Result(property = "energyConsumptionKwh", column = "energy_consumption_kwh"),
+            @Result(property = "timeIntervalMinutes", column = "time_interval_minutes"),
+            @Result(property = "timestamp", column = "entry_timestamp"),
+            @Result(property = "customerAccountId", column = "meter_account_number"),
+//            @Result(property = "energyReadingKwh", column = "meter_id"),
+//            @Result(property = "energyBalanceKwh", column = "meter_id"),
+            @Result(property = "customerName", column = "customer_fullname"),
+            @Result(property = "meterState", column = "connection_type"),
+            @Result(property = "latitude", column = "latitude"),
+            @Result(property = "longitude", column = "longitude"),
+            @Result(property = "meterNumber", column = "meter_number"),
+
+            @Result(property = "debt", column = "debt"),
+            @Result(property = "credit", column = "credit"),
+
+
+    })
+    List<MeterReadingModel> getMeterReadingModel(Date startDate, Date endDate);
+
+
+    @Select("""
+        SELECT
+            c.customer_id AS customerId,
+            m.account_number,
+            m.id,
+            m.meter_number,
+            CONCAT(c.firstname,' ', c.lastname) AS fullname,
+            c.phone_number,
+            md.latitude,
+            md.longitude,
+            COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
+            t.id AS transaction_id,
+            t.initial_amount AS amount,
+            t.created_at AS timestamp,
+            'NGN' AS currency,
+            t.unit AS transactionKwh
+        FROM customers c
+        LEFT JOIN meters m ON c.customer_id = m.customer_id
+        LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
+        LEFT JOIN md_meters_info md ON m.id = md.meter_id
+        LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
+        WHERE m.meter_stage = 'Assigned'
+          AND t.created_at BETWEEN #{startDate} AND #{endDate}
+        """)
+    @Results({
+            @Result(property = "customerId", column = "customerId"),
+            @Result(property = "customerAccountId", column = "account_number"),
+//            @Result(property = "meterId", column = "id"),
+            @Result(property = "meterId", column = "meter_number"),
+            @Result(property = "customerName", column = "fullname"),
+            @Result(property = "customerPhone", column = "phone_number"),
+            @Result(property = "latitude", column = "latitude"),
+            @Result(property = "longitude", column = "longitude"),
+            @Result(property = "transactionType", column = "transactionType"),
+            @Result(property = "transactionId", column = "transaction_id"),
+            @Result(property = "amount", column = "amount"),
+            @Result(property = "timestamp", column = "timestamp"),
+            @Result(property = "currency", column = "currency"),
+            @Result(property = "transactionKwh", column = "transactionKwh")
+    })
+    List<OdysseyPaymentModel> getOddyseyPayment(Date startDate, Date endDate);
 }

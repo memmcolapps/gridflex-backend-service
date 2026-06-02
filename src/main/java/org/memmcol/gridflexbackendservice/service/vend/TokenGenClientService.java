@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.vend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -11,6 +12,9 @@ import org.memmcol.gridflexbackendservice.model.vend.TokenGenResponse;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.View;
+
+import java.math.BigDecimal;
 
 @Service
 public class TokenGenClientService {
@@ -21,6 +25,8 @@ public class TokenGenClientService {
     private final WebClient webClient;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private View error;
 
     public TokenGenClientService(
             @Qualifier("tokenGenWebClient") WebClient webClient) {
@@ -29,9 +35,11 @@ public class TokenGenClientService {
 
     public TokenGenResponse generateToken(TokenGenRequest request, String url, String tokenType) {
 
-        request.setMeterNo("62124022443");
-        request.setSgc(600849);
-        request.setTosgc(600849);
+//        request.setMeterNo("62124022443");
+//        request.setSgc(600849);
+//        request.setTosgc(600849);
+
+//        request.setAmount(BigDecimal.valueOf(10));
         // Print the payload
         try {
             String payload = objectMapper.writeValueAsString(request);
@@ -54,7 +62,6 @@ public class TokenGenClientService {
                 .bodyToMono(String.class)
                 .map(rawResponse -> {
                     // Print the raw response for debugging
-                    System.out.println("Raw response: " + rawResponse);
                     return parseResponse(rawResponse, tokenType);
                 })
                 .block(); // OK because service is transactional
@@ -88,11 +95,16 @@ public class TokenGenClientService {
                                 ? response.getTokens().get(0)
                                 : "Token generation failed";
 
-                throw new RuntimeException(errorMsg);
+                throw new GlobalExceptionHandler.NotFoundException(errorMsg);
+//                RuntimeException(errorMsg);
             }
 
-            // ✅ SUCCESS
+            // SUCCESS
             return response;
+        } catch (GlobalExceptionHandler.NotFoundException ex) {
+
+        // Allow business exception to reach GlobalExceptionHandler
+        throw ex;
 
         } catch (Exception ex) {
             System.out.println("Invalid token generation response: " + ex.getMessage());

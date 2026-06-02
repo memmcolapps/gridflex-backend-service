@@ -64,7 +64,9 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 "/auth/service/test",
                 "/data-collection/schedules",
                 "/meter/service/meterInfo-lookup",
-                "/meter/service/readMeter-lookup"
+                "/meter/service/readMeter-lookup",
+                "/odyssey/standard/meter/readings",
+                "/odyssey/standard/electricity/payments"
 //                "/uploads"
 //				"/meter/service/virtual/export",
 //				"/meter/service/export"

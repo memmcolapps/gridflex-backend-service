@@ -134,7 +134,9 @@ public class SecurityConfig {
 						"/data-collection/schedules/**",
 						"/api/realtime/stream",
 						"/meter/service/meterInfo-lookup",
-						"/meter/service/readMeter-lookup"
+						"/meter/service/readMeter-lookup",
+						"/odyssey/standard/meter/readings",
+						"/odyssey/standard/electricity/payments"
 //						"/uploads/**"
 				).permitAll()
 
