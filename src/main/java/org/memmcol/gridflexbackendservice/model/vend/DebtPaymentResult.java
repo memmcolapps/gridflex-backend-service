@@ -1,8 +1,7 @@
-package org.memmcol.gridflexbackendservice.service.vend;
+package org.memmcol.gridflexbackendservice.model.vend;
 
 import lombok.Builder;
 import lombok.Data;
-import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

@@ -4,6 +4,7 @@ package org.memmcol.gridflexbackendservice.components;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
@@ -29,13 +30,13 @@ public class HandleValidUser {
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
             username = principal.getUsername();
         }
-
         UserModel user = staticOperatorMapper.findAuthByUserEmail(username);
 
-        System.out.println("user info: " + user.getFirstname());
+//        System.out.println("user info: " + user.getFirstname());
 
         if (user == null) {
-            throw new UsernameNotFoundException("User not found");
+            throw new GlobalExceptionHandler.NotFoundException("User not found");
+//            throw new UsernameNotFoundException("User not found");
         }
 
         if (!user.getStatus()) {
