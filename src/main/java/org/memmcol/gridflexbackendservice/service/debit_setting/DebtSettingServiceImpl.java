@@ -153,16 +153,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
-            LiabilityCause isExist = debtMapper.getLiabilityCauseById(request.getLiabilityCauseId(), um.getOrgId());
+            LiabilityCause isExist = debtMapper.getLiabilityCauseByIdForUpdate(request.getLiabilityCauseId(), um.getOrgId());
 
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
             }
             HandlePermission.perm(nodeType);
-
-//            if (isExist.getName().equalsIgnoreCase(request.getName())) {
-//                throw new GlobalExceptionHandler.ResourceAlreadyExistsException(lc + " (" + request.getName() + ") "+status.getExistDesc());
-//            }
 
             LiabilityCause isVersionExist = debtMapper.getLiabilityCauseVersionById(request.getLiabilityCauseId(), um.getOrgId());
 
@@ -172,7 +168,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             String changeDescription = buildChangeDescription(isExist, request);
             request.setDescription("Liability Cause Edited");
 
-            if(isVersionExist != null ){
+            if(isVersionExist != null){
                 throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending status needs to be cleared");
             } else {
                 int res = debtMapper.updateLiabilityCause("Pending-edited", request.getLiabilityCauseId(), request.getUpdatedAt());
@@ -448,7 +444,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
-            PercentageRange isExist = debtMapper.getPercentageById(request.getPercentageId(), um.getOrgId());
+            PercentageRange isExist = debtMapper.getPercentageByIdForUpdate(request.getPercentageId(), um.getOrgId());
 
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());

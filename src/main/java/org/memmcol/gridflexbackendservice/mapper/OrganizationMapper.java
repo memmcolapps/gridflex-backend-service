@@ -68,6 +68,22 @@ public interface OrganizationMapper {
     })
     Organization getOrganizationById(@Param("id") UUID id);
 
+    @Select("SELECT * FROM organizations WHERE id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "businessName", column = "business_name"),
+            @Result(property = "postalCode", column = "postal_code"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at"),
+            @Result(property = "operator", column = "user_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getOperator")),
+            @Result(property = "moduleAccess", column = "id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.OrganizationMapper.getXyzByOrgId")),
+            @Result(property = "moduleAccess", column = "id",
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.AuthMapper.getXyzByOrgId"))
+    })
+    Organization getOrganizationByIdForUpdate(@Param("id") UUID id);
+
     @Select("SELECT u.id, u.firstname, u.lastname, u.email, u.node_id, u.status, u.active, u.org_id, u.last_active, " +
             "u.created_at, u.updated_at, u.phone_number FROM users u WHERE id = #{id} ")
     @Results({

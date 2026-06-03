@@ -150,7 +150,7 @@ public class UserServiceImpl implements  UserService {
 
 //            operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
-            UserModel users = userMapper.findById(operator.getId(), um.getOrgId());
+            UserModel users = userMapper.getUserByIdForUpdate(operator.getId(), um.getOrgId());
             // check if operator exist
             if (users == null) {
                 throw new GlobalExceptionHandler.ResourceAlreadyExistsException(userName + " " + status.getNotFoundDesc());
@@ -198,7 +198,7 @@ public class UserServiceImpl implements  UserService {
                 throw new GlobalExceptionHandler.NotFoundException("Editing someone else record is not permissible");
             }
 
-            UserModel isOperator = userMapper.findById(request.getId(), um.getOrgId());
+            UserModel isOperator = userMapper.getUserByIdForUpdate(request.getId(), um.getOrgId());
             if (isOperator == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }
@@ -457,7 +457,7 @@ public class UserServiceImpl implements  UserService {
 
             HandlePermission.perm(nodeType);
             // check if operator exist
-            UserModel isOperator = userMapper.findById(userId, um.getOrgId());
+            UserModel isOperator = userMapper.getUserByIdForUpdate(userId, um.getOrgId());
             if (isOperator == null) {
                 throw new GlobalExceptionHandler.NotFoundException(userName + " " + status.getNotFoundDesc());
             }

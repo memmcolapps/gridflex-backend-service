@@ -24,6 +24,10 @@ public interface NodeMapper {
     @Select("SELECT * FROM nodes WHERE id = #{parentNodeId} AND org_id = #{orgId} LIMIT 1")
     Node isNodeExist(UUID parentNodeId, UUID orgId);
 
+    @Select("SELECT * FROM nodes WHERE id = #{parentNodeId} AND org_id = #{orgId} FOR UPDATE LIMIT 1")
+    Node getNodeExistByIdForUpdate(UUID parentNodeId, UUID orgId);
+
+
 
     @Insert("INSERT INTO substation_trans_feeder_lines (node_id, asset_id, org_id, name, serial_no, phone_number, email, " +
             "contact_person, address, status, voltage, latitude, longitude, type, description, parent_id, created_at, updated_at) " +

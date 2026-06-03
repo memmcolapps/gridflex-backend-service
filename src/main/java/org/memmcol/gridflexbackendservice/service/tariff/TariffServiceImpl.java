@@ -466,7 +466,7 @@ public class TariffServiceImpl implements TariffService {
 
             HandlePermission.perm(nodeType);
 
-            Tariff isExist = tariffMapper.getTariff(tariff.getT_id(), um.getOrgId());
+            Tariff isExist = tariffMapper.getTariffByIdForUpdate(tariff.getT_id(), um.getOrgId());
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(tariffName + " " + status.getNotFoundDesc());
             }
