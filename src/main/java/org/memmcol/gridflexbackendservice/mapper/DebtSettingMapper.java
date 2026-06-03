@@ -43,6 +43,16 @@ public interface DebtSettingMapper {
     })
     LiabilityCause getLiabilityCauseById(UUID id, UUID orgId);
 
+    @Select("SELECT * FROM liability_cause WHERE id = #{id} AND org_id = #{orgId} FOR UPDATE")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt")
+    })
+    LiabilityCause getLiabilityCauseByIdForUpdate(UUID id, UUID orgId);
+
 //    @Update("UPDATE liability_cause_version SET name = #{name}, code = #{code}, approve_status = #{approveStatus}, updated_at = #{updatedAt}, description = #{description} " +
 //            "WHERE liability_cause_id = #{liabilityCauseId} AND approve_status = 'pending'")
 //    int updateLiabilityCauseVer(LiabilityCause request);
@@ -190,6 +200,24 @@ public interface DebtSettingMapper {
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
     })
     PercentageRange getPercentageById(UUID id, UUID orgId);
+
+    @Select("SELECT * FROM debt_percentage WHERE id = #{id} AND org_id = #{orgId} FOR UPDATE")
+    @Results({
+            @Result(column = "id", property = "id"),
+            @Result(column = "org_id", property = "orgId"),
+            @Result(column = "band_id", property = "bandId"),
+            @Result(column = "debt_percentage_id", property = "percentageId"),
+            @Result(column = "approve_status", property = "approveStatus"),
+            @Result(column = "amount_start_range", property = "amountStartRange"),
+            @Result(column = "amount_end_range", property = "amountEndRange"),
+            @Result(column = "approve_by", property = "approveBy"),
+            @Result(column = "created_by", property = "createdBy"),
+            @Result(column = "created_at", property = "createdAt"),
+            @Result(column = "updated_at", property = "updatedAt"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper.getBandById")),
+    })
+    PercentageRange getPercentageByIdForUpdate(UUID id, UUID orgId);
 
     @Select("SELECT * FROM debt_percentage_version WHERE percentage = #{percentage} AND org_id = #{orgId} AND " +
             "(approve_status = 'Pending-created' OR approve_status = 'Pending-edited' OR approve_status = 'Pending-activated' " +

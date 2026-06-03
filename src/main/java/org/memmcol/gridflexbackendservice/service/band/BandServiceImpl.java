@@ -107,10 +107,6 @@ public class BandServiceImpl implements BandService {
             if (isExist != null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + ": (" + band.getName() + ") " + status.getExistDesc());
             }
-//            Band isVersionExist = bandMapper.getVersionBand(band.getName(), um.getOrgId());
-//            if(isVersionExist != null) {
-//                throw new GlobalExceptionHandler.NotFoundException(isVersionExist.getName()+ " have a pending task to attend to");
-//            }
 
             band.setOrgId(um.getOrgId());
             band.setApproveStatus("Pending-created");
@@ -164,7 +160,7 @@ public class BandServiceImpl implements BandService {
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
-            Band isExist = bandMapper.getBandById(band.getBandId(), um.getOrgId());
+            Band isExist = bandMapper.getBandByIdForUpdate(band.getBandId(), um.getOrgId());
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }

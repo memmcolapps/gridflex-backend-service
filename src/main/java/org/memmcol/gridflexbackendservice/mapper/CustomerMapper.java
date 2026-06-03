@@ -36,7 +36,7 @@ public interface CustomerMapper {
 
     @Select("SELECT * FROM customers WHERE id = #{id} " +
             "AND (node_id = #{nodeId} OR region = #{nodeId} " +
-            "OR node_id = #{nodeId} OR root = #{nodeId})")
+            "OR node_id = #{nodeId} OR root = #{nodeId}) FOR UPDATE")
     @Results({
             @Result(property = "orgId", column = "org_id"),
             @Result(property = "customerId", column = "customer_id"),

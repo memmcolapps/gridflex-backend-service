@@ -143,7 +143,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             }
 
             // check if operator exist
-            Manufacturer isManufacturer = manufacturerMapper.findById(request.getId(), um.getOrgId());
+            Manufacturer isManufacturer = manufacturerMapper.getManufacturerByIdForUpdate(request.getId(), um.getOrgId());
             if (isManufacturer == null){
                 throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " " + status.getNotFoundDesc());
             }
