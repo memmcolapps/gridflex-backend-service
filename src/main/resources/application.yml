@@ -26,16 +26,17 @@ spring:
 #    base-url: http://127.0.0.1:9061/api/realtime
 #  dlms-write-ops:
 #    base-url: http://127.0.0.1:9061/api/dlms
+#    base-url: http://192.168.1.76:9061/api
 
 external:
   token-gen:
     base-url: http://169.239.189.91:19071
   hes-realtime:
-    base-url: http://172.16.10.60:9061/api/realtime
+    base-url: http://192.168.1.76:9061/api/realtime
   hes-endpoint:
-    base-url: http://172.16.10.60:9061/api
+    base-url: http://192.168.1.76:9061/api
   dlms-write-ops:
-    base-url: http://172.16.10.60:9061/api/dlms
+    base-url: http://192.168.1.76:9061/api/dlms
  
 #spring:
 #  application:
