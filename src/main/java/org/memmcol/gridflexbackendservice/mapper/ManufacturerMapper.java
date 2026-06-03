@@ -46,6 +46,18 @@ public interface ManufacturerMapper {
     })
     Manufacturer findById(UUID id, UUID orgId);
 
+    @Select("SELECT * FROM manufacturers WHERE org_id = #{orgId} AND id = #{id} FOR UPDATE")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "manufacturerId", column = "manufacturer_id"),
+            @Result(property = "contactPerson", column = "contact_person"),
+            @Result(property = "phoneNo", column = "phone_no"),
+            @Result(property = "houseNo", column = "house_no"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Manufacturer getManufacturerByIdForUpdate(UUID id, UUID orgId);
+
 //    @Update("UPDATE manufacturers SET manufacturer_id = #{manufacturerId}, name = #{name}, contact_person = #{contactPerson}, " +
 //            "email = #{email}, phone_no = #{phoneNo}, updated_at = #{updatedAt} WHERE id = #{id}")
 

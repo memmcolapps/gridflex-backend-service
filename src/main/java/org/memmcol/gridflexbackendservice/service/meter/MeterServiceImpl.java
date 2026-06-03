@@ -442,7 +442,7 @@ public class MeterServiceImpl implements MeterService {
             System.out.print("nodeId: "+nodeId);
 
             // Fetch existing meter and version
-            Meter existingMeter = meterMapper.findById(request.getId(), user.getOrgId(), nodeId);
+            Meter existingMeter = meterMapper.getMeterByIdForUpdate(request.getId(), user.getOrgId(), nodeId);
             if (existingMeter == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Meter not found or You do not have permission to edit");
             }

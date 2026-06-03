@@ -73,6 +73,21 @@ public interface BandMapper {
     })
     Band getBandById(UUID id, UUID orgId);
 
+    @Select("""
+        SELECT *
+        FROM bands
+        WHERE id = #{id}
+        AND org_id = #{orgId}
+        FOR UPDATE
+    """)
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "approveStatus", column = "approve_status"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Band getBandByIdForUpdate(UUID id, UUID orgId);
+
     @Select("SELECT * FROM bands WHERE id = #{id} AND org_id = #{orgId} AND approve_status = 'Approved'")
     @Results({
             @Result(property = "orgId", column = "org_id"),

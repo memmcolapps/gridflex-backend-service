@@ -553,6 +553,10 @@ public class VendingServiceImpl implements VendingService {
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
             BigDecimal finalNetTender = netTenderAfterDebit.add(creditDeducted);
 
+            if(meter.getTariffRate() == null){
+                throw new GlobalExceptionHandler.NotFoundException("Tariff rate not found");
+            }
+
             BigDecimal tariffRate = new BigDecimal(meter.getTariffRate());
             if (tariffRate.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("Invalid tariff rate");

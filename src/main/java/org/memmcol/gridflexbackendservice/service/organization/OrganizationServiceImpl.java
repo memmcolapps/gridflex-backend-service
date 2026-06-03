@@ -102,7 +102,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
             HandlePermission.perm(nodeType);
 
-            Organization originalData = organizationMapper.getOrganizationById(um.getOrgId());
+            Organization originalData = organizationMapper.getOrganizationByIdForUpdate(um.getOrgId());
 //            if (originalData.getBusinessName().equalsIgnoreCase(organization.getBusinessName())) {
 //                throw new GlobalExceptionHandler.NotFoundException("Organization ("+organization.getBusinessName()+") "+status.getExistDesc());
 //            }

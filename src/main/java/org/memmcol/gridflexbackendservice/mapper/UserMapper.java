@@ -75,6 +75,24 @@ public interface UserMapper {
     })
     UserModel findById(@Param("id") UUID id, UUID orgId);
 
+    @Select("SELECT * FROM users WHERE id = #{id} AND org_id = #{orgId} FOR UPDATE")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "firstname", column = "firstname"),
+            @Result(property = "lastname", column = "lastname"),
+            @Result(property = "email", column = "email"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "status", column = "status"),
+            @Result(property = "active", column = "active"),
+            @Result(property = "firstname", column = "firstname"),
+            @Result(property = "lastActive", column = "last_active"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    UserModel getUserByIdForUpdate(@Param("id") UUID id, UUID orgId);
+
+
     @Select("SELECT * FROM users WHERE email = #{email} AND org_id = #{orgId}")
     @Results({
             @Result(property = "id", column = "id"),
@@ -93,7 +111,7 @@ public interface UserMapper {
     UserModel findByEmail(@Param("email") String email, @Param("orgId") UUID orgId);
 
     @Select("""
-            SELECT * FROM groups WHERE id = #{groupId} AND org_id = #{orgId}
+            SELECT * FROM groups WHERE id = #{groupId} AND org_id = #{orgId} FOR UPDATE
             """)
     Group checkGroupId(@Param("groupId") UUID groupId, @Param("orgId") UUID orgId);
 
@@ -231,7 +249,7 @@ public interface UserMapper {
     @Select("SELECT DISTINCT org_id FROM bands WHERE org_id = #{orgId}")
     String getOrgId(UUID orgId);
 
-    @Select("SELECT * FROM user_groups WHERE group_id = #{groupId}")
+    @Select("SELECT * FROM user_groups WHERE group_id = #{groupId} FOR UPDATE")
     @Results({
             @Result(property = "groupId", column = "group_id"),
             @Result(property = "userId", column = "user_id"),

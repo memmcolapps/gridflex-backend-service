@@ -300,7 +300,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getNodeId(), um.getOrgId());
+            Node nd = nodeMapper.getNodeExistByIdForUpdate(request.getNodeId(), um.getOrgId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Node does not exist");
@@ -415,7 +415,7 @@ public class NodeServiceImpl implements NodeService {
             node.setOrgId(um.getOrgId());
             node.setParentId(request.getParentId());
 
-            Node nd = nodeMapper.isNodeExist(request.getNodeId(), um.getOrgId());
+            Node nd = nodeMapper.getNodeExistByIdForUpdate(request.getNodeId(), um.getOrgId());
 
             if(nd == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Parent node does not exist");

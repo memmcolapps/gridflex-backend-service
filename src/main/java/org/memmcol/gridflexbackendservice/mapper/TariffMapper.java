@@ -32,6 +32,15 @@ public interface TariffMapper {
     })
     Tariff getTariff(UUID id, UUID orgId);
 
+    @Select("SELECT * FROM tariffs WHERE id = #{id} AND org_id = #{orgId} FOR UPDATE")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "band_id", column = "band_id"),
+            @Result(property = "band", column = "band_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.TariffMapper.getBand"))
+    })
+    Tariff getTariffByIdForUpdate(UUID id, UUID orgId);
+
     @Select("SELECT * FROM tariffs WHERE id = #{id} AND approve_status = 'Approved'")
     @Results({
             @Result(property = "id", column = "id"),
