@@ -2,7 +2,7 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.service.vend.VendingService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;

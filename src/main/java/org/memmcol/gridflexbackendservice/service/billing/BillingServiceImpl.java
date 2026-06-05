@@ -15,7 +15,7 @@ import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

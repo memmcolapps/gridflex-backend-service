@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 //import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,14 +34,30 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
-	private static final String ADMIN_HEADER_KEY = "custom";  // Custom header key
-	private static final String ADMIN_HEADER_VALUE = "ab@#1cD3fG!mNXyZ$%Kl78&OH@beeb$";
-	private static final String USER_HEADER_VALUE = "UvW$%12xYz!@#9LmNoP&*45QH@beeb&";
+    @Value("${security.header.key}")
+    private String adminHeaderKey;
 
-	private final IMap<String, Object> authCache;
+    @Value("${security.admin.value}")
+    private String adminHeaderValue;
 
-	public CustomAuthorizationFilter(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
+    @Value("${security.user.value}")
+    private String userHeaderValue;
+
+    @Value("${security.setup.value}")
+    private String setupHeaderValue;
+
+    private final IMap<String, Object> authCache;
+
+	public CustomAuthorizationFilter(
+            @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance
+//            String adminHeaderKey, String adminHeaderValue,
+//            String userHeaderValue, String setupHeaderValue
+    ) {
 		this.authCache = hazelcastInstance.getMap("authCache");
+//        this.adminHeaderKey = adminHeaderKey;
+//        this.adminHeaderValue = adminHeaderValue;
+//        this.userHeaderValue = userHeaderValue;
+//        this.setupHeaderValue = setupHeaderValue;
 	}
 
 	@Override
@@ -49,7 +66,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 		String path = request.getServletPath();
 
-        System.out.println("Endpoint: " + path);
 		// Define exempt paths where authorization is not required
 		Set<String> exemptPaths = Set.of(
 				"/service/alerts",
@@ -65,8 +81,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 "/data-collection/schedules",
                 "/meter/service/meterInfo-lookup",
                 "/meter/service/readMeter-lookup",
-                "/odyssey/standard/meter/readings",
-                "/odyssey/standard/electricity/payments"
+                "/admin/setup/api-clients",
+                "/standard/auth/token"
+//                "/standard/auth/token"
+//                "/odyssey/standard/meter/readings",
+//                "/odyssey/standard/electricity/payments"
 //                "/uploads"
 //				"/meter/service/virtual/export",
 //				"/meter/service/export"
@@ -82,33 +101,39 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             return;
         }
 
-//		// If the path is exempt, skip the authorization filter
-//		if (exemptPaths.contains(path)) {
-//			System.out.println("Requested path: " + path);
-//			filterChain.doFilter(request, response);
-//			return;
-//		}
+        if (path.startsWith("/odyssey/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        // Enforce custom header validation for paths like logout and forget-password
-        if (path.contains("/auth/service/generate-otp") || path.contains("/auth/service/forget-password")) {
-            String apiKey = request.getHeader(ADMIN_HEADER_KEY);
-//            System.out.println("apiKey:: "+apiKey);
+        if (path.startsWith("/admin/setup/api-clients")
+                || path.startsWith("/standard/auth/token")
+                || path.startsWith("/auth/service/generate-otp")
+                || path.startsWith("/auth/service/forget-password")) {
 
-            if (apiKey == null || (!apiKey.equals(ADMIN_HEADER_VALUE) && !apiKey.equals(USER_HEADER_VALUE))) {
+            String apiKey = request.getHeader(adminHeaderKey);
+
+            if (apiKey == null || (
+                    !apiKey.equals(adminHeaderValue)
+                            && !apiKey.equals(userHeaderValue)
+                            && !apiKey.equals(setupHeaderValue)
+            )) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-                Map<String, String> errorMessage = new HashMap<>();
-                errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
-                errorMessage.put("responsedesc", "Missing or invalid authentication header "+ADMIN_HEADER_KEY);
-                errorMessage.put("responsedata", "");
+                Map<String, Object> error = new HashMap<>();
+                error.put("responsecode", 401); //"Missing or invalid authentication header: " + adminHeaderKey
+                error.put("responsedesc", "Missing or invalid authentication header: " + adminHeaderKey);
+                error.put("responsedata", "");
 
-                new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
+                new ObjectMapper().writeValue(response.getOutputStream(), error);
                 return;
             }
+
             filterChain.doFilter(request, response);
             return;
-        } else {
+        }
+        else {
 //            System.out.println("token required:: "+HttpHeaders.AUTHORIZATION);
             // Token-based authorization for other paths
             String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -178,7 +203,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         }
 	}
 
-	// Helper method to handle exceptions and send a custom error message
+    // Helper method to handle exceptions and send a custom error message
 	private void handleException(HttpServletResponse response, Exception exception, String description, int statusCode) throws IOException {
 		Map<String, String> errorMessage = new HashMap<>();
 		errorMessage.put("responsecode", String.valueOf(statusCode));
@@ -190,3 +215,35 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 		new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
 	}
 }
+
+
+//		// If the path is exempt, skip the authorization filter
+//		if (exemptPaths.contains(path)) {
+//			System.out.println("Requested path: " + path);
+//			filterChain.doFilter(request, response);
+//			return;
+//		}
+
+//        // Enforce custom header validation for paths like logout and forget-password
+//        if (path.contains("/auth/service/generate-otp")
+//                || path.contains("/auth/service/forget-password")
+//                || path.contains("/admin/setup/api-clients")) {
+//            String apiKey = request.getHeader(ADMIN_HEADER_KEY);
+////            System.out.println("apiKey:: "+apiKey);
+//
+//            if (apiKey == null || (!apiKey.equals(ADMIN_HEADER_VALUE)
+//                    && !apiKey.equals(USER_HEADER_VALUE)
+//                    && !apiKey.equals(SETUP_HEADER_VALUE))) {
+//                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//                Map<String, String> errorMessage = new HashMap<>();
+//                errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
+//                errorMessage.put("responsedesc", "Missing or invalid authentication header "+ADMIN_HEADER_KEY);
+//                errorMessage.put("responsedata", "");
+//                new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
+//                return;
+//
+//            }
+//            filterChain.doFilter(request, response);
+//            return;
+//        }

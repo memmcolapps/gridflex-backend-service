@@ -7,8 +7,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.service.customer.CustomerService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
-import org.memmcol.gridflexbackendservice.util.ResponseMap;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -20,13 +19,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 

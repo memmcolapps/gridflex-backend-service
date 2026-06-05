@@ -1,6 +1,6 @@
-package org.memmcol.gridflexbackendservice.util;
+package org.memmcol.gridflexbackendservice.exception;
 
-import org.memmcol.gridflexbackendservice.model.vend.MeterView;
+import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -193,6 +193,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataAccessException.class)
 	public ResponseEntity<?> handleDataAccessException(DataAccessException ex) {
 		ex.printStackTrace();
+
+		System.out.println("Log: "+ex.getMessage());
 //		String msg = "There's a problem with accessing some data [See server logs for more details]";
 		String msg = "There's a problem with accessing some data, please try again later";
 		errorMessage.put("responsecode", "112");

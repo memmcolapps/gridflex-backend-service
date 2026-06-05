@@ -5,13 +5,10 @@ import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.CreditDebitPaymentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.PaymentModeMapper;
-import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.AdjustmentAllocation;
-import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.AdjustmentComputationResult;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.CreditDebitAdjustment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
-import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
 
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

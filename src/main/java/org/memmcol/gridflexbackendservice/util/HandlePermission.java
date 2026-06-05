@@ -1,7 +1,6 @@
 package org.memmcol.gridflexbackendservice.util;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 
 public class HandlePermission {
 

@@ -8,25 +8,18 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
-#  datasource:
-#    hikari:
-#      maximum-pool-size: 10
-#      minimum-idle: 5
-#      idle-timeout: 30000
-#      max-lifetime: 1800000
-#      connection-timeout: 30000
-#      leak-detection-threshold: 20000
+odyssey:
+  jwt-secret: ${JWT_SECRET}
 
-#external:
-#  token-gen:
-#    base-url: http://169.239.189.91:19071
-#  hes-endpoint:
-#    base-url: http://127.0.0.1:9061/api
-#  hes-realtime:
-#    base-url: http://127.0.0.1:9061/api/realtime
-#  dlms-write-ops:
-#    base-url: http://127.0.0.1:9061/api/dlms
-#    base-url: http://192.168.1.76:9061/api
+security:
+  header:
+    key: ${HEADER_KEY}
+  admin:
+    value: ${ADMIN_API_VALUE}
+  user:
+    value: ${USER_API_VALUE}
+  setup:
+    value: ${SETUP_API_VALUE}
 
 external:
   token-gen:
@@ -37,20 +30,7 @@ external:
     base-url: http://192.168.1.76:9061/api
   dlms-write-ops:
     base-url: http://192.168.1.76:9061/api/dlms
- 
-#spring:
-#  application:
-#    name: authorization-service
-#  config:
-#    import: optional:configserver:http://localhost:8888
-##  cloud:
-##    config:
-##      uri: http://localhost:8888  # Pointing to your config-service
-##  sleuth:
-##    sampler:
-##      probability: 1.0
-##  zipkin:
-##    base-url: http://localhost:9411/
+
 
 eureka:
   client:
@@ -108,3 +88,40 @@ resilience4j:
 #    metrics:
 #      export:
 #        enabled: true
+
+
+
+  #  datasource:
+  #    hikari:
+  #      maximum-pool-size: 10
+  #      minimum-idle: 5
+  #      idle-timeout: 30000
+  #      max-lifetime: 1800000
+  #      connection-timeout: 30000
+  #      leak-detection-threshold: 20000
+
+  #external:
+  #  token-gen:
+  #    base-url: http://169.239.189.91:19071
+  #  hes-endpoint:
+  #    base-url: http://127.0.0.1:9061/api
+  #  hes-realtime:
+  #    base-url: http://127.0.0.1:9061/api/realtime
+  #  dlms-write-ops:
+  #    base-url: http://127.0.0.1:9061/api/dlms
+  #    base-url: http://192.168.1.76:9061/api
+
+
+#spring:
+#  application:
+#    name: authorization-service
+#  config:
+#    import: optional:configserver:http://localhost:8888
+##  cloud:
+##    config:
+##      uri: http://localhost:8888  # Pointing to your config-service
+##  sleuth:
+##    sampler:
+##      probability: 1.0
+##  zipkin:
+##    base-url: http://localhost:9411/

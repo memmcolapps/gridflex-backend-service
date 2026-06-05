@@ -1,29 +1,44 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.service;
 
+import org.memmcol.gridflexbackendservice.components.ThirdPartySecurityContext;
 import org.memmcol.gridflexbackendservice.thirdPartyService.mapper.OdysseyMapper;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.MeterReadingModel;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.OdysseyPaymentModel;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.ThirdPartyPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Service
 public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
-    private final OdysseyMapper odysseyMapper;
+    @Autowired
+    private OdysseyMapper odysseyMapper;
+
     private static final long MAX_DURATION_MS = 24 * 60 * 60 * 1000;
 
-    public OdysseyApiServiceImpl(OdysseyMapper odysseyMapper) {
-        this.odysseyMapper = odysseyMapper;
-    }
+    @Autowired
+    private ThirdPartySecurityContext securityContext;
+
+//    public OdysseyApiServiceImpl(OdysseyMapper odysseyMapper) {
+//        this.odysseyMapper = odysseyMapper;
+//    }
 
 
+    @Transactional
     @Override
     public Map<String, Object> odysseyMeterReading(Date startDate, Date endDate, int offSet, int pageLimit) {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            ThirdPartyPrincipal principal = securityContext.getPrincipal();
+
+            if (!principal.hasScope("METER_READ")) {
+                throw new AccessDeniedException("You do not have permission to access this service");
+            }
             long durationMs = endDate.getTime() - startDate.getTime();
             if (durationMs < 0) {
                 throw new IllegalArgumentException("startDate must be before endDate");
@@ -64,10 +79,18 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
         return response;
     }
 
+    @Transactional
     @Override
     public Map<String, Object> odysseyPayment(Date startDate, Date endDate) {
         Map<String, Object> response = new HashMap<>();
         try {
+
+            ThirdPartyPrincipal principal = securityContext.getPrincipal();
+
+            if (!principal.hasScope("PAYMENT_READ")) {
+                throw new AccessDeniedException("You do not have permission to access this service");
+            }
+
             long durationMs = endDate.getTime() - startDate.getTime();
             if (durationMs < 0) {
                 throw new IllegalArgumentException("startDate must be before endDate");
