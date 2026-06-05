@@ -377,7 +377,9 @@ public class TariffServiceImpl implements TariffService {
             String bandCode,
             String effectiveDate,
             String approveStatus,
-            String type) {
+            String type,
+            String search,
+            String sort) {
         try {
             UserModel um = handleUserValidation();
 
@@ -412,13 +414,31 @@ public class TariffServiceImpl implements TariffService {
             } else {
                 allTariffs = tariffMapper.GetAllTariffs(um.getOrgId(), page, size);
             }
+            String searchTerm = search == null ? "" : search.trim().toLowerCase();
+
             List<Tariff> filteredTariffs = allTariffs.stream()
                     .filter(t -> tariffName == null || tariffName.isEmpty() || t.getName().equalsIgnoreCase(tariffName))
                     .filter(t -> tariffType == null || tariffType.isEmpty() || t.getTariff_type().equalsIgnoreCase(tariffType))
                     .filter(t -> tariffRate == null || tariffRate.isEmpty() || t.getTariff_rate().equalsIgnoreCase(tariffRate))
                     .filter(t -> effectiveDate == null || effectiveDate.isEmpty() || t.getEffective_date().equalsIgnoreCase(effectiveDate))
-                    .filter(t -> approveStatus == null || approveStatus.isEmpty() || t.getApprove_status().equalsIgnoreCase(approveStatus))
+                    // Filter by approval status: prefix match so "Pending" covers "Pending-created", "Pending-edited", etc.
+                    .filter(t -> approveStatus == null || approveStatus.isEmpty()
+                            || (t.getApprove_status() != null && t.getApprove_status().toLowerCase().startsWith(approveStatus.toLowerCase())))
+                    // Search box: partial match against tariff name OR tariff type
+                    .filter(t -> searchTerm.isEmpty()
+                            || (t.getName() != null && t.getName().toLowerCase().contains(searchTerm))
+                            || (t.getTariff_type() != null && t.getTariff_type().toLowerCase().contains(searchTerm)))
                     .collect(Collectors.toList());
+
+            // Sort by tariff name ascending/descending
+            if (sort != null && !sort.isEmpty()) {
+                Comparator<Tariff> byName = Comparator.comparing(
+                        t -> t.getName() == null ? "" : t.getName(), String.CASE_INSENSITIVE_ORDER);
+                if (sort.equalsIgnoreCase("desc")) {
+                    byName = byName.reversed();
+                }
+                filteredTariffs.sort(byName);
+            }
 
 
             // Pagination logic
