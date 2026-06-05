@@ -12,7 +12,7 @@ public interface BandService {
 
     Map<String, Object> updateBand(Band band);
 
-    Map<String, Object> getBands(String type, String search);
+    Map<String, Object> getBands(String type, String search, String sort);
 
     Map<String, Object> approve(UUID bandId, String approveStatus) throws MissingServletRequestParameterException;
 

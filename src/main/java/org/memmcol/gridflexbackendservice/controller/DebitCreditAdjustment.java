@@ -69,9 +69,11 @@ public class DebitCreditAdjustment {
             @RequestParam(value = "size", required = false, defaultValue = "0") int size,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "asc") String sortDirection,
             @ModelAttribute DebitCreditAdjust debitCreditAdjust) {
         try {
-            Map<String, Object> result = service.getDebitAdjustments(page, size, type, search, debitCreditAdjust);
+            Map<String, Object> result = service.getDebitAdjustments(page, size, type, search, sortBy, sortDirection, debitCreditAdjust);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

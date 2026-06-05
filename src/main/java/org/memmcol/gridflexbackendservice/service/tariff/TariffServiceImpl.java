@@ -410,9 +410,9 @@ public class TariffServiceImpl implements TariffService {
             List<Tariff> allTariffs;
             // Ideally, this should be a dynamic query in the mapper layer
             if (type.equalsIgnoreCase("pending-state")) {
-                allTariffs = tariffMapper.GetPendingTariffs(um.getOrgId(), page, size);
+                allTariffs = tariffMapper.GetPendingTariffs(um.getOrgId(), 0, 0);
             } else {
-                allTariffs = tariffMapper.GetAllTariffs(um.getOrgId(), page, size);
+                allTariffs = tariffMapper.GetAllTariffs(um.getOrgId(), 0, 0);
             }
             String searchTerm = search == null ? "" : search.trim().toLowerCase();
 
