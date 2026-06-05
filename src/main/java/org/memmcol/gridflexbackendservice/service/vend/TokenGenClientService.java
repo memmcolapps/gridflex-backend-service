@@ -2,7 +2,7 @@ package org.memmcol.gridflexbackendservice.service.vend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -11,10 +11,10 @@ import org.memmcol.gridflexbackendservice.model.vend.TokenGenRequest;
 import org.memmcol.gridflexbackendservice.model.vend.TokenGenResponse;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.View;
-
-import java.math.BigDecimal;
 
 @Service
 public class TokenGenClientService {
@@ -33,6 +33,7 @@ public class TokenGenClientService {
         this.webClient = webClient;
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public TokenGenResponse generateToken(TokenGenRequest request, String url, String tokenType) {
 
 //        request.setMeterNo("62124022443");

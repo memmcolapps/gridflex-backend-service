@@ -21,7 +21,7 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -61,21 +61,29 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
     private ResponseProperties responseProperties;
 
+	@Value("${security.header.key}")
+	private String adminHeaderKey1;
+
+	private final String adminHeaderKey;
+	private final String adminHeaderValue;
+
 //	private IMap<String, Boolean> authCache;
 
 	// Define the required headers
-	private static final String ADMIN_HEADER_KEY = "custom";
-	private static final String ADMIN_HEADER_VALUE = "ab@#1cD3fG!mNXyZ$%Kl78&OH@beeb$"; // Change this to a secure value
+//	private static final String ADMIN_HEADER_KEY = "custom";
+//	private static final String ADMIN_HEADER_VALUE = "ab@#1cD3fG!mNXyZ$%Kl78&OH@beeb$"; // Change this to a secure value
 
-	private static final String USER_HEADER_KEY = "custom";
-	private static final String USER_HEADER_VALUE = "UvW$%12xYz!@#9LmNoP&*45QH@beeb&"; // Change this to a secure value
+
+//	private static final String USER_HEADER_KEY = "custom";
+//	private static final String USER_HEADER_VALUE = "UvW$%12xYz!@#9LmNoP&*45QH@beeb&"; // Change this to a secure value
 
 	public CustomAuthenticationFilter(
 			AuthenticationManager authenticationManager,
 			AuthMapper authMapper, SafeAuditService safeAuditService,
 			HazelcastInstance hazelcastInstance, GenericHandler genericHandler,
 			ObjectMapper objectMapper,
-            ResponseProperties responseProperties) {
+            ResponseProperties responseProperties,
+			String adminHeaderKey, String adminHeaderValue) {
 		this.authenticationManager = authenticationManager;
 		this.authMapper = authMapper;
 		this.safeAuditService = safeAuditService;
@@ -83,6 +91,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		this.genericHandler = genericHandler;
 		this.objectMapper = objectMapper;
         this.responseProperties = responseProperties;
+		this.adminHeaderKey = adminHeaderKey;
+		this.adminHeaderValue = adminHeaderValue;
 //		this.authCache = hazelcastInstance.getMap("auth-Cache");
 	}
 
@@ -100,9 +110,13 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 //		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
 
 		// Validate the required header
-		String headerValue = request.getHeader(ADMIN_HEADER_KEY);
-		if (headerValue == null || !headerValue.equals(ADMIN_HEADER_VALUE)) {
-			throw new BadCredentialsException("Missing or invalid authentication header: " + ADMIN_HEADER_KEY);
+		System.out.println(adminHeaderKey);
+		String headerValue = request.getHeader(adminHeaderKey);
+		if (headerValue == null || !headerValue.equals(adminHeaderValue)) {
+			throw new BadCredentialsException(
+					"Missing or invalid authentication header: " + adminHeaderKey
+			) {
+			};
 		}
 
 //		// Dynamically set service URL
@@ -223,33 +237,10 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         objectMapper.writeValue(response.getOutputStream(), errorMessage);
     }
 
-
-    //	@Override
-	protected void unsuccessfulAuthenticationBackUp(HttpServletRequest request, HttpServletResponse response,
-			AuthenticationException failed) throws IOException, ServletException {
-
-		genericHandler.logIncidentReport("Login service failed");
-
-	    // Prepare the response message
-	    Map<String, String> errorMessage = new HashMap<>();
-	    errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
-	    errorMessage.put("responsedesc", failed.getMessage());
-	    errorMessage.put("responsedata", "");
-
-	    // Set the response status to indicate authentication failure
-	    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
-		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
-
-	    // Write the error message to the response body
-	    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-	    new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
-	}
-
     private String resolveAuthMessage(AuthenticationException ex) {
 
         if (ex instanceof BadCredentialsException) {
-            return "Invalid username or password";
+            return ex.getMessage();//"Invalid username or password";
         }
 
         if (ex instanceof org.springframework.security.core.userdetails.UsernameNotFoundException) {
@@ -258,6 +249,26 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
         return "Authentication failed";
     }
-
-
 }
+
+////	@Override
+//protected void unsuccessfulAuthenticationBackUp(HttpServletRequest request, HttpServletResponse response,
+//												AuthenticationException failed) throws IOException, ServletException {
+//
+//	genericHandler.logIncidentReport("Login service failed");
+//
+//	// Prepare the response message
+//	Map<String, String> errorMessage = new HashMap<>();
+//	errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
+//	errorMessage.put("responsedesc", failed.getMessage());
+//	errorMessage.put("responsedata", "");
+//
+//	// Set the response status to indicate authentication failure
+//	response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//
+//	System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+//
+//	// Write the error message to the response body
+//	response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//	new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
+//}

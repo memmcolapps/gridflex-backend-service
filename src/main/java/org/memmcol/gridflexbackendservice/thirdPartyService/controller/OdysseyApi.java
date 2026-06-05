@@ -3,10 +3,8 @@ package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,6 +20,7 @@ public class OdysseyApi {
     private ThirdPartyApiService thirdPartyApiService;
 
     @GetMapping("/meter/readings")
+    @PreAuthorize("hasAuthority('METER_READ')")
     public ResponseEntity<?> meterReading(
             @RequestParam String from,
             @RequestParam String to,
@@ -42,6 +41,7 @@ public class OdysseyApi {
     }
 
     @GetMapping("/electricity/payments")
+    @PreAuthorize("hasAuthority('PAYMENT_READ')")
     public ResponseEntity<?> payment(
             @RequestParam String from,
             @RequestParam String to

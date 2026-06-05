@@ -3,7 +3,7 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.service.audit.AuditLogService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

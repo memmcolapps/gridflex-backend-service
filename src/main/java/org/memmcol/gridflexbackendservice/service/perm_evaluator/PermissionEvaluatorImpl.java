@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.EndpointRegistry;
 import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.service.CustomUserDetails;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.ThirdPartyPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -26,10 +27,11 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
 
     // These endpoint do not required permission to be accessible
 //    private static final List<String> PUBLIC_ENDPOINTS = List.of(
-//////            "/audit-log/service/**",
-//////            "/dashboard/service/data-management/**"
-//////            "/hes/service/meter-status/stream/**"
-////    );
+//            "/odyssey/**"
+////            "/audit-log/service/**",
+////            "/dashboard/service/data-management/**"
+////            "/hes/service/meter-status/stream/**"
+//    );
 
     // These endpoints required permission at least to be true for access
     private static final List<String> GLOBAL_PERMISSION_ENDPOINTS = List.of(
@@ -44,6 +46,28 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {
 
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof ThirdPartyPrincipal) {
+
+            ThirdPartyPrincipal tp =
+                    (ThirdPartyPrincipal) principal;
+
+            String path = request.getServletPath();
+
+            if (path.contains("/electricity/payments")
+                    && tp.getScopes().contains("PAYMENT_READ")) {
+                return true;
+            }
+
+            if (path.contains("/meter/readings")
+                    && tp.getScopes().contains("METER_READ")) {
+                return true;
+            }
+
+            return false;
+        }
+
         if (matcher.match("/hes/service/meter-status/stream", request.getRequestURI())) {
             return true;
         }
@@ -52,7 +76,7 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             return false;
         }
 
-        Object principal = authentication.getPrincipal();
+//        Object principal = authentication.getPrincipal();
 
         if (!(principal instanceof CustomUserPrincipal user)) {
             return false;

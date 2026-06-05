@@ -5,7 +5,7 @@ import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
 import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.service.user.UserService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
