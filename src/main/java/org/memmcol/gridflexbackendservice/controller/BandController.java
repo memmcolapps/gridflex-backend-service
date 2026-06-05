@@ -44,10 +44,11 @@ public class BandController {
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllBands(
-            @RequestParam(value = "type", required = false, defaultValue = "") String type
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search
     ) {
         try {
-            Map<String, Object> result = service.getBands(type);
+            Map<String, Object> result = service.getBands(type, search);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
