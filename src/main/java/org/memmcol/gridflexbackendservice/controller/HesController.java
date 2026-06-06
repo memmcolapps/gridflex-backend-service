@@ -52,10 +52,12 @@ public class HesController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "connectionType", required = false) String connectionType,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "asc") String sortDirection,
             @RequestParam(value = "node", required = false) String node
     ) {
         try {
-            Map<String, Object> result = hesService.communicationReport(page, size, type, search, node);
+            Map<String, Object> result = hesService.communicationReport(page, size, type, search, connectionType, sortDirection, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -295,12 +297,15 @@ public class HesController {
             @RequestParam(required = false) String businessHub,
             @RequestParam(required = false) String manufacturer,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "meterNumber") String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "0") int size) {
         try {
             Map<String, Object> result = hesService.meterConfiguration(
                     meterNumber, simNo, model, meterClass, category,
-                    businessHub, manufacturer, status, page, size);
+                    businessHub, manufacturer, status, search, sortBy, sortDirection, page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

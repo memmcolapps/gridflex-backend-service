@@ -118,9 +118,12 @@ public class UserController {
     }
 
     @GetMapping("/groups")
-    public ResponseEntity<?> getGroup() {
+    public ResponseEntity<?> getGroup(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean status,
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection) {
         try {
-            Map<String, Object> result = service.getGroups();
+            Map<String, Object> result = service.getGroups(search, status, sortDirection);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

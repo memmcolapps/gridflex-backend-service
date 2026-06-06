@@ -689,7 +689,7 @@ public class UserServiceImpl implements  UserService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getGroups() {
+    public Map<String, Object> getGroups(String search, Boolean groupStatus, String sortDirection) {
         try {
 
             UserModel um = handleUserValidation();
@@ -699,7 +699,14 @@ public class UserServiceImpl implements  UserService {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
 
-            List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
+            String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
+            List<GroupWithPermissionsDTO> groupDTOs = groups.stream()
+                    .filter(group -> searchLower.isEmpty() ||
+                            group.getGroupTitle() != null && group.getGroupTitle().toLowerCase(Locale.ROOT).contains(searchLower))
+                    .filter(group -> groupStatus == null ||
+                            groupStatus && !Boolean.FALSE.equals(group.getStatus()) ||
+                            !groupStatus && Boolean.FALSE.equals(group.getStatus()))
+                    .map(group -> {
                 GroupWithPermissionsDTO groupDTO = new GroupWithPermissionsDTO();
                 groupDTO.setId(group.getId());
                 groupDTO.setGroupTitle(group.getGroupTitle());
@@ -716,6 +723,14 @@ public class UserServiceImpl implements  UserService {
 
                 return groupDTO;
             }).collect(Collectors.toList());
+
+            Comparator<GroupWithPermissionsDTO> comparator = Comparator.comparing(
+                    group -> group.getGroupTitle() == null ? "" : group.getGroupTitle(),
+                    String.CASE_INSENSITIVE_ORDER);
+            if ("desc".equalsIgnoreCase(sortDirection)) {
+                comparator = comparator.reversed();
+            }
+            groupDTOs.sort(comparator);
 
             return ResponseMap.response(status.getSuccessCode(),  "Group Permission " + status.getDesc(), groupDTOs);
         } catch (Exception exception) {
