@@ -59,9 +59,10 @@ public class AuditLogController {
 
     @GetMapping("/incident/report/get")
     public ResponseEntity<?> getIncidentReport(@RequestParam(required = false, defaultValue = "0") int page,
-                                               @RequestParam(required = false, defaultValue = "0") int size) {
+                                               @RequestParam(required = false, defaultValue = "0") int size,
+                                               @RequestParam(required = false) Boolean status) {
         try {
-            Map<String, Object> result = auditLogService.getIncidentReport(page, size);
+            Map<String, Object> result = auditLogService.getIncidentReport(page, size, status);
 
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
