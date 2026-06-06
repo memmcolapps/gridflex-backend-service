@@ -109,11 +109,13 @@ public class VendingController {
                                @RequestParam(required = false) String tariffName,
                                @RequestParam(required = false) String tokenType,
                                @RequestParam(required = false) String status,
+                               @RequestParam(required = false, defaultValue = "") String search,
+                               @RequestParam(required = false, defaultValue = "desc") String sortDirection,
                                @RequestParam(value = "page", required = false,defaultValue = "0") int page,
                                @RequestParam(value = "size",required = false,defaultValue = "0") int size){
         try {
             Map<String, Object> result = vendingService.getAllToken(meterNumber,accountNumber,tariffName,
-                    tokenType,status,page,size);
+                    tokenType,status,search,sortDirection,page,size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
