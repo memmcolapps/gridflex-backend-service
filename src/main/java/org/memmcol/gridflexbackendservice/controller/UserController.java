@@ -65,10 +65,15 @@ public class UserController {
             @RequestParam(value = "email", required = false, defaultValue = "") String email,
             @RequestParam(value = "permission", required = false, defaultValue = "") String permission,
             @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt,
-            @RequestParam(required = false, defaultValue = "") String lastActive
+            @RequestParam(required = false, defaultValue = "") String lastActive,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean status,
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection
     ) {
         try {
-            Map<String, Object> result = service.getUsers(firstname, lastname, email, permission, createdAt, lastActive, page, size);
+            Map<String, Object> result = service.getUsers(
+                    firstname, lastname, email, permission, createdAt, lastActive,
+                    search, status, sortDirection, page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

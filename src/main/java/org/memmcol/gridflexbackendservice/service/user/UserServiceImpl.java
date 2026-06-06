@@ -69,6 +69,10 @@ public class UserServiceImpl implements  UserService {
 
     private final IMap<String, Object> userCache;
 
+    private boolean containsIgnoreCase(String field, String search) {
+        return field != null && field.toLowerCase(Locale.ROOT).contains(search);
+    }
+
     private final IMap<String, Object> auditCache;
 
     public UserServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
@@ -231,7 +235,8 @@ public class UserServiceImpl implements  UserService {
     @Override
     public Map<String, Object> getUsers(
             String firstname, String lastname, String email, String permission,
-            String dateAdded, String lastActive, int page, int size) {
+            String dateAdded, String lastActive, String search, Boolean userStatus,
+            String sortDirection, int page, int size) {
         try {
             UserModel um = handleUserValidation();
 
@@ -255,7 +260,7 @@ public class UserServiceImpl implements  UserService {
 //            }
             List<UserModel> enrichedUsers = new ArrayList<>();
 
-            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId(), page, size);
+            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId(), 0, 0);
 
             for (UserModel user : users) {
                 /// Retrieve user data from database
@@ -287,6 +292,26 @@ public class UserServiceImpl implements  UserService {
 
             // Apply filtering
             Stream<UserModel> userStream = enrichedUsers.stream();
+            String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
+
+            if (!searchLower.isEmpty()) {
+                userStream = userStream.filter(user ->
+                        containsIgnoreCase(user.getFirstname(), searchLower) ||
+                        containsIgnoreCase(user.getLastname(), searchLower) ||
+                        containsIgnoreCase(user.getEmail(), searchLower) ||
+                        containsIgnoreCase(user.getPhoneNumber(), searchLower) ||
+                        containsIgnoreCase(user.getLastActive(), searchLower) ||
+                        user.getId() != null && user.getId().toString().toLowerCase(Locale.ROOT).contains(searchLower) ||
+                        user.getGroups() != null && containsIgnoreCase(user.getGroups().getGroupTitle(), searchLower) ||
+                        user.getNodes() != null && containsIgnoreCase(user.getNodes().getName(), searchLower));
+            }
+
+            if (userStatus != null) {
+                userStream = userStream.filter(user ->
+                        userStatus
+                                ? Boolean.TRUE.equals(user.getStatus())
+                                : !Boolean.TRUE.equals(user.getStatus()));
+            }
 
             if (firstname != null && !firstname.isEmpty()) {
                 userStream = userStream.filter(u -> u.getFirstname() != null && u.getFirstname().equalsIgnoreCase(firstname));
@@ -320,7 +345,16 @@ public class UserServiceImpl implements  UserService {
                 });
             }
 
-            List<UserModel> filteredUsers = userStream.toList();
+            List<UserModel> filteredUsers = new ArrayList<>(userStream.toList());
+            Comparator<UserModel> comparator = Comparator
+                    .comparing((UserModel user) -> user.getFirstname() == null ? "" : user.getFirstname(),
+                            String.CASE_INSENSITIVE_ORDER)
+                    .thenComparing(user -> user.getLastname() == null ? "" : user.getLastname(),
+                            String.CASE_INSENSITIVE_ORDER);
+            if ("desc".equalsIgnoreCase(sortDirection)) {
+                comparator = comparator.reversed();
+            }
+            filteredUsers.sort(comparator);
 
             // Pagination logic
             int totalUsers = filteredUsers.size();
@@ -334,7 +368,7 @@ public class UserServiceImpl implements  UserService {
                 paginatedUsers = filteredUsers.subList(fromIndex, toIndex);
             }
 
-            int totalUser = size == 0 ? 1 : (int) Math.ceil((double) totalUsers / size);
+            int totalUser = size <= 0 ? 1 : Math.max(1, (int) Math.ceil((double) totalUsers / size));
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
