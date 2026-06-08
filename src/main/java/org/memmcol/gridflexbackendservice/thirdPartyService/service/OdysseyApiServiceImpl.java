@@ -83,7 +83,11 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             String desc = "Meter Reading ("+startDate.toString()+" - "+endDate.toString()+")";
 
             AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
-            safeAuditService.saveAudit(auditLog);
+            try {
+                safeAuditService.saveAudit(auditLog);
+            } catch (Exception ex) {
+                log.error("Failed to save audit log", ex);
+            }
 
         } catch (Exception e) {
             log.error("Error occurred while reading meter [ODYSSEY]: {}", e.getMessage(), e);
@@ -135,7 +139,11 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             response.put("errors", Collections.emptyList());
 
             AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
-            safeAuditService.saveAudit(auditLog);
+            try {
+                safeAuditService.saveAudit(auditLog);
+            } catch (Exception ex) {
+                log.error("Failed to save audit log", ex);
+            }
 
         }catch (Exception e) {
 

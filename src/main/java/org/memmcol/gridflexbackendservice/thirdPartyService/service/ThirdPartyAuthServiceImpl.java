@@ -63,7 +63,11 @@ public class ThirdPartyAuthServiceImpl {
                     .toList();
 
             AuditLog auditLog = buildAuditLog(clientId, "Authenticated", "Client", metadata);
-            auditRepository.save(auditLog);
+            try {
+                auditRepository.save(auditLog);
+            } catch (Exception ex) {
+                log.error("Failed to save audit log", ex);
+            }
 
             return JWT.create()
                     .withSubject(clientId)
@@ -74,7 +78,7 @@ public class ThirdPartyAuthServiceImpl {
 
         } catch (Exception exception) {
 //            genericHandler.logIncidentReport("Third party authentication service failed");
-//            genericHandler.logAndSaveException(exception, "third party authentication");
+            genericHandler.logAndSaveException(exception, "third party authentication");
             throw exception;
         }
     }
