@@ -165,7 +165,7 @@ public class SecurityConfig {
 						"/api/licence/deactivate",
 						"/api/licence/fingerprint",
 						"/api/licence/validate",
-						"/api/licence/upload"
+						"/api/licence/upload",
 //						"/odyssey/standard/meter/readings",
 //						"/odyssey/standard/electricity/payments"
 						"/standard/auth/token"
