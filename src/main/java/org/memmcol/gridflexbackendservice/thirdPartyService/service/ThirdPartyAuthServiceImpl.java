@@ -45,6 +45,7 @@ public class ThirdPartyAuthServiceImpl {
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
+            System.out.println("metadata");
             ApiClient client = apiClientRepository.findByClientId(clientId)
                     .orElseThrow(() -> new RuntimeException("Client not found"));
 
@@ -72,8 +73,8 @@ public class ThirdPartyAuthServiceImpl {
                     .sign(Algorithm.HMAC256(secret));
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("Third party authentication service failed");
-            genericHandler.logAndSaveException(exception, "third party authentication");
+//            genericHandler.logIncidentReport("Third party authentication service failed");
+//            genericHandler.logAndSaveException(exception, "third party authentication");
             throw exception;
         }
     }
