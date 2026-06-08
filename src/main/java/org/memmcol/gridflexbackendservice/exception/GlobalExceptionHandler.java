@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.exception;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -419,6 +420,21 @@ public class GlobalExceptionHandler {
 						ex.getMostSpecificCause().getMessage(),
 						""
 				));
+	}
+
+	@ExceptionHandler(DataAccessResourceFailureException.class)
+	public ResponseEntity<Map<String, Object>> handleMongoTimeout(DataAccessResourceFailureException ex) {
+
+//		log.error("MongoDB connection failure", ex);
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("responsecode", "135");
+		response.put("responsedesc", "Audit temporarily unavailable (database connection timeout). Please try again later.");
+		response.put("responsedata", "");
+
+		return ResponseEntity
+				.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(response);
 	}
 
 //	@ExceptionHandler(IOException.class)

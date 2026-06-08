@@ -214,7 +214,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 		Map<String, String> errorMessage = new HashMap<>();
 		errorMessage.put("responsecode", String.valueOf(statusCode));
 		errorMessage.put("responsedesc", description);
-		errorMessage.put("responsedata", exception.getMessage());
+		errorMessage.put("responsedata", "");
 
 		response.setStatus(statusCode);
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
