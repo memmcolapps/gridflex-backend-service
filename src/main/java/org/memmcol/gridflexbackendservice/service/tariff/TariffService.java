@@ -12,7 +12,8 @@ public interface TariffService {
     Map<String, Object> createTariff(Tariff tariff);
 
     Map<String, Object> getFilterTariffs(int page, int size, String tariffName, String tariffType,
-                                         String tariffRate, String bandCode, String effectiveDate, String approveStatus, String type);
+                                         String tariffRate, String bandCode, String effectiveDate, String approveStatus, String type,
+                                         String search, String sort);
 
     Map<String, Object> bulkApproveTariff(List<Tariff> tariff);
 

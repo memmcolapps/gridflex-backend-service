@@ -8,7 +8,7 @@ import java.util.Map;
 public interface HesService {
 //    Map<String, Object> dashboard();
 
-    Map<String, Object> communicationReport(int page, int size, String type, String search, String node);
+    Map<String, Object> communicationReport(int page, int size, String type, String search, String connectionType, String sortDirection, String node);
 
     Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber,
                                 String profile, List<String> model, int page, int size, String search, String unit);
@@ -30,7 +30,8 @@ public interface HesService {
     Map<String, Object> triggerEvent(String jobGroup, String jobName);
 
     Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
-            String businessHub, String manufacturer, String meterStatus, int page, int size);
+            String businessHub, String manufacturer, String meterStatus, String search, String sortBy, String sortDirection,
+            int page, int size);
 
     Map<String, Object> profileEventsInfo(String type);
 //    Map<String, Object> communicationMonthlyReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate);

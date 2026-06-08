@@ -178,7 +178,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getLiabilityCauses(String type) {
+    public Map<String, Object> getLiabilityCauses(String type, String search, String sort) {
         try {
             UserModel um = handleUserValidation();
 
@@ -197,6 +197,26 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
+            }
+
+            // Search box: partial match against liability name or code
+            String searchTerm = search == null ? "" : search.trim().toLowerCase();
+            if (!searchTerm.isEmpty()) {
+                result = result.stream()
+                        .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(searchTerm))
+                                || (item.getCode() != null && item.getCode().toLowerCase().contains(searchTerm)))
+                        .collect(Collectors.toList());
+            }
+
+            // Sort by liability name ascending/descending
+            if (sort != null && !sort.isEmpty()) {
+                Comparator<LiabilityCause> byName = Comparator.comparing(
+                        item -> item.getName() == null ? "" : item.getName(), String.CASE_INSENSITIVE_ORDER);
+                if (sort.equalsIgnoreCase("desc")) {
+                    byName = byName.reversed();
+                }
+                result = new ArrayList<>(result);
+                result.sort(byName);
             }
 //            debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
@@ -492,7 +512,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getAllPercentages(String type) {
+    public Map<String, Object> getAllPercentages(String type, String search, String sort) {
         try {
             UserModel um = handleUserValidation();
 
@@ -512,6 +532,28 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
+
+            // Search box: partial match against percentage, code or band name
+            String searchTerm = search == null ? "" : search.trim().toLowerCase();
+            if (!searchTerm.isEmpty()) {
+                result = result.stream()
+                        .filter(item -> (item.getPercentage() != null && item.getPercentage().toLowerCase().contains(searchTerm))
+                                || (item.getCode() != null && item.getCode().toLowerCase().contains(searchTerm))
+                                || (item.getBand() != null && item.getBand().getName() != null
+                                    && item.getBand().getName().toLowerCase().contains(searchTerm)))
+                        .collect(Collectors.toList());
+            }
+
+            // Sort by percentage value ascending/descending
+            if (sort != null && !sort.isEmpty()) {
+                Comparator<PercentageRange> byPercentage = Comparator.comparingDouble(
+                        item -> parsePercentage(item.getPercentage()));
+                if (sort.equalsIgnoreCase("desc")) {
+                    byPercentage = byPercentage.reversed();
+                }
+                result = new ArrayList<>(result);
+                result.sort(byPercentage);
+            }
 //            debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
@@ -519,6 +561,18 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             genericHandler.logIncidentReport("fetching all percentage range service failed");
             genericHandler.logAndSaveException(exception, "fetching percentage ranges");
             throw exception;
+        }
+    }
+
+    // Safely parse a percentage string into a number for sorting; non-numeric values sort as 0.
+    private double parsePercentage(String value) {
+        if (value == null || value.isBlank()) {
+            return 0d;
+        }
+        try {
+            return Double.parseDouble(value.trim().replace("%", ""));
+        } catch (NumberFormatException e) {
+            return 0d;
         }
     }
 

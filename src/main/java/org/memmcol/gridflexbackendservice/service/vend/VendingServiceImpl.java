@@ -1506,7 +1506,7 @@ public class VendingServiceImpl implements VendingService {
     @Override
     public Map<String, Object> getAllToken(String meterNumber, String accountNumber,
                                            String tariffName, String tokenType, String stat,
-                                           int page, int size) {
+                                           String search, String sortDirection, int page, int size) {
         UserModel user = handleUserValidation();
         UUID uId = user.getOrgId();
         UUID nodeId = user.getNodeInfo().getNodeId();
@@ -1528,6 +1528,14 @@ public class VendingServiceImpl implements VendingService {
             List<Transaction> allReadings = vendMapper.getAllToken(
                     uId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size, nodeId
             );
+
+            if (search != null && !search.trim().isEmpty()) {
+                allReadings = allReadings.stream()
+                        .filter(transaction -> transactionMatchesSearch(transaction, search))
+                        .collect(Collectors.toList());
+            }
+
+            sortVendingTransactions(allReadings, sortDirection);
 
             int totalCount = allReadings.size();
             List<Transaction> paginatedReadings;
@@ -1561,6 +1569,34 @@ public class VendingServiceImpl implements VendingService {
             genericHandler.logAndSaveException(ex, "token fetched");
             throw ex;
         }
+    }
+
+    private boolean transactionMatchesSearch(Transaction transaction, String search) {
+        return containsIgnoreCase(transaction.getMeterAccountNumber(), search)
+                || containsIgnoreCase(transaction.getMeterNumber(), search)
+                || containsIgnoreCase(transaction.getTokenType(), search)
+                || containsIgnoreCase(transaction.getTariffName(), search)
+                || containsIgnoreCase(transaction.getStatus(), search)
+                || containsIgnoreCase(transaction.getCustomerFullname(), search)
+                || containsIgnoreCase(transaction.getUserFullname(), search)
+                || containsIgnoreCase(transaction.getReceiptNo(), search);
+    }
+
+    private boolean containsIgnoreCase(String value, String search) {
+        return value != null && search != null
+                && value.toLowerCase(Locale.ROOT).contains(search.trim().toLowerCase(Locale.ROOT));
+    }
+
+    private void sortVendingTransactions(List<Transaction> transactions, String sortDirection) {
+        Comparator<Transaction> byCreatedAt = Comparator.comparing(
+                Transaction::getCreatedAt,
+                Comparator.nullsLast(Comparator.naturalOrder()));
+
+        if (sortDirection == null || sortDirection.isBlank() || sortDirection.equalsIgnoreCase("desc")) {
+            byCreatedAt = byCreatedAt.reversed();
+        }
+
+        transactions.sort(byCreatedAt);
     }
 
     @Override

@@ -149,11 +149,15 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    public Map<String, Object> getIncidentReport(int page, int size) {
+    public Map<String, Object> getIncidentReport(int page, int size, Boolean reportStatus) {
         try {
             UserModel um = handleUserValidation();
 
-            List<IncidentReport> filteredReports = userMapper.getIncidentReport(um.getOrgId());
+            List<IncidentReport> filteredReports = userMapper.getIncidentReport(um.getOrgId()).stream()
+                    .filter(report -> reportStatus == null ||
+                            reportStatus && !Boolean.FALSE.equals(report.getStatus()) ||
+                            !reportStatus && Boolean.FALSE.equals(report.getStatus()))
+                    .toList();
 
             // Pagination logic
             int totalReports = filteredReports.size();
@@ -172,7 +176,7 @@ public class AuditLogServiceImpl implements AuditLogService {
             response.put("totalData", totalReports);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedReports.size() / size));
+            response.put("totalPages", size <= 0 ? 1 : Math.max(1, (int) Math.ceil((double) totalReports / size)));
 
             return ResponseMap.response(status.getSuccessCode(),
                     "Incident reports fetched successfully", response

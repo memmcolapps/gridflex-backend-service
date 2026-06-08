@@ -15,7 +15,7 @@ public interface DebtSettingService {
 
     Map<String, Object> updateLiabilityCause(LiabilityCause request);
 
-    Map<String, Object> getLiabilityCauses(String type);
+    Map<String, Object> getLiabilityCauses(String type, String search, String sort);
 
     Map<String, Object> getLiabilityCause(UUID id, UUID lcVersionId);
 
@@ -25,7 +25,7 @@ public interface DebtSettingService {
 
     Map<String, Object> updatePercentage(PercentageRange request);
 
-    Map<String, Object> getAllPercentages(String type);
+    Map<String, Object> getAllPercentages(String type, String search, String sort);
 
     Map<String, Object> getPercentage(UUID id, UUID percentageVersionId);
 

@@ -154,6 +154,7 @@ public class MeterController {
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "type", required = false,  defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
             @RequestParam(value = "meterStage", required = false,  defaultValue = "") String meterStage,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "simNo", required = false, defaultValue = "") String simNo,
@@ -162,10 +163,12 @@ public class MeterController {
             @RequestParam(value = "category", required = false, defaultValue = "") String category,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt,
-            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterStage, meterClass, category, status, createdAt, customerId, type);
+            Map<String, Object> result = service.getAllMeters(page, size, search, meterNumber, simNo, manufacturer, meterStage, meterClass, category, status, createdAt, customerId, type, sortBy, sortDirection);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

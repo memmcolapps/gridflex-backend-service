@@ -827,8 +827,9 @@ public class MeterServiceImpl implements MeterService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllMeters(
-            int page, int size, String meterNumber, String simNo, String manufacturer, String meterStage,
-            String meterClass, String category, String state, String createdAt, String customerId, String type) {
+            int page, int size, String search, String meterNumber, String simNo, String manufacturer, String meterStage,
+            String meterClass, String category, String state, String createdAt, String customerId, String type,
+            String sortBy, String sortDirection) {
         try {
 
             UserModel um = handleUserValidation();
@@ -838,6 +839,7 @@ public class MeterServiceImpl implements MeterService {
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
+            if (search != null && !search.isEmpty()) cacheKeyBuilder.append("_search_").append(search);
             if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
             if (simNo != null && !simNo.isEmpty()) cacheKeyBuilder.append("_simNo_").append(simNo);
             if (meterStage != null && !meterStage.isEmpty()) cacheKeyBuilder.append("_meterStage_").append(meterStage);
@@ -847,6 +849,8 @@ public class MeterServiceImpl implements MeterService {
             if (state != null && !state.isEmpty()) cacheKeyBuilder.append("_state_").append(state);
             if (createdAt != null && !createdAt.isEmpty()) cacheKeyBuilder.append("_createdAt_").append(createdAt);
             if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
+            if (sortBy != null && !sortBy.isEmpty()) cacheKeyBuilder.append("_sortBy_").append(sortBy);
+            if (sortDirection != null && !sortDirection.isEmpty()) cacheKeyBuilder.append("_sortDirection_").append(sortDirection);
             cacheKeyBuilder.append("_page_").append(page);
             cacheKeyBuilder.append("_size_").append(size);
 
@@ -900,11 +904,11 @@ public class MeterServiceImpl implements MeterService {
             // Apply filtering
             Stream<Meter> meterStream = meters.stream();
             if (meterNumber != null && !meterNumber.isEmpty()) {
-                meterStream = meterStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
+                meterStream = meterStream.filter(u -> containsIgnoreCase(u.getMeterNumber(), meterNumber));
             }
 
             if (simNo != null && !simNo.isEmpty()) {
-                meterStream = meterStream.filter(u -> u.getSimNumber() != null && u.getSimNumber().equalsIgnoreCase(simNo));
+                meterStream = meterStream.filter(u -> containsIgnoreCase(u.getSimNumber(), simNo));
             }
 
             if (meterStage != null && !meterStage.isEmpty()) {
@@ -919,8 +923,20 @@ public class MeterServiceImpl implements MeterService {
                 meterStream = meterStream.filter(u -> u.getMeterCategory() != null && u.getMeterCategory().equalsIgnoreCase(category));
             }
 
+            if (manufacturer != null && !manufacturer.isEmpty()) {
+                meterStream = meterStream.filter(u ->
+                        containsIgnoreCase(u.getMeterManufacturerName(), manufacturer)
+                                || (u.getMeterManufacturer() != null && containsIgnoreCase(u.getMeterManufacturer().toString(), manufacturer))
+                                || (u.getManufacturer() != null && containsIgnoreCase(u.getManufacturer().getName(), manufacturer))
+                                || (u.getManufacturer() != null && containsIgnoreCase(u.getManufacturer().getManufacturerId(), manufacturer)));
+            }
+
+            if (state != null && !state.isEmpty()) {
+                meterStream = meterStream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(state));
+            }
+
             if (customerId != null && !customerId.isEmpty()) {
-                meterStream = meterStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
+                meterStream = meterStream.filter(u -> containsIgnoreCase(u.getCustomerId(), customerId));
             }
 
             if (createdAt != null && !createdAt.isEmpty()) {
@@ -936,6 +952,10 @@ public class MeterServiceImpl implements MeterService {
                 });
             }
 
+            if (search != null && !search.trim().isEmpty()) {
+                meterStream = meterStream.filter(u -> meterMatchesSearch(u, search));
+            }
+
             List<Meter> filteredMeters = meterStream.toList();
             if (type.equalsIgnoreCase("assigned") || type.equalsIgnoreCase("pending-state")) {
                 filteredMeters.forEach(meter -> {
@@ -944,6 +964,8 @@ public class MeterServiceImpl implements MeterService {
                     }
                 });
             }
+
+            filteredMeters = sortMeters(filteredMeters, sortBy, sortDirection);
 
             // Pagination logic
             int totalMeters = filteredMeters.size();
@@ -958,7 +980,7 @@ public class MeterServiceImpl implements MeterService {
                  paginatedMeters = filteredMeters.subList(fromIndex, toIndex);
              }
 
-//            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalMeters / size);
+            int totalPages = size <= 0 ? 1 : (int) Math.ceil((double) totalMeters / size);
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -966,10 +988,7 @@ public class MeterServiceImpl implements MeterService {
             response.put("totalData", totalMeters);
             response.put("page", page);
             response.put("size", size);
-
-//             response.put("totalPages", totalPages);
-
-            response.put("totalPages", (int) Math.ceil((double) totalMeters / size));
+            response.put("totalPages", totalPages);
 
 
 //            userCache.put(cacheKey, response);
@@ -982,6 +1001,89 @@ public class MeterServiceImpl implements MeterService {
             genericHandler.logAndSaveException(exception, "fetching meter");
             throw exception;
         }
+    }
+
+    private boolean containsIgnoreCase(String value, String term) {
+        return value != null && term != null
+                && value.toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT));
+    }
+
+    private boolean meterMatchesSearch(Meter meter, String search) {
+        return containsIgnoreCase(meter.getMeterNumber(), search)
+                || containsIgnoreCase(meter.getSimNumber(), search)
+                || containsIgnoreCase(meter.getAccountNumber(), search)
+                || containsIgnoreCase(meter.getCin(), search)
+                || containsIgnoreCase(meter.getMeterClass(), search)
+                || containsIgnoreCase(meter.getMeterCategory(), search)
+                || containsIgnoreCase(meter.getMeterStage(), search)
+                || containsIgnoreCase(meter.getStatus(), search)
+                || containsIgnoreCase(meter.getMeterManufacturerName(), search)
+                || (meter.getMeterManufacturer() != null && containsIgnoreCase(meter.getMeterManufacturer().toString(), search))
+                || (meter.getManufacturer() != null && containsIgnoreCase(meter.getManufacturer().getName(), search))
+                || (meter.getManufacturer() != null && containsIgnoreCase(meter.getManufacturer().getManufacturerId(), search));
+    }
+
+    private List<Meter> sortMeters(List<Meter> meters, String sortBy, String sortDirection) {
+        String normalizedSortBy = sortBy == null || sortBy.trim().isEmpty()
+                ? "createdAt"
+                : sortBy.trim();
+        boolean descending = sortDirection == null || sortDirection.equalsIgnoreCase("desc");
+
+        Comparator<Meter> comparator;
+        switch (normalizedSortBy.toLowerCase(Locale.ROOT)) {
+            case "createdat", "dateadded" -> comparator = Comparator.comparing(
+                    Meter::getCreatedAt,
+                    nullableComparableComparator(descending)
+            );
+            case "updatedat" -> comparator = Comparator.comparing(
+                    Meter::getUpdatedAt,
+                    nullableComparableComparator(descending)
+            );
+            case "oldtariffindex" -> comparator = Comparator.comparing(
+                    Meter::getOldTariffIndex,
+                    nullableComparableComparator(descending)
+            );
+            case "newtariffindex" -> comparator = Comparator.comparing(
+                    Meter::getNewTariffIndex,
+                    nullableComparableComparator(descending)
+            );
+            default -> comparator = Comparator.comparing(
+                    meter -> meterSortValue(meter, normalizedSortBy),
+                    nullableStringComparator(descending)
+            );
+        }
+
+        return meters.stream().sorted(comparator).toList();
+    }
+
+    private <T extends Comparable<? super T>> Comparator<T> nullableComparableComparator(boolean descending) {
+        Comparator<T> valueComparator = descending ? Comparator.reverseOrder() : Comparator.naturalOrder();
+        return Comparator.nullsLast(valueComparator);
+    }
+
+    private Comparator<String> nullableStringComparator(boolean descending) {
+        Comparator<String> valueComparator = descending
+                ? String.CASE_INSENSITIVE_ORDER.reversed()
+                : String.CASE_INSENSITIVE_ORDER;
+        return Comparator.nullsLast(valueComparator);
+    }
+
+    private String meterSortValue(Meter meter, String sortBy) {
+        return switch (sortBy.toLowerCase(Locale.ROOT)) {
+            case "meternumber" -> meter.getMeterNumber();
+            case "simnumber", "simno" -> meter.getSimNumber();
+            case "manufacturer", "metermanufacturer", "metermanufacturername" ->
+                    meter.getManufacturer() != null ? meter.getManufacturer().getName() : meter.getMeterManufacturerName();
+            case "meterclass" -> meter.getMeterClass();
+            case "category", "metercategory" -> meter.getMeterCategory();
+            case "metertype", "type" -> meter.getMeterType();
+            case "meterstage" -> meter.getMeterStage();
+            case "status" -> meter.getStatus();
+            case "accountnumber" -> meter.getAccountNumber();
+            case "customerid" -> meter.getCustomerId();
+            case "cin" -> meter.getCin();
+            default -> meter.getCreatedAt() == null ? null : meter.getCreatedAt().toString();
+        };
     }
 
     @Transactional(readOnly = true)
