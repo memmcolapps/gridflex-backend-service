@@ -158,7 +158,13 @@ public class SecurityConfig {
 //						"/standard/auth/token",
 						"/admin/setup/api-clients",
 						"standard/**",
-						"/standard/auth/token"
+						"/standard/auth/token",
+						"/api/licence/generate-fingerprint",
+						"/api/licence/get",
+						"/api/licence/deactivate",
+						"/api/licence/fingerprint",
+						"/api/licence/validate",
+						"/api/licence/upload"
 //						"/odyssey/standard/meter/readings",
 //						"/odyssey/standard/electricity/payments"
 //						"/uploads/**"
