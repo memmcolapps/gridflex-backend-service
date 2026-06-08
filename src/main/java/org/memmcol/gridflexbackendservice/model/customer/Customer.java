@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Id;
 import lombok.Data;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -36,6 +37,7 @@ public class Customer implements Serializable {
     private String status;
     private String vat;
     private List<Meter> meter;
+    private RegionBhubServiceCenter businessName;
     private int meterCount;
 
 
@@ -224,5 +226,13 @@ public class Customer implements Serializable {
 
     public void setMeterCount(int meterCount) {
         this.meterCount = meterCount;
+    }
+
+    public RegionBhubServiceCenter getBusinessName() {
+        return businessName;
+    }
+
+    public void setBusinessName(RegionBhubServiceCenter businessName) {
+        this.businessName = businessName;
     }
 }

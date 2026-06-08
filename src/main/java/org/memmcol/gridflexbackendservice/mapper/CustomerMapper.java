@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.meter.*;
+import org.memmcol.gridflexbackendservice.model.node.RegionBhubServiceCenter;
 import org.memmcol.gridflexbackendservice.model.node.SubStationTransformerFeederLine;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 
@@ -174,9 +175,19 @@ public interface CustomerMapper {
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "meter", column = "customer_id",
-                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getByCustomerId"))
+                    many = @Many(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getByCustomerId")),
+            @Result(property = "businessName", column = "node_id",
+                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.CustomerMapper.getBusinessHubByNodeId"))
     })
     List<Customer> findAllCustomers(UUID orgId, int page, int size, UUID nodeId);
+
+    @Select("SELECT * FROM region_bhub_service_centers WHERE node_id = #{nodeId} AND type= 'business hub'")
+    @Results({
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "name", column = "name"),
+    })
+    RegionBhubServiceCenter getBusinessHubByNodeId(UUID nodeId);
 
     @Select("SELECT * FROM smart_meter_info WHERE meter_id = #{meterId}")
     @Results({

@@ -153,7 +153,6 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
         }
         return response;
     }
-}
 
     private AuditLog buildAuditLog(String creator, String description, String type, Map<String, String> metadata) {
         AuditLog log = new AuditLog();
