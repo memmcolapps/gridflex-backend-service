@@ -12,6 +12,7 @@ import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.MeterAndLiabilityCause;
