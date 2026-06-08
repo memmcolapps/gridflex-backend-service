@@ -3,6 +3,8 @@ server:
 
 app:
   base-path: /grid-flex/v1/api
+#  /api/v1
+#  /grid-flex/v1/api
 
 spring:
   jackson:

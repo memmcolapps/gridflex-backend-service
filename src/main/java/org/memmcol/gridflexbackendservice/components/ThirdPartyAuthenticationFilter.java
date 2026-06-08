@@ -2,7 +2,6 @@ package org.memmcol.gridflexbackendservice.components;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +19,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -143,7 +141,7 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
             Map<String, Object> error = new HashMap<>();
-            error.put("responsecode", 401);
+            error.put("responsecode", "401");
             error.put("responsedesc", ex.getMessage());
 
             new ObjectMapper().writeValue(response.getOutputStream(), error);
@@ -155,7 +153,7 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
             Map<String, Object> error = new HashMap<>();
-            error.put("responsecode", 401);
+            error.put("responsecode", "401");
             error.put("responsedesc", ex.getMessage());
 
             new ObjectMapper().writeValue(response.getOutputStream(), error);

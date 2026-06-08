@@ -250,25 +250,3 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         return "Authentication failed";
     }
 }
-
-////	@Override
-//protected void unsuccessfulAuthenticationBackUp(HttpServletRequest request, HttpServletResponse response,
-//												AuthenticationException failed) throws IOException, ServletException {
-//
-//	genericHandler.logIncidentReport("Login service failed");
-//
-//	// Prepare the response message
-//	Map<String, String> errorMessage = new HashMap<>();
-//	errorMessage.put("responsecode", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
-//	errorMessage.put("responsedesc", failed.getMessage());
-//	errorMessage.put("responsedata", "");
-//
-//	// Set the response status to indicate authentication failure
-//	response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-//
-//	System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
-//
-//	// Write the error message to the response body
-//	response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-//	new ObjectMapper().writeValue(response.getOutputStream(), errorMessage);
-//}

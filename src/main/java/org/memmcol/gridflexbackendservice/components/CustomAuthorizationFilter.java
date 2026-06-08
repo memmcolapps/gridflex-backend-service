@@ -122,7 +122,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
                 Map<String, Object> error = new HashMap<>();
-                error.put("responsecode", 401); //"Missing or invalid authentication header: " + adminHeaderKey
+                error.put("responsecode", "401"); //"Missing or invalid authentication header: " + adminHeaderKey
                 error.put("responsedesc", "Missing or invalid authentication header: " + adminHeaderKey);
                 error.put("responsedata", "");
 
