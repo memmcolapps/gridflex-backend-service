@@ -159,13 +159,8 @@ public class SecurityConfig {
 						"/admin/setup/api-clients",
 						"standard/**",
 						"/standard/auth/token"
-//						"/odyssey/standard/meter/readings",
-//						"/odyssey/standard/electricity/payments"
 //						"/uploads/**"
 				).permitAll()
-
-//				// THIRD PARTY PROTECTED
-//				.requestMatchers("/odyssey/**", "/standard/**").authenticated()
 				// protected endpoints
 				.anyRequest().access((authentication, context) -> {
 					HttpServletRequest request = context.getRequest();
@@ -177,11 +172,7 @@ public class SecurityConfig {
 		);
 
 		http.exceptionHandling(e -> e.accessDeniedHandler(accessDeniedHandler));
-//		// EXCEPTION HANDLING (ONLY ONCE)
-//		http.exceptionHandling(ex -> ex
-//				.authenticationEntryPoint(authenticationEntryPoint(objectMapper))
-//				.accessDeniedHandler(accessDeniedHandler(objectMapper))
-//		);
+
 		http.addFilter(authFilter);
 		http.addFilterBefore(thirdPartyAuthenticationFilter,
 				UsernamePasswordAuthenticationFilter.class);

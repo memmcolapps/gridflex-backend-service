@@ -1,10 +1,19 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.service;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.components.ThirdPartySecurityContext;
+import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.customer.Customer;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
+import org.memmcol.gridflexbackendservice.service.manufacturer.ManufacturerServiceImpl;
 import org.memmcol.gridflexbackendservice.thirdPartyService.mapper.OdysseyMapper;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.MeterReadingModel;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.OdysseyPaymentModel;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.ThirdPartyPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -15,6 +24,8 @@ import java.util.*;
 @Service
 public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
+    private static final Logger log = LoggerFactory.getLogger(OdysseyApiServiceImpl.class);
+
     @Autowired
     private OdysseyMapper odysseyMapper;
 
@@ -23,9 +34,15 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
     @Autowired
     private ThirdPartySecurityContext securityContext;
 
-//    public OdysseyApiServiceImpl(OdysseyMapper odysseyMapper) {
-//        this.odysseyMapper = odysseyMapper;
-//    }
+
+    @Autowired
+    private GenericHandler genericHandler;
+
+    @Autowired
+    private SafeAuditService safeAuditService;
+
+    @Autowired
+    private HttpServletRequest httpServletRequest;
 
 
     @Transactional
@@ -34,6 +51,8 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
             ThirdPartyPrincipal principal = securityContext.getPrincipal();
 
             if (!principal.hasScope("METER_READ")) {
@@ -60,7 +79,16 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             response.put("offset", offSet);
             response.put("pageLimit", pageLimit);
             response.put("total", totalReadings);
+
+            String desc = "Meter Reading ("+startDate.toString()+" - "+endDate.toString()+")";
+
+            AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
+            safeAuditService.saveAudit(auditLog);
+
         } catch (Exception e) {
+            log.error("Error occurred while reading meter [ODYSSEY]: {}", e.getMessage(), e);
+            genericHandler.logAndSaveException(e, "odyssey meter reading");
+
             List<Map<String, String>> errors = new ArrayList<>();
 
             Map<String, String> error = new HashMap<>();
@@ -84,6 +112,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
     public Map<String, Object> odysseyPayment(Date startDate, Date endDate) {
         Map<String, Object> response = new HashMap<>();
         try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             ThirdPartyPrincipal principal = securityContext.getPrincipal();
 
@@ -100,23 +129,40 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             }
 
             List<OdysseyPaymentModel> data = odysseyMapper.getOddyseyPayment(startDate, endDate);
+            String desc = "Payment History ("+startDate.toString()+" - "+endDate.toString()+")";
 
             response.put("payments", data);
             response.put("errors", Collections.emptyList());
 
+            AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
+            safeAuditService.saveAudit(auditLog);
+
         }catch (Exception e) {
+
+            log.error("Error occurred while fetching payment history [ODYSSEY]: {}", e.getMessage(), e);
+            genericHandler.logAndSaveException(e, "odyssey fetching payment history");
             List<Map<String, String>> errors = new ArrayList<>();
 
-            System.out.println("ERROR: " + e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("code", "PAYMENT_HISTORY_ERROR");
             error.put("message", e.getMessage());
-            System.out.println("ERROR 1: " + e.getMessage());
             errors.add(error);
 
             response.put("payments", Collections.emptyList());
             response.put("errors", errors);
         }
         return response;
+    }
+
+    private AuditLog buildAuditLog(String creator, String description, String type, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setUserClient(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
     }
 }

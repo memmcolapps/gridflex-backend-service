@@ -40,7 +40,7 @@ public interface OdysseyMapper {
                         customer_fullname,
                         connection_type
                     FROM vw_meter_summary
-                    WHERE meter_stage= 'Assigned'
+                    WHERE meter_stage = 'Assigned'
                 ) ms
                 LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id
                 -- latest energy reading
