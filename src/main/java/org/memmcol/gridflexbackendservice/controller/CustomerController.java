@@ -72,14 +72,17 @@ public class CustomerController {
     public ResponseEntity<?> allCustomers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
             @RequestParam(value = "firstname", required = false, defaultValue = "") String firstname,
             @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
             @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
-            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection
     ) {
         try {
-            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, accountNumber, status, customerId);
+            Map<String, Object> result = service.allCustomers(page, size, search, firstname, lastname, accountNumber, status, customerId, sortBy, sortDirection);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -182,7 +185,6 @@ public class CustomerController {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
 }
-
 
 
 

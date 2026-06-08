@@ -299,7 +299,7 @@ public class BandServiceImpl implements BandService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getBands(String type) {
+    public Map<String, Object> getBands(String type, String search, String sort) {
         try {
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
@@ -322,6 +322,21 @@ public class BandServiceImpl implements BandService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
+            if (search != null && !search.trim().isEmpty()) {
+                result = result.stream()
+                        .filter(band -> bandMatchesSearch(band, search))
+                        .toList();
+            }
+            if (sort != null && !sort.trim().isEmpty()) {
+                Comparator<Band> byName = Comparator.comparing(
+                        band -> band.getName() == null ? "" : band.getName(),
+                        String.CASE_INSENSITIVE_ORDER);
+                if (sort.equalsIgnoreCase("desc")) {
+                    byName = byName.reversed();
+                }
+                result = new ArrayList<>(result);
+                result.sort(byName);
+            }
 //            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
@@ -329,6 +344,17 @@ public class BandServiceImpl implements BandService {
            genericHandler.logAndSaveException(exception, "fetch bands");
             throw exception;
         }
+    }
+
+    private boolean bandMatchesSearch(Band band, String search) {
+        return containsIgnoreCase(band.getName(), search)
+                || containsIgnoreCase(band.getApproveStatus(), search)
+                || containsIgnoreCase(band.getHour(), search);
+    }
+
+    private boolean containsIgnoreCase(String value, String term) {
+        return value != null && term != null
+                && value.toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT));
     }
 
     @Transactional(readOnly = true)

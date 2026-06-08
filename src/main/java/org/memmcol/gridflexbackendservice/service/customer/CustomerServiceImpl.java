@@ -256,8 +256,9 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> allCustomers(
-            int page, int size, String firstname, String lastname,
-            String accountNumber, String assignedStatus, String customerId) {
+            int page, int size, String search, String firstname, String lastname,
+            String accountNumber, String assignedStatus, String customerId,
+            String sortBy, String sortDirection) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
         try {
 
@@ -267,11 +268,14 @@ public class CustomerServiceImpl implements CustomerService {
 
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("customers_"+um.getOrgId());
+            if (search != null && !search.isEmpty()) cacheKeyBuilder.append("_search_").append(search);
             if (firstname != null && !firstname.isEmpty()) cacheKeyBuilder.append("_firstname_").append(firstname);
             if (lastname != null && !lastname.isEmpty()) cacheKeyBuilder.append("_lastname_").append(lastname);
-//            if (meterNumber != null && !meterNumber.isEmpty()) cacheKeyBuilder.append("_meterNumber_").append(meterNumber);
+            if (accountNumber != null && !accountNumber.isEmpty()) cacheKeyBuilder.append("_accountNumber_").append(accountNumber);
             if (customerId != null && !customerId.isEmpty()) cacheKeyBuilder.append("_customerId_").append(customerId);
             if (assignedStatus != null && !assignedStatus.isEmpty()) cacheKeyBuilder.append("_status_").append(assignedStatus);
+            if (sortBy != null && !sortBy.isEmpty()) cacheKeyBuilder.append("_sortBy_").append(sortBy);
+            if (sortDirection != null && !sortDirection.isEmpty()) cacheKeyBuilder.append("_sortDirection_").append(sortDirection);
 //            if (address != null && !address.isEmpty()) cacheKeyBuilder.append("_address_").append(address);
 //            if (state != null && !state.isEmpty()) cacheKeyBuilder.append("_state_").append(state);
 //            if (meterAssigned != null) cacheKeyBuilder.append("_st_").append(meterAssigned);
@@ -301,26 +305,30 @@ public class CustomerServiceImpl implements CustomerService {
             Stream<Customer> userStream = customers.stream();
 
             if (firstname != null && !firstname.isEmpty()) {
-                userStream = userStream.filter(u -> u.getFirstname() != null && u.getFirstname().equalsIgnoreCase(firstname));
+                userStream = userStream.filter(u -> containsIgnoreCase(u.getFirstname(), firstname));
             }
 
             if (lastname != null && !lastname.isEmpty()) {
-                userStream = userStream.filter(u -> u.getLastname() != null && u.getLastname().equalsIgnoreCase(lastname));
+                userStream = userStream.filter(u -> containsIgnoreCase(u.getLastname(), lastname));
             }
 
             if (assignedStatus != null && !assignedStatus.isEmpty()) {
-                userStream = userStream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(lastname));
+                userStream = userStream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(assignedStatus));
             }
 
-//            if (meterNumber != null && !meterNumber.isEmpty()) {
-//                userStream = userStream.filter(u -> u.getMeterNumber() != null && u.getMeterNumber().equalsIgnoreCase(meterNumber));
-//            }
+            if (accountNumber != null && !accountNumber.isEmpty()) {
+                userStream = userStream.filter(u -> customerHasMeterValue(u, accountNumber));
+            }
 
             if (customerId != null && !customerId.isEmpty()) {
-                userStream = userStream.filter(u -> u.getCustomerId() != null && u.getCustomerId().equalsIgnoreCase(customerId));
+                userStream = userStream.filter(u -> containsIgnoreCase(u.getCustomerId(), customerId));
             }
 
-            List<Customer> filteredCustomers = userStream.toList();
+            if (search != null && !search.trim().isEmpty()) {
+                userStream = userStream.filter(u -> customerMatchesSearch(u, search));
+            }
+
+            List<Customer> filteredCustomers = sortCustomers(userStream.toList(), sortBy, sortDirection);
             int totalCustomers = filteredCustomers.size();
 
             // Safe pagination
@@ -356,6 +364,89 @@ public class CustomerServiceImpl implements CustomerService {
             genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
+    }
+
+    private boolean containsIgnoreCase(String value, String term) {
+        return value != null && term != null
+                && value.toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT));
+    }
+
+    private boolean customerMatchesSearch(Customer customer, String search) {
+        return containsIgnoreCase(customer.getCustomerId(), search)
+                || containsIgnoreCase(customer.getFirstname(), search)
+                || containsIgnoreCase(customer.getLastname(), search)
+                || containsIgnoreCase(customer.getPhoneNumber(), search)
+                || containsIgnoreCase(customer.getEmail(), search)
+                || containsIgnoreCase(customer.getState(), search)
+                || containsIgnoreCase(customer.getCity(), search)
+                || containsIgnoreCase(customer.getStreetName(), search)
+                || containsIgnoreCase(customer.getHouseNo(), search)
+                || containsIgnoreCase(customer.getStatus(), search)
+                || customerHasMeterValue(customer, search);
+    }
+
+    private boolean customerHasMeterValue(Customer customer, String search) {
+        if (customer.getMeter() == null || search == null || search.trim().isEmpty()) {
+            return false;
+        }
+        return customer.getMeter().stream().anyMatch(meter ->
+                containsIgnoreCase(meter.getMeterNumber(), search)
+                        || containsIgnoreCase(meter.getAccountNumber(), search)
+                        || containsIgnoreCase(meter.getCin(), search)
+                        || containsIgnoreCase(meter.getSimNumber(), search));
+    }
+
+    private List<Customer> sortCustomers(List<Customer> customers, String sortBy, String sortDirection) {
+        String normalizedSortBy = sortBy == null || sortBy.trim().isEmpty()
+                ? "createdAt"
+                : sortBy.trim();
+        boolean descending = sortDirection == null || sortDirection.equalsIgnoreCase("desc");
+
+        Comparator<Customer> comparator;
+        switch (normalizedSortBy.toLowerCase(Locale.ROOT)) {
+            case "createdat" -> comparator = Comparator.comparing(
+                    Customer::getCreatedAt,
+                    nullableComparableComparator(descending)
+            );
+            case "updatedat" -> comparator = Comparator.comparing(
+                    Customer::getUpdatedAt,
+                    nullableComparableComparator(descending)
+            );
+            default -> comparator = Comparator.comparing(
+                    customer -> customerSortValue(customer, normalizedSortBy),
+                    nullableStringComparator(descending)
+            );
+        }
+
+        return customers.stream().sorted(comparator).toList();
+    }
+
+    private <T extends Comparable<? super T>> Comparator<T> nullableComparableComparator(boolean descending) {
+        Comparator<T> valueComparator = descending ? Comparator.reverseOrder() : Comparator.naturalOrder();
+        return Comparator.nullsLast(valueComparator);
+    }
+
+    private Comparator<String> nullableStringComparator(boolean descending) {
+        Comparator<String> valueComparator = descending
+                ? String.CASE_INSENSITIVE_ORDER.reversed()
+                : String.CASE_INSENSITIVE_ORDER;
+        return Comparator.nullsLast(valueComparator);
+    }
+
+    private String customerSortValue(Customer customer, String sortBy) {
+        return switch (sortBy.toLowerCase(Locale.ROOT)) {
+            case "customerid" -> customer.getCustomerId();
+            case "firstname" -> customer.getFirstname();
+            case "lastname", "surname" -> customer.getLastname();
+            case "phonenumber", "phone" -> customer.getPhoneNumber();
+            case "email" -> customer.getEmail();
+            case "state" -> customer.getState();
+            case "city" -> customer.getCity();
+            case "houseno" -> customer.getHouseNo();
+            case "streetname", "street" -> customer.getStreetName();
+            case "status" -> customer.getStatus();
+            default -> customer.getCreatedAt() == null ? null : customer.getCreatedAt().toString();
+        };
     }
 
 //    @Transactional(readOnly = true)

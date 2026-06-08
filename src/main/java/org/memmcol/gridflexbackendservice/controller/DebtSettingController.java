@@ -60,10 +60,12 @@ public class DebtSettingController {
 
     @GetMapping("/liability-cause/all")
     public ResponseEntity<?> getAllBands(
-            @RequestParam(value = "type", required = false, defaultValue = "") String type
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "sort", required = false, defaultValue = "") String sort
     ) {
         try {
-            Map<String, Object> result = service.getLiabilityCauses(type);
+            Map<String, Object> result = service.getLiabilityCauses(type, search, sort);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -131,10 +133,12 @@ public class DebtSettingController {
 
     @GetMapping("/percentage-range/all")
     public ResponseEntity<?> getAllPercentages(
-            @RequestParam(value = "type", required = false, defaultValue = "") String type
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "sort", required = false, defaultValue = "") String sort
     ) {
         try {
-            Map<String, Object> result = service.getAllPercentages(type);
+            Map<String, Object> result = service.getAllPercentages(type, search, sort);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

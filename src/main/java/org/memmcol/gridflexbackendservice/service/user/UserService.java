@@ -19,9 +19,10 @@ public interface UserService {
 
     Map<String, Object> createGroupPermission(CreateGroupRequest request);
 
-    Map<String, Object> getGroups();
+    Map<String, Object> getGroups(String search, Boolean status, String sortDirection);
 
-    Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded, String lastActive, int page, int size);
+    Map<String, Object> getUsers(String firstname, String lastname, String email, String permission, String dateAdded,
+                                 String lastActive, String search, Boolean status, String sortDirection, int page, int size);
 
     Map<String, Object> changeGroupPermissionStatus(UUID groupId, Boolean status);
 

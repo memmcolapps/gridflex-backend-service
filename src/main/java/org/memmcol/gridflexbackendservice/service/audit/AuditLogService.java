@@ -11,5 +11,5 @@ public interface AuditLogService {
 
     Map<String, Object> incidentReport(IncidentReport incidentReport);
 
-    Map<String, Object> getIncidentReport(int page, int size);
+    Map<String, Object> getIncidentReport(int page, int size, Boolean status);
 }
