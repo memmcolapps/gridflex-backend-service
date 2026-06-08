@@ -211,7 +211,7 @@ public class VendingServiceImpl implements VendingService {
 
             // --- Token Generation ---
             TokenGenRequest request = new TokenGenRequest();
-            request.setAmount(finalNetTender);
+            request.setAmount(unitsFromTender);
             request.setMeterNo(meter.getMeterNumber());
             request.setSgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));

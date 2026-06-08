@@ -82,7 +82,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 "/meter/service/meterInfo-lookup",
                 "/meter/service/readMeter-lookup",
                 "/admin/setup/api-clients",
-                "/standard/auth/token"
+                "/standard/auth/token",
+                "/api/licence/generate-fingerprint",
+                "/api/licence/get",
+                "/api/licence/deactivate",
+                "/api/licence/fingerprint",
+                "/api/licence/validate",
+                "/api/licence/upload"
 //                "/standard/auth/token"
 //                "/odyssey/standard/meter/readings",
 //                "/odyssey/standard/electricity/payments"
