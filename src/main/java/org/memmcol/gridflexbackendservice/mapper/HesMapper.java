@@ -1427,9 +1427,9 @@ public interface HesMapper {
     <script>
         SELECT mc.*, m.*, fn.*, sm.meter_model
         FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
-        JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN meters m ON mc.meter_no = m.meter_number
+        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="type != null">
                 AND LOWER(m.meter_class) = LOWER(#{type})
@@ -1519,9 +1519,9 @@ public interface HesMapper {
     <script>
         SELECT mc.*, m.*, fn.*, sm.meter_model
         FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
-        JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN meters m ON mc.meter_no = m.meter_number
+        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="type != null">
                  AND LOWER(m.meter_class) IN (LOWER(#{type}), LOWER(#{type2}), LOWER(#{type3}))
@@ -1607,8 +1607,8 @@ public interface HesMapper {
         <script>
             SELECT mc.*, m.*, v.*, sm.meter_model
             FROM meters_connection_event mc
-            JOIN meters m ON mc.meter_no = m.meter_number
-            JOIN smart_meter_info sm ON m.id = sm.meter_id
+            LEFT JOIN meters m ON mc.meter_no = m.meter_number
+            LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
             LEFT JOIN vw_flatten_node_records v ON m.region = v.region_node_id
             <where>
                 mc.updated_at BETWEEN #{startDate} AND #{endDate}
@@ -1760,8 +1760,8 @@ public interface HesMapper {
     <script>
         SELECT mc.*, sm.meter_model
         FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN meters m ON mc.meter_no = m.meter_number
+        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
         WHERE m.org_id = #{orgId}
         ORDER BY mc.updated_at DESC
         LIMIT 5
@@ -1782,8 +1782,8 @@ public interface HesMapper {
         <script>
             SELECT e.*, et.*
             FROM event_log e 
-            JOIN event_type et ON e.event_type_id = et.id 
-            JOIN meters m ON e.meter_serial = m.meter_number
+            LEFT JOIN event_type et ON e.event_type_id = et.id 
+            LEFT JOIN meters m ON e.meter_serial = m.meter_number
             WHERE m.org_id = #{orgId}
             ORDER BY event_time DESC LIMIT 5
         </script>
@@ -1876,8 +1876,8 @@ public interface HesMapper {
         <script>
             SELECT DISTINCT ON (m.meter_id) *
             FROM vw_meter_summary m
-            JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
-            LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
+            LEFT JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
+            LEFT JOIN vw_flatten_node_records v ON m.region = v.region_node_id
             WHERE m.org_id = #{orgId}
             ORDER BY m.meter_id, m.updated_at DESC
             <if test="size != 0">
