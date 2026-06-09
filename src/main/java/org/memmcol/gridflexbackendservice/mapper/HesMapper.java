@@ -26,12 +26,7 @@ public interface HesMapper {
             SELECT e.*, m.*, fn.*
             FROM vw_event_details e
             LEFT JOIN meters m ON e.meter_no = m.meter_number
-            LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+            LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
             <where>
                 <if test="startDate != null">
                     AND e.event_time &gt;= #{startDate}
@@ -178,12 +173,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+       LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -305,12 +295,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -424,12 +409,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -546,12 +526,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -664,12 +639,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_three_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -781,12 +751,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_profile p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -900,12 +865,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_data_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1012,12 +972,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_data_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1125,12 +1080,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_profile p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1252,12 +1202,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_energy_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+       LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1370,12 +1315,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_energy_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN (
-                SELECT DISTINCT ON (region_node_id) *
-                FROM vw_flatten_node_records
-                ORDER BY region_node_id
-            ) fn
-                ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
