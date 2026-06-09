@@ -1425,10 +1425,11 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, sm.meter_model
+        SELECT mc.*, m.*, fn.*, sm.meter_model
         FROM meters_connection_event mc
         JOIN meters m ON mc.meter_no = m.meter_number
         JOIN smart_meter_info sm ON m.id = sm.meter_id
+        JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="type != null">
                 AND LOWER(m.meter_class) = LOWER(#{type})
@@ -1456,6 +1457,9 @@ public interface HesMapper {
             @Result(property = "meter.accountNumber", column = "account_number"),
             @Result(property = "meter.nodeId", column = "node_id"),
             @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.feeder", column = "feeder"),
+            @Result(property = "meter.region", column = "region"),
+            @Result(property = "meter.root", column = "root"),
             @Result(property = "meter.simNumber", column = "sim_number"),
             @Result(property = "meter.smartStatus", column = "smart_status"),
             @Result(property = "meter.meterStage", column = "meter_stage"),
@@ -1513,10 +1517,11 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, sm.meter_model
+        SELECT mc.*, m.*, fn.*, sm.meter_model
         FROM meters_connection_event mc
         JOIN meters m ON mc.meter_no = m.meter_number
         JOIN smart_meter_info sm ON m.id = sm.meter_id
+        JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="type != null">
                  AND LOWER(m.meter_class) IN (LOWER(#{type}), LOWER(#{type2}), LOWER(#{type3}))
@@ -1542,6 +1547,9 @@ public interface HesMapper {
             @Result(property = "meter.accountNumber", column = "account_number"),
             @Result(property = "meter.nodeId", column = "node_id"),
             @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.feeder", column = "feeder"),
+            @Result(property = "meter.region", column = "region"),
+            @Result(property = "meter.root", column = "root"),
             @Result(property = "meter.simNumber", column = "sim_number"),
             @Result(property = "meter.smartStatus", column = "smart_status"),
             @Result(property = "meter.meterStage", column = "meter_stage"),
@@ -1601,7 +1609,7 @@ public interface HesMapper {
             FROM meters_connection_event mc
             JOIN meters m ON mc.meter_no = m.meter_number
             JOIN smart_meter_info sm ON m.id = sm.meter_id
-            LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
+            LEFT JOIN vw_flatten_node_records v ON m.region = v.region_node_id
             <where>
                 mc.updated_at BETWEEN #{startDate} AND #{endDate}
     
