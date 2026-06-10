@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -10,12 +11,10 @@ import org.memmcol.gridflexbackendservice.model.meter.AssignMeterToCustomer;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.MeterRequest;
 import org.memmcol.gridflexbackendservice.model.meter.PaymentMode;
-import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.service.meter.FileStorageService;
 import org.memmcol.gridflexbackendservice.service.meter.MeterService;
-import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler.SQLServerException;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler.SQLServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
@@ -24,7 +23,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,6 +36,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/meter/service")
+@Tag(name = "Meter", description = "Meter Management APIs")
 public class MeterController {
     @Autowired
     private MeterService service;
@@ -122,6 +121,7 @@ public class MeterController {
             "fixed energy"
     };
 
+    @Operation(summary = "Create Meter")
     @PostMapping("/create")
     public ResponseEntity<?> createMeter(@RequestBody Meter meter) {
         try {
@@ -152,12 +152,13 @@ public class MeterController {
         }
     }
 
-//    @PreAuthorize("hasAuthority('PERM_VIEW')")
+//    @Operation(summary = "Create Meter")
     @GetMapping("/all")
     public ResponseEntity<?> getAllMeters(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "type", required = false,  defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
             @RequestParam(value = "meterStage", required = false,  defaultValue = "") String meterStage,
             @RequestParam(value = "meterNumber", required = false, defaultValue = "") String meterNumber,
             @RequestParam(value = "simNo", required = false, defaultValue = "") String simNo,
@@ -166,10 +167,12 @@ public class MeterController {
             @RequestParam(value = "category", required = false, defaultValue = "") String category,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam(value = "createdAt", required = false, defaultValue = "") String createdAt,
-            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection
     ) {
         try {
-            Map<String, Object> result = service.getAllMeters(page, size, meterNumber, simNo, manufacturer, meterStage, meterClass, category, status, createdAt, customerId, type);
+            Map<String, Object> result = service.getAllMeters(page, size, search, meterNumber, simNo, manufacturer, meterStage, meterClass, category, status, createdAt, customerId, type, sortBy, sortDirection);
             return ResponseEntity.ok(result);
         } catch (SQLServerException e) {
             return handleException(e);

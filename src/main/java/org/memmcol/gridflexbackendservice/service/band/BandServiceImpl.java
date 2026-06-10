@@ -7,18 +7,13 @@ import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.model.band.Band;
-import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.meter.MeterRequest;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
 import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -304,7 +299,7 @@ public class BandServiceImpl implements BandService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getBands(String type) {
+    public Map<String, Object> getBands(String type, String search, String sort) {
         try {
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
@@ -327,6 +322,21 @@ public class BandServiceImpl implements BandService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
+            if (search != null && !search.trim().isEmpty()) {
+                result = result.stream()
+                        .filter(band -> bandMatchesSearch(band, search))
+                        .toList();
+            }
+            if (sort != null && !sort.trim().isEmpty()) {
+                Comparator<Band> byName = Comparator.comparing(
+                        band -> band.getName() == null ? "" : band.getName(),
+                        String.CASE_INSENSITIVE_ORDER);
+                if (sort.equalsIgnoreCase("desc")) {
+                    byName = byName.reversed();
+                }
+                result = new ArrayList<>(result);
+                result.sort(byName);
+            }
 //            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
@@ -334,6 +344,17 @@ public class BandServiceImpl implements BandService {
            genericHandler.logAndSaveException(exception, "fetch bands");
             throw exception;
         }
+    }
+
+    private boolean bandMatchesSearch(Band band, String search) {
+        return containsIgnoreCase(band.getName(), search)
+                || containsIgnoreCase(band.getApproveStatus(), search)
+                || containsIgnoreCase(band.getHour(), search);
+    }
+
+    private boolean containsIgnoreCase(String value, String term) {
+        return value != null && term != null
+                && value.toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT));
     }
 
     @Transactional(readOnly = true)

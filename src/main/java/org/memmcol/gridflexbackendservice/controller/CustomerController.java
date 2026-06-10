@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -7,8 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.service.customer.CustomerService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
-import org.memmcol.gridflexbackendservice.util.ResponseMap;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -20,18 +20,14 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/customer/service")
+@Tag(name = "Customer", description = "Customer Management APIs")
 public class CustomerController {
 
     @Autowired
@@ -78,14 +74,17 @@ public class CustomerController {
     public ResponseEntity<?> allCustomers(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
             @RequestParam(value = "firstname", required = false, defaultValue = "") String firstname,
             @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
             @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
-            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection
     ) {
         try {
-            Map<String, Object> result = service.allCustomers(page, size, firstname, lastname, accountNumber, status, customerId);
+            Map<String, Object> result = service.allCustomers(page, size, search, firstname, lastname, accountNumber, status, customerId, sortBy, sortDirection);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -188,7 +187,6 @@ public class CustomerController {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
 }
-
 
 
 

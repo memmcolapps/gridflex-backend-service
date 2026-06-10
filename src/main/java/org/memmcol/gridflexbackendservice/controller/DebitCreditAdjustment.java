@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -7,7 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.service.debit_credit_adjustment.DebitCreditAdjustmentService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -19,13 +20,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/debit-credit-adjustment/service")
+@Tag(name = "Debit-Credit", description = "Debit-Credit Management APIs")
 public class DebitCreditAdjustment {
 
     @Autowired
@@ -69,9 +70,11 @@ public class DebitCreditAdjustment {
             @RequestParam(value = "size", required = false, defaultValue = "0") int size,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "asc") String sortDirection,
             @ModelAttribute DebitCreditAdjust debitCreditAdjust) {
         try {
-            Map<String, Object> result = service.getDebitAdjustments(page, size, type, search, debitCreditAdjust);
+            Map<String, Object> result = service.getDebitAdjustments(page, size, type, search, sortBy, sortDirection, debitCreditAdjust);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

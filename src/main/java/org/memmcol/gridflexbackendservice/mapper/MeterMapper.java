@@ -2291,6 +2291,9 @@ public interface MeterMapper {
     @Select("SELECT COUNT(*) FROM meters WHERE tariff = #{id} AND org_id = #{orgId} AND status != 'Deactivated'")
     int getTariffMeterById(UUID id, UUID orgId);
 
+    @Select("SELECT COUNT(*) FROM meters WHERE org_id = #{orgId} AND status != 'Deactivated'")
+    int countMetersByOrgId(UUID orgId);
+
     @Select("SELECT " +
             "    m.meter_id, " +
             "    m.org_id, " +

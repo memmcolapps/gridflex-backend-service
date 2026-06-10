@@ -1,8 +1,9 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.service.vend.VendingService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Controller
 @RequestMapping("/vending/service/generate/token")
+@Tag(name = "Vending", description = "Vending Management APIs")
 public class VendingController {
 
     @Autowired private VendingService vendingService;
@@ -109,11 +111,13 @@ public class VendingController {
                                @RequestParam(required = false) String tariffName,
                                @RequestParam(required = false) String tokenType,
                                @RequestParam(required = false) String status,
+                               @RequestParam(required = false, defaultValue = "") String search,
+                               @RequestParam(required = false, defaultValue = "desc") String sortDirection,
                                @RequestParam(value = "page", required = false,defaultValue = "0") int page,
                                @RequestParam(value = "size",required = false,defaultValue = "0") int size){
         try {
             Map<String, Object> result = vendingService.getAllToken(meterNumber,accountNumber,tariffName,
-                    tokenType,status,page,size);
+                    tokenType,status,search,sortDirection,page,size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

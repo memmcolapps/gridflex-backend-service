@@ -1,23 +1,17 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
 
-import jakarta.annotation.PostConstruct;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
-import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.hes.MeterStreamEvent;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.http.MediaType;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;

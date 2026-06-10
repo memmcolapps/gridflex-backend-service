@@ -1,8 +1,9 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.service.band.BandService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import java.util.List;
 @RestController
 @RequestMapping("/band/service")
+@Tag(name = "Band", description = "Band Management APIs")
 public class BandController {
 
     @Autowired
@@ -44,10 +46,12 @@ public class BandController {
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllBands(
-            @RequestParam(value = "type", required = false, defaultValue = "") String type
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "sort", required = false, defaultValue = "") String sort
     ) {
         try {
-            Map<String, Object> result = service.getBands(type);
+            Map<String, Object> result = service.getBands(type, search, sort);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

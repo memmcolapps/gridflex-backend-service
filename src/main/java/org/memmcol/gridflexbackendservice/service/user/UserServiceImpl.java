@@ -6,15 +6,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.Module;
 import org.memmcol.gridflexbackendservice.model.user.*;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
-import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -27,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -68,6 +64,10 @@ public class UserServiceImpl implements  UserService {
     private String userName = "User";
 
     private final IMap<String, Object> userCache;
+
+    private boolean containsIgnoreCase(String field, String search) {
+        return field != null && field.toLowerCase(Locale.ROOT).contains(search);
+    }
 
     private final IMap<String, Object> auditCache;
 
@@ -231,7 +231,8 @@ public class UserServiceImpl implements  UserService {
     @Override
     public Map<String, Object> getUsers(
             String firstname, String lastname, String email, String permission,
-            String dateAdded, String lastActive, int page, int size) {
+            String dateAdded, String lastActive, String search, Boolean userStatus,
+            String sortDirection, int page, int size) {
         try {
             UserModel um = handleUserValidation();
 
@@ -255,7 +256,7 @@ public class UserServiceImpl implements  UserService {
 //            }
             List<UserModel> enrichedUsers = new ArrayList<>();
 
-            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId(), page, size);
+            List<UserModel> users = operatorMapper.findAllUsers(um.getOrgId(), 0, 0);
 
             for (UserModel user : users) {
                 /// Retrieve user data from database
@@ -287,6 +288,26 @@ public class UserServiceImpl implements  UserService {
 
             // Apply filtering
             Stream<UserModel> userStream = enrichedUsers.stream();
+            String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
+
+            if (!searchLower.isEmpty()) {
+                userStream = userStream.filter(user ->
+                        containsIgnoreCase(user.getFirstname(), searchLower) ||
+                        containsIgnoreCase(user.getLastname(), searchLower) ||
+                        containsIgnoreCase(user.getEmail(), searchLower) ||
+                        containsIgnoreCase(user.getPhoneNumber(), searchLower) ||
+                        containsIgnoreCase(user.getLastActive(), searchLower) ||
+                        user.getId() != null && user.getId().toString().toLowerCase(Locale.ROOT).contains(searchLower) ||
+                        user.getGroups() != null && containsIgnoreCase(user.getGroups().getGroupTitle(), searchLower) ||
+                        user.getNodes() != null && containsIgnoreCase(user.getNodes().getName(), searchLower));
+            }
+
+            if (userStatus != null) {
+                userStream = userStream.filter(user ->
+                        userStatus
+                                ? Boolean.TRUE.equals(user.getStatus())
+                                : !Boolean.TRUE.equals(user.getStatus()));
+            }
 
             if (firstname != null && !firstname.isEmpty()) {
                 userStream = userStream.filter(u -> u.getFirstname() != null && u.getFirstname().equalsIgnoreCase(firstname));
@@ -320,7 +341,16 @@ public class UserServiceImpl implements  UserService {
                 });
             }
 
-            List<UserModel> filteredUsers = userStream.toList();
+            List<UserModel> filteredUsers = new ArrayList<>(userStream.toList());
+            Comparator<UserModel> comparator = Comparator
+                    .comparing((UserModel user) -> user.getFirstname() == null ? "" : user.getFirstname(),
+                            String.CASE_INSENSITIVE_ORDER)
+                    .thenComparing(user -> user.getLastname() == null ? "" : user.getLastname(),
+                            String.CASE_INSENSITIVE_ORDER);
+            if ("desc".equalsIgnoreCase(sortDirection)) {
+                comparator = comparator.reversed();
+            }
+            filteredUsers.sort(comparator);
 
             // Pagination logic
             int totalUsers = filteredUsers.size();
@@ -334,7 +364,7 @@ public class UserServiceImpl implements  UserService {
                 paginatedUsers = filteredUsers.subList(fromIndex, toIndex);
             }
 
-            int totalUser = size == 0 ? 1 : (int) Math.ceil((double) totalUsers / size);
+            int totalUser = size <= 0 ? 1 : Math.max(1, (int) Math.ceil((double) totalUsers / size));
 
             // Prepare response with pagination metadata
             Map<String, Object> response = new HashMap<>();
@@ -689,7 +719,7 @@ public class UserServiceImpl implements  UserService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getGroups() {
+    public Map<String, Object> getGroups(String search, Boolean groupStatus, String sortDirection) {
         try {
 
             UserModel um = handleUserValidation();
@@ -699,7 +729,14 @@ public class UserServiceImpl implements  UserService {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
             }
 
-            List<GroupWithPermissionsDTO> groupDTOs = groups.stream().map(group -> {
+            String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
+            List<GroupWithPermissionsDTO> groupDTOs = groups.stream()
+                    .filter(group -> searchLower.isEmpty() ||
+                            group.getGroupTitle() != null && group.getGroupTitle().toLowerCase(Locale.ROOT).contains(searchLower))
+                    .filter(group -> groupStatus == null ||
+                            groupStatus && !Boolean.FALSE.equals(group.getStatus()) ||
+                            !groupStatus && Boolean.FALSE.equals(group.getStatus()))
+                    .map(group -> {
                 GroupWithPermissionsDTO groupDTO = new GroupWithPermissionsDTO();
                 groupDTO.setId(group.getId());
                 groupDTO.setGroupTitle(group.getGroupTitle());
@@ -716,6 +753,14 @@ public class UserServiceImpl implements  UserService {
 
                 return groupDTO;
             }).collect(Collectors.toList());
+
+            Comparator<GroupWithPermissionsDTO> comparator = Comparator.comparing(
+                    group -> group.getGroupTitle() == null ? "" : group.getGroupTitle(),
+                    String.CASE_INSENSITIVE_ORDER);
+            if ("desc".equalsIgnoreCase(sortDirection)) {
+                comparator = comparator.reversed();
+            }
+            groupDTOs.sort(comparator);
 
             return ResponseMap.response(status.getSuccessCode(),  "Group Permission " + status.getDesc(), groupDTOs);
         } catch (Exception exception) {

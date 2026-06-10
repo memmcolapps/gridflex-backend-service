@@ -20,7 +20,8 @@ public interface VendingService {
     Map<String, Object> createCompensationToken(KctToken kctToken);
 
     Map<String, Object> getAllToken(String meterNumber, String meterAccountNumber,
-                                    String tariffName, String tokenType, String status,int page, int size);
+                                    String tariffName, String tokenType, String status,
+                                    String search, String sortDirection, int page, int size);
 
     Map<String, Object> calculateCreditToken(CreditToken creditToken);
 

@@ -26,7 +26,7 @@ public interface HesMapper {
             SELECT e.*, m.*, fn.*
             FROM vw_event_details e
             LEFT JOIN meters m ON e.meter_no = m.meter_number
-            LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+            LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
             <where>
                 <if test="startDate != null">
                     AND e.event_time &gt;= #{startDate}
@@ -173,7 +173,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+       LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -295,7 +295,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -409,7 +409,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -526,7 +526,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -639,7 +639,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_three_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -751,7 +751,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_profile p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -865,7 +865,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_data_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -972,7 +972,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_data_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1080,7 +1080,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_profile p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1202,7 +1202,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_energy_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+       LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1315,7 +1315,7 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_energy_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.feeder_node_id = m.feeder
+        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1425,10 +1425,16 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, sm.meter_model
+        SELECT mc.*, m.*, fn.*, sm.meter_model
         FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN meters m ON mc.meter_no = m.meter_number
+        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
+         LEFT JOIN (
+            SELECT DISTINCT ON (region_node_id) *
+            FROM vw_flatten_node_records
+            ORDER BY region_node_id
+        ) fn
+            ON fn.region_node_id = m.region
         <where>
             <if test="type != null">
                 AND LOWER(m.meter_class) = LOWER(#{type})
@@ -1456,6 +1462,9 @@ public interface HesMapper {
             @Result(property = "meter.accountNumber", column = "account_number"),
             @Result(property = "meter.nodeId", column = "node_id"),
             @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.feeder", column = "feeder"),
+            @Result(property = "meter.region", column = "region"),
+            @Result(property = "meter.root", column = "root"),
             @Result(property = "meter.simNumber", column = "sim_number"),
             @Result(property = "meter.smartStatus", column = "smart_status"),
             @Result(property = "meter.meterStage", column = "meter_stage"),
@@ -1513,10 +1522,16 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, sm.meter_model
+        SELECT DISTINCT mc.*, m.*, fn.*, sm.meter_model
         FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN meters m ON mc.meter_no = m.meter_number
+        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN (
+            SELECT DISTINCT ON (region_node_id) *
+            FROM vw_flatten_node_records
+            ORDER BY region_node_id
+        ) fn
+            ON fn.region_node_id = m.region
         <where>
             <if test="type != null">
                  AND LOWER(m.meter_class) IN (LOWER(#{type}), LOWER(#{type2}), LOWER(#{type3}))
@@ -1542,6 +1557,9 @@ public interface HesMapper {
             @Result(property = "meter.accountNumber", column = "account_number"),
             @Result(property = "meter.nodeId", column = "node_id"),
             @Result(property = "meter.dss", column = "dss"),
+            @Result(property = "meter.feeder", column = "feeder"),
+            @Result(property = "meter.region", column = "region"),
+            @Result(property = "meter.root", column = "root"),
             @Result(property = "meter.simNumber", column = "sim_number"),
             @Result(property = "meter.smartStatus", column = "smart_status"),
             @Result(property = "meter.meterStage", column = "meter_stage"),
@@ -1599,9 +1617,14 @@ public interface HesMapper {
         <script>
             SELECT mc.*, m.*, v.*, sm.meter_model
             FROM meters_connection_event mc
-            JOIN meters m ON mc.meter_no = m.meter_number
-            JOIN smart_meter_info sm ON m.id = sm.meter_id
-            LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
+            LEFT JOIN meters m ON mc.meter_no = m.meter_number
+            LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
+                LEFT JOIN (
+                SELECT DISTINCT ON (region_node_id) *
+                FROM vw_flatten_node_records
+                ORDER BY region_node_id
+            ) v
+                ON v.region_node_id = m.region
             <where>
                 mc.updated_at BETWEEN #{startDate} AND #{endDate}
     
@@ -1752,8 +1775,8 @@ public interface HesMapper {
     <script>
         SELECT mc.*, sm.meter_model
         FROM meters_connection_event mc
-        JOIN meters m ON mc.meter_no = m.meter_number
-        JOIN smart_meter_info sm ON m.id = sm.meter_id
+        LEFT JOIN meters m ON mc.meter_no = m.meter_number
+        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
         WHERE m.org_id = #{orgId}
         ORDER BY mc.updated_at DESC
         LIMIT 5
@@ -1774,8 +1797,8 @@ public interface HesMapper {
         <script>
             SELECT e.*, et.*
             FROM event_log e 
-            JOIN event_type et ON e.event_type_id = et.id 
-            JOIN meters m ON e.meter_serial = m.meter_number
+            LEFT JOIN event_type et ON e.event_type_id = et.id 
+            LEFT JOIN meters m ON e.meter_serial = m.meter_number
             WHERE m.org_id = #{orgId}
             ORDER BY event_time DESC LIMIT 5
         </script>
@@ -1868,8 +1891,8 @@ public interface HesMapper {
         <script>
             SELECT DISTINCT ON (m.meter_id) *
             FROM vw_meter_summary m
-            JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
-            LEFT JOIN vw_flatten_node_records v ON m.dss = v.dss_node_id
+            LEFT JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
+            LEFT JOIN vw_flatten_node_records v ON m.region = v.region_node_id
             WHERE m.org_id = #{orgId}
             ORDER BY m.meter_id, m.updated_at DESC
             <if test="size != 0">

@@ -1,26 +1,23 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
-import org.memmcol.gridflexbackendservice.model.user.MeterReadingDTO;
 import org.memmcol.gridflexbackendservice.service.billing.BillingService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.time.Month;
 
 
-import java.time.YearMonth;
 import java.util.*;
 
 @RestController
 @RequestMapping("/billing/service")
+@Tag(name = "Billing", description = "Billing Management APIs")
 public class BillingController {
 
     @Autowired

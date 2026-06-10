@@ -1,9 +1,10 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.service.audit.AuditLogService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/audit-log/service")
+@Tag(name = "Audit", description = "Audit Management APIs")
 public class AuditLogController {
 
     private final AuditLogService auditLogService;
@@ -59,9 +61,10 @@ public class AuditLogController {
 
     @GetMapping("/incident/report/get")
     public ResponseEntity<?> getIncidentReport(@RequestParam(required = false, defaultValue = "0") int page,
-                                               @RequestParam(required = false, defaultValue = "0") int size) {
+                                               @RequestParam(required = false, defaultValue = "0") int size,
+                                               @RequestParam(required = false) Boolean status) {
         try {
-            Map<String, Object> result = auditLogService.getIncidentReport(page, size);
+            Map<String, Object> result = auditLogService.getIncidentReport(page, size, status);
 
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {

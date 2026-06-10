@@ -73,6 +73,8 @@ public class AuditLog implements Serializable {
 
     private MeterReadingSheet meterReadingSheet;
 
+    private String userClient;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
@@ -270,5 +272,13 @@ public class AuditLog implements Serializable {
 
     public void setMeterReadingSheet(MeterReadingSheet meterReadingSheet) {
         this.meterReadingSheet = meterReadingSheet;
+    }
+
+    public String getUserClient() {
+        return userClient;
+    }
+
+    public void setUserClient(String userClient) {
+        this.userClient = userClient;
     }
 }

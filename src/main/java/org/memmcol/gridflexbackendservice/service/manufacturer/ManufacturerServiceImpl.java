@@ -7,11 +7,9 @@ import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
-import org.memmcol.gridflexbackendservice.util.HandlePermission;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -21,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
@@ -76,7 +73,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
             if (isManufacturer != null){
-                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+")" + status.getExistDesc());
+                throw new GlobalExceptionHandler.NotFoundException(manufacturerName + " ("+request.getName()+") " + status.getExistDesc());
             }
 
             request.setOrgId(um.getOrgId());

@@ -1,8 +1,10 @@
-package org.memmcol.gridflexbackendservice.util;
+package org.memmcol.gridflexbackendservice.exception;
 
-import org.memmcol.gridflexbackendservice.model.vend.MeterView;
+import com.mongodb.MongoException;
+import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -193,6 +195,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataAccessException.class)
 	public ResponseEntity<?> handleDataAccessException(DataAccessException ex) {
 		ex.printStackTrace();
+
+		System.out.println("Log: "+ex.getMessage());
 //		String msg = "There's a problem with accessing some data [See server logs for more details]";
 		String msg = "There's a problem with accessing some data, please try again later";
 		errorMessage.put("responsecode", "112");
@@ -416,6 +420,34 @@ public class GlobalExceptionHandler {
 						"132",
 						ex.getMostSpecificCause().getMessage(),
 						""
+				));
+	}
+
+	@ExceptionHandler(DataAccessResourceFailureException.class)
+	public ResponseEntity<Map<String, Object>> handleMongoTimeout(DataAccessResourceFailureException ex) {
+
+//		log.error("MongoDB connection failure", ex);
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("responsecode", "135");
+		response.put("responsedesc", "Audit temporarily unavailable (DB connection timeout). Please try again later.");
+		response.put("responsedata", "");
+
+		return ResponseEntity
+				.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(response);
+	}
+
+	@ExceptionHandler(com.mongodb.MongoException.class)
+	public ResponseEntity<?> handleMongo(MongoException ex) {
+
+//		log.error("Mongo error", ex);
+
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(Map.of(
+						"responsecode", "136",
+						"responsedesc", "MongoDB error: " + ex.getMessage(),
+						"responsedata", ""
 				));
 	}
 

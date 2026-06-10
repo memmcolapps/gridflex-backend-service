@@ -1,29 +1,16 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
-import jakarta.servlet.http.HttpServletResponse;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.debit_setting.DebtSettingService;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,26 +18,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/debt-setting/service")
+@Tag(name = "Debt Settings", description = "Debt Setting Management APIs")
 public class DebtSettingController {
     @Autowired
     private GlobalExceptionHandler exception;
 
     @Autowired private DebtSettingService service;
-
-
-//    private static final String[] LIABILITYCAUSEHEADERS = {
-//            "Name",
-//            "Code"
-//    };
-//
-//    private static final String[] PERCENTAGERANGEHEADERS = {
-//            "Percentage",
-//            "Code",
-//            "Band",
-//            "Amount Start Range",
-//            "Amount End Range",
-//    };
-
 
     @PostMapping("/liability-cause/create")
     public ResponseEntity<?> createLiabilityCause(@RequestBody LiabilityCause request) {
@@ -74,10 +47,12 @@ public class DebtSettingController {
 
     @GetMapping("/liability-cause/all")
     public ResponseEntity<?> getAllBands(
-            @RequestParam(value = "type", required = false, defaultValue = "") String type
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "sort", required = false, defaultValue = "") String sort
     ) {
         try {
-            Map<String, Object> result = service.getLiabilityCauses(type);
+            Map<String, Object> result = service.getLiabilityCauses(type, search, sort);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -145,10 +120,12 @@ public class DebtSettingController {
 
     @GetMapping("/percentage-range/all")
     public ResponseEntity<?> getAllPercentages(
-            @RequestParam(value = "type", required = false, defaultValue = "") String type
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "sort", required = false, defaultValue = "") String sort
     ) {
         try {
-            Map<String, Object> result = service.getAllPercentages(type);
+            Map<String, Object> result = service.getAllPercentages(type, search, sort);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

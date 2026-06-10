@@ -12,22 +12,19 @@ import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
-import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.CreditDebitAdjustment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditPayment;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.MeterAndLiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -35,9 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,7 +43,6 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.memmcol.gridflexbackendservice.components.GenericHandler.capitalizeFirstLetter;
@@ -1663,10 +1657,88 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
         return debitCreditAdjusts;
     }
 
+    private boolean containsIgnoreCase(String value, String search) {
+        return value != null && search != null && value.toLowerCase().contains(search);
+    }
+
+    private boolean debitCreditAdjustmentMatchesSearch(Meter meter, String search) {
+        if (search == null || search.isBlank()) {
+            return true;
+        }
+
+        String normalizedSearch = search.toLowerCase();
+        Customer customer = meter.getCustomer();
+
+        return containsIgnoreCase(meter.getAccountNumber(), normalizedSearch)
+                || containsIgnoreCase(meter.getCustomerId(), normalizedSearch)
+                || containsIgnoreCase(meter.getMeterNumber(), normalizedSearch)
+                || (meter.getOutstandingBalance() != null && meter.getOutstandingBalance().toPlainString().contains(normalizedSearch))
+                || (customer != null && (
+                containsIgnoreCase(customer.getFirstname(), normalizedSearch)
+                        || containsIgnoreCase(customer.getLastname(), normalizedSearch)
+                        || containsIgnoreCase((customer.getFirstname() + " " + customer.getLastname()), normalizedSearch)
+                        || containsIgnoreCase(customer.getPhoneNumber(), normalizedSearch)
+                        || containsIgnoreCase(customer.getEmail(), normalizedSearch)
+        ))
+                || (meter.getDebitCreditAdjustInfo() != null && meter.getDebitCreditAdjustInfo().stream()
+                .anyMatch(info -> debitCreditAdjustInfoMatchesSearch(info, normalizedSearch)));
+    }
+
+    private boolean debitCreditAdjustInfoMatchesSearch(DebitCreditAdjust adjustment, String search) {
+        if (adjustment == null) {
+            return false;
+        }
+
+        LiabilityCause liabilityCause = adjustment.getLiabilityCause();
+        return containsIgnoreCase(adjustment.getStatus(), search)
+                || containsIgnoreCase(adjustment.getType(), search)
+                || containsIgnoreCase(adjustment.getCode(), search)
+                || (adjustment.getAmount() != null && adjustment.getAmount().toPlainString().contains(search))
+                || (adjustment.getBalance() != null && adjustment.getBalance().toPlainString().contains(search))
+                || (adjustment.getTotalBalance() != null && adjustment.getTotalBalance().toPlainString().contains(search))
+                || (adjustment.getOutstandingBalance() != null && adjustment.getOutstandingBalance().toPlainString().contains(search))
+                || (liabilityCause != null && (
+                containsIgnoreCase(liabilityCause.getName(), search)
+                        || containsIgnoreCase(liabilityCause.getCode(), search)
+        ));
+    }
+
+    private String debitCreditCustomerName(Meter meter) {
+        if (meter.getCustomer() == null) {
+            return null;
+        }
+        String firstname = meter.getCustomer().getFirstname() == null ? "" : meter.getCustomer().getFirstname();
+        String lastname = meter.getCustomer().getLastname() == null ? "" : meter.getCustomer().getLastname();
+        return (firstname + " " + lastname).trim();
+    }
+
+    private void sortDebitCreditAdjustments(List<Meter> meters, String sortBy, String sortDirection) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return;
+        }
+
+        Comparator<String> stringComparator = Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER);
+        Comparator<Meter> comparator = switch (sortBy) {
+            case "accountNo", "accountNumber" -> Comparator.comparing(Meter::getAccountNumber, stringComparator);
+            case "customerName", "name" -> Comparator.comparing(this::debitCreditCustomerName, stringComparator);
+            case "meterNo", "meterNumber" -> Comparator.comparing(Meter::getMeterNumber, stringComparator);
+            case "balance", "outstandingBalance" -> Comparator.comparing(Meter::getOutstandingBalance, Comparator.nullsLast(Comparator.naturalOrder()));
+            case "createdAt", "date" -> Comparator.comparing(Meter::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()));
+            case "customerId" -> Comparator.comparing(Meter::getCustomerId, stringComparator);
+            default -> Comparator.comparing(Meter::getCustomerId, stringComparator);
+        };
+
+        if ("desc".equalsIgnoreCase(sortDirection)) {
+            comparator = comparator.reversed();
+        }
+
+        meters.sort(comparator);
+    }
+
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustments(
-            int page, int size, String type, String search, DebitCreditAdjust debitCreditAdjust) {
+            int page, int size, String type, String search, String sortBy, String sortDirection, DebitCreditAdjust debitCreditAdjust) {
         try {
 
             UserModel um = handleUserValidation();
@@ -1680,9 +1752,9 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             List<Meter> allDebitCreditAdjustment;
             // Ideally, this should be a dynamic query in the mapper layer
             if(type.equalsIgnoreCase("debit")) {
-                allDebitCreditAdjustment = mapper.GetDebitAdjustment(um.getOrgId(), page,size, nodeId);
+                allDebitCreditAdjustment = mapper.GetDebitAdjustment(um.getOrgId(), 0,0, nodeId);
             } else if (type.equalsIgnoreCase("credit")){
-                allDebitCreditAdjustment = mapper.GetCreditAdjustment(um.getOrgId(), page,size, nodeId);
+                allDebitCreditAdjustment = mapper.GetCreditAdjustment(um.getOrgId(), 0,0, nodeId);
             } else {
                 throw new GlobalExceptionHandler.NotFoundException("Type parameter (" + type + ") not supported");
             }
@@ -1701,19 +1773,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
             List<Meter> filteredDebitCreditAdjustment =
                     allDebitCreditAdjustment.stream()
-                            .filter(u ->
-                                    search == null || search.isBlank()
-                                            || (u.getAccountNumber() != null && u.getAccountNumber().toLowerCase().contains(search.toLowerCase()))
-                                            || (u.getCustomerId() != null && u.getCustomerId().toLowerCase().contains(search.toLowerCase()))
-                                            || (u.getMeterNumber() != null && u.getMeterNumber().toLowerCase().contains(search.toLowerCase()))
-                                            || (u.getCustomer() != null && (
-                                                    (u.getCustomer().getFirstname() != null && u.getCustomer().getFirstname().toLowerCase().contains(search.toLowerCase()))
-                                                    || (u.getCustomer().getLastname() != null && u.getCustomer().getLastname().toLowerCase().contains(search.toLowerCase()))
-                                            ))
-                            )
+                            .filter(u -> debitCreditAdjustmentMatchesSearch(u, search))
                             .collect(Collectors.toList());
 
-
+            sortDebitCreditAdjustments(filteredDebitCreditAdjustment, sortBy, sortDirection);
 
             // Pagination logic
             int totalDebitCreditAdjustment = filteredDebitCreditAdjustment.size();

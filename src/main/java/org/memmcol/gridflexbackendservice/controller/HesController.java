@@ -1,27 +1,18 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.apache.ibatis.annotations.Update;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.model.hes.Cron;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
-import org.memmcol.gridflexbackendservice.model.hes.Schedule;
 import org.memmcol.gridflexbackendservice.service.hes.*;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/hes/service")
+@Tag(name = "HES", description = "HES Management APIs")
 public class HesController {
 
     @Autowired
@@ -52,10 +44,12 @@ public class HesController {
             @RequestParam(value = "size", required = false,  defaultValue = "0") int size,
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "connectionType", required = false) String connectionType,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "asc") String sortDirection,
             @RequestParam(value = "node", required = false) String node
     ) {
         try {
-            Map<String, Object> result = hesService.communicationReport(page, size, type, search, node);
+            Map<String, Object> result = hesService.communicationReport(page, size, type, search, connectionType, sortDirection, node);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -295,12 +289,15 @@ public class HesController {
             @RequestParam(required = false) String businessHub,
             @RequestParam(required = false) String manufacturer,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "meterNumber") String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "0") int size) {
         try {
             Map<String, Object> result = hesService.meterConfiguration(
                     meterNumber, simNo, model, meterClass, category,
-                    businessHub, manufacturer, status, page, size);
+                    businessHub, manufacturer, status, search, sortBy, sortDirection, page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

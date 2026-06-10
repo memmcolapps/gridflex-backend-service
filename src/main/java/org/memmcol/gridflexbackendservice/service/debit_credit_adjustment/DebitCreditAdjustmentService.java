@@ -13,7 +13,7 @@ public interface DebitCreditAdjustmentService {
 
     Map<String, Object> getDebitAdjustment(UUID meterId, String type);
 
-    Map<String, Object> getDebitAdjustments(int page, int size, String type, String search, DebitCreditAdjust debitCreditAdjust);
+    Map<String, Object> getDebitAdjustments(int page, int size, String type, String search, String sortBy, String sortDirection, DebitCreditAdjust debitCreditAdjust);
 
     Map<String, Object> reconcileDebt(UUID meterId, UUID liabilityCauseId, String amount);
 

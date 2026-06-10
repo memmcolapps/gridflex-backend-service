@@ -10,7 +10,7 @@ import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -66,36 +66,50 @@ public class HesClientServiceImpl implements HesService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> communicationReport(int page, int size, String type, String search,String node) {
+    public Map<String, Object> communicationReport(int page, int size, String type, String search, String connectionType, String sortDirection, String node) {
         try {
 
             UserModel um = handleUserValidation();
             List<MeterConnEvent> meterConnEvent;
 
             if("MD".equalsIgnoreCase(type)){
-                meterConnEvent = hesMapper.getCommunicationReport(page, size, um.getOrgId(), type, node);
+                meterConnEvent = hesMapper.getCommunicationReport(0, 0, um.getOrgId(), type, node);
             } else if("Non-MD".equalsIgnoreCase(type)) {
                 String type1 = "three-phase";
                 String type2 = "single-phase";
-                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, "", node);
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(0, 0, um.getOrgId(), type1, type2, "", node);
             } else {
                 String type1 = "three-phase";
                 String type2 = "single-phase";
                 String type3 = "MD";
-                meterConnEvent = hesMapper.getCommunicationNonMDReport(page, size, um.getOrgId(), type1, type2, type3, node);
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(0, 0, um.getOrgId(), type1, type2, type3, node);
             }
 
-            // Normalize search text
-            String searchLower = (search == null) ? "" : search.toLowerCase();
-
-            // SEARCH ON ANY FIELD
+            String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
             List<MeterConnEvent> filteredComm = meterConnEvent.stream()
                     .filter(e -> searchLower.isEmpty() ||
-                            (e.getMeterNo() != null && e.getMeterNo().toLowerCase().equalsIgnoreCase(searchLower)) ||
-                            (e.getUpdatedAt() != null && e.getUpdatedAt().toString().equalsIgnoreCase(searchLower)) ||
-                            (e.getConnectionType() != null && e.getConnectionType().toLowerCase().equalsIgnoreCase(searchLower))
+                            contains(e.getMeterNo(), searchLower) ||
+                            contains(e.getConnectionType(), searchLower) ||
+                            containsDate(e.getUpdatedAt(), searchLower) ||
+                            (e.getMeter() != null && (
+                                    contains(e.getMeter().getAccountNumber(), searchLower) ||
+                                    contains(e.getMeter().getCustomerId(), searchLower) ||
+                                    contains(e.getMeter().getMeterClass(), searchLower) ||
+                                    (e.getMeter().getSmartMeterInfo() != null &&
+                                            contains(e.getMeter().getSmartMeterInfo().getMeterModel(), searchLower))
+                            ))
                     )
+                    .filter(e -> connectionType == null || connectionType.isBlank() ||
+                            (e.getConnectionType() != null && e.getConnectionType().equalsIgnoreCase(connectionType)))
                     .collect(Collectors.toList());
+
+            Comparator<MeterConnEvent> byMeterNumber = Comparator.comparing(
+                    e -> e.getMeterNo() == null ? "" : e.getMeterNo(),
+                    String.CASE_INSENSITIVE_ORDER);
+            if ("desc".equalsIgnoreCase(sortDirection)) {
+                byMeterNumber = byMeterNumber.reversed();
+            }
+            filteredComm.sort(byMeterNumber);
 
             // Pagination logic
             int totalComm = filteredComm.size();
@@ -114,7 +128,7 @@ public class HesClientServiceImpl implements HesService {
             response.put("totalData", totalComm);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
+            response.put("totalPages", size <= 0 ? 1 : (int) Math.ceil((double) totalComm / size));
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 //            // Call async method (now returns Map<String, Object>)
 //            CompletableFuture<Map<String, Object>> communicationReportFuture =
@@ -237,6 +251,76 @@ public class HesClientServiceImpl implements HesService {
 
     private boolean containsDate(LocalDateTime date, String search) {
         return date != null && date.toString().toLowerCase().contains(search);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private boolean equalsIgnoreCase(String field, String value) {
+        return field != null && field.equalsIgnoreCase(value);
+    }
+
+    private boolean matchesAny(String field, String commaSeparatedValues) {
+        if (field == null) return false;
+
+        return Arrays.stream(commaSeparatedValues.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .anyMatch(field::equalsIgnoreCase);
+    }
+
+    private boolean matchesMeterConfigurationSearch(MeterConnEvent event, String search) {
+        if (contains(event.getMeterNo(), search)
+                || contains(event.getConnectionType(), search)
+                || contains(event.getBusinessName(), search)
+                || containsDate(event.getOnlineTime(), search)
+                || containsDate(event.getOfflineTime(), search)
+                || containsDate(event.getUpdatedAt(), search)) {
+            return true;
+        }
+
+        if (event.getMeter() == null) return false;
+
+        var meter = event.getMeter();
+        if (contains(meter.getMeterNumber(), search)
+                || contains(meter.getSimNumber(), search)
+                || contains(meter.getMeterClass(), search)
+                || contains(meter.getMeterCategory(), search)
+                || contains(meter.getMeterManufacturerName(), search)
+                || meter.getSmartMeterInfo() != null
+                && contains(meter.getSmartMeterInfo().getMeterModel(), search)) {
+            return true;
+        }
+
+        if (meter.getFlatNode() == null) return false;
+
+        var node = meter.getFlatNode();
+        return contains(node.getRegionName(), search)
+                || contains(node.getBusinessName(), search)
+                || contains(node.getServiceName(), search)
+                || contains(node.getFeederName(), search)
+                || contains(node.getDssName(), search);
+    }
+
+    private Comparator<MeterConnEvent> meterConfigurationComparator(String sortBy) {
+        if ("status".equalsIgnoreCase(sortBy)) {
+            return Comparator.comparing(
+                    event -> event.getConnectionType() == null ? "" : event.getConnectionType(),
+                    String.CASE_INSENSITIVE_ORDER);
+        }
+
+        if ("meterNumber".equalsIgnoreCase(sortBy)) {
+            return Comparator.comparing(
+                    event -> event.getMeter() == null || event.getMeter().getMeterNumber() == null
+                            ? ""
+                            : event.getMeter().getMeterNumber(),
+                    String.CASE_INSENSITIVE_ORDER);
+        }
+
+        return Comparator.comparing(
+                event -> event.getMeterNo() == null ? "" : event.getMeterNo(),
+                String.CASE_INSENSITIVE_ORDER);
     }
 
     private boolean containsNested(Profile e, String search) {
@@ -685,24 +769,34 @@ public class HesClientServiceImpl implements HesService {
     @Transactional
     @Override
     public Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
-                                           String businessHub, String manufacturer, String meterStatus, int page, int size) {
+                                           String businessHub, String manufacturer, String meterStatus, String search,
+                                           String sortBy, String sortDirection, int page, int size) {
         try {
             UserModel um = handleUserValidation();
 
             UUID orgId = um.getOrgId();
-            List<MeterConnEvent> meterConfig = hesMapper.getMeterConfiguration(page, size, orgId);
+            List<MeterConnEvent> meterConfig = hesMapper.getMeterConfiguration(0, 0, orgId);
+            String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
 
             List<MeterConnEvent> filteredComm = meterConfig.stream()
-                    .filter(e -> (meterNumber == null || e.getMeterNo() != null && e.getMeterNo().equalsIgnoreCase(meterNumber)) &&
-                            (simNo == null || e.getMeter() != null && e.getMeter().getSimNumber() != null && e.getMeter().getSimNumber().equalsIgnoreCase(simNo)) &&
-                            (model == null || e.getMeter() != null && e.getMeter().getSmartMeterInfo() != null && e.getMeter().getSmartMeterInfo().getMeterModel() != null && e.getMeter().getSmartMeterInfo().getMeterModel().equalsIgnoreCase(model)) &&
-                            (meterClass == null || e.getMeter() != null && e.getMeter().getMeterClass() != null && e.getMeter().getMeterClass().equalsIgnoreCase(meterClass)) &&
-                            (category == null || e.getMeter() != null && e.getMeter().getMeterCategory() != null && e.getMeter().getMeterCategory().equalsIgnoreCase(category)) &&
-                            (businessHub == null || e.getBusinessName() != null && e.getBusinessName().equalsIgnoreCase(businessHub)) &&
-                            (manufacturer == null || e.getMeter() != null && e.getMeter().getMeterManufacturerName() != null && e.getMeter().getMeterManufacturerName().equalsIgnoreCase(manufacturer)) &&
-                            (meterStatus == null || e.getMeter() != null && e.getMeter().getSmartStatus() != null && e.getMeter().getSmartStatus().toString().equalsIgnoreCase(meterStatus))
-                    )
+                    .filter(e -> searchLower.isEmpty() || matchesMeterConfigurationSearch(e, searchLower))
+                    .filter(e -> isBlank(meterNumber) || equalsIgnoreCase(e.getMeterNo(), meterNumber))
+                    .filter(e -> isBlank(simNo) || e.getMeter() != null && equalsIgnoreCase(e.getMeter().getSimNumber(), simNo))
+                    .filter(e -> isBlank(model) || e.getMeter() != null && e.getMeter().getSmartMeterInfo() != null &&
+                            equalsIgnoreCase(e.getMeter().getSmartMeterInfo().getMeterModel(), model))
+                    .filter(e -> isBlank(meterClass) || e.getMeter() != null && matchesAny(e.getMeter().getMeterClass(), meterClass))
+                    .filter(e -> isBlank(category) || e.getMeter() != null && equalsIgnoreCase(e.getMeter().getMeterCategory(), category))
+                    .filter(e -> isBlank(businessHub) || equalsIgnoreCase(e.getBusinessName(), businessHub))
+                    .filter(e -> isBlank(manufacturer) || e.getMeter() != null &&
+                            equalsIgnoreCase(e.getMeter().getMeterManufacturerName(), manufacturer))
+                    .filter(e -> isBlank(meterStatus) || matchesAny(e.getConnectionType(), meterStatus))
                     .collect(Collectors.toList());
+
+            Comparator<MeterConnEvent> comparator = meterConfigurationComparator(sortBy);
+            if ("desc".equalsIgnoreCase(sortDirection)) {
+                comparator = comparator.reversed();
+            }
+            filteredComm.sort(comparator);
 
             int totalComm = filteredComm.size();
             List<MeterConnEvent> paginatedEvents;
@@ -719,7 +813,7 @@ public class HesClientServiceImpl implements HesService {
             response.put("totalData", totalComm);
             response.put("page", page);
             response.put("size", size);
-            response.put("totalPages", size > 0 ? (int) Math.ceil((double) totalComm / size) : 0);
+            response.put("totalPages", size > 0 ? Math.max(1, (int) Math.ceil((double) totalComm / size)) : 1);
             return ResponseMap.response(this.status.getSuccessCode(), "Fetched successfully", response);
 
         }catch (Exception e){

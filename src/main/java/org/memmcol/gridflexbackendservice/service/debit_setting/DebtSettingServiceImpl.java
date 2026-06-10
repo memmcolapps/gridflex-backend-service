@@ -3,32 +3,21 @@ package org.memmcol.gridflexbackendservice.service.debit_setting;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebitCreditAdjustmentMapper;
 import org.memmcol.gridflexbackendservice.mapper.DebtSettingMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.band.Band;
-import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.debit_credit_adjustment.DebitCreditAdjust;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
-import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
-import org.memmcol.gridflexbackendservice.model.meter.MDMeterInfo;
-import org.memmcol.gridflexbackendservice.model.meter.Meter;
-import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
-import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
-import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffServiceImpl;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
-import org.memmcol.gridflexbackendservice.util.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
@@ -41,12 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -194,7 +178,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getLiabilityCauses(String type) {
+    public Map<String, Object> getLiabilityCauses(String type, String search, String sort) {
         try {
             UserModel um = handleUserValidation();
 
@@ -213,6 +197,26 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(lc + " " + status.getNotFoundDesc());
+            }
+
+            // Search box: partial match against liability name or code
+            String searchTerm = search == null ? "" : search.trim().toLowerCase();
+            if (!searchTerm.isEmpty()) {
+                result = result.stream()
+                        .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(searchTerm))
+                                || (item.getCode() != null && item.getCode().toLowerCase().contains(searchTerm)))
+                        .collect(Collectors.toList());
+            }
+
+            // Sort by liability name ascending/descending
+            if (sort != null && !sort.isEmpty()) {
+                Comparator<LiabilityCause> byName = Comparator.comparing(
+                        item -> item.getName() == null ? "" : item.getName(), String.CASE_INSENSITIVE_ORDER);
+                if (sort.equalsIgnoreCase("desc")) {
+                    byName = byName.reversed();
+                }
+                result = new ArrayList<>(result);
+                result.sort(byName);
             }
 //            debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
@@ -508,7 +512,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getAllPercentages(String type) {
+    public Map<String, Object> getAllPercentages(String type, String search, String sort) {
         try {
             UserModel um = handleUserValidation();
 
@@ -528,6 +532,28 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             if(result == null) {
                 throw new GlobalExceptionHandler.NotFoundException(pr + " " + status.getNotFoundDesc());
             }
+
+            // Search box: partial match against percentage, code or band name
+            String searchTerm = search == null ? "" : search.trim().toLowerCase();
+            if (!searchTerm.isEmpty()) {
+                result = result.stream()
+                        .filter(item -> (item.getPercentage() != null && item.getPercentage().toLowerCase().contains(searchTerm))
+                                || (item.getCode() != null && item.getCode().toLowerCase().contains(searchTerm))
+                                || (item.getBand() != null && item.getBand().getName() != null
+                                    && item.getBand().getName().toLowerCase().contains(searchTerm)))
+                        .collect(Collectors.toList());
+            }
+
+            // Sort by percentage value ascending/descending
+            if (sort != null && !sort.isEmpty()) {
+                Comparator<PercentageRange> byPercentage = Comparator.comparingDouble(
+                        item -> parsePercentage(item.getPercentage()));
+                if (sort.equalsIgnoreCase("desc")) {
+                    byPercentage = byPercentage.reversed();
+                }
+                result = new ArrayList<>(result);
+                result.sort(byPercentage);
+            }
 //            debtCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
@@ -535,6 +561,18 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             genericHandler.logIncidentReport("fetching all percentage range service failed");
             genericHandler.logAndSaveException(exception, "fetching percentage ranges");
             throw exception;
+        }
+    }
+
+    // Safely parse a percentage string into a number for sorting; non-numeric values sort as 0.
+    private double parsePercentage(String value) {
+        if (value == null || value.isBlank()) {
+            return 0d;
+        }
+        try {
+            return Double.parseDouble(value.trim().replace("%", ""));
+        } catch (NumberFormatException e) {
+            return 0d;
         }
     }
 
