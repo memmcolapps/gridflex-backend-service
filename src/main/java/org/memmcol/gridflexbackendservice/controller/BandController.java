@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.service.band.BandService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import java.util.List;
 @RestController
 @RequestMapping("/band/service")
+@Tag(name = "Band", description = "Band Management APIs")
 public class BandController {
 
     @Autowired

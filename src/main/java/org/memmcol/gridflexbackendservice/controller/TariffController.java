@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 //import org.memmcol.gridflexbackendservice.model.tariff.BulkApprovalRequest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.service.tariff.TariffService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/tariff/service")
+@Tag(name = "Tariff", description = "Tariff Management APIs")
 public class TariffController {
 
     @Autowired

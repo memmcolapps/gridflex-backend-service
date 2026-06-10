@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/odyssey/standard")
+@Tag(name = "Odyssey", description = "Odyssey Management APIs")
 public class OdysseyApi {
 
     private static final String DATE_PATTERN = "yyyy-MM-dd";

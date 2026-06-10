@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.billing.FeederReadingSheet;
 import org.memmcol.gridflexbackendservice.model.billing.MeterReadingSheet;
 import org.memmcol.gridflexbackendservice.service.billing.BillingService;
@@ -16,6 +17,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/billing/service")
+@Tag(name = "Billing", description = "Billing Management APIs")
 public class BillingController {
 
     @Autowired

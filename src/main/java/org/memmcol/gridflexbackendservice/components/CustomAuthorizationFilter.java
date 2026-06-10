@@ -49,16 +49,44 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     private final IMap<String, Object> authCache;
 
 	public CustomAuthorizationFilter(
-            @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance
-//            String adminHeaderKey, String adminHeaderValue,
-//            String userHeaderValue, String setupHeaderValue
-    ) {
+            @Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
 		this.authCache = hazelcastInstance.getMap("authCache");
-//        this.adminHeaderKey = adminHeaderKey;
-//        this.adminHeaderValue = adminHeaderValue;
-//        this.userHeaderValue = userHeaderValue;
-//        this.setupHeaderValue = setupHeaderValue;
 	}
+
+    // ============================
+    // EXCLUDE SWAGGER + PUBLIC
+    // ============================
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+
+        String path = request.getServletPath();
+
+        return path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/v3/api-docs/public-apis")
+                || path.startsWith("/swagger-resources")
+                || path.startsWith("/webjars")
+                || path.startsWith("/actuator/prometheus")
+                || path.equals("/swagger-ui.html")
+                || path.startsWith("/actuator")
+
+                // existing public endpoints
+                || path.startsWith("/odyssey/")
+                || path.startsWith("/auth/service/admin/login")
+                || path.startsWith("/auth/service/generate-otp")
+                || path.startsWith("/auth/service/forget-password")
+                || path.startsWith("/auth/service/test")
+                || path.startsWith("/service/alerts")
+                || path.startsWith("/service/reports/summary")
+                || path.startsWith("/service/trigger")
+                || path.startsWith("/band/service/clear-cache")
+                || path.startsWith("/data-collection/schedules")
+                || path.startsWith("/meter/service/meterInfo-lookup")
+                || path.startsWith("/meter/service/readMeter-lookup")
+                || path.startsWith("/client/setup")
+                || path.startsWith("/client/auth/token")
+                || path.startsWith("/api/licence");
+    }
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -66,54 +94,64 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 		String path = request.getServletPath();
 
-		// Define exempt paths where authorization is not required
-		Set<String> exemptPaths = Set.of(
-				"/service/alerts",
-				"/auth/service/admin/login",
-                "/auth/service/generate-otp",
-                "/auth/service/forget-password",
-				"/actuator/prometheus",
-				"/service/reports/summary",
-				"/service/trigger/daily",
-				"/service/trigger/monthly",
-				"/band/service/clear-cache",
-                "/auth/service/test",
-                "/data-collection/schedules",
-                "/meter/service/meterInfo-lookup",
-                "/meter/service/readMeter-lookup",
-                "/admin/setup/api-clients",
-                "/standard/auth/token",
-                "/api/licence/generate-fingerprint",
-                "/api/licence/get",
-                "/api/licence/deactivate",
-                "/api/licence/fingerprint",
-                "/api/licence/validate",
-                "/api/licence/upload"
-//                "/standard/auth/token"
-//                "/odyssey/standard/meter/readings",
-//                "/odyssey/standard/electricity/payments"
-//                "/uploads"
-//				"/meter/service/virtual/export",
-//				"/meter/service/export"
-		);
+//		// Define exempt paths where authorization is not required
+//		Set<String> exemptPaths = Set.of(
+//				"/service/alerts",
+//				"/auth/service/admin/login",
+//                "/auth/service/generate-otp",
+//                "/auth/service/forget-password",
+//				"/actuator/prometheus",
+//				"/service/reports/summary",
+//				"/service/trigger/daily",
+//				"/service/trigger/monthly",
+//				"/band/service/clear-cache",
+//                "/auth/service/test",
+//                "/data-collection/schedules",
+//                "/meter/service/meterInfo-lookup",
+//                "/meter/service/readMeter-lookup",
+//                "/admin/setup/api-clients",
+//                "/standard/auth/token",
+//                "/api/licence/generate-fingerprint",
+//                "/api/licence/get",
+//                "/api/licence/deactivate",
+//                "/api/licence/fingerprint",
+//                "/api/licence/validate",
+//                "/api/licence/upload",
+//                "/swagger-ui",
+//                "/swagger-ui.html",
+//                "/v3/api-docs/**",
+//                "/v3/api-docs",
+//                "/swagger-resources/**",
+//                "/webjars/**"
+//		);
+//
+//        // Check if the path ends with any exempt pattern
+//        boolean isExempt = exemptPaths.stream()
+//                .anyMatch(path::endsWith);
+//
+//        // If the path is exempt, skip the authorization filter
+//        if (isExempt) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+//
+//        if (path.startsWith("/swagger-ui")
+//                || path.startsWith("/v3/api-docs")
+//                || path.startsWith("/swagger-resources")
+//                || path.startsWith("/webjars")) {
+//
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+//
+//        if (path.startsWith("/odyssey/")) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
 
-        // Check if the path ends with any exempt pattern
-        boolean isExempt = exemptPaths.stream()
-                .anyMatch(path::endsWith);
-
-        // If the path is exempt, skip the authorization filter
-        if (isExempt) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (path.startsWith("/odyssey/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (path.startsWith("/admin/setup/api-clients")
-                || path.startsWith("/standard/auth/token")
+        // ADMIN / API KEY AUTH PATHS
+        if (path.startsWith("/client/setup")
+                || path.startsWith("/client/auth/token")
                 || path.startsWith("/auth/service/generate-otp")
                 || path.startsWith("/auth/service/forget-password")) {
 
@@ -179,10 +217,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                             );
 
                     SecurityContextHolder.getContext().setAuthentication(auth);
-//                    CustomUserPrincipal principal = new CustomUserPrincipal(username, permissionTreeJson);
-//                    UsernamePasswordAuthenticationToken authToken =
-//                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
-//                    SecurityContextHolder.getContext().setAuthentication(authToken);
 
                     filterChain.doFilter(request, response);
 

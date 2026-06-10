@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyAuthServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/standard/auth")
+@RequestMapping("/client/auth")
+@Tag(name = "Authentication", description = "Authentication Management APIs")
 public class AuthAPI {
 
     @Autowired

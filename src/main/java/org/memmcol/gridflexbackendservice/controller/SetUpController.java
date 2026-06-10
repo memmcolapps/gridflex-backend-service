@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.model.setup.ApiClientResponse;
 import org.memmcol.gridflexbackendservice.model.setup.CreateApiClientRequest;
@@ -12,7 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/admin/setup/api-clients")
+@RequestMapping("/client/setup")
+@Tag(name = "Admin", description = "Admin Client Setup Management APIs")
 @RequiredArgsConstructor
 public class SetUpController {
     private final ApiClientService apiClientService;

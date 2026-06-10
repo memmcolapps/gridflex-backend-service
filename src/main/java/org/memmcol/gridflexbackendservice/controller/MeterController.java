@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -34,6 +36,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/meter/service")
+@Tag(name = "Meter", description = "Meter Management APIs")
 public class MeterController {
     @Autowired
     private MeterService service;
@@ -118,6 +121,7 @@ public class MeterController {
             "fixed energy"
     };
 
+    @Operation(summary = "Create Meter")
     @PostMapping("/create")
     public ResponseEntity<?> createMeter(@RequestBody Meter meter) {
         try {
@@ -148,7 +152,7 @@ public class MeterController {
         }
     }
 
-//    @PreAuthorize("hasAuthority('PERM_VIEW')")
+//    @Operation(summary = "Create Meter")
     @GetMapping("/all")
     public ResponseEntity<?> getAllMeters(
             @RequestParam(value = "page", required = false,  defaultValue = "0") int page,

@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.service.node.NodeService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/node/service")
+@Tag(name = "Node", description = "Node Management APIs")
 public class NodeController {
 
     @Autowired private NodeService nodeService;
