@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.service.service_alert.ReportQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/service")
+@Tag(name = "Service Alert", description = "Service Alert Management APIs")
 public class ServiceAlertController {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceAlertController.class);

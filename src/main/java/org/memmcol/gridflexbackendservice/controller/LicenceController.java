@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.service.licence.LicenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/licence")
+@Tag(name = "Licence", description = "Licence Management APIs")
 public class LicenceController {
 
     @Autowired

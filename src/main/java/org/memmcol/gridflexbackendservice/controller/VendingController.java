@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.service.vend.VendingService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Controller
 @RequestMapping("/vending/service/generate/token")
+@Tag(name = "Vending", description = "Vending Management APIs")
 public class VendingController {
 
     @Autowired private VendingService vendingService;

@@ -56,7 +56,7 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         // EXCLUDE TOKEN GENERATION ENDPOINT
-        if (path.equals("/standard/auth/token")) {
+        if (path.equals("/client/auth/token")) {
 
             String apiKey = request.getHeader(adminHeaderKey); // or x-api-key
 
@@ -77,7 +77,7 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // Only apply to Odyssey endpoints
-        if (!(path.startsWith("/odyssey/") || (path.startsWith("/standard/")))) {
+        if (!(path.startsWith("/odyssey/") || (path.startsWith("/client/")))) {
             filterChain.doFilter(request, response);
             return;
         }

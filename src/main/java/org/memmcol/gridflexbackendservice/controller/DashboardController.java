@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.service.dashboard.DashboardService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/dashboard/service")
+@Tag(name = "Dashboard", description = "Dashboard Management APIs")
 public class DashboardController {
 
     @Autowired

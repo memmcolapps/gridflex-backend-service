@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.audit.IncidentReport;
 import org.memmcol.gridflexbackendservice.service.audit.AuditLogService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/audit-log/service")
+@Tag(name = "Audit", description = "Audit Management APIs")
 public class AuditLogController {
 
     private final AuditLogService auditLogService;

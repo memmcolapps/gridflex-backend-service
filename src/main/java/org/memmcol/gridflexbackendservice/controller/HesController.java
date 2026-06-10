@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.model.hes.Cron;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/hes/service")
+@Tag(name = "HES", description = "HES Management APIs")
 public class HesController {
 
     @Autowired

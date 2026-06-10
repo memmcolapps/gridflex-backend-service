@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.user.CreateGroupRequest;
 //import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
 import org.memmcol.gridflexbackendservice.model.user.CreateUserRequest;
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/user/service")
+@Tag(name = "User", description = "User Management APIs")
 public class UserController {
 
     @Autowired

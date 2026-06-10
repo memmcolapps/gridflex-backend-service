@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.debt_setting.LiabilityCause;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.service.debit_setting.DebtSettingService;
@@ -17,26 +18,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/debt-setting/service")
+@Tag(name = "Debt Settings", description = "Debt Setting Management APIs")
 public class DebtSettingController {
     @Autowired
     private GlobalExceptionHandler exception;
 
     @Autowired private DebtSettingService service;
-
-
-//    private static final String[] LIABILITYCAUSEHEADERS = {
-//            "Name",
-//            "Code"
-//    };
-//
-//    private static final String[] PERCENTAGERANGEHEADERS = {
-//            "Percentage",
-//            "Code",
-//            "Band",
-//            "Amount Start Range",
-//            "Amount End Range",
-//    };
-
 
     @PostMapping("/liability-cause/create")
     public ResponseEntity<?> createLiabilityCause(@RequestBody LiabilityCause request) {

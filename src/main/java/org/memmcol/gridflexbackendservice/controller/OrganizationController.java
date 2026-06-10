@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.user.Organization;
 import org.memmcol.gridflexbackendservice.service.organization.OrganizationService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/organization/service")
+@Tag(name = "Organization", description = "Organization Management APIs")
 public class OrganizationController {
 
     @Autowired

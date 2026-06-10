@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth/service")
+@Tag(name = "Auth", description = "Auth Management APIs")
 public class AuthController {
 
     @Autowired private AuthService service;

@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.manufacturer.Manufacturer;
 import org.memmcol.gridflexbackendservice.service.manufacturer.ManufacturerService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/manufacturer/service")
+@Tag(name = "Manufacturer", description = "Manufacturer Management APIs")
 public class ManufacturerController {
 
     @Autowired
