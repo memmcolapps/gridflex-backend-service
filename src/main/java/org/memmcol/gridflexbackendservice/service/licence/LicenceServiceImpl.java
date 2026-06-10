@@ -58,10 +58,10 @@ public class LicenceServiceImpl implements LicenceService {
     @Autowired
     private MeterMapper meterMapper;
 
-    @Value("${licence.encryption.key:GridFlex@2024SecretKey}")
+    @Value("${licence.encryption.key}")
     private String encryptionKey;
 
-    @Value("${licence.hmac.key:GridFlex@HMAC@2024!@#$}")
+    @Value("${licence.hmac.key}")
     private String hmacKey;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());

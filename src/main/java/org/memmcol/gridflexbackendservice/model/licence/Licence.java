@@ -18,10 +18,10 @@ public class Licence {
     private UUID organisationId;
     private String organisationName;
     private LocalDateTime issuedDate;
-    private LocalDateTime startDate;
-    private LocalDateTime expiryDate;
-    private String licenseType;
-    private int maxMeters;
+//    private LocalDateTime startDate;
+//    private LocalDateTime expiryDate;
+//    private String licenseType;
+    private int maxMeters = 14000;
     private String hardwareFingerprint;
     private boolean active;
     private String hmacSignature;

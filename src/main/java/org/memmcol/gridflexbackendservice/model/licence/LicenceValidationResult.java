@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class LicenceValidationResult {
     private boolean valid;
     private String message;
-    private String warningMessage;
+//    private String warningMessage;
     private Licence licence;
 }

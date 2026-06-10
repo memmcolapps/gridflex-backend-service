@@ -17,7 +17,6 @@ import java.util.UUID;
 @Service
 public class HardwareBindingService {
 
-//    private static final String FINGERPRINT_DIR = "./fingerprints";
     @Value("${gridflex.data.dir}")
     private String dataDir;
 
@@ -25,7 +24,7 @@ public class HardwareBindingService {
         return dataDir + "/fingerprints";
     }
 
-    @Value("${licence.encryption.key:GridFlex@2024SecretKey}")
+    @Value("${licence.encryption.key}")
     private String encryptionKey;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
