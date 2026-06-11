@@ -146,9 +146,9 @@ public class SecurityConfig {
 						"/swagger-resources/**",
 						"/webjars/**",
 						"/api/**",
-						"/v3/api-docs/**",
-						"/v3/api-docs/Client Authentication",
-						"/v3/api-docs/Odyssey"
+						"/gridflex/api-docs/**",
+						"/gridflex/api-docs/Client Authentication",
+						"/gridflex/api-docs/Odyssey"
 				).permitAll()
 
 				// public endpoints - do not required authentication token to be accessible
