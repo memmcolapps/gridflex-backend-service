@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 
 import java.util.Map;
 import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/auth/service")
