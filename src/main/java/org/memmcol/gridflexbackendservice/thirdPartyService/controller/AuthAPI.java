@@ -1,7 +1,9 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.ClientLoginModel;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyAuthServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +25,13 @@ public class AuthAPI {
     @Autowired
     private GlobalExceptionHandler exception;
 
+    @SecurityRequirement(name = "apiKeyAuth")
     @PostMapping("/token")
-    public ResponseEntity<?> token(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> token(@RequestBody ClientLoginModel request) {
 
         try {
             String token = authService.authenticate(
-                    request.get("clientId"),
-                    request.get("clientSecret")
+                    request
             );
 
             return ResponseEntity.ok(Map.of(

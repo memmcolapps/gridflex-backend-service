@@ -62,13 +62,15 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         return path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/v3/api-docs/public-apis")
+                || path.startsWith("/gridflex/api-docs")
+                || path.startsWith("/api")
                 || path.startsWith("/swagger-resources")
                 || path.startsWith("/webjars")
                 || path.startsWith("/actuator/prometheus")
                 || path.equals("/swagger-ui.html")
                 || path.startsWith("/actuator")
+                || path.startsWith("/gridflex/api-docs/Client Authentication")
+                || path.startsWith("/gridflex/api-docs/Odyssey")
 
                 // existing public endpoints
                 || path.startsWith("/odyssey/")
@@ -85,7 +87,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 || path.startsWith("/meter/service/readMeter-lookup")
                 || path.startsWith("/client/setup")
                 || path.startsWith("/client/auth/token")
-                || path.startsWith("/api/licence");
+                || path.startsWith("/licence/service");
     }
 
 	@Override

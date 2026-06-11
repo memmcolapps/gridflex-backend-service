@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,8 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/odyssey/standard")
-@Tag(name = "Odyssey", description = "Odyssey Management APIs")
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Odyssey", description = "Meter reading & Transaction history  Management APIs")
 public class OdysseyApi {
 
     private static final String DATE_PATTERN = "yyyy-MM-dd";
@@ -38,7 +41,7 @@ public class OdysseyApi {
         } catch (IllegalArgumentException e) {
             return badRequest("readings", e.getMessage());
         } catch (Exception e) {
-            return badRequest("readings", "An unexpected error occurred: " + e.getMessage());
+            return badRequest("readings", "An unexpected error occurred");
         }
     }
 

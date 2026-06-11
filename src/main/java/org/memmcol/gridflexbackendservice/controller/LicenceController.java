@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/licence")
+@RequestMapping("/licence/service")
 @Tag(name = "Licence", description = "Licence Management APIs")
 public class LicenceController {
 

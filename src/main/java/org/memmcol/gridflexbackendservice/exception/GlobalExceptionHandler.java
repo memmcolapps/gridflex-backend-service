@@ -373,7 +373,7 @@ public class GlobalExceptionHandler {
 
 		// Create a meaningful response
 //		String msg = "Data integrity violation";
-		String msg = "Duplicate key value violates unique constraint";
+		String msg = "Already exist - Duplicate key value violates unique constraint";
 		errorMessage.put("responsecode", "127");
 		errorMessage.put("responsedesc", msg);
 		errorMessage.put("responsedata", "");

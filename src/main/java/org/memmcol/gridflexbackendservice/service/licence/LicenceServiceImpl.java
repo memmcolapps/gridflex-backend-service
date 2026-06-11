@@ -12,6 +12,7 @@ import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.model.licence.LicenceValidationResult;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.LicenceEncryptionUtil;
+import org.memmcol.gridflexbackendservice.util.LicenceSecurityConstants;
 import org.memmcol.gridflexbackendservice.util.LicenceSignerUtil;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,11 +59,11 @@ public class LicenceServiceImpl implements LicenceService {
     @Autowired
     private MeterMapper meterMapper;
 
-    @Value("${licence.encryption.key}")
-    private String encryptionKey;
+//    @Value("${licence.encryption.key}")
+//    private String encryptionKey;
 
-    @Value("${licence.hmac.key}")
-    private String hmacKey;
+//    @Value("${licence.hmac.key}")
+//    private String hmacKey;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -91,7 +92,7 @@ public class LicenceServiceImpl implements LicenceService {
                     throw new RuntimeException("Failed to serialize licence for signature verification", e);
                 }
                 licence.setHmacSignature(savedSignature);
-                boolean signatureValid = LicenceSignerUtil.verify(licenceJson, savedSignature, hmacKey);
+                boolean signatureValid = LicenceSignerUtil.verify(licenceJson, savedSignature, LicenceSecurityConstants.getHmacKey());
                 if (!signatureValid) {
                     return ResponseMap.response(
                             status.getFailCode(),
@@ -284,7 +285,7 @@ public class LicenceServiceImpl implements LicenceService {
 
         try {
             String encryptedContent = new String(Files.readAllBytes(licencePath));
-            String decryptedContent = LicenceEncryptionUtil.decrypt(encryptedContent, encryptionKey);
+            String decryptedContent = LicenceEncryptionUtil.decrypt(encryptedContent, LicenceSecurityConstants.getEncryptionKey());
             return objectMapper.readValue(decryptedContent, Licence.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read licence file", e);
@@ -297,7 +298,7 @@ public class LicenceServiceImpl implements LicenceService {
             Files.createDirectories(licencePath.getParent());
 
             String jsonContent = objectMapper.writeValueAsString(licence);
-            String encryptedContent = LicenceEncryptionUtil.encrypt(jsonContent, encryptionKey);
+            String encryptedContent = LicenceEncryptionUtil.encrypt(jsonContent, LicenceSecurityConstants.getEncryptionKey());
             Files.write(licencePath, encryptedContent.getBytes());
 
         } catch (IOException e) {

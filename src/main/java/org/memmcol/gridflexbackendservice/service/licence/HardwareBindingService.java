@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.licence.HardwareFingerprint;
 import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.util.HardwareFingerprintUtil;
 import org.memmcol.gridflexbackendservice.util.LicenceEncryptionUtil;
+import org.memmcol.gridflexbackendservice.util.LicenceSecurityConstants;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,8 +25,8 @@ public class HardwareBindingService {
         return dataDir + "/fingerprints";
     }
 
-    @Value("${licence.encryption.key}")
-    private String encryptionKey;
+//    @Value("${licence.encryption.key}")
+//    private String encryptionKey;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -55,7 +56,7 @@ public class HardwareBindingService {
             HardwareFingerprint fingerprint = generateFingerprint();
 
             String jsonContent = objectMapper.writeValueAsString(fingerprint);
-            String encryptedContent = LicenceEncryptionUtil.encrypt(jsonContent, encryptionKey);
+            String encryptedContent = LicenceEncryptionUtil.encrypt(jsonContent, LicenceSecurityConstants.getEncryptionKey());
 
             Path fingerprintPath = Paths.get(getFingerprintDir(), organisationId + ".txt");
             Files.createDirectories(fingerprintPath.getParent());
@@ -81,7 +82,7 @@ public class HardwareBindingService {
 
     public HardwareFingerprint decryptFingerprintFile(String encryptedContent) {
         try {
-            String decryptedContent = LicenceEncryptionUtil.decrypt(encryptedContent, encryptionKey);
+            String decryptedContent = LicenceEncryptionUtil.decrypt(encryptedContent, LicenceSecurityConstants.getEncryptionKey());
             return objectMapper.readValue(decryptedContent, HardwareFingerprint.class);
         } catch (Exception e) {
             throw new RuntimeException("Failed to decrypt fingerprint file", e);

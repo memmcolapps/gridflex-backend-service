@@ -144,7 +144,11 @@ public class SecurityConfig {
 						"/swagger-ui.html",
 						"/v3/api-docs/**",
 						"/swagger-resources/**",
-						"/webjars/**"
+						"/webjars/**",
+						"/api/**",
+						"/gridflex/api-docs/**",
+						"/gridflex/api-docs/Client Authentication",
+						"/gridflex/api-docs/Odyssey"
 				).permitAll()
 
 				// public endpoints - do not required authentication token to be accessible
@@ -169,21 +173,16 @@ public class SecurityConfig {
 						"client/**",
 						"/client/auth/token",
 
-						"/api/licence/generate-fingerprint",
-						"/api/licence/get",
-						"/api/licence/deactivate",
-						"/api/licence/fingerprint",
-						"/api/licence/validate",
-						"/api/licence/upload"
+						"/licence/service/generate-fingerprint",
+						"/licence/service/get",
+						"/licence/service/deactivate",
+						"/licence/service/fingerprint",
+						"/licence/service/validate",
+						"/licence/service/upload"
 //						"/uploads/**"
 				).permitAll()
-				.requestMatchers(
-						"/v3/api-docs/admin-apis"
-				).hasAuthority("ADMIN")
-
-				.requestMatchers(
-						"/v3/api-docs/odyssey-apis"
-				).hasAuthority("ADMIN")
+//				.requestMatchers("/v3/api-docs/Admin").hasAuthority("ADMIN")
+//				.requestMatchers("/v3/api-docs/admin").hasAuthority("ADMIN")
 				// protected endpoints
 				.anyRequest().access((authentication, context) -> {
 					HttpServletRequest request = context.getRequest();

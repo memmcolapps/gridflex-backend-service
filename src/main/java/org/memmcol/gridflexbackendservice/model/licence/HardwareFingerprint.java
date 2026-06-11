@@ -14,5 +14,6 @@ public class HardwareFingerprint {
     private String motherboardSerial;
     private String diskSerial;
     private String osSerial;
+    private String macAddress;
     private String hash;
 }

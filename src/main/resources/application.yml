@@ -33,6 +33,19 @@ external:
   dlms-write-ops:
     base-url: http://192.168.1.76:9061/api/dlms
 
+springdoc:
+  api-docs:
+    path: /gridflex/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+    config-url: /api/v1/gridflex/api-docs/swagger-config
+    url: /api/v1/gridflex/api-docs
+
+  packages-to-scan: org.memmcol.gridflexbackendservice.thirdPartyService
+#    urls:
+#      - name: Admin
+#        url: /v3/api-docs/admin
 
 eureka:
   client:

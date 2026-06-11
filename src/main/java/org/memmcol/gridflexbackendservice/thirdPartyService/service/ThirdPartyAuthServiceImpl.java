@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.ApiClient;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.ApiClientScope;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.ClientLoginModel;
 import org.memmcol.gridflexbackendservice.thirdPartyService.repository.ApiClientRepository;
 import org.memmcol.gridflexbackendservice.thirdPartyService.repository.ApiClientScopeRepository;
 import org.slf4j.Logger;
@@ -40,29 +41,29 @@ public class ThirdPartyAuthServiceImpl {
     private String secret;
 
     @Transactional
-    public String authenticate(String clientId, String clientSecret) {
+    public String authenticate(ClientLoginModel request) {
 
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             System.out.println("metadata");
-            ApiClient client = apiClientRepository.findByClientId(clientId)
+            ApiClient client = apiClientRepository.findByClientId(request.getClientId())
                     .orElseThrow(() -> new RuntimeException("Client not found"));
 
             if (!client.getStatus()) {
                 throw new RuntimeException("Client deactivated");
             }
 
-            if (!passwordEncoder.matches(clientSecret, client.getClientSecretHash())) {
+            if (!passwordEncoder.matches(request.getClientSecret(), client.getClientSecretHash())) {
                 throw new RuntimeException("Invalid secret");
             }
 
-            List<String> scopes = scopeRepository.findByClientId(clientId)
+            List<String> scopes = scopeRepository.findByClientId(request.getClientId())
                     .stream()
                     .map(ApiClientScope::getScope)
                     .toList();
 
-            AuditLog auditLog = buildAuditLog(clientId, "Authenticated", "Client", metadata);
+            AuditLog auditLog = buildAuditLog(request.getClientId(), "Authenticated", "Client", metadata);
             try {
                 auditRepository.save(auditLog);
             } catch (Exception ex) {
@@ -70,7 +71,7 @@ public class ThirdPartyAuthServiceImpl {
             }
 
             return JWT.create()
-                    .withSubject(clientId)
+                    .withSubject(request.getClientId())
                     .withClaim("userId", client.getId().toString())
                     .withClaim("orgId", client.getOrgId() != null ? client.getOrgId().toString() : null)
                     .withArrayClaim("scopes", scopes.toArray(new String[0]))
