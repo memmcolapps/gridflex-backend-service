@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.ClientLoginModel;
@@ -24,6 +25,7 @@ public class AuthAPI {
     @Autowired
     private GlobalExceptionHandler exception;
 
+    @SecurityRequirement(name = "apiKeyAuth")
     @PostMapping("/token")
     public ResponseEntity<?> token(@RequestBody ClientLoginModel request) {
 
