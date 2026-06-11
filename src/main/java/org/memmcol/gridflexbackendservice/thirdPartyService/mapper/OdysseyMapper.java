@@ -124,10 +124,10 @@ public interface OdysseyMapper {
             md.latitude,
             md.longitude,
             COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
-            COALESCE(t.id, NULL) AS transaction_id,
+            t.id AS transaction_id,
             COALESCE(t.initial_amount, 0) AS amount,
-            COALESCE(t.unit, '') AS transactionKwh,
-            COALESCE(t.created_at, '') AS timestamp,
+            COALESCE(t.unit, 0) AS transactionKwh,
+            COALESCE(t.created_at, CURRENT_TIMESTAMP) AS timestamp,
             'NGN' AS currency
         FROM customers c
         LEFT JOIN meters m ON c.customer_id = m.customer_id
@@ -137,6 +137,7 @@ public interface OdysseyMapper {
         WHERE m.meter_stage = 'Assigned'
           AND t.created_at BETWEEN #{startDate} AND #{endDate}
         """)
+
     @Results({
             @Result(property = "customerId", column = "customerId"),
             @Result(property = "customerAccountId", column = "account_number"),

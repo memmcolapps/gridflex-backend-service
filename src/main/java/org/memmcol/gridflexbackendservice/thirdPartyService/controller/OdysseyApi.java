@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.thirdPartyService.controller;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/odyssey/standard")
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Odyssey", description = "Meter reading & Transaction history  Management APIs")
 public class OdysseyApi {
 
