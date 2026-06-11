@@ -46,6 +46,10 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
     @Override
     public boolean checkAccess(HttpServletRequest request, Authentication authentication) {
 
+        if (matcher.match("/hes/service/meter-status/stream", request.getRequestURI())) {
+            return true;
+        }
+
         Object principal = authentication.getPrincipal();
 
         if (principal instanceof ThirdPartyPrincipal) {
@@ -66,10 +70,6 @@ public class PermissionEvaluatorImpl implements PermissionEvaluator {
             }
 
             return false;
-        }
-
-        if (matcher.match("/hes/service/meter-status/stream", request.getRequestURI())) {
-            return true;
         }
 
         if (authentication == null || !authentication.isAuthenticated()) {

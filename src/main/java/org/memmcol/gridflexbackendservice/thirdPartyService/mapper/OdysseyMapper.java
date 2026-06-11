@@ -29,8 +29,8 @@ public interface OdysseyMapper {
                 
                     interval_data.time_interval_minutes,
                 
-                    COALESCE(debt.balance_after_adjustment, '') AS debt,
-                    COALESCE(credit.balance_after_adjustment, '') AS credit
+                    COALESCE(debt.balance_after_adjustment, 0) AS debt,
+                    COALESCE(credit.balance_after_adjustment, 0) AS credit
                 
                 FROM (
                     SELECT DISTINCT
@@ -124,8 +124,8 @@ public interface OdysseyMapper {
             md.latitude,
             md.longitude,
             COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
-            COALESCE(t.id, '') AS transaction_id,
-            COALESCE(t.initial_amount, '') AS amount,
+            COALESCE(t.id, NULL) AS transaction_id,
+            COALESCE(t.initial_amount, 0) AS amount,
             COALESCE(t.unit, '') AS transactionKwh,
             COALESCE(t.created_at, '') AS timestamp,
             'NGN' AS currency

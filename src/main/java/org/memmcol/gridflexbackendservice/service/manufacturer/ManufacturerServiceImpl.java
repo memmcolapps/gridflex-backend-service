@@ -64,11 +64,11 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             String desc = capitalizeFirstLetter(request.getName()) + "newly created";
             UserModel um = handleUserValidation();
             String nodeType = um.getNodeInfo().getType();
-            if(!nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")
-            ){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+//            if(!nodeType.equalsIgnoreCase("Region")
+//                    && !nodeType.equalsIgnoreCase("Root")
+//            ){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.findByName(request.getName(), um.getOrgId());
@@ -133,11 +133,11 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             UserModel um = handleUserValidation();
             String nodeType = um.getNodeInfo().getType();
 
-            if(!nodeType.equalsIgnoreCase("Region")
-                    && !nodeType.equalsIgnoreCase("Root")
-            ){
-                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-            }
+//            if(!nodeType.equalsIgnoreCase("Region")
+//                    && !nodeType.equalsIgnoreCase("Root")
+//            ){
+//                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+//            }
 
             // check if operator exist
             Manufacturer isManufacturer = manufacturerMapper.getManufacturerByIdForUpdate(request.getId(), um.getOrgId());

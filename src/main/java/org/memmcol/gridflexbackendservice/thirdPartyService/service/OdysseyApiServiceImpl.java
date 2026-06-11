@@ -97,7 +97,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             Map<String, String> error = new HashMap<>();
             error.put("code", "METER_READING_ERROR");
-            error.put("message", e.getMessage());
+            error.put("message", e.getMessage().contains("SQl") ? "Error accessing data, please try again" :  e.getMessage());
 
             errors.add(error);
 
@@ -153,7 +153,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             Map<String, String> error = new HashMap<>();
             error.put("code", "PAYMENT_HISTORY_ERROR");
-            error.put("message", e.getMessage());
+            error.put("message", e.getMessage().contains("SQl") ? "Error accessing data, please try again" :  e.getMessage());
             errors.add(error);
 
             response.put("payments", Collections.emptyList());
