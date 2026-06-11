@@ -17,20 +17,40 @@ public class HardwareFingerprintUtil {
     }
 
     public static HardwareFingerprint generateFingerprint() {
-        String biosSerial = executeCommand("wmic bios get serialnumber");
-        String motherboardSerial = executeCommand("wmic baseboard get serialnumber");
-        String diskSerial = executeCommand("wmic diskdrive get serialnumber");
-        String osSerial = executeCommand("wmic os get serialnumber");
 
-        String concatenated = biosSerial + motherboardSerial + diskSerial + osSerial;
-        String saltedInput = SALT + concatenated + SALT;
-        String hash = sha256Hash(saltedInput);
+        String biosSerial;
+        String motherboardSerial;
+        String machineId;
+
+        if (isWindows()) {
+            biosSerial = executeCommand("wmic bios get serialnumber");
+            motherboardSerial = executeCommand("wmic baseboard get serialnumber");
+            machineId = executeCommand("wmic os get serialnumber");
+        } else if (isLinux()) {
+            biosSerial = executeCommand("cat /sys/class/dmi/id/product_serial");
+            motherboardSerial = executeCommand("cat /sys/class/dmi/id/board_serial");
+            machineId = executeCommand("cat /etc/machine-id");
+        } else {
+            biosSerial = "";
+            motherboardSerial = "";
+            machineId = "";
+        }
+
+        String macAddress = getMacAddress();
+
+        String fingerprintSource =
+                biosSerial +
+                        motherboardSerial +
+                        machineId +
+                        macAddress;
+
+        String hash = sha256Hash(SALT + fingerprintSource + SALT);
 
         return HardwareFingerprint.builder()
                 .biosSerial(biosSerial)
                 .motherboardSerial(motherboardSerial)
-                .diskSerial(diskSerial)
-                .osSerial(osSerial)
+                .osSerial(machineId)
+                .macAddress(macAddress)
                 .hash(hash)
                 .build();
     }
@@ -43,18 +63,39 @@ public class HardwareFingerprintUtil {
     private static String executeCommand(String command) {
         try {
             Process process = Runtime.getRuntime().exec(command);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String output = reader.lines().collect(Collectors.joining());
-                String[] lines = output.split("\\r?\\n");
-                if (lines.length > 1) {
-                    return lines[1].trim();
-                }
-                return "";
+
+            try (BufferedReader reader =
+                         new BufferedReader(
+                                 new InputStreamReader(process.getInputStream()))) {
+
+                return reader.lines()
+                        .map(String::trim)
+                        .filter(line -> !line.isEmpty())
+                        .skip(1) // Skip WMIC header
+                        .findFirst()
+                        .orElse("");
             }
+
         } catch (Exception e) {
             return "";
         }
     }
+
+//    private static String executeCommand(String command) {
+//        try {
+//            Process process = Runtime.getRuntime().exec(command);
+//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+//                String output = reader.lines().collect(Collectors.joining());
+//                String[] lines = output.split("\\r?\\n");
+//                if (lines.length > 1) {
+//                    return lines[1].trim();
+//                }
+//                return "";
+//            }
+//        } catch (Exception e) {
+//            return "";
+//        }
+//    }
 
     private static String sha256Hash(String input) {
         try {
@@ -72,5 +113,47 @@ public class HardwareFingerprintUtil {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not available", e);
         }
+    }
+
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name")
+                .toLowerCase()
+                .contains("win");
+    }
+
+    private static boolean isLinux() {
+        return System.getProperty("os.name")
+                .toLowerCase()
+                .contains("linux");
+    }
+
+    private static String getMacAddress() {
+        try {
+            for (java.net.NetworkInterface ni :
+                    java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
+
+                if (ni.isLoopback() || !ni.isUp() || ni.isVirtual()) {
+                    continue;
+                }
+
+                byte[] mac = ni.getHardwareAddress();
+
+                if (mac == null || mac.length == 0) {
+                    continue;
+                }
+
+                StringBuilder sb = new StringBuilder();
+
+                for (byte b : mac) {
+                    sb.append(String.format("%02X", b));
+                }
+
+                return sb.toString();
+            }
+        } catch (Exception ignored) {
+        }
+
+        return "";
     }
 }
