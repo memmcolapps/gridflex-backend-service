@@ -105,6 +105,13 @@ public class LicenceServiceImpl implements LicenceService {
             int currentMeters = meterMapper.countMetersByOrgId(organisationId);
             LicenceValidationResult validationResult = LicenceValidator.validateWithLimits(licence, currentMeters);
 
+            if (!validationResult.isValid()
+                    && validationResult.getMessage() != null
+                    && validationResult.getMessage().startsWith("Licence has expired")) {
+                licence.setActive(false);
+                writeLicenceFile(licence);
+            }
+
             if (validationResult.isValid()) {
                 boolean boundToServer = hardwareBindingService.isLicenceBoundToCurrentServer(licence);
                 if (!boundToServer) {
