@@ -23,6 +23,7 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI baseOpenAPI() {
+        System.out.println("header-key: " + apiHeaderKey);
         return new OpenAPI()
                 .info(new Info()
                         .title("GridFlex API")
