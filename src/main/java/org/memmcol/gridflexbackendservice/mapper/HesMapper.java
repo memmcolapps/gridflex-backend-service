@@ -331,7 +331,7 @@ public interface HesMapper {
             @Result(column = "meter_serial", property = "meterNumber"),
             @Result(column = "model_number", property = "meterModel"),
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
-            @Result(column = "active_energy_import", property = "meterHealthIndicator"),
+            @Result(column = "active_energy_import", property = "activeEnergyImport"),
             @Result(column = "active_energy_import_ongrid", property = "activeEnergyImportOngrid"),
             @Result(column = "active_energy_import_offgrid", property = "activeEnergyImportOffgrid"),
             @Result(column = "active_energy_export", property = "activeEnergyExport"),

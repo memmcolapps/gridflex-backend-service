@@ -35,13 +35,14 @@ external:
 
 springdoc:
   api-docs:
-    path: /v3/api-docs
-    packages-to-scan: org.memmcol.gridflexbackendservice.thirdPartyService
+    path: /gridflex/api-docs
 
   swagger-ui:
     path: /swagger-ui.html
-    config-url: /api/v1/v3/api-docs/swagger-config
-    url: /api/v1/v3/api-docs
+    config-url: /api/v1/gridflex/api-docs/swagger-config
+    url: /api/v1/gridflex/api-docs
+
+  packages-to-scan: org.memmcol.gridflexbackendservice.thirdPartyService
 #    urls:
 #      - name: Admin
 #        url: /v3/api-docs/admin
