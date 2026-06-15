@@ -44,8 +44,9 @@ public class GenericHandler {
     }
 
     public Map<String, String> extractRequestMetadata(HttpServletRequest request) {
+        System.out.println("Client IP: " + request.getHeader("X-Client-IP"));
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("ipAddress", getClientIp(request));
+        metadata.put("ipAddress", request.getHeader("X-Client-IP"));//getClientIp(request));
         metadata.put("userAgent", request.getHeader("User-Agent"));
         metadata.put("endpoint", request.getRequestURI());
         metadata.put("httpMethod", request.getMethod());
