@@ -21,28 +21,34 @@ public class HardwareFingerprintUtil {
         String biosSerial;
         String motherboardSerial;
         String machineId;
+        String diskSerial;
 
         if (isWindows()) {
             biosSerial = executeCommand("wmic bios get serialnumber");
             motherboardSerial = executeCommand("wmic baseboard get serialnumber");
             machineId = executeCommand("wmic os get serialnumber");
+            diskSerial = executeCommand("wmic diskdrive get serialnumber");
         } else if (isLinux()) {
             biosSerial = executeCommand("cat /sys/class/dmi/id/product_serial");
             motherboardSerial = executeCommand("cat /sys/class/dmi/id/board_serial");
             machineId = executeCommand("cat /etc/machine-id");
+            diskSerial = executeCommand(
+                    "udevadm info --query=property --name=$(lsblk -ndo PKNAME $(df / | tail -1 | awk '{print $1}') | head -1 | sed 's#^#/dev/#') | grep '^ID_SERIAL=' | cut -d= -f2"
+            );
         } else {
             biosSerial = "";
             motherboardSerial = "";
             machineId = "";
+            diskSerial = "";
         }
 
-        String macAddress = getMacAddress();
+//        String macAddress = getMacAddress();
 
         String fingerprintSource =
                 biosSerial +
                         motherboardSerial +
                         machineId +
-                        macAddress;
+                        diskSerial;
 
         String hash = sha256Hash(SALT + fingerprintSource + SALT);
 
@@ -50,7 +56,8 @@ public class HardwareFingerprintUtil {
                 .biosSerial(biosSerial)
                 .motherboardSerial(motherboardSerial)
                 .osSerial(machineId)
-                .macAddress(macAddress)
+                .diskSerial(diskSerial)
+//                .macAddress(macAddress)
                 .hash(hash)
                 .build();
     }
@@ -128,32 +135,32 @@ public class HardwareFingerprintUtil {
                 .contains("linux");
     }
 
-    private static String getMacAddress() {
-        try {
-            for (java.net.NetworkInterface ni :
-                    java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
-
-                if (ni.isLoopback() || !ni.isUp() || ni.isVirtual()) {
-                    continue;
-                }
-
-                byte[] mac = ni.getHardwareAddress();
-
-                if (mac == null || mac.length == 0) {
-                    continue;
-                }
-
-                StringBuilder sb = new StringBuilder();
-
-                for (byte b : mac) {
-                    sb.append(String.format("%02X", b));
-                }
-
-                return sb.toString();
-            }
-        } catch (Exception ignored) {
-        }
-
-        return "";
-    }
+//    private static String getMacAddress() {
+//        try {
+//            for (java.net.NetworkInterface ni :
+//                    java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
+//
+//                if (ni.isLoopback() || !ni.isUp() || ni.isVirtual()) {
+//                    continue;
+//                }
+//
+//                byte[] mac = ni.getHardwareAddress();
+//
+//                if (mac == null || mac.length == 0) {
+//                    continue;
+//                }
+//
+//                StringBuilder sb = new StringBuilder();
+//
+//                for (byte b : mac) {
+//                    sb.append(String.format("%02X", b));
+//                }
+//
+//                return sb.toString();
+//            }
+//        } catch (Exception ignored) {
+//        }
+//
+//        return "";
+//    }
 }

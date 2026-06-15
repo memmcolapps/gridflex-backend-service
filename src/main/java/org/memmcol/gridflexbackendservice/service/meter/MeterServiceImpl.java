@@ -1106,26 +1106,44 @@ public class MeterServiceImpl implements MeterService {
 
             if(meterNumber != null){
                 meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
+                if (meter == null){
+                    return ResponseMap.response(status.getFailCode(),  "Meter Number " + status.getNotFoundDesc(), "");
+                }
             }
 
             if(accountNumber != null){
                 meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
+                if (meter == null){
+                    return ResponseMap.response(status.getFailCode(),  "Account Number " + status.getNotFoundDesc(), "");
+                }
             }
 
             if(meterId != null){
                 meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
+                if (meter == null){
+                    return ResponseMap.response(status.getFailCode(),  "Meter ID " + status.getNotFoundDesc(), "");
+                }
             }
 
             if(cin != null){
                 meter = meterMapper.getMeter(um.getOrgId(), meterId, meterNumber, accountNumber, cin, "", nodeId);
+                if (meter == null){
+                    return ResponseMap.response(status.getFailCode(),  "CIN " + status.getNotFoundDesc(), "");
+                }
             }
 
             if(versionMeterNumber != null){
                 meter = meterMapper.getVersionMeter(um.getOrgId(), meterVersionId, versionMeterNumber, cin);
+                if (meter == null){
+                    return ResponseMap.response(status.getFailCode(),  "Meter Version Number " + status.getNotFoundDesc(), "");
+                }
             }
 
             if(meterVersionId != null){
                 meter = meterMapper.getVersionMeter(um.getOrgId(), meterVersionId, versionMeterNumber, cin);
+                if (meter == null){
+                    return ResponseMap.response(status.getFailCode(),  "Meter Version ID " + status.getNotFoundDesc(), "");
+                }
             }
 
 //            handleAddCache(meter);
