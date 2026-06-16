@@ -114,29 +114,36 @@ public interface OdysseyMapper {
 
 
     @Select("""
-        SELECT
-            c.customer_id AS customerId,
-            m.account_number,
-            m.id,
-            m.meter_number,
-            CONCAT(c.firstname,' ', c.lastname) AS fullname,
-            c.phone_number,
-            md.latitude,
-            md.longitude,
-            COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
-            t.id,
-            COALESCE(t.receipt_no, '') AS transaction_id,
-            COALESCE(t.initial_amount, 0) AS amount,
-            COALESCE(t.unit, 0) AS transactionKwh,
-            COALESCE(t.created_at, CURRENT_TIMESTAMP) AS timestamp,
-            'NGN' AS currency
-        FROM customers c
-        LEFT JOIN meters m ON c.customer_id = m.customer_id
-        LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
-        LEFT JOIN md_meters_info md ON m.id = md.meter_id
-        LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
-        WHERE m.meter_stage = 'Assigned'
-          AND t.created_at BETWEEN #{startDate} AND #{endDate} || t.receipt_no = #{txId}
+        <script>
+            SELECT
+                c.customer_id AS customerId,
+                m.account_number,
+                m.id,
+                m.meter_number,
+                CONCAT(c.firstname,' ', c.lastname) AS fullname,
+                c.phone_number,
+                md.latitude,
+                md.longitude,
+                COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
+                t.id,
+                COALESCE(t.receipt_no, '') AS transaction_id,
+                COALESCE(t.initial_amount, 0) AS amount,
+                COALESCE(t.unit, 0) AS transactionKwh,
+                COALESCE(t.created_at, CURRENT_TIMESTAMP) AS timestamp,
+                'NGN' AS currency
+            FROM customers c
+            LEFT JOIN meters m ON c.customer_id = m.customer_id
+            LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
+            LEFT JOIN md_meters_info md ON m.id = md.meter_id
+            LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
+            WHERE m.meter_stage = 'Assigned'
+              AND t.created_at BETWEEN #{startDate} AND #{endDate}
+            
+            <if test="txId != null and txId != ''">
+              AND t.receipt_no = #{txId}
+            </if>
+        
+        </script>
         """)
     @Results({
             @Result(property = "customerId", column = "customerId"),
