@@ -129,7 +129,7 @@ public class MeterServiceImpl implements MeterService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Region")
-//                    && !nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Root")
             ){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
@@ -900,7 +900,6 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-//            System.out.println(">>>>>>>>>>::: here: "+meters.get(0).getMeterNumber());
             // Apply filtering
             Stream<Meter> meterStream = meters.stream();
             if (meterNumber != null && !meterNumber.isEmpty()) {

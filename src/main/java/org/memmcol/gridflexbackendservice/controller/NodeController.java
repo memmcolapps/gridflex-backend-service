@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/node/service")
@@ -114,6 +115,16 @@ public class NodeController {
         }
     }
 
+    @GetMapping("/feederByBhub")
+    public ResponseEntity<Map<String, Object>> getFeederByBHub(@RequestParam UUID nodeId){
+        try {
+            Map<String, Object> result =  nodeService.getFeederByBhub(nodeId);
+            return ResponseEntity.ok(result);
+        } catch (SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     @GetMapping("/dss")
     public ResponseEntity<Map<String, Object>> getAllDss(@RequestParam String assetId){
         try {
@@ -133,9 +144,6 @@ public class NodeController {
             return handleException(e);
         }
     }
-
-
-
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);

@@ -29,8 +29,7 @@ public class SwaggerConfig {
                         .title("GridFlex API")
                         .version("1.0"))
                 .servers(List.of(
-                        new Server().url("http://localhost:8081/api/v1"),
-                        new Server().url("https://sbctest.memmserve.com:8081/api/v1")
+                        new Server().url("https://sbctest.memmserve.com/api/v1")
                 ))
                 // ================= SECURITY SCHEMES =================
                 .components(new Components()

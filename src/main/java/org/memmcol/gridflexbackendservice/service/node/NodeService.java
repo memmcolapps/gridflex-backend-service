@@ -26,4 +26,6 @@ public interface NodeService {
     Map<String, Object> getAllFeeder();
 
     Map<String, Object> getAllDss(String assetId);
+
+    Map<String, Object> getFeederByBhub(UUID nodeId);
 }
