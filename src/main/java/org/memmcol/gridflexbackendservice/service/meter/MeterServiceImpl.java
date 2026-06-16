@@ -2740,7 +2740,8 @@ public class MeterServiceImpl implements MeterService {
             String nodeName = user.getNodeInfo().getType();
             UUID nodeId = user.getNodeInfo().getNodeId();
             List<Meter> meters;
-            if(nodeName.equalsIgnoreCase("Region")) {
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("Root")) {
                 if (filename.endsWith(".csv")) {
                     meters = processCsv(file.getInputStream(), user);
                 } else if (filename.endsWith(".xlsx")) {
@@ -4414,7 +4415,6 @@ public class MeterServiceImpl implements MeterService {
             if (batch.isEmpty()) {
                 continue;
             }
-
 
             try {
                 insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
