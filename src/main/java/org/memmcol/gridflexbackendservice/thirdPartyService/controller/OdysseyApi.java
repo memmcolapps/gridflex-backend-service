@@ -73,9 +73,9 @@ public class OdysseyApi {
             Map<String, Object> result = thirdPartyApiService.odysseyPayment(from, to, id);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            return badRequest("payments", e.getMessage());
+            return badRequest("payments", e.getMessage().contains("SQl") ? "There was a problem accessing data, please try again" : e.getMessage());
         } catch (Exception e) {
-            return badRequest("payments", "An unexpected error occurred: " + e.getMessage());
+            return badRequest("payments", "An unexpected error occurred");
         }
     }
 
