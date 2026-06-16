@@ -555,6 +555,21 @@ List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
     })
     UUID getParentNode(UUID orgId, UUID nodeId);
 
+
+    @Select("""
+            SELECT * FROM vw_node_summary
+            WHERE org_id = #{orgId} AND parent_id = #{nodeId}
+              AND UPPER(type) IN (UPPER('feeder line'))
+            """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+            @Result(property = "assetId", column = "asset_id")
+    })
+    List<SubStationTransformerFeederLine> getFeederByBhub(UUID orgId, UUID nodeId);
+
 //    @Select("""
 //    SELECT 1
 //    FROM region_bhub_service_centers

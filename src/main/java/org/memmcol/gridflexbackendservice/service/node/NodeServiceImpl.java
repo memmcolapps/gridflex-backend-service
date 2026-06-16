@@ -718,6 +718,25 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
+    @Transactional
+    @Override
+    public Map<String, Object> getFeederByBhub(UUID nodeId) {
+        try{
+
+            UserModel um = handleUserValidation();
+
+            List<SubStationTransformerFeederLine> result = nodeMapper.getFeederByBhub(um.getOrgId(), nodeId);
+
+            return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
+
+        } catch (Exception exception) {
+            log.error("Error filtering / fetching feeders and dss: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching feeders and dss service failed");
+            genericHandler.logAndSaveException(exception, "fetching feeders and dss");
+            throw exception;
+        }
+    }
+
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getFeederAndDssNode() {
