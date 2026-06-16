@@ -5,12 +5,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -27,16 +30,22 @@ public class OdysseyApi {
     @GetMapping("/meter/readings")
     @PreAuthorize("hasAuthority('METER_READ')")
     public ResponseEntity<?> meterReading(
-            @RequestParam String from,
-            @RequestParam String to,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime from,
+
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime to,
+
             @RequestParam(required = false, defaultValue = "0") int offSet,
             @RequestParam(required = false, defaultValue = "10") int pageLimit
     ) {
         try {
-            Date startDate = parseDate(from);
-            Date endDate = parseDate(to);
+//            Timestamp startDate = parseDate(from);
+//            Date endDate = parseDate(to);
 
-            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, offSet, pageLimit);
+            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(from, to, offSet, pageLimit);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return badRequest("readings", e.getMessage());
@@ -48,14 +57,20 @@ public class OdysseyApi {
     @GetMapping("/electricity/payments")
     @PreAuthorize("hasAuthority('PAYMENT_READ')")
     public ResponseEntity<?> payment(
-            @RequestParam String from,
-            @RequestParam String to
+            @RequestParam(value = "id", required = false, defaultValue = "") String id,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime from,
+
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime to
     ) {
         try {
-            Date startDate = parseDate(from);
-            Date endDate = parseDate(to);
+//            Date startDate = parseDate(from);
+//            Date endDate = parseDate(to);
 
-            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate);
+            Map<String, Object> result = thirdPartyApiService.odysseyPayment(from, to, id);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return badRequest("payments", e.getMessage());

@@ -110,7 +110,7 @@ public interface OdysseyMapper {
 
 
     })
-    List<MeterReadingModel> getMeterReadingModel(Date startDate, Date endDate);
+    List<MeterReadingModel> getMeterReadingModel(LocalDateTime startDate, LocalDateTime endDate);
 
 
     @Select("""
@@ -124,7 +124,8 @@ public interface OdysseyMapper {
             md.latitude,
             md.longitude,
             COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
-            t.id AS transaction_id,
+            t.id,
+            COALESCE(t.receipt_no, '') AS transaction_id,
             COALESCE(t.initial_amount, 0) AS amount,
             COALESCE(t.unit, 0) AS transactionKwh,
             COALESCE(t.created_at, CURRENT_TIMESTAMP) AS timestamp,
@@ -135,13 +136,11 @@ public interface OdysseyMapper {
         LEFT JOIN md_meters_info md ON m.id = md.meter_id
         LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
         WHERE m.meter_stage = 'Assigned'
-          AND t.created_at BETWEEN #{startDate} AND #{endDate}
+          AND t.created_at BETWEEN #{startDate} AND #{endDate} || t.receipt_no = #{txId}
         """)
-
     @Results({
             @Result(property = "customerId", column = "customerId"),
             @Result(property = "customerAccountId", column = "account_number"),
-//            @Result(property = "meterId", column = "id"),
             @Result(property = "meterId", column = "meter_number"),
             @Result(property = "customerName", column = "fullname"),
             @Result(property = "customerPhone", column = "phone_number"),
@@ -154,5 +153,5 @@ public interface OdysseyMapper {
             @Result(property = "currency", column = "currency"),
             @Result(property = "transactionKwh", column = "transactionKwh")
     })
-    List<OdysseyPaymentModel> getOddyseyPayment(Date startDate, Date endDate);
+    List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId);
 }

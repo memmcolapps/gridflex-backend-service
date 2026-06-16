@@ -19,6 +19,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -47,7 +50,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
     @Transactional
     @Override
-    public Map<String, Object> odysseyMeterReading(Date startDate, Date endDate, int offSet, int pageLimit) {
+    public Map<String, Object> odysseyMeterReading(LocalDateTime startDate, LocalDateTime endDate, int offSet, int pageLimit) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -58,11 +61,12 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             if (!principal.hasScope("METER_READ")) {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
-            long durationMs = endDate.getTime() - startDate.getTime();
-            if (durationMs < 0) {
+            Duration duration = Duration.between(startDate, endDate);
+
+            if (duration.isNegative()) {
                 throw new IllegalArgumentException("startDate must be before endDate");
             }
-            if (durationMs > MAX_DURATION_MS) {
+            if (duration.toHours() > 24) {
                 throw new IllegalArgumentException("Date range must not exceed 24 hours");
             }
             List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate);
@@ -113,7 +117,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
     @Transactional
     @Override
-    public Map<String, Object> odysseyPayment(Date startDate, Date endDate) {
+    public Map<String, Object> odysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String id) {
         Map<String, Object> response = new HashMap<>();
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
@@ -124,15 +128,24 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
 
-            long durationMs = endDate.getTime() - startDate.getTime();
-            if (durationMs < 0) {
+            Duration duration = Duration.between(startDate, endDate);
+
+            if (duration.isNegative()) {
                 throw new IllegalArgumentException("startDate must be before endDate");
             }
-            if (durationMs > MAX_DURATION_MS) {
+            if (duration.toHours() > 24) {
                 throw new IllegalArgumentException("Date range must not exceed 24 hours");
             }
 
-            List<OdysseyPaymentModel> data = odysseyMapper.getOddyseyPayment(startDate, endDate);
+//            long durationMs = endDate.getTime() - startDate.getTime();
+//            if (durationMs < 0) {
+//                throw new IllegalArgumentException("startDate must be before endDate");
+//            }
+//            if (durationMs > MAX_DURATION_MS) {
+//                throw new IllegalArgumentException("Date range must not exceed 24 hours");
+//            }
+
+            List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id);
             String desc = "Payment History ("+startDate.toString()+" - "+endDate.toString()+")";
 
             response.put("payments", data);
