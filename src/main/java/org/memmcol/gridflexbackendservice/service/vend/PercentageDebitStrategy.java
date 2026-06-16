@@ -4,6 +4,8 @@ import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.debt_setting.PercentageRange;
 import org.memmcol.gridflexbackendservice.model.vend.DebtPaymentResult;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,17 +16,19 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Service
 public class PercentageDebitStrategy {
 
-    private static VendMapper vendMapper;
+    @Autowired
+    private VendMapper vendMapper;
 
 //    private final BigDecimal percentage;
 
-    public PercentageDebitStrategy(VendMapper vendMapper) {
-        PercentageDebitStrategy.vendMapper = vendMapper;
-    }
+//    public PercentageDebitStrategy(VendMapper vendMapper) {
+//        this.vendMapper = vendMapper;
+//    }
 
-    static DebtPaymentResult processDebtsSequentially(List<MeterView> meters, BigDecimal paymentAmount, UUID orgId, UUID meterId) {
+    public DebtPaymentResult processDebtsSequentially(List<MeterView> meters, BigDecimal paymentAmount, UUID orgId, UUID meterId) {
 
         List<MeterView> debitMeters = meters.stream()
                 .filter(m -> "debit".equalsIgnoreCase(m.getAdjustmentType()))
