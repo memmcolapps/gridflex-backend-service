@@ -71,6 +71,12 @@ public class VendingServiceImpl implements VendingService {
     @Autowired
     private CreditDebitAdjustmentSettlementService adjustmentSettlementService;
 
+    @Autowired
+    private PercentageDebitStrategy percentageDebitStrategy;
+
+    @Autowired
+    private PercentageCreditStrategy percentageCreditStrategy;
+
     @Transactional
     @Override
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
@@ -137,7 +143,7 @@ public class VendingServiceImpl implements VendingService {
 //            String creditPaymentPlan = meter.getCreditPaymentPlan();
 
             // --- Process Debits Sequentially ---
-            DebtPaymentResult debtResult = PercentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
+            DebtPaymentResult debtResult = percentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
             
             if (debtResult.getErrorMessage() != null) {
                 throw new GlobalExceptionHandler.NotFoundException(debtResult.getErrorMessage());
@@ -166,7 +172,7 @@ public class VendingServiceImpl implements VendingService {
                     amountAfterDebit.subtract(netTenderAfterDebit);
 
             // --- Process Credits Sequentially (Applied after VAT) ---
-            CreditPaymentResult creditResult = PercentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
+            CreditPaymentResult creditResult = percentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
             BigDecimal creditDeducted = creditResult.getTotalCreditDeducted();
 
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
@@ -519,7 +525,7 @@ public class VendingServiceImpl implements VendingService {
 //            BigDecimal totalCreditUnits = calculateTotalByType(meters,"credit");
 
             // --- Process Debits Sequentially ---
-            DebtPaymentResult debtResult = PercentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
+            DebtPaymentResult debtResult = percentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
             
             if (debtResult.getErrorMessage() != null) {
                 throw new GlobalExceptionHandler.NotFoundException(debtResult.getErrorMessage());
@@ -548,7 +554,7 @@ public class VendingServiceImpl implements VendingService {
                     amountAfterDebit.subtract(netTenderAfterDebit);
 
             // --- Process Credits Sequentially (Applied after VAT) ---
-            CreditPaymentResult creditResult = PercentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
+            CreditPaymentResult creditResult = percentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
             BigDecimal creditDeducted = creditResult.getTotalCreditDeducted();
 
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
