@@ -72,6 +72,7 @@ public class VendingServiceImpl implements VendingService {
     private CreditDebitAdjustmentSettlementService adjustmentSettlementService;
 
     @Transactional
+    @Override
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
         UserModel user = handleUserValidation();
         UUID nodeId = user.getNodeInfo().getNodeId();
