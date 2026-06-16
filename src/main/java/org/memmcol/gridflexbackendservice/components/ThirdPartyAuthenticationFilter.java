@@ -106,7 +106,7 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             List<String> scopes = jwt.getClaim("scopes").asList(String.class);
 
             // Optional DB validation (extra security layer)
-            ApiClient client = apiClientRepository.findByClientId(clientId)
+            ApiClient client = apiClientRepository.findByClientId(clientId.toLowerCase())
                     .orElseThrow(() -> new RuntimeException("Invalid client"));
 
             if (!client.getStatus()) {

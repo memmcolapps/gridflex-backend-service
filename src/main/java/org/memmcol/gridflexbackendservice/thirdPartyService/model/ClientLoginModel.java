@@ -14,7 +14,7 @@ public class ClientLoginModel {
     }
 
     public void setClientId(String clientId) {
-        this.clientId = clientId;
+        this.clientId = clientId != null ? clientId.toLowerCase() : null;
     }
 
     public String getClientSecret() {
@@ -22,6 +22,6 @@ public class ClientLoginModel {
     }
 
     public void setClientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
+        this.clientSecret = clientSecret != null ? clientSecret.toLowerCase() : null;
     }
 }

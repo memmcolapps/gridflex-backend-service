@@ -32,7 +32,7 @@ public class ApiClientService {
     public Map<String, Object> createClient(CreateApiClientRequest request) {
 
         Optional<ApiClient> existing = apiClientRepository
-                .findByClientNameAndOrgId(request.getClientName(), request.getOrgId());
+                .findByClientNameAndOrgId(request.getClientName().toLowerCase(), request.getOrgId());
 
         if (existing.isPresent()) {
             ApiClient client = existing.get();
