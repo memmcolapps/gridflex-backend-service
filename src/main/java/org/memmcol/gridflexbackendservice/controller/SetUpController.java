@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/client/setup")
+@RequestMapping("/admin/setup")
 @Tag(name = "Admin", description = "Admin Client Setup Management APIs")
 @RequiredArgsConstructor
 public class SetUpController {
     private final ApiClientService apiClientService;
 
-    @PostMapping
+    @PostMapping("/client")
     public Map<String, Object> create(@RequestBody CreateApiClientRequest request) {
         return apiClientService.createClient(request);
     }

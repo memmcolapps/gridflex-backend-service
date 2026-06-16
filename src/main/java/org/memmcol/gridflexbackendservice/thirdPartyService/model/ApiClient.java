@@ -34,4 +34,11 @@ public class ApiClient {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId != null ? clientId.toLowerCase() : null;
+    }
+    public void setClientName(String clientName) {
+        this.clientName = clientName != null ? clientName.toLowerCase() : null;
+    }
 }

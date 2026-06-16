@@ -47,7 +47,7 @@ public class ThirdPartyAuthServiceImpl {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             System.out.println("metadata");
-            ApiClient client = apiClientRepository.findByClientId(request.getClientId())
+            ApiClient client = apiClientRepository.findByClientId(request.getClientId().toLowerCase())
                     .orElseThrow(() -> new RuntimeException("Client not found"));
 
             if (!client.getStatus()) {
