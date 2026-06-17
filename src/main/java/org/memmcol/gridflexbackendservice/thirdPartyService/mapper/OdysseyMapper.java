@@ -8,8 +8,8 @@ import org.memmcol.gridflexbackendservice.thirdPartyService.model.MeterReadingMo
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.OdysseyPaymentModel;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Mapper
 public interface OdysseyMapper {
@@ -40,9 +40,9 @@ public interface OdysseyMapper {
                         customer_fullname,
                         connection_type
                     FROM vw_meter_summary
-                    WHERE meter_stage = 'Assigned'
+                    WHERE meter_stage = 'Assigned' AND org_id = #{orgId}
                 ) ms
-                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id
+                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
                 -- latest energy reading
                 LEFT JOIN LATERAL (
                     SELECT
@@ -73,7 +73,8 @@ public interface OdysseyMapper {
                     SELECT
                         balance_after_adjustment
                     FROM vw_meter_summary m2
-                    WHERE m2.meter_number = ms.meter_number
+                    WHERE m2.meter_number = ms.meter_number 
+                      AND m2.org_id = #{orgId}
                       AND m2.adjustment_type = 'debit'
                     ORDER BY m2.created_at DESC
                     LIMIT 1
@@ -85,6 +86,7 @@ public interface OdysseyMapper {
                         balance_after_adjustment
                     FROM vw_meter_summary m3
                     WHERE m3.meter_number = ms.meter_number
+                      AND m3.org_id = #{orgId}
                       AND m3.adjustment_type = 'credit'
                     ORDER BY m3.created_at DESC
                     LIMIT 1
@@ -110,7 +112,7 @@ public interface OdysseyMapper {
 
 
     })
-    List<MeterReadingModel> getMeterReadingModel(LocalDateTime startDate, LocalDateTime endDate);
+    List<MeterReadingModel> getMeterReadingModel(LocalDateTime startDate, LocalDateTime endDate, UUID orgId);
 
 
     @Select("""
@@ -136,7 +138,7 @@ public interface OdysseyMapper {
             LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
             LEFT JOIN md_meters_info md ON m.id = md.meter_id
             LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
-            WHERE m.meter_stage = 'Assigned'
+            WHERE m.meter_stage = 'Assigned' AND m.org_id = #{orgId}
               AND t.created_at BETWEEN #{startDate} AND #{endDate}
             
             <if test="txId != null and txId != ''">
@@ -160,5 +162,5 @@ public interface OdysseyMapper {
             @Result(property = "currency", column = "currency"),
             @Result(property = "transactionKwh", column = "transactionKwh")
     })
-    List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId);
+    List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId, UUID orgId);
 }
