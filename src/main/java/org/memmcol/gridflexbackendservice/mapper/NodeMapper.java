@@ -586,6 +586,13 @@ List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
         FROM hierarchy
         WHERE LOWER(type) = 'feeder line'
     """)
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "orgId", column = "org_id"),
+            @Result(property = "nodeId", column = "node_id"),
+            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "assetId", column = "asset_id")
+    })
     List<RegionBhubServiceCenter> getFeederByBhub(UUID orgId, UUID nodeId);
 
 //    @Select("""
