@@ -2637,7 +2637,7 @@ public class MeterServiceImpl implements MeterService {
             System.out.println("region: "+verifyMeter.getRegion());
             //Allocate meter
             int result;
-            result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated");
+            result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated", node.getParentId());
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
             }
@@ -3406,7 +3406,7 @@ public class MeterServiceImpl implements MeterService {
 //        String desc = meter.getMeterNumber() + " meter allocated to " + meter.getNodeInfo().getRegionId();
 
         // --- Step 2: Insert into main + version tables ---
-        meterMapper.allocateMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Allocated");
+        meterMapper.allocateMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Allocated", meter.getRegion());
 //        if(result == 0){
 //            throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
 //        }
