@@ -3195,14 +3195,21 @@ public class MeterServiceImpl implements MeterService {
 
             // Fetch region → business-hub mappings
             List<RegionBhubServiceCenter> regionHubs = meterMapper.getRegionBhubMappings(regionIds, user.getOrgId());
-            Map<String, UUID> regionNodeIdMap = regionHubs.stream()
-                    .collect(Collectors.toMap(RegionBhubServiceCenter::getRegionId, RegionBhubServiceCenter::getNodeId));
+            Map<String, RegionMapping> regionNodeIdMap = regionHubs.stream()
+                    .collect(Collectors.toMap(
+                            RegionBhubServiceCenter::getRegionId,
+                            r -> new RegionMapping(
+                                    r.getParentId(),
+                                    r.getNodeId()
+                            ),
+                            (a, b) -> a // prevent duplicates crash
+                    ));
 
             List<Meter> validAllocations = new ArrayList<>();
 
             for (MeterRequest req : subBatch) {
                 Meter meter = meterMap.get(req.getMeterNumber());
-                UUID nodeId = regionNodeIdMap.get(req.getRegionId());
+                RegionMapping mapping = regionNodeIdMap.get(req.getRegionId());
 
                 if (meter == null) {
                     GenericResp resp = new GenericResp();
@@ -3214,10 +3221,10 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                if (nodeId == null) {
+                if (mapping == null || mapping.getParentId() == null || mapping.getNodeId() == null) {
                     GenericResp resp = new GenericResp();
                     resp.setId(meter.getMeterNumber());
-                    resp.setMessage("Meter allocate failed: region not found in business hub");
+                    resp.setMessage("Meter allocate failed: region not linked to business hub");
                     resp.setData(meter.getMeterNumber());
 
                     failedRecords.add(resp);
@@ -3225,7 +3232,8 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                meter.setNodeId(nodeId);
+                meter.setNodeId(mapping.getNodeId());
+                meter.setRegion(mapping.getParentId());
 //                meter.getNodeInfo().setRegionId(req.getRegionId());
                 meter.setOrgId(user.getOrgId());
                 meter.setMeterStage("Pending-allocated");

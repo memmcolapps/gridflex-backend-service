@@ -2218,13 +2218,13 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type," +
-            "meter_stage, status, meter_number, node_id, region, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
+            "meter_stage, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
             "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status, region, root) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, 'Pending-allocated', 'Active', #{meter.meterNumber}, " +
-            "#{nodeId}, #{region}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus}, " +
-            "#{meter.region}, #{meter.root})")
+            "#{region}, #{meter.root})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
     int allocateMeterVersion(
             @Param("meter") Meter meter,
@@ -3102,8 +3102,8 @@ public interface MeterMapper {
 
     @Select({
             "<script>",
-            "SELECT node_id AS nodeId, region_id AS regionId, org_id AS orgId FROM region_bhub_service_centers ",
-            "WHERE org_id = #{orgId}",
+            "SELECT node_id AS nodeId, region_id AS regionId, org_id AS orgId, parent_id AS parentId FROM region_bhub_service_centers ",
+            "WHERE org_id = #{orgId} AND type ILIKE '%business%' ",
             "AND region_id IN",
             "<foreach collection='regionIds' item='id' open='(' separator=',' close=')'>",
             "#{id}",

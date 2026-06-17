@@ -586,7 +586,7 @@ List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
         FROM hierarchy
         WHERE LOWER(type) = 'feeder line'
     """)
-    List<FlatNode> getFeederByBhub(UUID orgId, UUID nodeId);
+    List<RegionBhubServiceCenter> getFeederByBhub(UUID orgId, UUID nodeId);
 
 //    @Select("""
 //    SELECT 1
