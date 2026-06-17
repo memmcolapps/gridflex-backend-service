@@ -126,7 +126,7 @@ public class NodeController {
     }
 
     @GetMapping("/dss")
-    public ResponseEntity<Map<String, Object>> getAllDss(@RequestParam String assetId){
+    public ResponseEntity<Map<String, Object>> getAllDss(@RequestParam UUID assetId){
         try {
             Map<String, Object> result =  nodeService.getAllDss(assetId);
             return ResponseEntity.ok(result);

@@ -110,13 +110,14 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
                     .orElseThrow(() -> new RuntimeException("Invalid client"));
 
             if (!client.getStatus()) {
-                throw new RuntimeException("Client disabled");
+                throw new RuntimeException("Client deactivated");
             }
 
             ThirdPartyPrincipal principal = new ThirdPartyPrincipal(
                     clientId,
                     userId,
                     orgId,
+                    client.getStatus(),
                     scopes
             );
 
