@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.model.setup.ApiClientResponse;
+import org.memmcol.gridflexbackendservice.model.setup.ChangeState;
 import org.memmcol.gridflexbackendservice.model.setup.CreateApiClientRequest;
 import org.memmcol.gridflexbackendservice.service.setup.ApiClientService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,14 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/admin/setup")
+@RequestMapping("/admin")
 @Tag(name = "Admin", description = "Admin Client Setup Management APIs")
 @RequiredArgsConstructor
 public class SetUpController {
     private final ApiClientService apiClientService;
 
-    @PostMapping("/client")
+    @PostMapping("/setup/client")
     public Map<String, Object> create(@RequestBody CreateApiClientRequest request) {
         return apiClientService.createClient(request);
+    }
+
+    @PostMapping("/client/change-state")
+    public Map<String, Object> changeState(@RequestBody ChangeState request) {
+        return apiClientService.changeStateClient(request);
     }
 }

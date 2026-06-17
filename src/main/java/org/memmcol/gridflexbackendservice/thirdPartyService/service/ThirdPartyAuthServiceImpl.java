@@ -73,12 +73,12 @@ public class ThirdPartyAuthServiceImpl {
             return JWT.create()
                     .withSubject(request.getClientId())
                     .withClaim("userId", client.getId().toString())
+                    .withClaim("status", client.getStatus())
                     .withClaim("orgId", client.getOrgId() != null ? client.getOrgId().toString() : null)
                     .withArrayClaim("scopes", scopes.toArray(new String[0]))
                     .sign(Algorithm.HMAC256(secret));
 
         } catch (Exception exception) {
-//            genericHandler.logIncidentReport("Third party authentication service failed");
             genericHandler.logAndSaveException(exception, "third party authentication");
             throw exception;
         }

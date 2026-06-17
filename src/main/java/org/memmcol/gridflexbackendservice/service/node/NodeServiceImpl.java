@@ -39,9 +39,6 @@ public class NodeServiceImpl implements NodeService {
     @Autowired
     private ResponseProperties status;
 
-//    @Autowired
-//    private AuditRepository auditRepository;
-
     @Autowired
     private SafeAuditService safeAuditService;
 
@@ -229,16 +226,6 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
 
-//            NodeSummary nodeSummary = nodeMapper.nodeSummary(request.getParentId(), um.getOrgId());
-//
-//            if(nodeSummary != null
-//                    && nodeSummary.getType().equalsIgnoreCase("Business hub")) {
-//                request.setBhubId(request.getParentId());
-//            } else {
-//                assert nodeSummary != null;
-//                request.setBhubId(nodeSummary.getBhubId());
-//            }
-
             nodeMapper.createNode(node);
 
             UUID nodeId = node.getId();
@@ -348,18 +335,6 @@ public class NodeServiceImpl implements NodeService {
                     );
                 }
             }
-
-//            // Validate Phone Number (only if phone number changed)
-//            if (request.getPhoneNo() != null && !request.getPhoneNo().isEmpty() &&
-//                    !request.getPhoneNo().equals(existingRecord.getPhoneNo())) {
-//
-//                if (Boolean.TRUE.equals(nodeMapper.existsByPhoneNumberExcludingCurrent(
-//                        request.getPhoneNo(), um.getOrgId(), request.getNodeId()))) {
-//                    throw new GlobalExceptionHandler.NotFoundException(
-//                            "Phone Number (" + request.getPhoneNo() + ") already been used"
-//                    );
-//                }
-//            }
 
             nodeMapper.updateNode(node);
 
@@ -474,16 +449,6 @@ public class NodeServiceImpl implements NodeService {
                     );
                 }
             }
-
-//            SubStationTransformerFeederLine sub = nodeMapper.getSubStationTransformerFeederLineById(request.getId(), um.getOrgId());
-//            if (sub.getName().equalsIgnoreCase(request.getName())){
-//                throw new GlobalExceptionHandler.NotFoundException("Node ("+ request.getName()+") " + status.getExistDesc());
-//            }
-
-//            SubStationTransformerFeederLine subAsset = nodeMapper.verifySubNode(request.getAssetId(), um.getOrgId());
-//            if(subAsset != null){
-//                throw new GlobalExceptionHandler.NotFoundException("Asset ID ("+ request.getAssetId()+") " + status.getExistDesc());
-//            }
 
             nodeMapper.updateNode(node);
 
@@ -704,11 +669,11 @@ public class NodeServiceImpl implements NodeService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getAllDss(String assetId){
+    public Map<String, Object> getAllDss(UUID assetId){
         try {
             UserModel um = handleUserValidation();
-            UUID nodeId = nodeMapper.getFeederNodeId(um.getOrgId(),assetId);
-            List<SubStationTransformerFeederLine> result = nodeMapper.getAllDssByNodeId(um.getOrgId(), nodeId);
+//            UUID nodeId = nodeMapper.getFeederNodeId(um.getOrgId(),assetId);
+            List<SubStationTransformerFeederLine> result = nodeMapper.getAllDssByNodeId(um.getOrgId(), assetId);
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         }catch (Exception exception) {
@@ -756,52 +721,6 @@ public class NodeServiceImpl implements NodeService {
             throw exception;
         }
     }
-
-    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {
-
-        UUID currentNodeId = startNodeId;
-        Set<UUID> visited = new HashSet<>();
-
-        while (currentNodeId != null) {
-
-            if (!visited.add(currentNodeId)) {
-                throw new IllegalStateException("Circular hierarchy detected");
-            }
-
-            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
-            if (node == null) break;
-
-            String type = node.getType() == null ? "" : node.getType().toLowerCase();
-
-            switch (type) {
-//                case "business hub":
-//                    System.out.println("bbbhhh:: "+node.getNodeId());
-//                    if(bhubId.equals(node.getNodeId())){
-//                        request.setNodeId(node.getNodeId());
-//                    } else {
-//                        throw new GlobalExceptionHandler
-//                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
-//                    }
-//
-//                    break;
-//                case "service center":
-//                    request.setServiceCenter(node.getNodeId());
-//                    break;
-                case "region":
-                    request.setRegion(node.getNodeId());
-                    break;
-//                case "substation":
-//                    request.setSubstation(node.getNodeId());
-//                    break;
-                case "root":
-                    request.setRoot(node.getNodeId());
-                    break;
-            }
-
-            currentNodeId = node.getParentId();
-        }
-    }
-
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();

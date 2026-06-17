@@ -58,6 +58,10 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             ThirdPartyPrincipal principal = securityContext.getPrincipal();
 
+            if (!principal.getStatus()) {
+                throw new RuntimeException("Client deactivated");
+            }
+
             if (!principal.hasScope("METER_READ")) {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
