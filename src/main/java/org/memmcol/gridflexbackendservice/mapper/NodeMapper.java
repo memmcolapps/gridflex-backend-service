@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.mapper;
 
 import org.apache.ibatis.annotations.*;
+import org.memmcol.gridflexbackendservice.model.meter.FlatNode;
 import org.memmcol.gridflexbackendservice.model.node.*;
 
 import java.util.List;
@@ -556,19 +557,36 @@ List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
     UUID getParentNode(UUID orgId, UUID nodeId);
 
 
+//    @Select("""
+//            SELECT * FROM vw_flatten_node_records WHERE org_id = #{orgId}
+//            """)
+//    @Results({
+//            @Result(property = "id", column = "id"),
+//            @Result(property = "orgId", column = "org_id"),
+//            @Result(property = "nodeId", column = "node_id"),
+//            @Result(property = "parentId", column = "parent_id"),
+//            @Result(property = "assetId", column = "asset_id")
+//    })
     @Select("""
-            SELECT * FROM vw_node_summary
-            WHERE org_id = #{orgId} AND parent_id = #{nodeId}
-              AND UPPER(type) IN (UPPER('feeder line'))
-            """)
-    @Results({
-            @Result(property = "id", column = "id"),
-            @Result(property = "orgId", column = "org_id"),
-            @Result(property = "nodeId", column = "node_id"),
-            @Result(property = "parentId", column = "parent_id"),
-            @Result(property = "assetId", column = "asset_id")
-    })
-    List<SubStationTransformerFeederLine> getFeederByBhub(UUID orgId, UUID nodeId);
+        WITH RECURSIVE hierarchy AS (
+            SELECT *
+            FROM vw_node_summary
+            WHERE node_id = #{nodeId}
+               AND org_id = #{orgId}
+    
+            UNION ALL
+    
+            SELECT child.*
+            FROM vw_node_summary child
+            INNER JOIN hierarchy parent
+                ON child.parent_id = parent.node_id
+            WHERE child.org_id = #{orgId}
+        )
+        SELECT *
+        FROM hierarchy
+        WHERE LOWER(type) = 'feeder line'
+    """)
+    List<FlatNode> getFeederByBhub(UUID orgId, UUID nodeId);
 
 //    @Select("""
 //    SELECT 1

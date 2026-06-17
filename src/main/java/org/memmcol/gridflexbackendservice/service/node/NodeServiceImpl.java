@@ -6,6 +6,7 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
+import org.memmcol.gridflexbackendservice.model.meter.FlatNode;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.node.*;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -725,14 +726,14 @@ public class NodeServiceImpl implements NodeService {
 
             UserModel um = handleUserValidation();
 
-            List<SubStationTransformerFeederLine> result = nodeMapper.getFeederByBhub(um.getOrgId(), nodeId);
+            List<FlatNode> result = nodeMapper.getFeederByBhub(um.getOrgId(), nodeId);
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
 
         } catch (Exception exception) {
-            log.error("Error filtering / fetching feeders and dss: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching feeders and dss service failed");
-            genericHandler.logAndSaveException(exception, "fetching feeders and dss");
+            log.error("Error filtering / fetching feeders : {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("fetching feeders service failed");
+            genericHandler.logAndSaveException(exception, "fetching feeders");
             throw exception;
         }
     }

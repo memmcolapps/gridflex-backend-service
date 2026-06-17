@@ -2218,15 +2218,20 @@ public interface MeterMapper {
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type," +
-            "meter_stage, status, meter_number, node_id, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
+            "meter_stage, status, meter_number, node_id, region, old_sgc, new_sgc, old_krn, new_krn, old_tariff_index, " +
             "new_tariff_index, created_at, updated_at, type, created_by, description, meter_id, smart_status, region, root) " +
             "VALUES (#{meter.orgId}, #{meter.simNumber}, #{meter.meterCategory}, #{meter.meterClass}, " +
             "#{meter.meterManufacturer}, #{meter.meterType}, 'Pending-allocated', 'Active', #{meter.meterNumber}, " +
-            "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
+            "#{nodeId}, #{region}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus}, " +
             "#{meter.region}, #{meter.root})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
+    int allocateMeterVersion(
+            @Param("meter") Meter meter,
+            @Param("nodeId") UUID nodeId,
+            @Param("userId") UUID userId,
+            @Param("desc") String desc,
+            @Param("region") UUID region);
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, fixed_energy," +
