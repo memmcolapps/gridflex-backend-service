@@ -69,7 +69,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             if (duration.toHours() > 24) {
                 throw new IllegalArgumentException("Date range must not exceed 24 hours");
             }
-            List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate);
+            List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate, principal.getOrgId());
 
             int totalReadings = allReadings.size();
             int fromIndex = Math.min(offSet, totalReadings);
@@ -84,7 +84,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             response.put("pageLimit", pageLimit);
             response.put("total", totalReadings);
 
-            String desc = "Meter Reading ("+startDate.toString()+" - "+endDate.toString()+")";
+            String desc = "Meter Reading ("+startDate+" - "+endDate+")";
 
             AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
             try {
@@ -101,7 +101,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             Map<String, String> error = new HashMap<>();
             error.put("code", "METER_READING_ERROR");
-            error.put("message", e.getMessage().contains("SQl") ? "There was a problem accessing data, please try again later" : e.getMessage());
+            error.put("message", "There was a problem accessing data, please try again later");
 
             errors.add(error);
 
@@ -137,16 +137,8 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
                 throw new IllegalArgumentException("Date range must not exceed 24 hours");
             }
 
-//            long durationMs = endDate.getTime() - startDate.getTime();
-//            if (durationMs < 0) {
-//                throw new IllegalArgumentException("startDate must be before endDate");
-//            }
-//            if (durationMs > MAX_DURATION_MS) {
-//                throw new IllegalArgumentException("Date range must not exceed 24 hours");
-//            }
-
-            List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id);
-            String desc = "Payment History ("+startDate.toString()+" - "+endDate.toString()+")";
+            List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id, principal.getOrgId());
+            String desc = "Payment History ("+startDate+" - "+endDate.toString()+")";
 
             response.put("payments", data);
             response.put("errors", Collections.emptyList());
@@ -158,7 +150,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
                 log.error("Failed to save audit log", ex);
             }
 
-        }catch (Exception e) {
+        } catch (Exception e) {
 
             log.error("Error occurred while fetching payment history [ODYSSEY]: {}", e.getMessage(), e);
             genericHandler.logAndSaveException(e, "odyssey fetching payment history");
@@ -166,7 +158,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             Map<String, String> error = new HashMap<>();
             error.put("code", "PAYMENT_HISTORY_ERROR");
-            error.put("message", e.getMessage().contains("SQl") ? "There was a problem accessing data, please try again later" : e.getMessage());
+            error.put("message", "There was a problem accessing data, please try again later");
             errors.add(error);
 
             response.put("payments", Collections.emptyList());
