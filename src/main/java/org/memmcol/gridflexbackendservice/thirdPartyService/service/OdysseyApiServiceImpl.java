@@ -100,14 +100,9 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
         } catch (Exception e) {
             log.error("Error occurred while reading meter [ODYSSEY]: {}", e.getMessage(), e);
             genericHandler.logAndSaveException(e, "odyssey meter reading");
+            List<String> errors = new ArrayList<>();
 
-            List<Map<String, String>> errors = new ArrayList<>();
-
-            Map<String, String> error = new HashMap<>();
-            error.put("code", "METER_READING_ERROR");
-            error.put("message", "There was a problem accessing data, please try again later");
-
-            errors.add(error);
+            errors.add("There was a problem accessing data, please try again later");
 
             response.put("readings", Collections.emptyList());
             response.put("errors", errors);
