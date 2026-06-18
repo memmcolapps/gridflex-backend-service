@@ -27,10 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -88,7 +85,34 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new RuntimeException("Missing Authorization token");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                Map<String, Object> resp = new HashMap<>();
+                if ((path.startsWith("/odyssey/standard/meter"))) {
+                    List<String> errors = new ArrayList<>();
+
+                    errors.add("Missing Authorization token");
+//                    errors.add("");
+
+                    resp.put("readings", Collections.emptyList());
+                    resp.put("errors", errors);
+                    resp.put("offset", 0);
+                    resp.put("pageLimit", 0);
+                    resp.put("total", 0);
+                    new ObjectMapper().writeValue(response.getOutputStream(), resp);
+
+                } else if((path.startsWith("/odyssey/standard/electricity"))){
+
+                    resp.put("payment", Collections.emptyList());
+                    resp.put("error", "Missing Authorization token");
+                    
+                    new ObjectMapper().writeValue(response.getOutputStream(), resp);
+                }
+
+                else {
+                    throw new RuntimeException("Missing Authorization token");
+                }
+
             }
 
             String token = authHeader.substring(7);

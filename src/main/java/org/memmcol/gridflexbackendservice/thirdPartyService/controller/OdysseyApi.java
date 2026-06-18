@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.memmcol.gridflexbackendservice.doc.OdysseyApiSample;
 import org.memmcol.gridflexbackendservice.thirdPartyService.service.ThirdPartyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -42,58 +43,18 @@ public class OdysseyApi {
                     description = "Meter readings retrieved successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Successful Response",
-                                    value = """
-                                {
-                                  "pageLimit": 10,
-                                  "total": 1,
-                                  "readings": [
-                                    {
-                                      "meterId": "62525009163",
-                                      "meterNumber": "62525009163",
-                                      "energyConsumptionKwh": 79.65,
-                                      "timeIntervalMinutes": 1440,
-                                      "timestamp": "2026-05-08T00:00:00",
-                                      "customerAccountId": "45900123276",
-                                      "customerName": "John Doe",
-                                      "meterState": "OFFLINE",
-                                      "debt": 0,
-                                      "credit": 0
-                                    }
-                                  ],
-                                  "offset": 0,
-                                  "errors": []
-                                }
-                                """
-                            )
+                            examples = @ExampleObject(value = OdysseyApiSample.METER_READINGS_200)
                     )
             ),
+
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid request",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Bad Request",
-                                    value = """
-                                {
-                                  "pageLimit": 0,
-                                  "total": 0,
-                                  "readings": [],
-                                  "offset": 0,
-                                  "errors": [
-                                    "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ss"
-                                  ]
-                                }
-                                """
-                            )
+                            examples = @ExampleObject(value = OdysseyApiSample.METER_READINGS_400)
                     )
             ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Access denied"
-            )
     })
     @GetMapping("/meter/readings")
     @PreAuthorize("hasAuthority('METER_READ')")
@@ -150,58 +111,23 @@ public class OdysseyApi {
                 Date format: yyyy-MM-ddTHH:mm:ss
                 """
     )
-
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Payment history retrieved successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Successful Response",
-                                    value = """
-                                {
-                                  "payments": [
-                                    {
-                                      "amount": 5000.00,
-                                      "currency": "NGN",
-                                      "transactionType": "FULL_PAYMENT",
-                                      "transactionId": "RCPT-20260522103357-202006002221",
-                                      "meterId": "202006002221",
-                                      "timestamp": "2026-05-22T09:33:57.023Z",
-                                      "customerId": "23ee204b8651",
-                                      "customerAccountId": "0257946288",
-                                      "customerName": "John Doe",
-                                      "customerPhone": "08012345678",
-                                      "latitude": 12.0,
-                                      "longitude": 6543.0,
-                                      "transactionKwh": 25.00
-                                    }
-                                  ],
-                                  "errors": ""
-                                }
-                                """
-                            )
+                            examples = @ExampleObject(value = OdysseyApiSample.PAYMENT_200)
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid request",
                     content = @Content(
-                            examples = @ExampleObject(
-                                    value = """
-                                {
-                                  "payments": [],
-                                  "errors": "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ss"
-                                }
-                                """
-                            )
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = OdysseyApiSample.PAYMENT_400)
                     )
             ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Access denied"
-            )
     })
     @GetMapping("/electricity/payments")
     @PreAuthorize("hasAuthority('PAYMENT_READ')")
@@ -247,8 +173,10 @@ public class OdysseyApi {
 
     private ResponseEntity<Map<String, Object>> badRequest(String resourceKey, String message) {
         Map<String, Object> body = new LinkedHashMap<>();
+        List<String> errors = new ArrayList<>();
+        errors.add(message);
         body.put(resourceKey, Collections.emptyList());
-        body.put("errors", message);
+        body.put("errors", resourceKey.contains("readings") ? message : errors);
         return ResponseEntity.badRequest().body(body);
     }
 }
