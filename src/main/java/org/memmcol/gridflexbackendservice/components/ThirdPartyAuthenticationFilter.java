@@ -2,6 +2,8 @@ package org.memmcol.gridflexbackendservice.components;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -109,7 +111,7 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             ApiClient client = apiClientRepository.findByClientId(clientId.toLowerCase())
                     .orElseThrow(() -> new RuntimeException("Invalid client"));
 
-            if (!client.getStatus()) {
+            if (!Boolean.TRUE.equals(client.getStatus())) {
                 throw new RuntimeException("Client deactivated");
             }
 
@@ -147,6 +149,30 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
 
             new ObjectMapper().writeValue(response.getOutputStream(), error);
 
+//        }  catch (TokenExpiredException ex) {
+//
+//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("responsecode", "401");
+//            error.put("responsedesc", "Token has expired");
+//            error.put("responsedata", "");
+//
+//            new ObjectMapper().writeValue(response.getOutputStream(), error);
+//
+//        } catch (JWTVerificationException ex) {
+//
+//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("responsecode", "401");
+//            error.put("responsedesc", "Invalid token");
+//            error.put("responsedata", "");
+//
+//            new ObjectMapper().writeValue(response.getOutputStream(), error);
+//
         } catch (Exception ex) {
 //            log.error("Odyssey authentication failed", ex);
 

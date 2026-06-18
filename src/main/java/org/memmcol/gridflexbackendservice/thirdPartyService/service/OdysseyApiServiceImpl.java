@@ -145,7 +145,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             String desc = "Payment History ("+startDate+" - "+endDate.toString()+")";
 
             response.put("payments", data);
-            response.put("errors", Collections.emptyList());
+            response.put("errors", "");
 
             AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
             try {
@@ -158,15 +158,9 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             log.error("Error occurred while fetching payment history [ODYSSEY]: {}", e.getMessage(), e);
             genericHandler.logAndSaveException(e, "odyssey fetching payment history");
-            List<Map<String, String>> errors = new ArrayList<>();
 
-            Map<String, String> error = new HashMap<>();
-            error.put("code", "PAYMENT_HISTORY_ERROR");
-            error.put("message", "There was a problem accessing data, please try again later");
-            errors.add(error);
-
-            response.put("payments", Collections.emptyList());
-            response.put("errors", errors);
+            response.put("payment", Collections.emptyList());
+            response.put("error", "An unexpected error occurred");
         }
         return response;
     }

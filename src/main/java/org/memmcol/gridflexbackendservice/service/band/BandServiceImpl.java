@@ -3,15 +3,19 @@ package org.memmcol.gridflexbackendservice.service.band;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.components.CustomSecurityContext;
+import org.memmcol.gridflexbackendservice.components.ThirdPartySecurityContext;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.BandMapper;
 import org.memmcol.gridflexbackendservice.mapper.TariffMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.band.Band;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
+import org.memmcol.gridflexbackendservice.model.user.UserPermissionResponse;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
+import org.memmcol.gridflexbackendservice.thirdPartyService.model.ThirdPartyPrincipal;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 //import org.memmcol.gridflexbackendservice.util.HandleCatchError;
@@ -45,7 +49,7 @@ public class BandServiceImpl implements BandService {
     private BandMapper bandMapper;
 
     @Autowired
-    private AuthMapper operatorMapper;
+    private CustomSecurityContext securityContext;
 
     @Autowired
     private ResponseProperties status;
@@ -91,6 +95,12 @@ public class BandServiceImpl implements BandService {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Newly Added";
+
+//            UserPermissionResponse principal = securityContext.getPrincipal();
+//            UUID orgId = principal.getPermissionTree().get(0).getGroup().getOrgId();
+//            UUID nodeId = principal.getPermissionTree().get(0).getGroup().getNodeId();
+//            String nodeType = principal.getPermissionTree().get(0).getGroup().getNodeType();
+//            UUID userId = principal.getPermissionTree().get(0).getGroup().getUserId();
             UserModel um = handleUserValidation();
             UUID orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
