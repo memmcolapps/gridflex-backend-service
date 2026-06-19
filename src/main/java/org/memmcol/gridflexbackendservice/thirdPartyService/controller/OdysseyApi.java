@@ -93,7 +93,7 @@ public class OdysseyApi {
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
-                    "payments",
+                    "readings",
                     "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ss"
             );
         } catch (IllegalArgumentException e) {
@@ -176,7 +176,7 @@ public class OdysseyApi {
         List<String> errors = new ArrayList<>();
         errors.add(message);
         body.put(resourceKey, Collections.emptyList());
-        body.put("errors", resourceKey.contains("readings") ? message : errors);
+        body.put("errors", resourceKey.contains("readings") ? errors : message);
         return ResponseEntity.badRequest().body(body);
     }
 }

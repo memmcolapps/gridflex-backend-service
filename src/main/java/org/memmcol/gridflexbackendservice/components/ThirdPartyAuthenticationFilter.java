@@ -108,7 +108,6 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
                     
                     new ObjectMapper().writeValue(response.getOutputStream(), resp);
                 }
-
                 else {
                     throw new RuntimeException("Missing Authorization token");
                 }

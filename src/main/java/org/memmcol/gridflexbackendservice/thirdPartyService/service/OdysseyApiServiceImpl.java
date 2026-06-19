@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.thirdPartyService.service;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.components.ThirdPartySecurityContext;
+import org.memmcol.gridflexbackendservice.exception.OdysseyServiceException;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.customer.Customer;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -96,6 +97,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             } catch (Exception ex) {
                 log.error("Failed to save audit log", ex);
             }
+            return response;
 
         } catch (Exception e) {
             log.error("Error occurred while reading meter [ODYSSEY]: {}", e.getMessage(), e);
@@ -110,8 +112,8 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             response.put("pageLimit", pageLimit);
             response.put("total", 0);
 
+            throw new OdysseyServiceException("ODYSSEY_ERROR", response);
         }
-        return response;
     }
 
     @Transactional
@@ -148,7 +150,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             } catch (Exception ex) {
                 log.error("Failed to save audit log", ex);
             }
-
+            return response;
         } catch (Exception e) {
 
             log.error("Error occurred while fetching payment history [ODYSSEY]: {}", e.getMessage(), e);
@@ -156,8 +158,9 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
             response.put("payment", Collections.emptyList());
             response.put("error", "An unexpected error occurred");
+            throw new IllegalArgumentException(response.toString());
         }
-        return response;
+
     }
 
     private AuditLog buildAuditLog(String creator, String description, String type, Map<String, String> metadata) {
