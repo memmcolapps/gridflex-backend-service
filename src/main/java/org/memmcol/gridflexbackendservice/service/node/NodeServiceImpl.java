@@ -691,7 +691,7 @@ public class NodeServiceImpl implements NodeService {
 
             UserModel um = handleUserValidation();
 
-            List<RegionBhubServiceCenter> result = nodeMapper.getFeederByBhub(um.getOrgId(), nodeId);
+            List<NodeSummary> result = nodeMapper.getFeederByBhub(um.getOrgId(), nodeId);
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
 

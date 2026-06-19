@@ -593,7 +593,7 @@ List<NodeSummary> getAllRegionFeeder(UUID orgId, UUID nodeId);
             @Result(property = "parentId", column = "parent_id"),
             @Result(property = "assetId", column = "asset_id")
     })
-    List<RegionBhubServiceCenter> getFeederByBhub(UUID orgId, UUID nodeId);
+    List<NodeSummary> getFeederByBhub(UUID orgId, UUID nodeId);
 
 //    @Select("""
 //    SELECT 1
