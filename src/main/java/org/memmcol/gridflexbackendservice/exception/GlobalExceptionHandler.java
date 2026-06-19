@@ -115,7 +115,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
 		ex.printStackTrace();
-		String msg = "Invalid argument";
+		String msg = ex.getMessage().contains("Longitude")
+				|| ex.getMessage().contains("Latitude") ? ex.getMessage() : "Invalid argument";
 		errorMessage.put("responsecode", "104");
 		errorMessage.put("responsedesc", msg);
 		errorMessage.put("responsedata", "");

@@ -124,8 +124,18 @@ public interface OdysseyMapper {
                 COALESCE(m.meter_number, '') AS meterNumber,
                 CONCAT(c.firstname,'', c.lastname) AS fullname,
                 COALESCE(c.phone_number, '') AS phoneNumber,
-                COALESCE(md.latitude, '') AS latitude,
-                COALESCE(md.longitude, '') AS longitude,
+                CASE
+                      WHEN NULLIF(md.latitude, '0.000000') IS NOT NULL
+                           AND CAST(md.latitude AS DOUBLE PRECISION) BETWEEN -90 AND 90
+                      THEN CAST(md.latitude AS DOUBLE PRECISION)
+                      ELSE '0.000000'
+                  END AS latitude,
+                CASE
+                    WHEN NULLIF(md.longitude, '0.000000') IS NOT NULL
+                         AND CAST(md.longitude AS DOUBLE PRECISION) BETWEEN -180 AND 180
+                    THEN CAST(md.longitude AS DOUBLE PRECISION)
+                    ELSE '0.000000'
+                END AS longitude,
                 COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
                 t.id,
                 COALESCE(t.receipt_no, '') AS transactionId,
@@ -150,7 +160,7 @@ public interface OdysseyMapper {
     @Results({
             @Result(property = "customerId", column = "customerId"),
             @Result(property = "customerAccountId", column = "accountNumber"),
-            @Result(property = "meterId", column = "meter_number"),
+            @Result(property = "meterId", column = "meterNumber"),
             @Result(property = "serialNumber", column = "meterNumber"),
             @Result(property = "customerName", column = "fullname"),
             @Result(property = "customerPhone", column = "phoneNumber"),
@@ -165,3 +175,12 @@ public interface OdysseyMapper {
     })
     List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId, UUID orgId);
 }
+
+
+//if (payment.getLongitude() != null &&
+//    (payment.getLongitude() < -180 || payment.getLongitude() > 180)) {
+//
+//    throw new IllegalArgumentException(
+//        "Longitude must be between -180 and 180"
+//    );
+//}

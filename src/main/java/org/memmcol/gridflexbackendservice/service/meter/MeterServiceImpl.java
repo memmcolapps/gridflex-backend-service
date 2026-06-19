@@ -390,6 +390,25 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void insertMDMeterInfo(Meter request, UserModel user) {
+
+        if (request.getMdMeterInfo().getLongitude() != null) {
+            double longitude = Double.parseDouble(request.getMdMeterInfo().getLongitude());
+            if (longitude < -180 || longitude > 180) {
+                throw new IllegalArgumentException(
+                        "Longitude must be between -180 and 180"
+                );
+            }
+        }
+
+        if (request.getMdMeterInfo().getLatitude() != null) {
+            double latitude = Double.parseDouble(request.getMdMeterInfo().getLongitude());
+            if (latitude < -90 || latitude > 90) {
+                throw new IllegalArgumentException(
+                        "Latitude must be between -90 and 90"
+                );
+            }
+        }
+
         request.getMdMeterInfo().setMeterId(request.getId());
         request.getMdMeterInfo().setOrgId(user.getOrgId());
         request.getMdMeterInfo().setCreatedBy(user.getId());
