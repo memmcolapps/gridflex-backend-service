@@ -66,14 +66,14 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             if (!principal.hasScope("METER_READ")) {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
-            Duration duration = Duration.between(startDate, endDate);
-
-            if (duration.isNegative()) {
-                throw new IllegalArgumentException("startDate must be before endDate");
-            }
-            if (duration.toHours() > 24) {
-                throw new IllegalArgumentException("Date range must not exceed 24 hours");
-            }
+//            Duration duration = Duration.between(startDate, endDate);
+//
+//            if (duration.isNegative()) {
+//                throw new IllegalArgumentException("startDate must be before endDate");
+//            }
+//            if (duration.toHours() > 24) {
+//                throw new IllegalArgumentException("Date range must not exceed 24 hours");
+//            }
             List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate, principal.getOrgId());
 
             int totalReadings = allReadings.size();
@@ -129,14 +129,14 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
 
-            Duration duration = Duration.between(startDate, endDate);
-
-            if (duration.isNegative()) {
-                throw new IllegalArgumentException("startDate must be before endDate");
-            }
-            if (duration.toHours() > 24) {
-                throw new IllegalArgumentException("Date range must not exceed 24 hours");
-            }
+//            Duration duration = Duration.between(startDate, endDate);
+//
+//            if (duration.isNegative()) {
+//                throw new IllegalArgumentException("startDate must be before endDate");
+//            }
+//            if (duration.toHours() > 24) {
+//                throw new IllegalArgumentException("Date range must not exceed 24 hours");
+//            }
 
             List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id, principal.getOrgId());
             String desc = "Payment History ("+startDate+" - "+endDate.toString()+")";
