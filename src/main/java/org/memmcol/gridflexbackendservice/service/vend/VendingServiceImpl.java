@@ -152,6 +152,7 @@ public class VendingServiceImpl implements VendingService {
                 kctRequest.setMeterType("STS6");
                 kctRequest.setTometerType("STS6");
                 kctRequest.setAllowkrn(true);
+                kctRequest.setAllow(creditToken.getAllow());
 
                 TokenGenResponse kctResponse = tokenGenClient.generateToken(kctRequest, "/kcttokenGen", "kct");
 
@@ -1226,8 +1227,8 @@ public class VendingServiceImpl implements VendingService {
             List<String> tokens = tokenResponse.getTokens();
 
             kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
-            kctToken.setKct1(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
-            kctToken.setKct1(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
+            kctToken.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+            kctToken.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 //            kctToken.setKct2(tokenResponse.getTokens().get(0));
 //            kctToken.setKct3(tokenResponse.getTokens().get(1));
 //            kctToken.setKct1(generateDummyToken());

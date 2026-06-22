@@ -26,6 +26,7 @@ public class CreditToken implements Serializable {
     private BigDecimal unit;
     private String token;
     private boolean needKCT;
+    private Boolean allow;
 
     public UUID getId() {
         return id;
@@ -169,5 +170,13 @@ public class CreditToken implements Serializable {
 
     public void setNeedKCT(boolean needKCT) {
         this.needKCT = needKCT;
+    }
+
+    public Boolean getAllow() {
+        return allow;
+    }
+
+    public void setAllow(Boolean allow) {
+        this.allow = allow;
     }
 }
