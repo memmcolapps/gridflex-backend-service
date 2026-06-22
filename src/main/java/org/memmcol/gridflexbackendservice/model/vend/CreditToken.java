@@ -25,6 +25,7 @@ public class CreditToken implements Serializable {
     private BigDecimal vatAmount;
     private BigDecimal unit;
     private String token;
+    private boolean needKCT;
 
     public UUID getId() {
         return id;
@@ -162,4 +163,11 @@ public class CreditToken implements Serializable {
         this.meterNumber = meterNumber;
     }
 
+    public boolean isNeedKCT() {
+        return needKCT;
+    }
+
+    public void setNeedKCT(boolean needKCT) {
+        this.needKCT = needKCT;
+    }
 }

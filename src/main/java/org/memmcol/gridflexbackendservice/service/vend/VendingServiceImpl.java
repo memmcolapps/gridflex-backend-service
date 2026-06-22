@@ -137,6 +137,35 @@ public class VendingServiceImpl implements VendingService {
                 );
             }
 
+            // --- KCT Token Generation (before adjustments) ---
+            String kct1 = null;
+            String kct2 = null;
+            String kct3 = null;
+
+            if (creditToken.isNeedKCT()) {
+                TokenGenRequest kctRequest = new TokenGenRequest();
+                kctRequest.setMeterNo(meter.getMeterNumber());
+                kctRequest.setSgc(Integer.parseInt(meter.getNewSgc()));
+                kctRequest.setTosgc(Integer.parseInt(meter.getNewSgc()));
+                kctRequest.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
+                kctRequest.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
+                kctRequest.setMeterType("STS6");
+                kctRequest.setTometerType("STS6");
+                kctRequest.setAllowkrn(true);
+
+                TokenGenResponse kctResponse = tokenGenClient.generateToken(kctRequest, "/kcttokenGen", "kct");
+
+                if (kctResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(kctResponse.getCode())) {
+                    throw new GlobalExceptionHandler.NotFoundException("KCT token generation failed");
+                }
+
+                List<String> tokens = kctResponse.getTokens();
+
+                kct1 = (tokens != null && tokens.size() > 0) ? tokens.get(0) : null;
+                kct2 = (tokens != null && tokens.size() > 1) ? tokens.get(1) : null;
+                kct3 = (tokens != null && tokens.size() > 2) ? tokens.get(2) : null;
+            }
+
 //            String debitPaymentMode = meter.getDebitPaymentMode();
 //            String debitPaymentPlan = meter.getDebitPaymentPlan();
 //            String creditPaymentMode = meter.getCreditPaymentMode();
@@ -249,8 +278,11 @@ public class VendingServiceImpl implements VendingService {
             transaction.setOrgId(user.getOrgId());
             transaction.setUserId(user.getId());
             transaction.setCustomerId(meter.getCustomerId());
-            transaction.setKct1(generateDummyToken());
-            transaction.setKct2(generateDummyToken());
+            // transaction.setKct1(generateDummyToken());
+            // transaction.setKct2(generateDummyToken());
+            transaction.setKct1(kct1);
+            transaction.setKct2(kct2);
+            transaction.setKct3(kct3);
             transaction.setVatAmount(vatAmount);
 
                 int created = vendMapper.createCreditToken(transaction);
@@ -1191,8 +1223,13 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
 
-            kctToken.setKct1(tokenResponse.getTokens().get(0));
-            kctToken.setKct2(tokenResponse.getTokens().get(1));
+            List<String> tokens = tokenResponse.getTokens();
+
+            kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+            kctToken.setKct1(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+            kctToken.setKct1(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
+//            kctToken.setKct2(tokenResponse.getTokens().get(0));
+//            kctToken.setKct3(tokenResponse.getTokens().get(1));
 //            kctToken.setKct1(generateDummyToken());
 //            kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());

@@ -19,10 +19,10 @@ public interface VendMapper {
 
     @Insert("INSERT INTO vending_transactions (" +
             "org_id, meter_id, initial_amount, final_amount, customer_id, user_id, tariff_id, unit, unit_cost, " +
-            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, tx_node_id) " +
+            "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2, kct3, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, #{InitialAmount}, #{FinalAmount}, #{customerId}, #{userId}, #{tariffId}, #{unit}," +
             "#{unitCost}, #{vatAmount}, #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, #{kct1}, " +
-            "#{kct2}, #{txNodeId})")
+            "#{kct2},#{kct3}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createCreditToken(Transaction transaction);
 
