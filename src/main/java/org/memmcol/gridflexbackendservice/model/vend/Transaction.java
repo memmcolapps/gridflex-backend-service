@@ -36,6 +36,7 @@ public class Transaction implements Serializable {
     private String token;
     private String kct1;
     private String kct2;
+    private String kct3;
     private String receiptNo;
     private String tokenType;
 
@@ -249,6 +250,14 @@ public class Transaction implements Serializable {
 
     public void setKct2(String kct2) {
         this.kct2 = kct2;
+    }
+
+    public String getKct3() {
+        return kct3;
+    }
+
+    public void setKct3(String kct3) {
+        this.kct3 = kct3;
     }
 
     public String getReceiptNo() {
