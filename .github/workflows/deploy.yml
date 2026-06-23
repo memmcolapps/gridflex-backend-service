@@ -75,6 +75,20 @@ jobs:
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
             "$JAR_FILE" \
             $SERVER:$REMOTE_PATH
+          
+          echo "Writing env file..."
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /opt/java-webservices/staging.env" << EOF
+          DB_HOST="${{ secrets.STAGING_DB_HOST }}"
+          DB_PORT="${{ secrets.STAGING_DB_PORT }}"
+          DB_NAME="${{ secrets.STAGING_DB_NAME }}"
+          DB_USERNAME="${{ secrets.STAGING_DB_USERNAME }}"
+          DB_PASSWORD="${{ secrets.STAGING_DB_PASSWORD }}"
+          MONGO_HOST="${{ secrets.STAGING_MONGO_HOST }}"
+          MONGO_PORT="${{ secrets.STAGING_MONGO_PORT }}"
+          MONGO_DB="${{ secrets.STAGING_MONGO_DB }}"
+          EOF
+          
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/staging.env"
 
           echo "Deploying (safe SSH execution)..."
           ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
@@ -93,6 +107,10 @@ jobs:
             fi
 
             echo "Starting app..."
+          
+            set -a
+            source /opt/java-webservices/staging.env
+            set +a
 
             nohup java -Dspring.profiles.active=staging \
               -jar /opt/java-webservices/gridflex-backend-service.jar \
@@ -126,6 +144,23 @@ jobs:
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
             "$JAR_FILE" \
             $SERVER:$REMOTE_PATH
+          
+          echo "Writing env file..."
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /opt/java-webservices/prod.env" << EOF
+          DB_HOST="${{ secrets.PROD_DB_HOST }}"
+          DB_PORT="${{ secrets.PROD_DB_PORT }}"
+          DB_NAME="${{ secrets.PROD_DB_NAME }}"
+          DB_USERNAME="${{ secrets.PROD_DB_USERNAME }}"
+          DB_PASSWORD="${{ secrets.PROD_DB_PASSWORD }}"
+          MONGO_HOST="${{ secrets.PROD_MONGO_HOST }}"
+          MONGO_PORT="${{ secrets.PROD_MONGO_PORT }}"
+          MONGO_DB="${{ secrets.PROD_MONGO_DB }}"
+          MONGO_USERNAME="${{ secrets.PROD_MONGO_USERNAME }}"
+          MONGO_PASSWORD="${{ secrets.PROD_MONGO_PASSWORD }}"
+          EOF
+          
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/prod.env"
+
 
           echo "Deploying (safe SSH execution)..."
           ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
@@ -144,6 +179,10 @@ jobs:
             fi
 
             echo "Starting app..."
+          
+            set -a
+            source /opt/java-webservices/staging.env
+            set +a
 
             nohup java -Dspring.profiles.active=prod \
               -jar /opt/java-webservices/gridflex-backend-service.jar \
