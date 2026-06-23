@@ -4,6 +4,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Local override configs (if you ever create these for local dev)
+application-dev.properties.yml
+**/application-dev.properties.yml
+
 ### STS ###
 .apt_generated
 .classpath
@@ -18,6 +22,7 @@ target/
 *.iws
 *.iml
 *.ipr
+.DS_Store
 
 ### NetBeans ###
 /nbproject/private/
