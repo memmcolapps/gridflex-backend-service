@@ -93,7 +93,7 @@ jobs:
           ADMIN_API_VALUE="${{ secrets.ADMIN_API_VALUE }}"
           USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
           SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
-          JWT_SECRETE="${{ secrets.JWT_SECRETE }}"
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
           UPLOAD="${{ secrets.UPLOAD }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
           EOF
@@ -174,7 +174,7 @@ jobs:
           ADMIN_API_VALUE="${{ secrets.ADMIN_API_VALUE }}"
           USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
           SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
-          JWT_SECRETE="${{ secrets.JWT_SECRETE }}"
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
           UPLOAD="${{ secrets.UPLOAD }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
           EOF
