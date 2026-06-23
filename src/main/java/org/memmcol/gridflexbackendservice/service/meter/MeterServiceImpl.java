@@ -3123,8 +3123,8 @@ public class MeterServiceImpl implements MeterService {
 
             String nodeName = user.getNodeInfo().getType();
             List<MeterRequest> meters;
-            if(nodeName.equalsIgnoreCase("Region")){
-
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("Root")){
                 if (filename.endsWith(".csv")) {
                     meters = processAllocateCsv(file.getInputStream());
                 } else if (filename.endsWith(".xlsx")) {
