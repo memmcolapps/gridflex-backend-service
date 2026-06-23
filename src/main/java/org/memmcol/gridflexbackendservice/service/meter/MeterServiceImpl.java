@@ -3209,8 +3209,15 @@ public class MeterServiceImpl implements MeterService {
             }
             // Fetch meters
             List<Meter> meters = meterMapper.getMetersByMeterNumbers(meterNumbers, user.getOrgId(), user.getNodeInfo().getNodeId());
+//            Map<String, Meter> meterMap = meters.stream()
+//                    .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
             Map<String, Meter> meterMap = meters.stream()
-                    .collect(Collectors.toMap(Meter::getMeterNumber, m -> m));
+                    .filter(m -> m.getMeterNumber() != null)
+                    .collect(Collectors.toMap(
+                            m -> m.getMeterNumber().trim(),
+                            m -> m,
+                            (a, b) -> a
+                    ));
 
             // Fetch region → business-hub mappings
             List<RegionBhubServiceCenter> regionHubs = meterMapper.getRegionBhubMappings(regionIds, user.getOrgId());
@@ -3227,10 +3234,13 @@ public class MeterServiceImpl implements MeterService {
             List<Meter> validAllocations = new ArrayList<>();
 
             for (MeterRequest req : subBatch) {
-                Meter meter = meterMap.get(req.getMeterNumber());
+                String reqMeterNo = Optional.ofNullable(req.getMeterNumber()).orElse("").trim();
+
+                Meter meter = meterMap.get(reqMeterNo);
                 RegionMapping mapping = regionNodeIdMap.get(req.getRegionId());
 
                 if (meter == null) {
+                    System.out.println("meter2>>>>: ");
                     GenericResp resp = new GenericResp();
                     resp.setId(req.getMeterNumber());
                     resp.setMessage("Meter Not found");

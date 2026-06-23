@@ -2525,7 +2525,7 @@ public interface MeterMapper {
             "</foreach>",
             "AND (m.meter_stage IN ('Created'))",
             "AND m.org_id = #{orgId}",
-            "AND m.region = #{nodeId}",
+            "AND (m.region = #{nodeId} OR m.root = #{nodeId})",
             "ORDER BY m.created_at DESC",
             "</script>"
     })
