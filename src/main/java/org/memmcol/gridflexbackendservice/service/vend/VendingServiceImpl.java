@@ -71,7 +71,14 @@ public class VendingServiceImpl implements VendingService {
     @Autowired
     private CreditDebitAdjustmentSettlementService adjustmentSettlementService;
 
+    @Autowired
+    private PercentageDebitStrategy percentageDebitStrategy;
+
+    @Autowired
+    private PercentageCreditStrategy percentageCreditStrategy;
+
     @Transactional
+    @Override
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
         UserModel user = handleUserValidation();
         UUID nodeId = user.getNodeInfo().getNodeId();
@@ -130,13 +137,43 @@ public class VendingServiceImpl implements VendingService {
                 );
             }
 
+            // --- KCT Token Generation (before adjustments) ---
+            String kct1 = null;
+            String kct2 = null;
+            String kct3 = null;
+
+            if (creditToken.isNeedKCT()) {
+                TokenGenRequest kctRequest = new TokenGenRequest();
+                kctRequest.setMeterNo(meter.getMeterNumber());
+                kctRequest.setSgc(Integer.parseInt(meter.getNewSgc()));
+                kctRequest.setTosgc(Integer.parseInt(meter.getNewSgc()));
+                kctRequest.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
+                kctRequest.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
+                kctRequest.setMeterType("STS6");
+                kctRequest.setTometerType("STS6");
+                kctRequest.setAllowkrn(true);
+                kctRequest.setAllow(creditToken.getAllow());
+
+                TokenGenResponse kctResponse = tokenGenClient.generateToken(kctRequest, "/kcttokenGen", "kct");
+
+                if (kctResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(kctResponse.getCode())) {
+                    throw new GlobalExceptionHandler.NotFoundException("KCT token generation failed");
+                }
+
+                List<String> tokens = kctResponse.getTokens();
+
+                kct1 = (tokens != null && tokens.size() > 0) ? tokens.get(0) : null;
+                kct2 = (tokens != null && tokens.size() > 1) ? tokens.get(1) : null;
+                kct3 = (tokens != null && tokens.size() > 2) ? tokens.get(2) : null;
+            }
+
 //            String debitPaymentMode = meter.getDebitPaymentMode();
 //            String debitPaymentPlan = meter.getDebitPaymentPlan();
 //            String creditPaymentMode = meter.getCreditPaymentMode();
 //            String creditPaymentPlan = meter.getCreditPaymentPlan();
 
             // --- Process Debits Sequentially ---
-            DebtPaymentResult debtResult = PercentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
+            DebtPaymentResult debtResult = percentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
             
             if (debtResult.getErrorMessage() != null) {
                 throw new GlobalExceptionHandler.NotFoundException(debtResult.getErrorMessage());
@@ -165,7 +202,7 @@ public class VendingServiceImpl implements VendingService {
                     amountAfterDebit.subtract(netTenderAfterDebit);
 
             // --- Process Credits Sequentially (Applied after VAT) ---
-            CreditPaymentResult creditResult = PercentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
+            CreditPaymentResult creditResult = percentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
             BigDecimal creditDeducted = creditResult.getTotalCreditDeducted();
 
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
@@ -242,8 +279,11 @@ public class VendingServiceImpl implements VendingService {
             transaction.setOrgId(user.getOrgId());
             transaction.setUserId(user.getId());
             transaction.setCustomerId(meter.getCustomerId());
-            transaction.setKct1(generateDummyToken());
-            transaction.setKct2(generateDummyToken());
+            // transaction.setKct1(generateDummyToken());
+            // transaction.setKct2(generateDummyToken());
+            transaction.setKct1(kct1);
+            transaction.setKct2(kct2);
+            transaction.setKct3(kct3);
             transaction.setVatAmount(vatAmount);
 
                 int created = vendMapper.createCreditToken(transaction);
@@ -518,7 +558,7 @@ public class VendingServiceImpl implements VendingService {
 //            BigDecimal totalCreditUnits = calculateTotalByType(meters,"credit");
 
             // --- Process Debits Sequentially ---
-            DebtPaymentResult debtResult = PercentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
+            DebtPaymentResult debtResult = percentageDebitStrategy.processDebtsSequentially(meters, creditToken.getInitialAmount(), user.getOrgId(), meter.getMeterId());
             
             if (debtResult.getErrorMessage() != null) {
                 throw new GlobalExceptionHandler.NotFoundException(debtResult.getErrorMessage());
@@ -547,7 +587,7 @@ public class VendingServiceImpl implements VendingService {
                     amountAfterDebit.subtract(netTenderAfterDebit);
 
             // --- Process Credits Sequentially (Applied after VAT) ---
-            CreditPaymentResult creditResult = PercentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
+            CreditPaymentResult creditResult = percentageCreditStrategy.processCreditsSequentially(meters, netTenderAfterDebit, user.getOrgId(), meter.getMeterId());
             BigDecimal creditDeducted = creditResult.getTotalCreditDeducted();
 
             // --- Final Net Tender (After Debit, VAT, and Credit) ---
@@ -1184,8 +1224,13 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
 
-            kctToken.setKct1(tokenResponse.getTokens().get(0));
-            kctToken.setKct2(tokenResponse.getTokens().get(1));
+            List<String> tokens = tokenResponse.getTokens();
+
+            kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+            kctToken.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+            kctToken.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
+//            kctToken.setKct2(tokenResponse.getTokens().get(0));
+//            kctToken.setKct3(tokenResponse.getTokens().get(1));
 //            kctToken.setKct1(generateDummyToken());
 //            kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());

@@ -44,6 +44,7 @@ public class GenericHandler {
     }
 
     public Map<String, String> extractRequestMetadata(HttpServletRequest request) {
+//        System.out.println("Client IP: " + request.getHeader("X-Client-IP"));
         Map<String, String> metadata = new HashMap<>();
         metadata.put("ipAddress", getClientIp(request));
         metadata.put("userAgent", request.getHeader("User-Agent"));
@@ -57,7 +58,7 @@ public class GenericHandler {
         if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
             return ip.split(",")[0].trim();
         }
-        ip = request.getHeader("X-Real-IP");
+        ip = request.getHeader("X-Client-IP");
         if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
             return ip;
         }

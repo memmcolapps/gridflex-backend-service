@@ -129,7 +129,7 @@ public class MeterServiceImpl implements MeterService {
             String nodeType = user.getNodeInfo().getType();
 
             if(!nodeType.equalsIgnoreCase("Region")
-//                    && !nodeType.equalsIgnoreCase("Root")
+                    && !nodeType.equalsIgnoreCase("Root")
             ){
                 throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
             }
@@ -390,6 +390,25 @@ public class MeterServiceImpl implements MeterService {
     }
 
     private void insertMDMeterInfo(Meter request, UserModel user) {
+
+        if (request.getMdMeterInfo().getLongitude() != null) {
+            double longitude = Double.parseDouble(request.getMdMeterInfo().getLongitude());
+            if (longitude < -180 || longitude > 180) {
+                throw new IllegalArgumentException(
+                        "Longitude must be between -180 and 180"
+                );
+            }
+        }
+
+        if (request.getMdMeterInfo().getLatitude() != null) {
+            double latitude = Double.parseDouble(request.getMdMeterInfo().getLongitude());
+            if (latitude < -90 || latitude > 90) {
+                throw new IllegalArgumentException(
+                        "Latitude must be between -90 and 90"
+                );
+            }
+        }
+
         request.getMdMeterInfo().setMeterId(request.getId());
         request.getMdMeterInfo().setOrgId(user.getOrgId());
         request.getMdMeterInfo().setCreatedBy(user.getId());
@@ -900,7 +919,6 @@ public class MeterServiceImpl implements MeterService {
                 }
             }
 
-//            System.out.println(">>>>>>>>>>::: here: "+meters.get(0).getMeterNumber());
             // Apply filtering
             Stream<Meter> meterStream = meters.stream();
             if (meterNumber != null && !meterNumber.isEmpty()) {
@@ -2638,7 +2656,7 @@ public class MeterServiceImpl implements MeterService {
             System.out.println("region: "+verifyMeter.getRegion());
             //Allocate meter
             int result;
-            result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated");
+            result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated", node.getParentId());
             if(result == 0){
                 throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
             }
@@ -2741,7 +2759,8 @@ public class MeterServiceImpl implements MeterService {
             String nodeName = user.getNodeInfo().getType();
             UUID nodeId = user.getNodeInfo().getNodeId();
             List<Meter> meters;
-            if(nodeName.equalsIgnoreCase("Region")) {
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("Root")) {
                 if (filename.endsWith(".csv")) {
                     meters = processCsv(file.getInputStream(), user);
                 } else if (filename.endsWith(".xlsx")) {
@@ -3104,8 +3123,8 @@ public class MeterServiceImpl implements MeterService {
 
             String nodeName = user.getNodeInfo().getType();
             List<MeterRequest> meters;
-            if(nodeName.equalsIgnoreCase("Region")){
-
+            if(nodeName.equalsIgnoreCase("Region")
+                    || nodeName.equalsIgnoreCase("Root")){
                 if (filename.endsWith(".csv")) {
                     meters = processAllocateCsv(file.getInputStream());
                 } else if (filename.endsWith(".xlsx")) {
@@ -3195,14 +3214,21 @@ public class MeterServiceImpl implements MeterService {
 
             // Fetch region → business-hub mappings
             List<RegionBhubServiceCenter> regionHubs = meterMapper.getRegionBhubMappings(regionIds, user.getOrgId());
-            Map<String, UUID> regionNodeIdMap = regionHubs.stream()
-                    .collect(Collectors.toMap(RegionBhubServiceCenter::getRegionId, RegionBhubServiceCenter::getNodeId));
+            Map<String, RegionMapping> regionNodeIdMap = regionHubs.stream()
+                    .collect(Collectors.toMap(
+                            RegionBhubServiceCenter::getRegionId,
+                            r -> new RegionMapping(
+                                    r.getParentId(),
+                                    r.getNodeId()
+                            ),
+                            (a, b) -> a // prevent duplicates crash
+                    ));
 
             List<Meter> validAllocations = new ArrayList<>();
 
             for (MeterRequest req : subBatch) {
                 Meter meter = meterMap.get(req.getMeterNumber());
-                UUID nodeId = regionNodeIdMap.get(req.getRegionId());
+                RegionMapping mapping = regionNodeIdMap.get(req.getRegionId());
 
                 if (meter == null) {
                     GenericResp resp = new GenericResp();
@@ -3214,10 +3240,10 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                if (nodeId == null) {
+                if (mapping == null || mapping.getParentId() == null || mapping.getNodeId() == null) {
                     GenericResp resp = new GenericResp();
                     resp.setId(meter.getMeterNumber());
-                    resp.setMessage("Meter allocate failed: region not found in business hub");
+                    resp.setMessage("Meter allocate failed: region not linked to business hub");
                     resp.setData(meter.getMeterNumber());
 
                     failedRecords.add(resp);
@@ -3225,7 +3251,8 @@ public class MeterServiceImpl implements MeterService {
                     continue;
                 }
 
-                meter.setNodeId(nodeId);
+                meter.setNodeId(mapping.getNodeId());
+                meter.setRegion(mapping.getParentId());
 //                meter.getNodeInfo().setRegionId(req.getRegionId());
                 meter.setOrgId(user.getOrgId());
                 meter.setMeterStage("Pending-allocated");
@@ -3406,7 +3433,7 @@ public class MeterServiceImpl implements MeterService {
 //        String desc = meter.getMeterNumber() + " meter allocated to " + meter.getNodeInfo().getRegionId();
 
         // --- Step 2: Insert into main + version tables ---
-        meterMapper.allocateMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Allocated");
+        meterMapper.allocateMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Allocated", meter.getRegion());
 //        if(result == 0){
 //            throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
 //        }
@@ -4415,7 +4442,6 @@ public class MeterServiceImpl implements MeterService {
             if (batch.isEmpty()) {
                 continue;
             }
-
 
             try {
                 insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);

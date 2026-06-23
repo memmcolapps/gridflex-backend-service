@@ -2,6 +2,7 @@ package org.memmcol.gridflexbackendservice.service.licence;
 
 import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.model.licence.LicenceValidationResult;
+import org.memmcol.gridflexbackendservice.util.TrustedTimeProvider;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -33,7 +34,15 @@ public class LicenceValidator {
                     .build();
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = TrustedTimeProvider.getCurrentTime();
+
+        if (now == null) {
+            return LicenceValidationResult.builder()
+                    .valid(false)
+                    .message("Unable to verify licence time")
+                    .licence(licence)
+                    .build();
+        }
 
         if (now.isAfter(licence.getExpiryDate())) {
             return LicenceValidationResult.builder()

@@ -169,7 +169,7 @@ public class SecurityConfig {
 						"/meter/service/meterInfo-lookup",
 						"/meter/service/readMeter-lookup",
 //						"/standard/auth/token",
-						"/client/setup",
+						"/admin/setup/client",
 						"client/**",
 						"/client/auth/token",
 

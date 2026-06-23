@@ -2,6 +2,8 @@ package org.memmcol.gridflexbackendservice.components;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,10 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -86,7 +85,33 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new RuntimeException("Missing Authorization token");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                Map<String, Object> resp = new HashMap<>();
+                if ((path.startsWith("/odyssey/standard/meter"))) {
+                    List<String> errors = new ArrayList<>();
+
+                    errors.add("Missing Authorization token");
+//                    errors.add("");
+
+                    resp.put("readings", Collections.emptyList());
+                    resp.put("errors", errors);
+                    resp.put("offset", 0);
+                    resp.put("pageLimit", 0);
+                    resp.put("total", 0);
+                    new ObjectMapper().writeValue(response.getOutputStream(), resp);
+
+                } else if((path.startsWith("/odyssey/standard/electricity"))){
+
+                    resp.put("payment", Collections.emptyList());
+                    resp.put("error", "Missing Authorization token");
+                    
+                    new ObjectMapper().writeValue(response.getOutputStream(), resp);
+                }
+                else {
+                    throw new RuntimeException("Missing Authorization token");
+                }
+
             }
 
             String token = authHeader.substring(7);
@@ -106,17 +131,18 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
             List<String> scopes = jwt.getClaim("scopes").asList(String.class);
 
             // Optional DB validation (extra security layer)
-            ApiClient client = apiClientRepository.findByClientId(clientId)
+            ApiClient client = apiClientRepository.findByClientId(clientId.toLowerCase())
                     .orElseThrow(() -> new RuntimeException("Invalid client"));
 
-            if (!client.getStatus()) {
-                throw new RuntimeException("Client disabled");
+            if (!Boolean.TRUE.equals(client.getStatus())) {
+                throw new RuntimeException("Client deactivated");
             }
 
             ThirdPartyPrincipal principal = new ThirdPartyPrincipal(
                     clientId,
                     userId,
                     orgId,
+                    client.getStatus(),
                     scopes
             );
 
@@ -146,6 +172,30 @@ public class ThirdPartyAuthenticationFilter extends OncePerRequestFilter {
 
             new ObjectMapper().writeValue(response.getOutputStream(), error);
 
+//        }  catch (TokenExpiredException ex) {
+//
+//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("responsecode", "401");
+//            error.put("responsedesc", "Token has expired");
+//            error.put("responsedata", "");
+//
+//            new ObjectMapper().writeValue(response.getOutputStream(), error);
+//
+//        } catch (JWTVerificationException ex) {
+//
+//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("responsecode", "401");
+//            error.put("responsedesc", "Invalid token");
+//            error.put("responsedata", "");
+//
+//            new ObjectMapper().writeValue(response.getOutputStream(), error);
+//
         } catch (Exception ex) {
 //            log.error("Odyssey authentication failed", ex);
 

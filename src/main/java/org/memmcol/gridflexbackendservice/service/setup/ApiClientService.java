@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.setup;
 import lombok.RequiredArgsConstructor;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.model.setup.ApiClientResponse;
+import org.memmcol.gridflexbackendservice.model.setup.ChangeState;
 import org.memmcol.gridflexbackendservice.model.setup.CreateApiClientRequest;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.ApiClient;
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.ApiClientScope;
@@ -32,18 +33,13 @@ public class ApiClientService {
     public Map<String, Object> createClient(CreateApiClientRequest request) {
 
         Optional<ApiClient> existing = apiClientRepository
-                .findByClientNameAndOrgId(request.getClientName(), request.getOrgId());
+                .findByClientNameAndOrgId(request.getClientName().toLowerCase(), request.getOrgId());
 
         if (existing.isPresent()) {
             ApiClient client = existing.get();
 
             throw new GlobalExceptionHandler.NotFoundException("Client already exist - clientId: " + client.getClientId());
 
-            // You already created it before → do NOT regenerate secret
-//            return ApiClientResponse.builder()
-//                    .clientId(client.getClientId())
-//                    .message("Client already exist")
-//                    .build();
         }
 
         UUID clientUuid = UUID.randomUUID();
@@ -79,5 +75,36 @@ public class ApiClientService {
         ApiClientResponse resp = new ApiClientResponse(clientId, rawSecret, null);
 
         return ResponseMap.response(status.getSuccessCode(), "Created successfully", resp);
+    }
+
+    @Transactional
+    public Map<String, Object> changeStateClient(ChangeState request) {
+
+        ApiClient existing = apiClientRepository
+                .findByClientNameAndOrgId(
+                        request.getClientName().toLowerCase(),
+                        request.getOrgId()
+                )
+                .orElseThrow(() ->
+                        new GlobalExceptionHandler.NotFoundException("Client not found")
+                );
+
+        // deactivate or activate based on request
+        existing.setStatus(request.getStatus());
+
+        // optional audit fields
+        existing.setUpdatedAt(LocalDateTime.now());
+
+        apiClientRepository.save(existing);
+
+        String message = request.getStatus()
+                ? "Client activated successfully"
+                : "Client deactivated successfully";
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                message,
+                ""
+        );
     }
 }

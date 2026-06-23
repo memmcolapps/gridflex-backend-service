@@ -2224,9 +2224,14 @@ public interface MeterMapper {
             "#{meter.meterManufacturer}, #{meter.meterType}, 'Pending-allocated', 'Active', #{meter.meterNumber}, " +
             "#{nodeId}, #{meter.oldSgc}, #{meter.newSgc}, #{meter.oldKrn}, #{meter.newKrn}, #{meter.oldTariffIndex}, #{meter.newTariffIndex}, " +
             "#{meter.createdAt}, #{meter.updatedAt}, #{meter.type}, #{userId}, #{desc}, #{meter.id}, #{meter.smartStatus}, " +
-            "#{meter.region}, #{meter.root})")
+            "#{region}, #{meter.root})")
 //    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int allocateMeterVersion(@Param("meter") Meter meter, @Param("nodeId") UUID nodeId, @Param("userId") UUID userId, @Param("desc") String desc);
+    int allocateMeterVersion(
+            @Param("meter") Meter meter,
+            @Param("nodeId") UUID nodeId,
+            @Param("userId") UUID userId,
+            @Param("desc") String desc,
+            @Param("region") UUID region);
 
     @Insert("INSERT INTO meters_version (" +
             "org_id, sim_number, meter_category, meter_class, meter_manufacturer, meter_type, fixed_energy," +
@@ -3097,8 +3102,8 @@ public interface MeterMapper {
 
     @Select({
             "<script>",
-            "SELECT node_id AS nodeId, region_id AS regionId, org_id AS orgId FROM region_bhub_service_centers ",
-            "WHERE org_id = #{orgId}",
+            "SELECT node_id AS nodeId, region_id AS regionId, org_id AS orgId, parent_id AS parentId FROM region_bhub_service_centers ",
+            "WHERE org_id = #{orgId} AND type ILIKE '%business%' ",
             "AND region_id IN",
             "<foreach collection='regionIds' item='id' open='(' separator=',' close=')'>",
             "#{id}",

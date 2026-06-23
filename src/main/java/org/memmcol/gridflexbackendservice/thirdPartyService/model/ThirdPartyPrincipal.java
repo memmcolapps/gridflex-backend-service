@@ -13,6 +13,7 @@ public class ThirdPartyPrincipal {
     private final String clientId;
     private final UUID id;
     private final UUID orgId;
+    private final Boolean status;
     private final List<String> scopes;
 
     /**

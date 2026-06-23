@@ -85,7 +85,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 || path.startsWith("/data-collection/schedules")
                 || path.startsWith("/meter/service/meterInfo-lookup")
                 || path.startsWith("/meter/service/readMeter-lookup")
-                || path.startsWith("/client/setup")
+                || path.startsWith("/admin/setup/client")
                 || path.startsWith("/client/auth/token")
                 || path.startsWith("/licence/service");
     }
@@ -152,7 +152,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 //        }
 
         // ADMIN / API KEY AUTH PATHS
-        if (path.startsWith("/client/setup")
+        if (path.startsWith("/admin/setup/client")
                 || path.startsWith("/client/auth/token")
                 || path.startsWith("/auth/service/generate-otp")
                 || path.startsWith("/auth/service/forget-password")) {

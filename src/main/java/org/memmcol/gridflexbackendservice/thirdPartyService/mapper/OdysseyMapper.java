@@ -8,8 +8,8 @@ import org.memmcol.gridflexbackendservice.thirdPartyService.model.MeterReadingMo
 import org.memmcol.gridflexbackendservice.thirdPartyService.model.OdysseyPaymentModel;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Mapper
 public interface OdysseyMapper {
@@ -40,9 +40,9 @@ public interface OdysseyMapper {
                         customer_fullname,
                         connection_type
                     FROM vw_meter_summary
-                    WHERE meter_stage = 'Assigned'
+                    WHERE meter_stage = 'Assigned' AND org_id = #{orgId}
                 ) ms
-                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id
+                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
                 -- latest energy reading
                 LEFT JOIN LATERAL (
                     SELECT
@@ -73,7 +73,8 @@ public interface OdysseyMapper {
                     SELECT
                         balance_after_adjustment
                     FROM vw_meter_summary m2
-                    WHERE m2.meter_number = ms.meter_number
+                    WHERE m2.meter_number = ms.meter_number 
+                      AND m2.org_id = #{orgId}
                       AND m2.adjustment_type = 'debit'
                     ORDER BY m2.created_at DESC
                     LIMIT 1
@@ -85,6 +86,7 @@ public interface OdysseyMapper {
                         balance_after_adjustment
                     FROM vw_meter_summary m3
                     WHERE m3.meter_number = ms.meter_number
+                      AND m3.org_id = #{orgId}
                       AND m3.adjustment_type = 'credit'
                     ORDER BY m3.created_at DESC
                     LIMIT 1
@@ -110,49 +112,75 @@ public interface OdysseyMapper {
 
 
     })
-    List<MeterReadingModel> getMeterReadingModel(Date startDate, Date endDate);
+    List<MeterReadingModel> getMeterReadingModel(LocalDateTime startDate, LocalDateTime endDate, UUID orgId);
 
 
     @Select("""
-        SELECT
-            c.customer_id AS customerId,
-            m.account_number,
-            m.id,
-            m.meter_number,
-            CONCAT(c.firstname,' ', c.lastname) AS fullname,
-            c.phone_number,
-            md.latitude,
-            md.longitude,
-            COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
-            t.id AS transaction_id,
-            COALESCE(t.initial_amount, 0) AS amount,
-            COALESCE(t.unit, 0) AS transactionKwh,
-            COALESCE(t.created_at, CURRENT_TIMESTAMP) AS timestamp,
-            'NGN' AS currency
-        FROM customers c
-        LEFT JOIN meters m ON c.customer_id = m.customer_id
-        LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
-        LEFT JOIN md_meters_info md ON m.id = md.meter_id
-        LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
-        WHERE m.meter_stage = 'Assigned'
-          AND t.created_at BETWEEN #{startDate} AND #{endDate}
+        <script>
+            SELECT
+                COALESCE(c.customer_id, '') AS customerId,
+                COALESCE(m.account_number, '') AS accountNumber,
+                m.id,
+                COALESCE(m.meter_number, '') AS meterNumber,
+                CONCAT(c.firstname,'', c.lastname) AS fullname,
+                COALESCE(c.phone_number, '') AS phoneNumber,
+                CASE
+                      WHEN NULLIF(md.latitude, '0.000000') IS NOT NULL
+                           AND CAST(md.latitude AS DOUBLE PRECISION) BETWEEN -90 AND 90
+                      THEN CAST(md.latitude AS DOUBLE PRECISION)
+                      ELSE '0.000000'
+                  END AS latitude,
+                CASE
+                    WHEN NULLIF(md.longitude, '0.000000') IS NOT NULL
+                         AND CAST(md.longitude AS DOUBLE PRECISION) BETWEEN -180 AND 180
+                    THEN CAST(md.longitude AS DOUBLE PRECISION)
+                    ELSE '0.000000'
+                END AS longitude,
+                COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
+                t.id,
+                COALESCE(t.receipt_no, '') AS transactionId,
+                COALESCE(t.initial_amount, 0) AS amount,
+                COALESCE(t.unit, 0) AS transactionKwh,
+                COALESCE(t.created_at, CURRENT_TIMESTAMP) AS timestamp,
+                'NGN' AS currency
+            FROM customers c
+            LEFT JOIN meters m ON c.customer_id = m.customer_id
+            LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
+            LEFT JOIN md_meters_info md ON m.id = md.meter_id
+            LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
+            WHERE m.meter_stage = 'Assigned' AND m.org_id = #{orgId}
+              AND t.created_at BETWEEN #{startDate} AND #{endDate}
+            
+            <if test="txId != null and txId != ''">
+              AND t.receipt_no = #{txId}
+            </if>
+        
+        </script>
         """)
-
     @Results({
             @Result(property = "customerId", column = "customerId"),
-            @Result(property = "customerAccountId", column = "account_number"),
-//            @Result(property = "meterId", column = "id"),
-            @Result(property = "meterId", column = "meter_number"),
+            @Result(property = "customerAccountId", column = "accountNumber"),
+            @Result(property = "meterId", column = "meterNumber"),
+            @Result(property = "serialNumber", column = "meterNumber"),
             @Result(property = "customerName", column = "fullname"),
-            @Result(property = "customerPhone", column = "phone_number"),
+            @Result(property = "customerPhone", column = "phoneNumber"),
             @Result(property = "latitude", column = "latitude"),
             @Result(property = "longitude", column = "longitude"),
             @Result(property = "transactionType", column = "transactionType"),
-            @Result(property = "transactionId", column = "transaction_id"),
+            @Result(property = "transactionId", column = "transactionId"),
             @Result(property = "amount", column = "amount"),
             @Result(property = "timestamp", column = "timestamp"),
             @Result(property = "currency", column = "currency"),
             @Result(property = "transactionKwh", column = "transactionKwh")
     })
-    List<OdysseyPaymentModel> getOddyseyPayment(Date startDate, Date endDate);
+    List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId, UUID orgId);
 }
+
+
+//if (payment.getLongitude() != null &&
+//    (payment.getLongitude() < -180 || payment.getLongitude() > 180)) {
+//
+//    throw new IllegalArgumentException(
+//        "Longitude must be between -180 and 180"
+//    );
+//}

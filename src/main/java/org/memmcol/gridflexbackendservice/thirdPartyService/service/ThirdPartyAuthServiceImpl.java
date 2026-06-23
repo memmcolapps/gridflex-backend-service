@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +48,7 @@ public class ThirdPartyAuthServiceImpl {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             System.out.println("metadata");
-            ApiClient client = apiClientRepository.findByClientId(request.getClientId())
+            ApiClient client = apiClientRepository.findByClientId(request.getClientId().toLowerCase())
                     .orElseThrow(() -> new RuntimeException("Client not found"));
 
             if (!client.getStatus()) {
@@ -73,12 +74,14 @@ public class ThirdPartyAuthServiceImpl {
             return JWT.create()
                     .withSubject(request.getClientId())
                     .withClaim("userId", client.getId().toString())
+                    .withClaim("status", client.getStatus())
                     .withClaim("orgId", client.getOrgId() != null ? client.getOrgId().toString() : null)
                     .withArrayClaim("scopes", scopes.toArray(new String[0]))
+//                    .withIssuedAt(new Date())
+//                    .withExpiresAt(new Date(System.currentTimeMillis() + 86_400_000L)) // 24 hours
                     .sign(Algorithm.HMAC256(secret));
 
         } catch (Exception exception) {
-//            genericHandler.logIncidentReport("Third party authentication service failed");
             genericHandler.logAndSaveException(exception, "third party authentication");
             throw exception;
         }
