@@ -61,6 +61,12 @@ public class OdysseyApi {
     @PreAuthorize("hasAuthority('METER_READ')")
     public ResponseEntity<?> meterReading(
             @Parameter(
+                    description = "Transaction ID (optional)",
+                    example = "RCPT-20260522103357-202006002221"
+            )
+            @RequestParam(value = "ID", required = false, defaultValue = "") String ID,
+
+            @Parameter(
                     description = "Start date and time in ISO format (UTC)",
                     example = "2026-05-07T00:00:00Z",
                     required = true
@@ -82,9 +88,9 @@ public class OdysseyApi {
 
             @Parameter(
                     description = "Default maximum records per page",
-                    example = "1000"
+                    example = "100"
             )
-            @RequestParam(required = false, defaultValue = "1000") int pageLimit
+            @RequestParam(required = false, defaultValue = "100") int pageLimit
     ) {
         try {
             OffsetDateTime startOffset = OffsetDateTime.parse(FROM);
@@ -93,7 +99,7 @@ public class OdysseyApi {
             LocalDateTime startDate = startOffset.toLocalDateTime();
             LocalDateTime endDate = endOffset.toLocalDateTime();
 
-            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, offset, pageLimit);
+            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, offset, pageLimit, ID);
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
@@ -140,7 +146,7 @@ public class OdysseyApi {
                     description = "Transaction ID (optional)",
                     example = "RCPT-20260522103357-202006002221"
             )
-            @RequestParam(value = "id", required = false, defaultValue = "") String id,
+            @RequestParam(value = "ID", required = false, defaultValue = "") String ID,
 
             @Parameter(
                     description = "Start date and time in ISO format (UTC)",
@@ -163,9 +169,9 @@ public class OdysseyApi {
 
             @Parameter(
                     description = "Default maximum records per page",
-                    example = "1000"
+                    example = "0"
             )
-            @RequestParam(required = false, defaultValue = "1000") int pageLimit
+            @RequestParam(required = false, defaultValue = "0") int pageLimit
 
     ) {
         try {
@@ -176,7 +182,7 @@ public class OdysseyApi {
             LocalDateTime startDate = startOffset.toLocalDateTime();
             LocalDateTime endDate = endOffset.toLocalDateTime();
 
-            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate, id, offset, pageLimit);
+            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate, ID, offset, pageLimit);
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
