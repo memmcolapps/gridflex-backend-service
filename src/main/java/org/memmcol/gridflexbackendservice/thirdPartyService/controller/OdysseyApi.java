@@ -78,13 +78,13 @@ public class OdysseyApi {
                     description = "Pagination offset",
                     example = "0"
             )
-            @RequestParam(required = false, defaultValue = "0") int OFFSET,
+            @RequestParam(required = false, defaultValue = "0") int offset,
 
             @Parameter(
                     description = "Default maximum records per page",
                     example = "1000"
             )
-            @RequestParam(required = false, defaultValue = "1000") int PAGELIMIT
+            @RequestParam(required = false, defaultValue = "1000") int pageLimit
     ) {
         try {
             OffsetDateTime startOffset = OffsetDateTime.parse(FROM);
@@ -93,7 +93,7 @@ public class OdysseyApi {
             LocalDateTime startDate = startOffset.toLocalDateTime();
             LocalDateTime endDate = endOffset.toLocalDateTime();
 
-            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, OFFSET, PAGELIMIT);
+            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, offset, pageLimit);
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
@@ -159,13 +159,13 @@ public class OdysseyApi {
                     description = "Pagination offset",
                     example = "0"
             )
-            @RequestParam(required = false, defaultValue = "0") int OFFSET,
+            @RequestParam(required = false, defaultValue = "0") int offset,
 
             @Parameter(
                     description = "Default maximum records per page",
                     example = "1000"
             )
-            @RequestParam(required = false, defaultValue = "1000") int PAGELIMIT
+            @RequestParam(required = false, defaultValue = "1000") int pageLimit
 
     ) {
         try {
@@ -176,7 +176,7 @@ public class OdysseyApi {
             LocalDateTime startDate = startOffset.toLocalDateTime();
             LocalDateTime endDate = endOffset.toLocalDateTime();
 
-            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate, id, OFFSET, PAGELIMIT);
+            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate, id, offset, pageLimit);
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
