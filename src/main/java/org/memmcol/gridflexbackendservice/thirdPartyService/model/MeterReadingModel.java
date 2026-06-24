@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,7 +19,7 @@ public class MeterReadingModel {
     private String meterNumber;
     private BigDecimal energyConsumptionKwh;
     private Integer timeIntervalMinutes;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 
     private String customerAccountId;
     private BigDecimal energyReadingKwh;

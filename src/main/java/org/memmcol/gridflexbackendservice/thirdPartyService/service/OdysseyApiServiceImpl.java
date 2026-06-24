@@ -20,8 +20,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -118,7 +116,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
     @Transactional
     @Override
-    public Map<String, Object> odysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String id) {
+    public Map<String, Object> odysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String id, int offSet, int pageLimit) {
         Map<String, Object> response = new HashMap<>();
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
@@ -139,10 +137,23 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 //            }
 
             List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id, principal.getOrgId());
+
+            int totalReadings = data.size();
+            int fromIndex = Math.min(offSet, totalReadings);
+            int toIndex = Math.min(offSet + pageLimit, totalReadings);
+
+            List<OdysseyPaymentModel> pagedReadings = data.subList(fromIndex, toIndex);
+
+            response.put("readings", pagedReadings);
+            response.put("errors", "");
+            response.put("offset", offSet);
+            response.put("pageLimit", pageLimit);
+            response.put("total", totalReadings);
+
             String desc = "Payment History ("+startDate+" - "+endDate.toString()+")";
 
-            response.put("payments", data);
-            response.put("errors", "");
+//            response.put("payments", data);
+//            response.put("errors", "");
 
             AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
             try {
