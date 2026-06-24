@@ -141,19 +141,20 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		ObjectMapper mapper = new ObjectMapper();
 		List<Map<String, Object>> permissionTree = mapper.readValue(userDetails.getPermissionTreeJson(), List.class);
 
+		UserModel user = authMapper.findAuthByUserEmail(userDetails.getUsername());
+
 		String access_token = JWT.create()
 				.withSubject(userDetails.getUsername())
 				.withClaim("roles", userDetails.getAuthorities().stream()
 						.map(GrantedAuthority::getAuthority)
 						.collect(Collectors.toList()))
-				.withClaim("permission_tree", permissionTree) // your structured JSON
+				.withClaim("permission_tree", permissionTree)
+				.withClaim("orgId", user.getOrgId() != null ? user.getOrgId().toString() : null)
 				.withIssuedAt(new Date())
 				.withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24 hours
 				.sign(algorithm);
 
 		authMapper.updateLoginState(userDetails.getUsername(), LocalDateTime.now(ZoneId.of("Africa/Lagos")));
-
-		UserModel user = authMapper.findAuthByUserEmail(userDetails.getUsername());
 		List<Node> nodes = authMapper.getNodeWithChildren(user.getNodeId(), user.getOrgId());
 
 		Map<UUID, Node> nodeMap = new HashMap<>();
