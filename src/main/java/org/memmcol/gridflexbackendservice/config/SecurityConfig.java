@@ -178,7 +178,7 @@ public class SecurityConfig {
 						"/licence/service/deactivate",
 						"/licence/service/fingerprint",
 						"/licence/service/validate",
-						"/licence/service/upload"
+						"/licence/service/save"
 //						"/uploads/**"
 				).permitAll()
 //				.requestMatchers("/v3/api-docs/Admin").hasAuthority("ADMIN")

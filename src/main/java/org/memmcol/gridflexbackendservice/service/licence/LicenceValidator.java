@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
 
 public class LicenceValidator {
 
-    private static final long EXPIRY_WARNING_DAYS = 7;
+    private static final long EXPIRY_WARNING_DAYS = 30;
 
     private LicenceValidator() {
     }

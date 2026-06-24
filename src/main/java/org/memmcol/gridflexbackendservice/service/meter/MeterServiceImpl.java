@@ -27,6 +27,8 @@ import org.memmcol.gridflexbackendservice.service.hes.HesAuthServiceImpl;
 import org.memmcol.gridflexbackendservice.util.GenericResp;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.HandlePermission;
+import org.memmcol.gridflexbackendservice.util.LicenceFileUtil;
+import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
@@ -69,6 +71,9 @@ public class MeterServiceImpl implements MeterService {
 
     @Value("${file.base-address}"+"${app.base-path}")
     private String uploadDir;
+
+    @Value("${gridflex.data.dir}")
+    private String dataDir;
 
 //    @Autowired
 //    private AuditRepository auditRepository;
@@ -137,6 +142,9 @@ public class MeterServiceImpl implements MeterService {
             validateMeterRequest(request, user);
 
             resolveNodeHierarchy(request, nodeId, user.getOrgId());
+
+            // --- Licence Meter Limit Check ---
+            checkLicenceMeterLimit(user.getOrgId(), 1);
 
             // --- Step 2: Insert Meter + Versions ---
             int result1 = meterMapper.insertMeter(request);
@@ -4278,7 +4286,23 @@ public class MeterServiceImpl implements MeterService {
             throw new IllegalArgumentException("Meter list cannot be empty");
         }
 
+        // --- Licence Meter Limit Check (import up to limit) ---
         int totalRecords = meters.size();
+        Licence licence = LicenceFileUtil.readLicenceFile(dataDir, user.getOrgId());
+        if (licence != null && licence.getMaxMeters() > 0) {
+            int currentMeters = meterMapper.countMetersByOrgId(user.getOrgId());
+            int remaining = licence.getMaxMeters() - currentMeters;
+            if (remaining <= 0) {
+                throw new GlobalExceptionHandler.NotFoundException(
+                    "Licence meter limit reached (" + licence.getMaxMeters() + " max). No more meters can be added."
+                );
+            }
+            if (meters.size() > remaining) {
+                meters = new ArrayList<>(meters.subList(0, remaining));
+                result.put("warning", "Imported " + remaining + " of " + totalRecords + " meters. Licence limit of " + licence.getMaxMeters() + " reached.");
+            }
+        }
+
         int successCount = 0;
 
         // ------------------------------------------
@@ -6283,6 +6307,9 @@ public class MeterServiceImpl implements MeterService {
     public void assignVirtualSingleTransactional(Meter meter, UserModel user) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
+        // --- Licence Meter Limit Check ---
+        checkLicenceMeterLimit(user.getOrgId(), 1);
+
         meterMapper.insertMeter(meter);
         meter.setMeterId(meter.getId());
         meterMapper.assignMeterVersion(meter, meter.getNodeId(), meter.getId(), "Pending Assigned");
@@ -6432,6 +6459,20 @@ public class MeterServiceImpl implements MeterService {
         }
 
         list.add(obis);
+    }
+
+    private void checkLicenceMeterLimit(UUID orgId, int newMeterCount) {
+        Licence licence = LicenceFileUtil.readLicenceFile(dataDir, orgId);
+        if (licence == null) return;
+        if (licence.getMaxMeters() <= 0) return;
+
+        int currentMeters = meterMapper.countMetersByOrgId(orgId);
+        if (currentMeters + newMeterCount > licence.getMaxMeters()) {
+            int remaining = Math.max(0, licence.getMaxMeters() - currentMeters);
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Licence limit reached. " + remaining + " of " + licence.getMaxMeters() + " meters remaining"
+            );
+        }
     }
 
     private List<AssignMeterToCustomer> processAssignExcel(InputStream inputStream) throws IOException {
