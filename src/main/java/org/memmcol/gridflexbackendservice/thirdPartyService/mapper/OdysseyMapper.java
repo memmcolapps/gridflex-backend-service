@@ -17,17 +17,17 @@ public interface OdysseyMapper {
     @Select("""
                 SELECT
                     ms.meter_id,
-                    ms.meter_number,
-                    ms.meter_account_number,
-                	ms.customer_fullname,
-                	ms.connection_type,
+                    COALESCE(ms.meter_number, '') AS meter_number,
+                    COALESCE(ms.meter_account_number, '') AS meter_account_number,
+                    COALESCE(ms.customer_fullname, '') AS customer_fullname,
+                    COALESCE(ms.connection_type, '') AS connection_type,
                 	md.latitude,
                 	md.longitude,
                 
-                    latest.energy_consumption AS energy_consumption_kwh,
-                    latest.entry_timestamp,
-                
-                    interval_data.time_interval_minutes,
+                    COALESCE(latest.energy_consumption, 0) AS energy_consumption_kwh,
+                    COALESCE(latest.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp,
+                    COALESCE(interval_data.time_interval_minutes, 0) AS time_interval_minutes,
+                    
                 
                     COALESCE(debt.balance_after_adjustment, 0) AS debt,
                     COALESCE(credit.balance_after_adjustment, 0) AS credit
@@ -35,19 +35,19 @@ public interface OdysseyMapper {
                 FROM (
                     SELECT DISTINCT
                         meter_id,
-                        meter_number,
-                        meter_account_number,
-                        customer_fullname,
-                        connection_type
+                        COALESCE(meter_number, '') AS meter_number,
+                        COALESCE(meter_account_number, '') AS meter_account_number,
+                        COALESCE(customer_fullname, '') AS customer_fullname,
+                        COALESCE(connection_type, '') AS connection_type
                     FROM vw_meter_summary
-                    WHERE meter_stage = 'Assigned' AND org_id = #{orgId}
+                    WHERE meter_stage IN ('Assigned', 'Assigned-edited') AND org_id = #{orgId}
                 ) ms
                 LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
                 -- latest energy reading
                 LEFT JOIN LATERAL (
                     SELECT
-                        de.energy_consumption,
-                        de.entry_timestamp
+                        COALESCE(de.energy_consumption, 0) AS energy_consumption,
+                        COALESCE(de.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp
                     FROM vw_daily_energy_consumption de
                     WHERE de.meter_serial = ms.meter_number
                       AND de.entry_timestamp BETWEEN
@@ -91,7 +91,7 @@ public interface OdysseyMapper {
                     ORDER BY m3.created_at DESC
                     LIMIT 1
                 ) credit ON TRUE
-                WHERE latest.entry_timestamp IS NOT NULL;
+            
         """)
     @Results({
             @Result(property = "meterId", column = "meter_number"),
@@ -113,7 +113,6 @@ public interface OdysseyMapper {
 
     })
     List<MeterReadingModel> getMeterReadingModel(LocalDateTime startDate, LocalDateTime endDate, UUID orgId);
-
 
     @Select("""
         <script>
@@ -148,7 +147,7 @@ public interface OdysseyMapper {
             LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
             LEFT JOIN md_meters_info md ON m.id = md.meter_id
             LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
-            WHERE m.meter_stage = 'Assigned' AND m.org_id = #{orgId}
+            WHERE m.meter_stage IN ('Assigned', 'Assigned-edited') AND m.org_id = #{orgId}
               AND t.created_at BETWEEN #{startDate} AND #{endDate}
             
             <if test="txId != null and txId != ''">

@@ -146,6 +146,7 @@ public class SecurityConfig {
 						"/swagger-resources/**",
 						"/webjars/**",
 						"/api/**",
+						"/apidoc/**",
 						"/gridflex/api-docs/**",
 						"/gridflex/api-docs/Client Authentication",
 						"/gridflex/api-docs/Odyssey"
