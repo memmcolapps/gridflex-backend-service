@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface ThirdPartyApiService {
 
-    Map<String, Object> odysseyMeterReading(LocalDateTime startDate, LocalDateTime endDate, int offSet, int pageLimit);
+    Map<String, Object> odysseyMeterReading(LocalDateTime startDate, LocalDateTime endDate, int offSet, int pageLimit, String id);
 
     Map<String, Object> odysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String id, int offSet, int pageLimit);
 }

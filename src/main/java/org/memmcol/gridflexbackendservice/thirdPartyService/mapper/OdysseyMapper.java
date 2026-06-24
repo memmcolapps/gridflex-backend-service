@@ -15,6 +15,7 @@ import java.util.UUID;
 public interface OdysseyMapper {
 
     @Select("""
+            <script> 
                 SELECT
                     ms.meter_id,
                     COALESCE(ms.meter_number, '') AS meter_number,
@@ -40,7 +41,7 @@ public interface OdysseyMapper {
                         COALESCE(customer_fullname, '') AS customer_fullname,
                         COALESCE(connection_type, '') AS connection_type
                     FROM vw_meter_summary
-                    WHERE meter_stage IN ('Assigned', 'Assigned-edited') AND org_id = #{orgId}
+                    WHERE meter_stage IN ('Assigned', 'Assign-edited') AND org_id = #{orgId}
                 ) ms
                 LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
                 -- latest energy reading
@@ -91,7 +92,11 @@ public interface OdysseyMapper {
                     ORDER BY m3.created_at DESC
                     LIMIT 1
                 ) credit ON TRUE
-            
+                WHERE 1 = 1
+                     <if test="meterId != null and meterId != ''">
+                         AND ms.meter_number = #{meterId}
+                     </if>
+        </script>    
         """)
     @Results({
             @Result(property = "meterId", column = "meter_number"),
@@ -112,7 +117,11 @@ public interface OdysseyMapper {
 
 
     })
-    List<MeterReadingModel> getMeterReadingModel(LocalDateTime startDate, LocalDateTime endDate, UUID orgId);
+    List<MeterReadingModel> getMeterReadingModel(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            UUID orgId,
+            String meterId);
 
     @Select("""
         <script>
@@ -144,10 +153,17 @@ public interface OdysseyMapper {
                 'NGN' AS currency
             FROM customers c
             LEFT JOIN meters m ON c.customer_id = m.customer_id
-            LEFT JOIN credit_debit_adjustment adj ON m.id = adj.meter_id
             LEFT JOIN md_meters_info md ON m.id = md.meter_id
             LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
-            WHERE m.meter_stage IN ('Assigned', 'Assigned-edited') AND m.org_id = #{orgId}
+            LEFT JOIN LATERAL (
+                SELECT a.status
+                FROM credit_debit_adjustment a
+                WHERE a.meter_id = m.id
+                ORDER BY a.created_at DESC
+                LIMIT 1
+            ) adj ON TRUE
+            
+            WHERE m.meter_stage IN ('Assigned', 'Assign-edited') AND m.org_id = #{orgId}
               AND t.created_at BETWEEN #{startDate} AND #{endDate}
             
             <if test="txId != null and txId != ''">
