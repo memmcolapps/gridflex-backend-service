@@ -32,6 +32,7 @@ public class ClearTamper implements Serializable {
     private String receiptNo;
     private UUID tariffId;
     private UUID txNodeId;
+//    private Boolean allow;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -227,4 +228,12 @@ public class ClearTamper implements Serializable {
     public void setTxNodeId(UUID txNodeId) {
         this.txNodeId = txNodeId;
     }
+
+//    public Boolean getAllow() {
+//        return allow;
+//    }
+//
+//    public void setAllow(Boolean allow) {
+//        this.allow = allow;
+//    }
 }

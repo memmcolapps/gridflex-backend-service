@@ -29,6 +29,7 @@ public class ClearCredit implements Serializable {
     private String kct2;
     private String kct3;
     private UUID txNodeId;
+//    private Boolean allow;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -192,4 +193,12 @@ public class ClearCredit implements Serializable {
     public void setTxNodeId(UUID txNodeId) {
         this.txNodeId = txNodeId;
     }
+
+//    public Boolean getAllow() {
+//        return allow;
+//    }
+//
+//    public void setAllow(Boolean allow) {
+//        this.allow = allow;
+//    }
 }
