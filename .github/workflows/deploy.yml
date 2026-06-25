@@ -201,7 +201,7 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /opt/java-webservices/staging.env
+            source /opt/java-webservices/prod.env
             set +a
 
             nohup java -Dspring.profiles.active=prod \
