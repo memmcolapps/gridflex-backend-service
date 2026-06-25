@@ -66,10 +66,10 @@ jobs:
         if: github.ref == 'refs/heads/staging'
         run: |
           SERVER="${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}"
-          REMOTE_PATH="/opt/java-webservices/gridflex-backend-service.jar"
+          REMOTE_PATH="/${{ LOCATION }}/gridflex-backend-service.jar"
 
           echo "Creating remote directory..."
-          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/java-webservices"
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ LOCATION }}"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -77,7 +77,7 @@ jobs:
             $SERVER:$REMOTE_PATH
           
           echo "Writing env file..."
-          ssh -o StrictHostKeyChecking=no $SERVER "cat > /opt/java-webservices/staging.env" << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ LOCATION }}/staging.env" << EOF
           DB_HOST="${{ secrets.STAGING_DB_HOST }}"
           DB_PORT="${{ secrets.STAGING_DB_PORT }}"
           DB_NAME="${{ secrets.STAGING_DB_NAME }}"
@@ -96,9 +96,14 @@ jobs:
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
           UPLOAD="${{ secrets.UPLOAD }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
+          EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
+          EUREKA_PORT="${{ secrets.EUREKA_ADDRESS }}"
+          BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
+          DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
+          STAGING_DOMAIN="${{ secrets.STAGING_DOMAIN }}"
           EOF
           
-          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/staging.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ LOCATION }}/staging.env"
 
           echo "Deploying (safe SSH execution)..."
           ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
@@ -119,12 +124,12 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /opt/java-webservices/staging.env
+            source /${{ LOCATION }}/staging.env
             set +a
 
             nohup java -Dspring.profiles.active=staging \
-              -jar /opt/java-webservices/gridflex-backend-service.jar \
-              > /opt/java-webservices/gridflex-staging.log 2>&1 &
+              -jar /${{ LOCATION }}/gridflex-backend-service.jar \
+              > /${{ LOCATION }}/gridflex-staging.log 2>&1 &
 
             echo "Deployment complete"
           EOF
@@ -145,10 +150,10 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           SERVER="${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}"
-          REMOTE_PATH="/opt/java-webservices/gridflex-backend-service.jar"
+          REMOTE_PATH="/${{ LOCATION }}/gridflex-backend-service.jar"
 
           echo "Creating remote directory..."
-          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/java-webservices"
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ LOCATION }}"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -156,7 +161,7 @@ jobs:
             $SERVER:$REMOTE_PATH
           
           echo "Writing env file..."
-          ssh -o StrictHostKeyChecking=no $SERVER "cat > /opt/java-webservices/prod.env" << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ LOCATION }}/prod.env" << EOF
           DB_HOST="${{ secrets.PROD_DB_HOST }}"
           DB_PORT="${{ secrets.PROD_DB_PORT }}"
           DB_NAME="${{ secrets.PROD_DB_NAME }}"
@@ -177,9 +182,14 @@ jobs:
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
           UPLOAD="${{ secrets.UPLOAD }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
+          EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
+          EUREKA_PORT="${{ secrets.EUREKA_ADDRESS }}"
+          BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
+          DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
+          PROD_DOMAIN="${{ secrets.PROD_DOMAIN }}"
           EOF
           
-          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/prod.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ LOCATION }}/prod.env"
 
 
           echo "Deploying (safe SSH execution)..."
@@ -201,12 +211,12 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /opt/java-webservices/prod.env
+            source /${{ LOCATION }}/prod.env
             set +a
 
             nohup java -Dspring.profiles.active=prod \
-              -jar /opt/java-webservices/gridflex-backend-service.jar \
-              > /opt/java-webservices/gridflex-prod.log 2>&1 &
+              -jar /${{ LOCATION }}/gridflex-backend-service.jar \
+              > /${{ LOCATION }}/gridflex-prod.log 2>&1 &
 
             echo "Deployment complete"
           EOF
