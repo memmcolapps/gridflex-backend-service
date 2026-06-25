@@ -61,8 +61,8 @@ public class OdysseyApi {
     @PreAuthorize("hasAuthority('METER_READ')")
     public ResponseEntity<?> meterReading(
             @Parameter(
-                    description = "Transaction ID (optional)",
-                    example = "RCPT-20260522103357-202006002221"
+                    description = "Transaction ID (optional)"
+//                    example = "RCPT-20260522103357-202006002221"
             )
             @RequestParam(value = "ID", required = false, defaultValue = "") String ID,
 
@@ -150,14 +150,14 @@ public class OdysseyApi {
 
             @Parameter(
                     description = "Start date and time in ISO format (UTC)",
-                    example = "2026-05-07T00:00:00Z",
+                    example = "2026-04-07T00:00:00Z",
                     required = true
             )
             @RequestParam String FROM,
 
             @Parameter(
                     description = "End date and time in ISO format (UTC)",
-                    example = "2026-05-07T23:59:59Z",
+                    example = "2026-06-07T23:59:59Z",
                     required = true
             )
             @RequestParam String TO,
