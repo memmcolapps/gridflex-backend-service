@@ -144,7 +144,11 @@ public interface OdysseyMapper {
                     THEN CAST(md.longitude AS DOUBLE PRECISION)
                     ELSE '0.000000'
                 END AS longitude,
-                COALESCE(adj.status, 'FULL_PAYMENT') AS transactionType,
+                CASE
+                    WHEN adj.status = 'PAID' THEN 'FULL_PAYMENT'
+                    WHEN adj.status IN ('PARTIALLY_PAID', 'UNPAID') THEN 'INSTALLMENT_PAYMENT'
+                    ELSE 'FULL_PAYMENT'
+                END AS transactionType,
                 t.id,
                 COALESCE(t.receipt_no, '') AS transactionId,
                 COALESCE(t.initial_amount, 0) AS amount,
