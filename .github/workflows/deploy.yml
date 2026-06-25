@@ -98,10 +98,10 @@ jobs:
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
           EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
-          EUREKA_PORT="${{ secrets.EUREKA_ADDRESS }}"
+          EUREKA_PORT="${{ secrets.EUREKA_PORT }}"
           BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
           DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
-          PROD_DOMAIN="${{ secrets.PROD_DOMAIN }}"
+          STAGING_DOMAIN="${{ secrets.STAGING_DOMAIN }}"
           LOCATION="${{ secrets.LOCATION }}"
           EOF
           
@@ -184,7 +184,7 @@ jobs:
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
           EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
-          EUREKA_PORT="${{ secrets.EUREKA_ADDRESS }}"
+          EUREKA_PORT="${{ secrets.EUREKA_PORT }}"
           BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
           DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
           PROD_DOMAIN="${{ secrets.PROD_DOMAIN }}"
