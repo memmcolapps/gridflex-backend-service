@@ -1,6 +1,7 @@
 package org.memmcol.gridflexbackendservice.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.memmcol.gridflexbackendservice.model.licence.SaveLicenceRequest;
 import org.memmcol.gridflexbackendservice.service.licence.LicenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +27,10 @@ public class LicenceController {
         return licenceService.getLicence(orgId);
     }
 
-    @GetMapping("/deactivate")
-    public Map<String, Object> deactivate(@RequestParam UUID orgId) {
-        return licenceService.deactivateLicence(orgId);
-    }
+//    @GetMapping("/deactivate")
+//    public Map<String, Object> deactivate(@RequestParam UUID orgId) {
+//        return licenceService.deactivateLicence(orgId);
+//    }
 
     @PostMapping("/generate-fingerprint")
     public Map<String, Object> generateFingerprint(@RequestParam UUID orgId) {
@@ -41,10 +42,9 @@ public class LicenceController {
         return licenceService.getFingerprint(orgId);
     }
 
-    @PostMapping("/upload")
-    public Map<String, Object> upload(
-            @RequestParam UUID orgId,
-            @RequestBody String licenceContent) {
-        return licenceService.uploadLicence(orgId, licenceContent);
+    @PostMapping("/save")
+    public Map<String, Object> save(@RequestBody SaveLicenceRequest request) {
+        return licenceService.saveLicense(request.getOrgId(), request.getEncryptedLicence());
     }
+
 }

@@ -12,6 +12,7 @@ import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.model.licence.LicenceValidationResult;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.util.LicenceEncryptionUtil;
+import org.memmcol.gridflexbackendservice.util.LicenceFileUtil;
 import org.memmcol.gridflexbackendservice.util.LicenceSecurityConstants;
 import org.memmcol.gridflexbackendservice.util.LicenceSignerUtil;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -176,50 +177,23 @@ public class LicenceServiceImpl implements LicenceService {
 
     @Transactional
     @Override
-    public Map<String, Object> deactivateLicence(UUID organisationId) {
-        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-
-        try {
-            Licence licence = readLicenceFile(organisationId);
-
-            if (licence == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Licence not found");
-            }
-
-            licence.setActive(false);
-            writeLicenceFile(licence);
-
-            AuditLog auditLog = buildAuditLog("licence deactivated", "licence", licence, metadata);
-            safeAuditService.saveAudit(auditLog);
-
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Licence deactivated successfully",
-                    licence
-            );
-
-        } catch (Exception ex) {
-            genericHandler.logIncidentReport("Licence deactivation failed");
-            genericHandler.logAndSaveException(ex, "deactivating licence");
-            throw ex;
-        }
-    }
-
-    @Transactional
-    @Override
     public Map<String, Object> generateFingerprint(UUID organisationId) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
         try {
-            String encryptedFingerprint = hardwareBindingService.generateAndSaveFingerprintFile(organisationId);
+            Map<String, String> fingerprintData = hardwareBindingService.generateAndSaveFingerprintFile(organisationId);
 
             AuditLog auditLog = buildAuditLog("fingerprint generated", "licence", organisationId, metadata);
             safeAuditService.saveAudit(auditLog);
 
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("machineId", fingerprintData.get("hash"));
+            responseData.put("encryptedFingerprint", fingerprintData.get("encryptedContent"));
+
             return ResponseMap.response(
                     status.getSuccessCode(),
                     "Fingerprint generated and saved successfully",
-                    encryptedFingerprint
+                    responseData
             );
 
         } catch (Exception ex) {
@@ -231,11 +205,52 @@ public class LicenceServiceImpl implements LicenceService {
 
     @Transactional
     @Override
+    public Map<String, Object> saveLicense(UUID orgId, String encryptedLicence) {
+        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+        try {
+            if (orgId == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Organisation ID is required");
+            }
+
+            if (encryptedLicence == null || encryptedLicence.isBlank()) {
+                throw new GlobalExceptionHandler.NotFoundException("Encrypted licence content is required");
+            }
+
+            try {
+                Path licencePath = Paths.get(getLicenceDir(), orgId + ".lic");
+                Files.createDirectories(licencePath.getParent());
+                Files.write(licencePath, encryptedLicence.getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to write licence file", e);
+            }
+
+            AuditLog auditLog = buildAuditLog("licence saved", "licence", orgId, metadata);
+            safeAuditService.saveAudit(auditLog);
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    "Licence saved successfully",
+                    null
+            );
+
+        } catch (GlobalExceptionHandler.NotFoundException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            genericHandler.logIncidentReport("Licence save failed");
+            genericHandler.logAndSaveException(ex, "saving licence");
+            throw ex;
+        }
+    }
+
+    @Transactional
+    @Override
     public Map<String, Object> getFingerprint(UUID organisationId) {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
         try {
-            String fingerprintContent = hardwareBindingService.readFingerprintFile(organisationId);
+//            String fingerprintContent
+            Map<String, String> fingerprintContent = hardwareBindingService.readFingerprintFile(organisationId);
 
             if (fingerprintContent == null) {
                 return ResponseMap.response(
@@ -245,13 +260,17 @@ public class LicenceServiceImpl implements LicenceService {
                 );
             }
 
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("machineId", fingerprintContent.get("hash"));
+            responseData.put("encryptedFingerprint", fingerprintContent.get("encryptedContent"));
+
             AuditLog auditLog = buildAuditLog("fingerprint retrieved", "licence", organisationId, metadata);
             safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
                     "Fingerprint retrieved successfully",
-                    fingerprintContent
+                    responseData
             );
 
         } catch (Exception ex) {
@@ -261,45 +280,8 @@ public class LicenceServiceImpl implements LicenceService {
         }
     }
 
-    @Transactional
-    @Override
-    public Map<String, Object> uploadLicence(UUID organisationId, String licenceContent) {
-        Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-
-        try {
-            Path licencePath = Paths.get(getLicenceDir(), organisationId + ".lic");
-            Files.createDirectories(licencePath.getParent());
-            Files.write(licencePath, licenceContent.getBytes());
-
-            AuditLog auditLog = buildAuditLog("licence uploaded", "licence", organisationId, metadata);
-            safeAuditService.saveAudit(auditLog);
-
-            return ResponseMap.response(
-                    status.getSuccessCode(),
-                    "Licence uploaded successfully",
-                    null
-            );
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload licence file", e);
-        }
-    }
-
     private Licence readLicenceFile(UUID organisationId) {
-        Path licencePath = Paths.get(getLicenceDir(), organisationId + ".lic");
-        File licenceFile = licencePath.toFile();
-
-        if (!licenceFile.exists()) {
-            return null;
-        }
-
-        try {
-            String encryptedContent = new String(Files.readAllBytes(licencePath));
-            String decryptedContent = LicenceEncryptionUtil.decrypt(encryptedContent, LicenceSecurityConstants.getEncryptionKey());
-            return objectMapper.readValue(decryptedContent, Licence.class);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read licence file", e);
-        }
+        return LicenceFileUtil.readLicenceFile(dataDir, organisationId);
     }
 
     private void writeLicenceFile(Licence licence) {

@@ -146,6 +146,7 @@ public class SecurityConfig {
 						"/swagger-resources/**",
 						"/webjars/**",
 						"/api/**",
+						"/apidoc/**",
 						"/gridflex/api-docs/**",
 						"/gridflex/api-docs/Client Authentication",
 						"/gridflex/api-docs/Odyssey"
@@ -178,7 +179,7 @@ public class SecurityConfig {
 						"/licence/service/deactivate",
 						"/licence/service/fingerprint",
 						"/licence/service/validate",
-						"/licence/service/upload"
+						"/licence/service/save"
 //						"/uploads/**"
 				).permitAll()
 //				.requestMatchers("/v3/api-docs/Admin").hasAuthority("ADMIN")

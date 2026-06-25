@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
@@ -60,41 +61,50 @@ public class OdysseyApi {
     @PreAuthorize("hasAuthority('METER_READ')")
     public ResponseEntity<?> meterReading(
             @Parameter(
-                    description = "Start date and time in ISO format",
-                    example = "2026-05-07T00:00:00",
-                    required = true
+                    description = "Transaction ID (optional)"
+//                    example = "RCPT-20260522103357-202006002221"
             )
-            @RequestParam String from,
+            @RequestParam(value = "ID", required = false, defaultValue = "") String ID,
 
             @Parameter(
-                    description = "End date and time in ISO format",
-                    example = "2026-05-07T23:59:59",
+                    description = "Start date and time in ISO format (UTC)",
+                    example = "2026-05-07T00:00:00Z",
                     required = true
             )
-            @RequestParam String to,
+            @RequestParam String FROM,
+
+            @Parameter(
+                    description = "Start date and time in ISO format (UTC)",
+                    example = "2026-05-08T20:10:04Z",
+                    required = true
+            )
+            @RequestParam String TO,
 
             @Parameter(
                     description = "Pagination offset",
                     example = "0"
             )
-            @RequestParam(required = false, defaultValue = "0") int offSet,
+            @RequestParam(required = false, defaultValue = "0") int offset,
 
             @Parameter(
                     description = "Default maximum records per page",
-                    example = "10"
+                    example = "100"
             )
-            @RequestParam(required = false, defaultValue = "10") int pageLimit
+            @RequestParam(required = false, defaultValue = "100") int pageLimit
     ) {
         try {
-            LocalDateTime startDate = LocalDateTime.parse(from);
-            LocalDateTime endDate = LocalDateTime.parse(to);
+            OffsetDateTime startOffset = OffsetDateTime.parse(FROM);
+            OffsetDateTime endOffset = OffsetDateTime.parse(TO);
 
-            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, offSet, pageLimit);
+            LocalDateTime startDate = startOffset.toLocalDateTime();
+            LocalDateTime endDate = endOffset.toLocalDateTime();
+
+            Map<String, Object> result = thirdPartyApiService.odysseyMeterReading(startDate, endDate, offset, pageLimit, ID);
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
                     "readings",
-                    "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ss"
+                    "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ssZ"
             );
         } catch (IllegalArgumentException e) {
             return badRequest("readings", "There was a problem accessing data, please try again");
@@ -136,33 +146,48 @@ public class OdysseyApi {
                     description = "Transaction ID (optional)",
                     example = "RCPT-20260522103357-202006002221"
             )
-            @RequestParam(value = "id", required = false, defaultValue = "") String id,
+            @RequestParam(value = "ID", required = false, defaultValue = "") String ID,
 
             @Parameter(
-                    description = "Start date and time in ISO format",
-                    example = "2026-05-07T00:00:00",
+                    description = "Start date and time in ISO format (UTC)",
+                    example = "2026-04-07T00:00:00Z",
                     required = true
             )
-            @RequestParam String from,
+            @RequestParam String FROM,
 
             @Parameter(
-                    description = "End date and time in ISO format",
-                    example = "2026-05-07T23:59:59",
+                    description = "End date and time in ISO format (UTC)",
+                    example = "2026-06-07T23:59:59Z",
                     required = true
             )
-            @RequestParam String to
+            @RequestParam String TO,
+            @Parameter(
+                    description = "Pagination offset",
+                    example = "0"
+            )
+            @RequestParam(required = false, defaultValue = "0") int offset,
+
+            @Parameter(
+                    description = "Default maximum records per page",
+                    example = "0"
+            )
+            @RequestParam(required = false, defaultValue = "0") int pageLimit
+
     ) {
         try {
 
-            LocalDateTime startDate = LocalDateTime.parse(from);
-            LocalDateTime endDate = LocalDateTime.parse(to);
+            OffsetDateTime startOffset = OffsetDateTime.parse(FROM);
+            OffsetDateTime endOffset = OffsetDateTime.parse(TO);
 
-            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate, id);
+            LocalDateTime startDate = startOffset.toLocalDateTime();
+            LocalDateTime endDate = endOffset.toLocalDateTime();
+
+            Map<String, Object> result = thirdPartyApiService.odysseyPayment(startDate, endDate, ID, offset, pageLimit);
             return ResponseEntity.ok(result);
         } catch (DateTimeParseException e) {
             return badRequest(
                     "payments",
-                    "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ss"
+                    "Invalid date format. Expected format: yyyy-MM-ddTHH:mm:ssZ"
             );
         } catch (IllegalArgumentException e) {
             return badRequest("payments", "There was a problem accessing data, please try again");

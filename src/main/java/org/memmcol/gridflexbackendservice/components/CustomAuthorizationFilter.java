@@ -64,6 +64,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         return path.startsWith("/swagger-ui")
                 || path.startsWith("/gridflex/api-docs")
                 || path.startsWith("/api")
+                || path.startsWith( "/apidoc")
                 || path.startsWith("/swagger-resources")
                 || path.startsWith("/webjars")
                 || path.startsWith("/actuator/prometheus")
@@ -96,62 +97,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 		String path = request.getServletPath();
 
-//		// Define exempt paths where authorization is not required
-//		Set<String> exemptPaths = Set.of(
-//				"/service/alerts",
-//				"/auth/service/admin/login",
-//                "/auth/service/generate-otp",
-//                "/auth/service/forget-password",
-//				"/actuator/prometheus",
-//				"/service/reports/summary",
-//				"/service/trigger/daily",
-//				"/service/trigger/monthly",
-//				"/band/service/clear-cache",
-//                "/auth/service/test",
-//                "/data-collection/schedules",
-//                "/meter/service/meterInfo-lookup",
-//                "/meter/service/readMeter-lookup",
-//                "/admin/setup/api-clients",
-//                "/standard/auth/token",
-//                "/api/licence/generate-fingerprint",
-//                "/api/licence/get",
-//                "/api/licence/deactivate",
-//                "/api/licence/fingerprint",
-//                "/api/licence/validate",
-//                "/api/licence/upload",
-//                "/swagger-ui",
-//                "/swagger-ui.html",
-//                "/v3/api-docs/**",
-//                "/v3/api-docs",
-//                "/swagger-resources/**",
-//                "/webjars/**"
-//		);
-//
-//        // Check if the path ends with any exempt pattern
-//        boolean isExempt = exemptPaths.stream()
-//                .anyMatch(path::endsWith);
-//
-//        // If the path is exempt, skip the authorization filter
-//        if (isExempt) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-//
-//        if (path.startsWith("/swagger-ui")
-//                || path.startsWith("/v3/api-docs")
-//                || path.startsWith("/swagger-resources")
-//                || path.startsWith("/webjars")) {
-//
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-//
-//        if (path.startsWith("/odyssey/")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-
-        // ADMIN / API KEY AUTH PATHS
         if (path.startsWith("/admin/setup/client")
                 || path.startsWith("/client/auth/token")
                 || path.startsWith("/auth/service/generate-otp")

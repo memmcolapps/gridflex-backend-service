@@ -1241,7 +1241,7 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setUserId(user.getId());
             kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
             kctToken.setTariffId(meter.getTariffId());
-            kctToken.setToken(generateDummyToken());
+//            kctToken.setToken(generateDummyToken());
 
             int kct = vendMapper.createKctToken(kctToken);
             if(kct == 0) {
@@ -1352,6 +1352,12 @@ public class VendingServiceImpl implements VendingService {
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
+
+            List<String> tokens = tokenResponse.getTokens();
+
+            clearTamper.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+            clearTamper.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+            clearTamper.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 //
             clearTamper.setToken(tokenResponse.getTokens().get(0));
 //            clearTamper.setToken(generateDummyToken());
@@ -1362,8 +1368,8 @@ public class VendingServiceImpl implements VendingService {
             clearTamper.setUserId(user.getId());
             clearTamper.setReceiptNo(generateReceiptNumber(clearTamper.getMeterNumber()));
             clearTamper.setTariffId(meter.getTariffId());
-            clearTamper.setKct1(generateDummyToken());
-            clearTamper.setKct2(generateDummyToken());
+//            clearTamper.setKct1(generateDummyToken());
+//            clearTamper.setKct2(generateDummyToken());
             clearTamper.setTxNodeId(nodeId);
 
             int clear = vendMapper.createClearToken(clearTamper);
@@ -1434,6 +1440,12 @@ public class VendingServiceImpl implements VendingService {
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
+
+            List<String> tokens = tokenResponse.getTokens();
+
+            clearCredit.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+            clearCredit.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+            clearCredit.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 //
             clearCredit.setToken(tokenResponse.getTokens().get(0));
 //            clearCredit.setToken(generateDummyToken());
@@ -1444,8 +1456,8 @@ public class VendingServiceImpl implements VendingService {
             clearCredit.setUserId(user.getId());
             clearCredit.setReceiptNumber(generateReceiptNumber(clearCredit.getMeterNumber()));
             clearCredit.setTariffId(meter.getTariffId());
-            clearCredit.setKct1(generateDummyToken());
-            clearCredit.setKct2(generateDummyToken());
+//            clearCredit.setKct1(generateDummyToken());
+//            clearCredit.setKct2(generateDummyToken());
             clearCredit.setTxNodeId(nodeId);
 
             int clear = vendMapper.createClearCredit(clearCredit);
@@ -1514,6 +1526,11 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
 
+            List<String> tokens = tokenResponse.getTokens();
+
+            kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+            kctToken.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+            kctToken.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 
             kctToken.setToken(tokenResponse.getTokens().get(0));
 //            kctToken.setToken(generateDummyToken());
@@ -1524,8 +1541,8 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setUserId(user.getId());
             kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
             kctToken.setTariffId(meter.getTariffId());
-            kctToken.setKct1(generateDummyToken());
-            kctToken.setKct2(generateDummyToken());
+//            kctToken.setKct1(generateDummyToken());
+//            kctToken.setKct2(generateDummyToken());
             kctToken.setTxNodeId(nodeId);
 
             int clear = vendMapper.createCompensationToken(kctToken);

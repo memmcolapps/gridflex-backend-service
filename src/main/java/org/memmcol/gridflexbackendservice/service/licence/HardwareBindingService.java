@@ -1,5 +1,6 @@
 package org.memmcol.gridflexbackendservice.service.licence;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.memmcol.gridflexbackendservice.model.licence.HardwareFingerprint;
 import org.memmcol.gridflexbackendservice.model.licence.Licence;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -51,7 +54,7 @@ public class HardwareBindingService {
         return verifyFingerprint(licence.getHardwareFingerprint());
     }
 
-    public String generateAndSaveFingerprintFile(UUID organisationId) {
+    public Map<String, String> generateAndSaveFingerprintFile(UUID organisationId) {
         try {
             HardwareFingerprint fingerprint = generateFingerprint();
 
@@ -62,19 +65,29 @@ public class HardwareBindingService {
             Files.createDirectories(fingerprintPath.getParent());
             Files.write(fingerprintPath, encryptedContent.getBytes());
 
-            return encryptedContent;
+            Map<String, String> result = new HashMap<>();
+            result.put("hash", fingerprint.getHash());
+            result.put("encryptedContent", encryptedContent);
+            return result;
         } catch (IOException e) {
             throw new RuntimeException("Failed to generate fingerprint file", e);
         }
     }
 
-    public String readFingerprintFile(UUID organisationId) {
+    public Map<String, String> readFingerprintFile(UUID organisationId) {
         try {
             Path fingerprintPath = Paths.get(getFingerprintDir(), organisationId + ".txt");
             if (!Files.exists(fingerprintPath)) {
                 return null;
             }
-            return new String(Files.readAllBytes(fingerprintPath));
+
+            String content = Files.readString(fingerprintPath);
+
+            return objectMapper.readValue(
+                    content,
+                    new TypeReference<Map<String, String>>() {}
+            );
+//            return new String(Files.readAllBytes(fingerprintPath));
         } catch (IOException e) {
             throw new RuntimeException("Failed to read fingerprint file", e);
         }

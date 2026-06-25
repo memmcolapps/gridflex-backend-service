@@ -86,6 +86,16 @@ jobs:
           MONGO_HOST="${{ secrets.STAGING_MONGO_HOST }}"
           MONGO_PORT="${{ secrets.STAGING_MONGO_PORT }}"
           MONGO_DB="${{ secrets.STAGING_MONGO_DB }}"
+          HES_PORT="${{ secrets.HES_PORT }}"
+          HES_ADDRESS="${{ secrets.STAGING_HES_ADDRESS }}"
+          T_ADDRESS="${{ secrets.T_ADDRESS }}"
+          T_PORT="${{ secrets.T_PORT }}"
+          ADMIN_API_VALUE="${{ secrets.ADMIN_API_VALUE }}"
+          USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
+          SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          UPLOAD="${{ secrets.UPLOAD }}"
+          HEADER_KEY="${{ secrets.HEADER_KEY }}"
           EOF
           
           ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/staging.env"
@@ -157,6 +167,16 @@ jobs:
           MONGO_DB="${{ secrets.PROD_MONGO_DB }}"
           MONGO_USERNAME="${{ secrets.PROD_MONGO_USERNAME }}"
           MONGO_PASSWORD="${{ secrets.PROD_MONGO_PASSWORD }}"
+          HES_PORT="${{ secrets.HES_PORT }}"
+          HES_ADDRESS="${{ secrets.PROD_HES_ADDRESS }}"
+          T_ADDRESS="${{ secrets.T_ADDRESS }}"
+          T_PORT="${{ secrets.T_PORT }}"
+          ADMIN_API_VALUE="${{ secrets.ADMIN_API_VALUE }}"
+          USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
+          SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          UPLOAD="${{ secrets.UPLOAD }}"
+          HEADER_KEY="${{ secrets.HEADER_KEY }}"
           EOF
           
           ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/prod.env"

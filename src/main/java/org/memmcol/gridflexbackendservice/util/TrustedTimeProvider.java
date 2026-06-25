@@ -24,6 +24,7 @@ public class TrustedTimeProvider {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(TIME_API_URL))
                     .GET()
+                    .timeout(java.time.Duration.ofSeconds(5))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -34,8 +35,8 @@ public class TrustedTimeProvider {
                 return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             }
         } catch (Exception e) {
-            System.err.println("Failed to fetch trusted time: " + e.getMessage());
+            System.err.println("Failed to fetch trusted time, falling back to system time: " + e.getMessage());
         }
-        return null;
+        return LocalDateTime.now();
     }
 }

@@ -20,8 +20,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -51,7 +49,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
     @Transactional
     @Override
-    public Map<String, Object> odysseyMeterReading(LocalDateTime startDate, LocalDateTime endDate, int offSet, int pageLimit) {
+    public Map<String, Object> odysseyMeterReading(LocalDateTime startDate, LocalDateTime endDate, int offSet, int pageLimit, String meterId) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -74,19 +72,32 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 //            if (duration.toHours() > 24) {
 //                throw new IllegalArgumentException("Date range must not exceed 24 hours");
 //            }
-            List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate, principal.getOrgId());
+            List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate, principal.getOrgId(), meterId);
+
+//            int totalReadings = allReadings.size();
+//            int fromIndex = Math.min(offSet, totalReadings);
+//            int toIndex = Math.min(offSet + pageLimit, totalReadings);
+//
+//            List<MeterReadingModel> pagedReadings =
+//                    allReadings.subList(fromIndex, toIndex);
 
             int totalReadings = allReadings.size();
-            int fromIndex = Math.min(offSet, totalReadings);
-            int toIndex = Math.min(offSet + pageLimit, totalReadings);
-
-            List<MeterReadingModel> pagedReadings =
-                    allReadings.subList(fromIndex, toIndex);
+            int fromIndex = Math.max(offSet, 0);
+            List<MeterReadingModel> pagedReadings;
+            if (pageLimit <= 0) {
+                // show all records from offset to end
+                fromIndex = Math.min(fromIndex, totalReadings);
+                pagedReadings = allReadings.subList(fromIndex, totalReadings);
+            } else {
+                fromIndex = Math.min(fromIndex, totalReadings);
+                int toIndex = Math.min(fromIndex + pageLimit, totalReadings);
+                pagedReadings = allReadings.subList(fromIndex, toIndex);
+            }
 
             response.put("readings", pagedReadings);
             response.put("errors", Collections.emptyList());
             response.put("offset", offSet);
-            response.put("pageLimit", pageLimit);
+            response.put("pageLimit", pageLimit <= 0 ? totalReadings : pageLimit);
             response.put("total", totalReadings);
 
             String desc = "Meter Reading ("+startDate+" - "+endDate+")";
@@ -118,7 +129,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
     @Transactional
     @Override
-    public Map<String, Object> odysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String id) {
+    public Map<String, Object> odysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String id, int offSet, int pageLimit) {
         Map<String, Object> response = new HashMap<>();
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
@@ -139,10 +150,29 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 //            }
 
             List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id, principal.getOrgId());
-            String desc = "Payment History ("+startDate+" - "+endDate.toString()+")";
 
-            response.put("payments", data);
+            int totalReadings = data.size();
+            int fromIndex = Math.max(offSet, 0);
+            List<OdysseyPaymentModel> pagedReadings;
+            if (pageLimit <= 0) {
+                // show all records from offset to end
+                fromIndex = Math.min(fromIndex, totalReadings);
+                pagedReadings = data.subList(fromIndex, totalReadings);
+            } else {
+                fromIndex = Math.min(fromIndex, totalReadings);
+                int toIndex = Math.min(fromIndex + pageLimit, totalReadings);
+                pagedReadings = data.subList(fromIndex, toIndex);
+            }
+
+//            List<OdysseyPaymentModel> pagedReadings = data.subList(fromIndex, toIndex);
+
+            response.put("payments", pagedReadings);
             response.put("errors", "");
+            response.put("offset", offSet);
+            response.put("pageLimit", pageLimit <= 0 ? totalReadings : pageLimit);
+            response.put("total", totalReadings);
+
+            String desc = "Payment History ("+startDate+" - "+endDate.toString()+")";
 
             AuditLog auditLog = buildAuditLog(principal.getClientId(), desc, "Client", metadata);
             try {
