@@ -166,7 +166,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
 
 //            List<OdysseyPaymentModel> pagedReadings = data.subList(fromIndex, toIndex);
 
-            response.put("readings", pagedReadings);
+            response.put("payments", pagedReadings);
             response.put("errors", "");
             response.put("offset", offSet);
             response.put("pageLimit", pageLimit <= 0 ? totalReadings : pageLimit);
