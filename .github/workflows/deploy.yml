@@ -66,10 +66,10 @@ jobs:
         if: github.ref == 'refs/heads/staging'
         run: |
           SERVER="${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}"
-          REMOTE_PATH="/opt/java-webservices/gridflex-backend-service.jar"
+          REMOTE_PATH="/${{ secrets.LOCATION }}/gridflex-backend-service.jar"
 
           echo "Creating remote directory..."
-          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/java-webservices"
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.LOCATION }}"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -77,7 +77,7 @@ jobs:
             $SERVER:$REMOTE_PATH
           
           echo "Writing env file..."
-          ssh -o StrictHostKeyChecking=no $SERVER "cat > /opt/java-webservices/staging.env" << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ secrets.LOCATION }}/staging.env" << EOF
           DB_HOST="${{ secrets.STAGING_DB_HOST }}"
           DB_PORT="${{ secrets.STAGING_DB_PORT }}"
           DB_NAME="${{ secrets.STAGING_DB_NAME }}"
@@ -86,6 +86,8 @@ jobs:
           MONGO_HOST="${{ secrets.STAGING_MONGO_HOST }}"
           MONGO_PORT="${{ secrets.STAGING_MONGO_PORT }}"
           MONGO_DB="${{ secrets.STAGING_MONGO_DB }}"
+          MONGO_USERNAME="${{ secrets.STAGING_MONGO_USERNAME }}"
+          MONGO_PASSWORD="${{ secrets.STAGING_MONGO_PASSWORD }}"
           HES_PORT="${{ secrets.HES_PORT }}"
           HES_ADDRESS="${{ secrets.STAGING_HES_ADDRESS }}"
           T_ADDRESS="${{ secrets.T_ADDRESS }}"
@@ -94,11 +96,16 @@ jobs:
           USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
           SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          UPLOAD="${{ secrets.UPLOAD }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
+          EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
+          EUREKA_PORT="${{ secrets.EUREKA_PORT }}"
+          BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
+          DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
+          STAGING_DOMAIN="${{ secrets.STAGING_DOMAIN }}"
+          LOCATION="${{ secrets.LOCATION }}"
           EOF
           
-          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/staging.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/staging.env"
 
           echo "Deploying (safe SSH execution)..."
           ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
@@ -119,12 +126,12 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /opt/java-webservices/staging.env
+            source /${{ secrets.LOCATION }}/staging.env
             set +a
 
             nohup java -Dspring.profiles.active=staging \
-              -jar /opt/java-webservices/gridflex-backend-service.jar \
-              > /opt/java-webservices/gridflex-staging.log 2>&1 &
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
+              > /${{ secrets.LOCATION }}/gridflex-staging.log 2>&1 &
 
             echo "Deployment complete"
           EOF
@@ -145,10 +152,10 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           SERVER="${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}"
-          REMOTE_PATH="/opt/java-webservices/gridflex-backend-service.jar"
+          REMOTE_PATH="/${{ secrets.LOCATION }}/gridflex-backend-service.jar"
 
           echo "Creating remote directory..."
-          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/java-webservices"
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.LOCATION }}"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -156,7 +163,7 @@ jobs:
             $SERVER:$REMOTE_PATH
           
           echo "Writing env file..."
-          ssh -o StrictHostKeyChecking=no $SERVER "cat > /opt/java-webservices/prod.env" << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ secrets.LOCATION }}/prod.env" << EOF
           DB_HOST="${{ secrets.PROD_DB_HOST }}"
           DB_PORT="${{ secrets.PROD_DB_PORT }}"
           DB_NAME="${{ secrets.PROD_DB_NAME }}"
@@ -175,11 +182,16 @@ jobs:
           USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
           SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          UPLOAD="${{ secrets.UPLOAD }}"
           HEADER_KEY="${{ secrets.HEADER_KEY }}"
+          EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
+          EUREKA_PORT="${{ secrets.EUREKA_PORT }}"
+          BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
+          DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
+          PROD_DOMAIN="${{ secrets.PROD_DOMAIN }}"
+          LOCATION="${{ secrets.LOCATION }}"
           EOF
           
-          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /opt/java-webservices/prod.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/prod.env"
 
 
           echo "Deploying (safe SSH execution)..."
@@ -201,12 +213,12 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /opt/java-webservices/prod.env
+            source /${{ secrets.LOCATION }}/prod.env
             set +a
 
             nohup java -Dspring.profiles.active=prod \
-              -jar /opt/java-webservices/gridflex-backend-service.jar \
-              > /opt/java-webservices/gridflex-prod.log 2>&1 &
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
+              > /${{ secrets.LOCATION }}/gridflex-prod.log 2>&1 &
 
             echo "Deployment complete"
           EOF

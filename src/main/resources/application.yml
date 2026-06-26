@@ -2,7 +2,7 @@ server:
   port: 9080
 
 app:
-  base-path: /grid-flex/v1/api
+  base-path: /${BASE_ADDRESS}
 #  /api/v1
 #  /grid-flex/v1/api
 
@@ -39,24 +39,13 @@ springdoc:
 
   swagger-ui:
     path: /swagger-ui.html
-    config-url: /api/v1/gridflex/api-docs/swagger-config
-    url: /api/v1/gridflex/api-docs
+    config-url: /${DOC_ADDRESS}/api-docs/swagger-config
+    url: /${DOC_ADDRESS}/api-docs
 
   packages-to-scan: org.memmcol.gridflexbackendservice.thirdPartyService
 #    urls:
 #      - name: Admin
 #        url: /v3/api-docs/admin
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true                # Register using IP instead of hostname
-    ip-address: ${spring.cloud.client.ip-address}  # Auto-detects service IP
-    instance-id: ${spring.application.name}:${server.port}
-    metadata-map:
-      management.port: ${management.server.port:${server.port}}
 
 management:
   server:

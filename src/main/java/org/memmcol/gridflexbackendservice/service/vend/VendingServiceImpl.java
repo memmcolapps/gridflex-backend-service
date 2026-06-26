@@ -1353,11 +1353,11 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
 
-            List<String> tokens = tokenResponse.getTokens();
-
-            clearTamper.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
-            clearTamper.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
-            clearTamper.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
+//            List<String> tokens = tokenResponse.getTokens();
+//
+//            clearTamper.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+//            clearTamper.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+//            clearTamper.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 //
             clearTamper.setToken(tokenResponse.getTokens().get(0));
 //            clearTamper.setToken(generateDummyToken());
@@ -1441,11 +1441,11 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
 
-            List<String> tokens = tokenResponse.getTokens();
+//            List<String> tokens = tokenResponse.getTokens();
 
-            clearCredit.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
-            clearCredit.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
-            clearCredit.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
+//            clearCredit.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+//            clearCredit.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+//            clearCredit.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 //
             clearCredit.setToken(tokenResponse.getTokens().get(0));
 //            clearCredit.setToken(generateDummyToken());
@@ -1526,11 +1526,11 @@ public class VendingServiceImpl implements VendingService {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
             }
 
-            List<String> tokens = tokenResponse.getTokens();
-
-            kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
-            kctToken.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
-            kctToken.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
+//            List<String> tokens = tokenResponse.getTokens();
+//
+//            kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
+//            kctToken.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
+//            kctToken.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
 
             kctToken.setToken(tokenResponse.getTokens().get(0));
 //            kctToken.setToken(generateDummyToken());

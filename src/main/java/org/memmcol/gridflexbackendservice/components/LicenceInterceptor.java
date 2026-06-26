@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.memmcol.gridflexbackendservice.model.licence.Licence;
@@ -95,7 +96,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
             if (licence.getHmacSignature() != null) {
                 String savedSignature = licence.getHmacSignature();
                 licence.setHmacSignature(null);
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
                 String licenceJson = mapper.writeValueAsString(licence);
                 licence.setHmacSignature(savedSignature);
                 boolean signatureValid = LicenceSignerUtil.verify(licenceJson, savedSignature, LicenceSecurityConstants.getHmacKey());
