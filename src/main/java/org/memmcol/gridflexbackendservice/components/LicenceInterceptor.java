@@ -37,7 +37,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
         String path = request.getServletPath();
 
         // Allow licence-related endpoints (so users can validate/upload/save even with invalid licence)
-        if (path.startsWith("/licence/service")) {
+        if (path.startsWith("/license/service")) {
             return true;
         }
 
@@ -87,7 +87,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
             Licence licence = LicenceFileUtil.readLicenceFile(dataDir, orgId);
 
             if (licence == null) {
-//                blockAccess(response, "Licence not found");
+//                blockAccess(response, "License not found");
 //                return false;
                 return true;
             }
@@ -101,7 +101,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
                 licence.setHmacSignature(savedSignature);
                 boolean signatureValid = LicenceSignerUtil.verify(licenceJson, savedSignature, LicenceSecurityConstants.getHmacKey());
                 if (!signatureValid) {
-                    blockAccess(response, "Licence has been tampered with");
+                    blockAccess(response, "License has been tampered with");
                     return false;
                 }
             }
@@ -116,7 +116,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
 
             // Add expiry warning header if licence expires within 30 days
             if (result.getWarningMessage() != null) {
-                response.setHeader("X-Licence-Warning", result.getWarningMessage());
+                response.setHeader("X-License-Warning", result.getWarningMessage());
             }
 
             return true;
@@ -125,7 +125,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
             // Let CustomAuthorizationFilter handle JWT errors
             return true;
         } catch (Exception e) {
-            blockAccess(response, "Licence validation failed: " + e.getMessage());
+            blockAccess(response, "License validation failed: " + e.getMessage());
             return false;
         }
     }

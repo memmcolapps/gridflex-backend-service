@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/licence/service")
-@Tag(name = "Licence", description = "Licence Management APIs")
+@RequestMapping("/license/service")
+@Tag(name = "License", description = "License Management APIs")
 public class LicenceController {
 
     @Autowired

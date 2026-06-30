@@ -4294,12 +4294,15 @@ public class MeterServiceImpl implements MeterService {
             int remaining = licence.getMaxMeters() - currentMeters;
             if (remaining <= 0) {
                 throw new GlobalExceptionHandler.NotFoundException(
-                    "Licence meter limit reached (" + licence.getMaxMeters() + " max). No more meters can be added."
+                    "License meter limit reached (" + licence.getMaxMeters() + " max). No more meters can be added."
                 );
             }
             if (meters.size() > remaining) {
-                meters = new ArrayList<>(meters.subList(0, remaining));
-                result.put("warning", "Imported " + remaining + " of " + totalRecords + " meters. Licence limit of " + licence.getMaxMeters() + " reached.");
+                throw new GlobalExceptionHandler.NotFoundException(
+                        "Upload exceeds your license limit. Remaining slots: " + remaining
+                                + ". Attempted upload: " + meters.size()
+                                + " meter(s). Please upload " + remaining + " meter(s) or fewer."
+                );
             }
         }
 
@@ -6470,7 +6473,7 @@ public class MeterServiceImpl implements MeterService {
         if (currentMeters + newMeterCount > licence.getMaxMeters()) {
             int remaining = Math.max(0, licence.getMaxMeters() - currentMeters);
             throw new GlobalExceptionHandler.NotFoundException(
-                    "Licence limit reached. " + remaining + " of " + licence.getMaxMeters() + " meters remaining"
+                    "License limit reached. " + remaining + " of " + licence.getMaxMeters() + " meters remaining"
             );
         }
     }

@@ -90,7 +90,7 @@ public class SwaggerConfig {
                 .pathsToMatch(
                         "/client/setup/**",
                         "/service/**",
-                        "/api/licence/**")
+                        "/api/license/**")
                 .addOpenApiCustomizer(openApi -> {
                     openApi.setSecurity(List.of(
                             new SecurityRequirement().addList("bearerAuth")
@@ -117,7 +117,7 @@ public class SwaggerConfig {
 //                .pathsToMatch(
 //                        "/client/**",
 //                        "/service/**",
-//                        "/api/licence/**")
+//                        "/api/license/**")
 //                .build();
 //    }
 
@@ -167,7 +167,7 @@ public class SwaggerConfig {
 //                .pathsToMatch(
 //                        "/client/**",
 //                        "/service/**",
-//                        "/api/licence/**")
+//                        "/api/license/**")
 //                .build();
 //    }
 
@@ -217,7 +217,7 @@ public class SwaggerConfig {
 //                .pathsToMatch(
 //                        "/client/**",
 //                        "/service/**",
-//                        "/api/licence/**")
+//                        "/api/license/**")
 //                .build();
 //    }
 }

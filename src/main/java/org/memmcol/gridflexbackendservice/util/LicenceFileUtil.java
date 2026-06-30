@@ -19,20 +19,20 @@ public class LicenceFileUtil {
     }
 
     public static Licence readLicenceFile(String dataDir, UUID organisationId) {
-        String licenceDir = dataDir + "/licenses";
-        Path licencePath = Paths.get(licenceDir, organisationId + ".lic");
-        File licenceFile = licencePath.toFile();
+        String licenseDir = dataDir + "/licenses";
+        Path licensePath = Paths.get(licenseDir, organisationId + ".lic");
+        File licenseFile = licensePath.toFile();
 
-        if (!licenceFile.exists()) {
+        if (!licenseFile.exists()) {
             return null;
         }
 
         try {
-            String encryptedContent = new String(Files.readAllBytes(licencePath));
+            String encryptedContent = new String(Files.readAllBytes(licensePath));
             String decryptedContent = LicenceEncryptionUtil.decrypt(encryptedContent, LicenceSecurityConstants.getEncryptionKey());
             return objectMapper.readValue(decryptedContent, Licence.class);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read licence file", e);
+            throw new RuntimeException("Failed to read license file", e);
         }
     }
 }
