@@ -81,7 +81,7 @@ public class LicenceServiceImpl implements LicenceService {
             if (licence == null) {
                 return ResponseMap.response(
                         status.getNotFoundCode(),
-                        "Licence not found",
+                        "License not found",
                         null
                 );
             }
@@ -93,14 +93,14 @@ public class LicenceServiceImpl implements LicenceService {
                 try {
                     licenceJson = objectMapper.writeValueAsString(licence);
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to serialize licence for signature verification", e);
+                    throw new RuntimeException("Failed to serialize license for signature verification", e);
                 }
                 licence.setHmacSignature(savedSignature);
                 boolean signatureValid = LicenceSignerUtil.verify(licenceJson, savedSignature, LicenceSecurityConstants.getHmacKey());
                 if (!signatureValid) {
                     return ResponseMap.response(
                             status.getFailCode(),
-                            "Licence has been tampered with",
+                            "License has been tampered with",
                             null
                     );
                 }
@@ -111,7 +111,7 @@ public class LicenceServiceImpl implements LicenceService {
 
             if (!validationResult.isValid()
                     && validationResult.getMessage() != null
-                    && validationResult.getMessage().startsWith("Licence has expired")) {
+                    && validationResult.getMessage().startsWith("License has expired")) {
                 licence.setActive(false);
                 writeLicenceFile(licence);
             }
@@ -121,13 +121,13 @@ public class LicenceServiceImpl implements LicenceService {
                 if (!boundToServer) {
                     validationResult = LicenceValidationResult.builder()
                             .valid(false)
-                            .message("Licence is not bound to this server")
+                            .message("License is not bound to this server")
                             .licence(licence)
                             .build();
                 }
             }
 
-            AuditLog auditLog = buildAuditLog("licence validation", "licence", validationResult, metadata);
+            AuditLog auditLog = buildAuditLog("license validation", "license", validationResult, metadata);
             safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(
@@ -137,8 +137,8 @@ public class LicenceServiceImpl implements LicenceService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Licence validation failed");
-            genericHandler.logAndSaveException(ex, "validating licence");
+            genericHandler.logIncidentReport("License validation failed");
+            genericHandler.logAndSaveException(ex, "validating license");
             throw ex;
         }
     }
@@ -154,23 +154,23 @@ public class LicenceServiceImpl implements LicenceService {
             if (licence == null) {
                 return ResponseMap.response(
                         status.getNotFoundCode(),
-                        "Licence not found",
+                        "License not found",
                         null
                 );
             }
 
-            AuditLog auditLog = buildAuditLog("licence retrieved", "licence", licence, metadata);
+            AuditLog auditLog = buildAuditLog("license retrieved", "license", licence, metadata);
             safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                    "Licence retrieved successfully",
+                    "License retrieved successfully",
                     licence
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Licence retrieval failed");
-            genericHandler.logAndSaveException(ex, "retrieving licence");
+            genericHandler.logIncidentReport("License retrieval failed");
+            genericHandler.logAndSaveException(ex, "retrieving license");
             throw ex;
         }
     }
@@ -183,7 +183,7 @@ public class LicenceServiceImpl implements LicenceService {
         try {
             Map<String, String> fingerprintData = hardwareBindingService.generateAndSaveFingerprintFile(organisationId);
 
-            AuditLog auditLog = buildAuditLog("fingerprint generated", "licence", organisationId, metadata);
+            AuditLog auditLog = buildAuditLog("fingerprint generated", "license", organisationId, metadata);
             safeAuditService.saveAudit(auditLog);
 
             Map<String, Object> responseData = new HashMap<>();
@@ -214,7 +214,7 @@ public class LicenceServiceImpl implements LicenceService {
             }
 
             if (encryptedLicence == null || encryptedLicence.isBlank()) {
-                throw new GlobalExceptionHandler.NotFoundException("Encrypted licence content is required");
+                throw new GlobalExceptionHandler.NotFoundException("Encrypted license content is required");
             }
 
             try {
@@ -222,23 +222,23 @@ public class LicenceServiceImpl implements LicenceService {
                 Files.createDirectories(licencePath.getParent());
                 Files.write(licencePath, encryptedLicence.getBytes());
             } catch (IOException e) {
-                throw new RuntimeException("Failed to write licence file", e);
+                throw new RuntimeException("Failed to write license file", e);
             }
 
-            AuditLog auditLog = buildAuditLog("licence saved", "licence", orgId, metadata);
+            AuditLog auditLog = buildAuditLog("license saved", "license", orgId, metadata);
             safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(
                     status.getSuccessCode(),
-                    "Licence saved successfully",
+                    "License saved successfully",
                     null
             );
 
         } catch (GlobalExceptionHandler.NotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Licence save failed");
-            genericHandler.logAndSaveException(ex, "saving licence");
+            genericHandler.logIncidentReport("License save failed");
+            genericHandler.logAndSaveException(ex, "saving license");
             throw ex;
         }
     }
@@ -264,7 +264,7 @@ public class LicenceServiceImpl implements LicenceService {
             responseData.put("machineId", fingerprintContent.get("hash"));
             responseData.put("encryptedFingerprint", fingerprintContent.get("encryptedContent"));
 
-            AuditLog auditLog = buildAuditLog("fingerprint retrieved", "licence", organisationId, metadata);
+            AuditLog auditLog = buildAuditLog("fingerprint retrieved", "license", organisationId, metadata);
             safeAuditService.saveAudit(auditLog);
 
             return ResponseMap.response(
@@ -294,7 +294,7 @@ public class LicenceServiceImpl implements LicenceService {
             Files.write(licencePath, encryptedContent.getBytes());
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write licence file", e);
+            throw new RuntimeException("Failed to write license file", e);
         }
     }
 

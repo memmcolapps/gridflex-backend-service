@@ -174,12 +174,12 @@ public class SecurityConfig {
 						"client/**",
 						"/client/auth/token",
 
-						"/licence/service/generate-fingerprint",
-						"/licence/service/get",
-						"/licence/service/deactivate",
-						"/licence/service/fingerprint",
-						"/licence/service/validate",
-						"/licence/service/save"
+						"/license/service/generate-fingerprint",
+						"/license/service/get",
+						"/license/service/deactivate",
+						"/license/service/fingerprint",
+						"/license/service/validate",
+						"/license/service/save"
 //						"/uploads/**"
 				).permitAll()
 //				.requestMatchers("/v3/api-docs/Admin").hasAuthority("ADMIN")
