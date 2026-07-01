@@ -3647,17 +3647,24 @@ public class MeterServiceImpl implements MeterService {
                 meter.getSmartMeterInfo().setMeterId(meter.getMeterId());
                 meter.getSmartMeterInfo().setOrgId(user.getOrgId());
             }
-            if(meter.getMeterStage().equalsIgnoreCase("Pending-created")
-                    || meter.getMeterStage().equalsIgnoreCase("Pending-allocated")
-                    && (!user.getNodeInfo().getType().equalsIgnoreCase("Region")
-                    && !user.getNodeInfo().getType().equalsIgnoreCase("Root"))){
+            String stage = meter.getMeterStage();
+            String nodeType = user.getNodeInfo().getType();
+
+            boolean pendingStage =
+                    stage.equalsIgnoreCase("Pending-created")
+                            || stage.equalsIgnoreCase("Pending-allocated");
+
+            boolean allowedUser =
+                    nodeType.equalsIgnoreCase("Region")
+                            || nodeType.equalsIgnoreCase("Root");
+
+            if (pendingStage && !allowedUser) {
                 GenericResp resp = new GenericResp();
                 resp.setId(meter.getMeterNumber());
                 resp.setMessage("You do not have permission to approve meter");
                 resp.setData(meter.getMeterNumber());
 
                 failedRecords.add(resp);
-
             }
         }
     }
