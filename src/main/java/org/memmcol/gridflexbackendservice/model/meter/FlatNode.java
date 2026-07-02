@@ -11,6 +11,8 @@ public class FlatNode implements Serializable {
     private UUID rootId;
     private String rootName;
     private String rootEmail;
+    private UUID rootNodeId;
+    private String rootRegionId;
 
     // Region
     private UUID regionId;

@@ -6,8 +6,10 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
 import org.memmcol.gridflexbackendservice.model.hes.*;
+import org.memmcol.gridflexbackendservice.model.meter.Meter;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -244,7 +246,6 @@ public class HesClientServiceImpl implements HesService {
             throw exception;
         }
     }
-
     private boolean contains(String field, String search) {
         return field != null && field.toLowerCase().contains(search);
     }
