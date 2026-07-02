@@ -18,18 +18,20 @@ public class LicenceValidator {
         return validateWithLimits(licence, 0);
     }
 
+    private static final int METER_COUNTDOWN_WARNING_THRESHOLD = 30;
+
     public static LicenceValidationResult validateWithLimits(Licence licence, int currentMeters) {
         if (licence == null) {
             return LicenceValidationResult.builder()
                     .valid(false)
-                    .message("Licence not found")
+                    .message("License not found")
                     .build();
         }
 
         if (!licence.isActive()) {
             return LicenceValidationResult.builder()
                     .valid(false)
-                    .message("Licence is inactive")
+                    .message("License is inactive")
                     .licence(licence)
                     .build();
         }
@@ -39,15 +41,15 @@ public class LicenceValidator {
         if (now == null) {
             return LicenceValidationResult.builder()
                     .valid(false)
-                    .message("Unable to verify licence time")
+                    .message("Unable to verify license time")
                     .licence(licence)
                     .build();
         }
 
-        if (now.isAfter(licence.getExpiryDate())) {
+        if (licence.getExpiryDate() != null && now.isAfter(licence.getExpiryDate())) {
             return LicenceValidationResult.builder()
                     .valid(false)
-                    .message("Licence has expired on " + licence.getExpiryDate())
+                    .message("License has expired on " + licence.getExpiryDate())
                     .licence(licence)
                     .build();
         }
@@ -60,15 +62,23 @@ public class LicenceValidator {
                     .build();
         }
 
-        long daysUntilExpiry = ChronoUnit.DAYS.between(now.toLocalDate(), licence.getExpiryDate().toLocalDate());
         String warningMessage = null;
-        if (daysUntilExpiry <= EXPIRY_WARNING_DAYS) {
-            warningMessage = "Licence expires in " + daysUntilExpiry + " day(s)";
+
+        if (licence.getExpiryDate() != null) {
+            long daysUntilExpiry = ChronoUnit.DAYS.between(now.toLocalDate(), licence.getExpiryDate().toLocalDate());
+            if (daysUntilExpiry <= EXPIRY_WARNING_DAYS) {
+                warningMessage = "License expires in " + daysUntilExpiry + " day(s)";
+            }
+        } else if (licence.getMaxMeters() > 0) {
+            int remaining = licence.getMaxMeters() - currentMeters;
+            if (remaining <= METER_COUNTDOWN_WARNING_THRESHOLD) {
+                warningMessage = "License meter limit countdown: " + remaining + " meter(s) remaining out of " + licence.getMaxMeters();
+            }
         }
 
         return LicenceValidationResult.builder()
                 .valid(true)
-                .message("Licence is valid")
+                .message("License is valid")
                 .warningMessage(warningMessage)
                 .licence(licence)
                 .build();

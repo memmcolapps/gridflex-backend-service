@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Licence {
-    private String licenceKey;
+    private String licenseKey;
     private UUID organisationId;
     private String organisationName;
     private LocalDateTime issuedDate;

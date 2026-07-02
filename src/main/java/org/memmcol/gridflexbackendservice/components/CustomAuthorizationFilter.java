@@ -88,7 +88,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 || path.startsWith("/meter/service/readMeter-lookup")
                 || path.startsWith("/admin/setup/client")
                 || path.startsWith("/client/auth/token")
-                || path.startsWith("/licence/service");
+                || path.startsWith("/license/service");
     }
 
 	@Override

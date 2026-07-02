@@ -5,6 +5,7 @@ import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
+import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.time.LocalDateTime;
@@ -26,7 +27,13 @@ public interface HesMapper {
             SELECT e.*, m.*, fn.*
             FROM vw_event_details e
             LEFT JOIN meters m ON e.meter_no = m.meter_number
-            LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+            LEFT JOIN vw_flatten_node_records fn
+                ON fn.root_node_id = m.root
+                AND fn.region_node_id = m.region
+                AND fn.business_node_id = m.node_id
+                AND fn.service_node_id = m.service_center
+                AND fn.feeder_node_id = m.feeder
+                AND fn.dss_node_id = m.dss
             <where>
                 <if test="startDate != null">
                     AND e.event_time &gt;= #{startDate}
@@ -50,7 +57,8 @@ public interface HesMapper {
                 </if>
             AND m.org_id = #{orgId}
             AND e.event_type_id = #{eventTypeId}
-            AND (fn.region_region_id = #{node} 
+            AND (fn.root_region_id = #{node} 
+                        OR fn.region_region_id = #{node} 
                         OR fn.service_region_id = #{node} 
                         OR fn.business_region_id = #{node}
                         OR fn.feeder_asset_id = #{node} 
@@ -61,20 +69,17 @@ public interface HesMapper {
         </script>
     """)
     @Results({
-//            @Result(column = "src_table", property = "srcTable"),
             @Result(column = "meter_no", property = "meterNumber"),
             @Result(column = "meter_model", property = "meterModel"),
             @Result(column = "event_time", property = "eventTime"),
             @Result(column = "event", property = "event"),
             @Result(column = "event_type", property = "eventType"),
-//            @Result(column = "event_type_id", property = "eventTypeId"),
             @Result(column = "critical_level", property = "criticalLevel"),
             @Result(column = "total_absolute_active_kwh", property = "totalAbsoluteActiveKwh"),
             @Result(column = "balance_kwh", property = "balanceKwh"),
             @Result(column = "recharge_token", property = "rechargeToken"),
             @Result(column = "recharge_amount_kwh", property = "rechargeAmountKwh"),
             @Result(column = "manage_token", property = "manageToken"),
-//            @Result(column = "manage_token_type_code", property = "manageTokenTypeCode"),
             @Result(column = "mgt_token_type_description", property = "mgtTokenTypeDescription"),
             @Result(column = "reason_description", property = "reasonDescription"),
             @Result(column = "reason_of_operation_code", property = "reasonOfOperationCode"),
@@ -84,11 +89,6 @@ public interface HesMapper {
             @Result(column = "manage_token", property = "manageToken"),
             @Result(column = "manage_token_type", property = "manageTokenType"),
 
-//            @Result(property = "eventType.name", column = "name"),
-//            @Result(property = "eventType.description", column = "description"),
-//            @Result(property = "eventType.obisCode", column = "obis_code"),
-
-//            @Result(property = "meter.id", column = "id"),
             @Result(property = "meter.orgId", column = "org_id"),
             @Result(property = "meter.customerId", column = "customer_id"),
             @Result(property = "meter.meterId", column = "meter_id"),
@@ -115,6 +115,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -173,7 +175,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-       LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -195,7 +203,8 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node}
+            AND (fn.root_region_id = #{node} 
+                OR fn.region_region_id = #{node}
                 OR fn.service_region_id = #{node}
                 OR fn.business_region_id = #{node}
                 OR fn.feeder_asset_id = #{node}
@@ -251,6 +260,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -295,7 +306,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_one_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -317,7 +334,7 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node}
+            AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node}
                 OR fn.service_region_id = #{node}
                 OR fn.business_region_id = #{node}
                 OR fn.feeder_asset_id = #{node}
@@ -366,6 +383,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -409,7 +428,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -431,7 +456,8 @@ public interface HesMapper {
                 </foreach>
             </if>
         AND m.org_id = #{orgId}
-        AND (fn.region_region_id = #{node} 
+        AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -485,6 +511,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -526,7 +554,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_two_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+         LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -548,7 +582,8 @@ public interface HesMapper {
                 </foreach>
             </if>
         AND m.org_id = #{orgId}
-        AND (fn.region_region_id = #{node} 
+        AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -597,6 +632,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -639,7 +676,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM profile_channel_three_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+         LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -661,7 +704,8 @@ public interface HesMapper {
                 </foreach>
             </if>
         AND m.org_id = #{orgId}
-        AND (fn.region_region_id = #{node} 
+        AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -710,6 +754,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -751,7 +797,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_profile p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -772,7 +824,8 @@ public interface HesMapper {
                 </foreach>
             </if>
         AND m.org_id = #{orgId}
-        AND (fn.region_region_id = #{node} 
+        AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -825,6 +878,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -865,7 +920,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_data_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -886,7 +947,8 @@ public interface HesMapper {
                 </foreach>
             </if>
         AND m.org_id = #{orgId}
-        AND (fn.region_region_id = #{node} 
+        AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -932,6 +994,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -972,7 +1036,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_data_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -993,7 +1063,9 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node} 
+            AND ( 
+                    fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -1038,6 +1110,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1080,7 +1154,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_profile p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+            ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id = m.service_center
+            AND fn.feeder_node_id = m.feeder
+            AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1101,11 +1181,14 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node} 
-                    OR fn.service_region_id = #{node} 
+             AND (
+                    fn.root_region_id = #{node}
+                    OR fn.region_region_id = #{node}
+                    OR fn.service_region_id = #{node}
                     OR fn.business_region_id = #{node}
-                    OR fn.feeder_asset_id = #{node} 
-                    OR fn.dss_asset_id = #{node})
+                    OR fn.feeder_asset_id = #{node}
+                    OR fn.dss_asset_id = #{node}
+                )
         </where>
         ORDER BY p.entry_timestamp DESC
         </script>
@@ -1158,6 +1241,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1202,7 +1287,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM daily_billing_energy_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-       LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+        LEFT JOIN vw_flatten_node_records fn
+                ON fn.root_node_id = m.root
+                AND fn.region_node_id = m.region
+                AND fn.business_node_id = m.node_id
+                AND fn.service_node_id = m.service_center
+                AND fn.feeder_node_id = m.feeder
+                AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1223,7 +1314,7 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node} 
+            AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -1272,6 +1363,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1315,7 +1408,13 @@ public interface HesMapper {
         SELECT p.*, m.*, fn.*
         FROM monthly_billing_energy_hh p
         LEFT JOIN meters m ON p.meter_serial = m.meter_number
-        LEFT JOIN vw_flatten_node_records fn ON fn.region_node_id = m.region
+         LEFT JOIN vw_flatten_node_records fn
+                ON fn.root_node_id = m.root
+                AND fn.region_node_id = m.region
+                AND fn.business_node_id = m.node_id
+                AND fn.service_node_id = m.service_center
+                AND fn.feeder_node_id = m.feeder
+                AND fn.dss_node_id = m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1336,7 +1435,7 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.region_region_id = #{node} 
+            AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
@@ -1385,6 +1484,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1483,6 +1584,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1578,6 +1681,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1679,6 +1784,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -1785,8 +1892,6 @@ public interface HesMapper {
     @Results({
             @Result(property = "connectionType", column = "connection_type"),
             @Result(property = "meterNo", column = "meter_no"),
-//            @Result(property = "onlineTime", column = "online_time"),
-//            @Result(property = "offlineTime", column = "offline_time"),
             @Result(property = "updatedAt", column = "updated_at"),
             @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
@@ -1854,10 +1959,6 @@ public interface HesMapper {
             @Result(column = "last_run_time", property = "lastRunTime"),
             @Result(column = "obis_codes", property = "obisCode"),
             @Result(column = "updated_at", property = "updatedAt"),
-
-//            @Result(property = "organization.businessName", column = "business_name"),
-//            @Result(property = "organization.createdAt", column = "created_at"),
-//            @Result(property = "organization.updatedAt", column = "updated_at"),
     })
     List<Schedule> getScheduleData(int page, int size);
 
@@ -1881,11 +1982,6 @@ public interface HesMapper {
             @Result(column = "cron_expression", property = "cronExpression")
     })
     Schedule getProfileEvent(String jobName);
-
-//    private String lastRunTime;
-//    private String obisCode;
-//    private EventType eventType;
-
 
     @Select("""
         <script>
@@ -1937,6 +2033,8 @@ public interface HesMapper {
 
             @Result(property = "meter.flatNode.rootId", column = "root_id"),
             @Result(property = "meter.flatNode.rootName", column = "root_name"),
+            @Result(property = "meter.flatNode.rootNodeId", column = "root_node_id"),
+            @Result(property = "meter.flatNode.rootRegionId", column = "root_region_id"),
 
             @Result(property = "meter.flatNode.regionId", column = "region_id"),
             @Result(property = "meter.flatNode.regionName", column = "region_name"),
@@ -2022,4 +2120,5 @@ public interface HesMapper {
     List<Event> getManagementTokenEvents(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, int page, int size, UUID orgId, String node);
 
     List<Event> getRechargeTokenEvents(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, List<Long> eventTypeId, List<String> model, int page, int size, UUID orgId, String node);
+
 }
