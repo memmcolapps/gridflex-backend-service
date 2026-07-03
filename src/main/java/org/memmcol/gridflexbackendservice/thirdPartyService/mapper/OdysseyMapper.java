@@ -158,7 +158,7 @@ public interface OdysseyMapper {
             FROM customers c
             LEFT JOIN meters m ON c.customer_id = m.customer_id
             LEFT JOIN md_meters_info md ON m.id = md.meter_id
-            LEFT JOIN vending_transactions t ON md.meter_id = t.meter_id
+            LEFT JOIN vending_transactions t ON m.id = t.meter_id
             LEFT JOIN LATERAL (
                 SELECT a.status
                 FROM credit_debit_adjustment a
@@ -194,12 +194,3 @@ public interface OdysseyMapper {
     })
     List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId, UUID orgId);
 }
-
-
-//if (payment.getLongitude() != null &&
-//    (payment.getLongitude() < -180 || payment.getLongitude() > 180)) {
-//
-//    throw new IllegalArgumentException(
-//        "Longitude must be between -180 and 180"
-//    );
-//}

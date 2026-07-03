@@ -5,7 +5,6 @@ import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.model.meter.SmartMeterInfo;
 import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.node.NodeInfo;
-import org.memmcol.gridflexbackendservice.model.node.NodeSummary;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 
 import java.time.LocalDateTime;
@@ -179,9 +178,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -310,9 +309,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -432,9 +431,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -558,9 +557,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -680,9 +679,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -801,9 +800,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -924,9 +923,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1040,9 +1039,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1158,9 +1157,9 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id = m.service_center
-            AND fn.feeder_node_id = m.feeder
-            AND fn.dss_node_id = m.dss
+            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1291,9 +1290,9 @@ public interface HesMapper {
                 ON fn.root_node_id = m.root
                 AND fn.region_node_id = m.region
                 AND fn.business_node_id = m.node_id
-                AND fn.service_node_id = m.service_center
-                AND fn.feeder_node_id = m.feeder
-                AND fn.dss_node_id = m.dss
+                 AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+                AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+                AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1412,9 +1411,9 @@ public interface HesMapper {
                 ON fn.root_node_id = m.root
                 AND fn.region_node_id = m.region
                 AND fn.business_node_id = m.node_id
-                AND fn.service_node_id = m.service_center
-                AND fn.feeder_node_id = m.feeder
-                AND fn.dss_node_id = m.dss
+                 AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1983,13 +1982,38 @@ public interface HesMapper {
     })
     Schedule getProfileEvent(String jobName);
 
-    @Select("""
+//    @Select("""
+//        <script>
+//            SELECT DISTINCT ON (m.meter_id) *
+//            FROM vw_meter_summary m
+//            LEFT JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
+//            LEFT JOIN vw_flatten_node_records v ON m.region = v.region_node_id
+//            WHERE m.org_id = #{orgId}
+//            ORDER BY m.meter_id, m.updated_at DESC
+//            <if test="size != 0">
+//                LIMIT #{size} OFFSET #{page} * #{size}
+//            </if>
+//        </script>
+//        """)
+@Select("""
         <script>
             SELECT DISTINCT ON (m.meter_id) *
             FROM vw_meter_summary m
             LEFT JOIN meters_connection_event mc ON mc.meter_no = m.meter_number
-            LEFT JOIN vw_flatten_node_records v ON m.region = v.region_node_id
-            WHERE m.org_id = #{orgId}
+            LEFT JOIN vw_flatten_node_records fn
+                ON fn.root_node_id = m.root
+                AND fn.region_node_id = m.region
+                AND fn.business_node_id = m.node_id
+                AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+                AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+                AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            WHERE m.org_id = #{orgId} 
+                AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
+                    OR fn.service_region_id = #{node} 
+                    OR fn.business_region_id = #{node}
+                    OR fn.feeder_asset_id = #{node} 
+                    OR fn.dss_asset_id = #{node})
             ORDER BY m.meter_id, m.updated_at DESC
             <if test="size != 0">
                 LIMIT #{size} OFFSET #{page} * #{size}
@@ -2066,7 +2090,7 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId);
+    List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId, String node);
 
     @Select("""
         SELECT * FROM vw_meter_obis_mapping
