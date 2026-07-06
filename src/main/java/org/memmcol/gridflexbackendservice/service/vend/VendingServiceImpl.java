@@ -145,7 +145,7 @@ public class VendingServiceImpl implements VendingService {
             if (creditToken.isNeedKCT()) {
                 TokenGenRequest kctRequest = new TokenGenRequest();
                 kctRequest.setMeterNo(meter.getMeterNumber());
-                kctRequest.setSgc(Integer.parseInt(meter.getNewSgc()));
+                kctRequest.setSgc(Integer.parseInt(meter.getOldSgc()));
                 kctRequest.setTosgc(Integer.parseInt(meter.getNewSgc()));
                 kctRequest.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
                 kctRequest.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
@@ -1185,9 +1185,9 @@ public class VendingServiceImpl implements VendingService {
                     user.getOrgId(), kctToken.getMeterNumber(),
                     kctToken.getAccountNumber(), nodeId);
 
-            if (meterResult == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
-            }
+//            if (meterResult == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+//            }
 
             boolean isValidForVending =
                     "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
@@ -1209,7 +1209,7 @@ public class VendingServiceImpl implements VendingService {
 
             TokenGenRequest request = new TokenGenRequest();
             request.setMeterNo(meter.getMeterNumber());
-            request.setSgc(Integer.parseInt(meter.getNewSgc()));
+            request.setSgc(Integer.parseInt(meter.getOldSgc()));
             request.setTosgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
             request.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
@@ -1317,9 +1317,9 @@ public class VendingServiceImpl implements VendingService {
             HandlePermission.perm(nodeType);
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), clearTamper.getMeterNumber(), clearTamper.getAccountNumber(), nodeId);
-            if (meterResult == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
-            }
+//            if (meterResult == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+//            }
 
             boolean isValidForVending =
                     "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
@@ -1403,9 +1403,9 @@ public class VendingServiceImpl implements VendingService {
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), clearCredit.getMeterNumber(),
                     clearCredit.getAccountNumber(), nodeId);
-            if (meterResult == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
-            }
+//            if (meterResult == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+//            }
 
             boolean isValidForVending =
                     "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
@@ -1493,9 +1493,9 @@ public class VendingServiceImpl implements VendingService {
             Meter meterResult = vendMapper.getMeter(
                     user.getOrgId(), kctToken.getMeterNumber(),
                     kctToken.getAccountNumber(), nodeId);
-            if (meterResult == null) {
-                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
-            }
+//            if (meterResult == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+//            }
             
             boolean isValidForVending =
                     "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
