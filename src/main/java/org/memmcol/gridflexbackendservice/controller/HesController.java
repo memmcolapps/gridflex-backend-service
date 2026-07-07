@@ -340,10 +340,10 @@ public class HesController {
     @PostMapping("/dlms/set-token")
     public ResponseEntity<?> setToken(
             @RequestParam String serial,
-            @RequestParam String credit
+            @RequestParam String token
     ) {
         try {
-            Map<String, Object> result = dlmsService.setToken(serial, credit);
+            Map<String, Object> result = dlmsService.setToken(serial, token);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

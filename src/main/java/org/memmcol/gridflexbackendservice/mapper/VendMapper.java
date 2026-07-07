@@ -442,7 +442,7 @@ public interface VendMapper {
             "vat_amount, status, receipt_no, token, created_at, updated_at, token_type, kct1, kct2,kct3, tx_node_id) " +
             "VALUES (#{orgId}, #{meterId}, '0.00', '0.00', #{customerId}, #{userId}, #{tariffId}, #{unit}, " +
             "'0.00', '0.00', #{status}, #{receiptNo}, #{token}, #{createdAt}, #{updatedAt}, #{tokenType}, " +
-            "#{kct1}, #{kct2},#{kct3} #{txNodeId})")
+            "#{kct1}, #{kct2},#{kct3}, #{txNodeId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createCompensationToken(KctToken kctToken);
 
