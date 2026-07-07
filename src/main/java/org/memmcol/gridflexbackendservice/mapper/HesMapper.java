@@ -1525,36 +1525,40 @@ public interface HesMapper {
 
     @Select("""
     <script>
-        SELECT mc.*, m.*, fn.*, sm.meter_model
-        FROM meters_connection_event mc
-        LEFT JOIN meters m ON mc.meter_no = m.meter_number
-        LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
-         LEFT JOIN (
-            SELECT DISTINCT ON (region_node_id) *
-            FROM vw_flatten_node_records
-            ORDER BY region_node_id
-        ) fn
-            ON fn.root_node_id = m.root
+       SELECT mc.*, m.*, fn.*, sm.meter_model
+         FROM meters_connection_event mc
+         LEFT JOIN meters m
+             ON mc.meter_no = m.meter_number
+         LEFT JOIN smart_meter_info sm
+             ON m.id = sm.meter_id
+         LEFT JOIN vw_flatten_node_records fn
+             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
             AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
             AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
             AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
-
-            <if test="type != null">
-                AND LOWER(m.meter_class) = LOWER(#{type})
-            </if>
-            AND m.org_id = #{orgId}
-            AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node} 
-                OR fn.service_region_id = #{node} 
-                OR fn.business_region_id = #{node}
-                OR fn.feeder_asset_id = #{node} 
-                OR fn.dss_asset_id = #{node})
-
-        ORDER BY mc.updated_at DESC
-        <if test="size != 0">
-            LIMIT #{size} OFFSET #{page} * #{size}
-        </if>
+         <where>
+             <if test="type != null">
+                 AND LOWER(m.meter_class) = LOWER(#{type})
+             </if>
+         
+             AND m.org_id = #{orgId}
+         
+             AND (
+                 fn.root_region_id = #{node}
+                 OR fn.region_region_id = #{node}
+                 OR fn.business_region_id = #{node}
+                 OR fn.service_region_id = #{node}
+                 OR fn.feeder_asset_id = #{node}
+                 OR fn.dss_asset_id = #{node}
+             )
+         </where>
+         ORDER BY mc.updated_at DESC
+         <if test="size != 0">
+             LIMIT #{size}
+             OFFSET (#{page} * #{size})
+         </if>
     </script>
     """)
     @Results({
@@ -1634,36 +1638,44 @@ public interface HesMapper {
 
     @Select("""
     <script>
-       SELECT DISTINCT mc.*, m.*, fn.*, sm.meter_model
-           FROM meters_connection_event mc
-                    LEFT JOIN meters m ON mc.meter_no = m.meter_number
-                    LEFT JOIN smart_meter_info sm ON m.id = sm.meter_id
-                    LEFT JOIN (
-               SELECT DISTINCT ON (region_node_id) *
-               FROM vw_flatten_node_records
-               ORDER BY region_node_id
-           ) fn
-              ON fn.root_node_id = m.root
-                  AND fn.region_node_id = m.region
-                  AND fn.business_node_id = m.node_id
-                  AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-                  AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-                  AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
-           
-                <if test="type != null">
-                       AND LOWER(m.meter_class) IN (LOWER(#{type}), LOWER(#{type2}), LOWER(#{type3}))
-                </if>
+       SELECT mc.*, m.*, fn.*, sm.meter_model
+         FROM meters_connection_event mc
+         LEFT JOIN meters m
+             ON mc.meter_no = m.meter_number
+         LEFT JOIN smart_meter_info sm
+             ON m.id = sm.meter_id
+         LEFT JOIN vw_flatten_node_records fn
+             ON fn.root_node_id = m.root
+            AND fn.region_node_id = m.region
+            AND fn.business_node_id = m.node_id
+            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
+            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
+            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+         <where>
+             <if test="type != null">
+                 AND LOWER(m.meter_class) IN (
+                     LOWER(#{type}),
+                     LOWER(#{type2}),
+                     LOWER(#{type3})
+                 )
+             </if>
+         
              AND m.org_id = #{orgId}
-                AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node} 
-                OR fn.service_region_id = #{node} 
-                OR fn.business_region_id = #{node}
-                OR fn.feeder_asset_id = #{node} 
-                OR fn.dss_asset_id = #{node})
-
-           ORDER BY mc.updated_at DESC
-            <if test="size != 0">
-                LIMIT #{size} OFFSET #{page} * #{size}
-            </if>
+         
+             AND (
+                 fn.root_region_id = #{node}
+                 OR fn.region_region_id = #{node}
+                 OR fn.business_region_id = #{node}
+                 OR fn.service_region_id = #{node}
+                 OR fn.feeder_asset_id = #{node}
+                 OR fn.dss_asset_id = #{node}
+             )
+         </where>
+         ORDER BY mc.updated_at DESC
+         <if test="size != 0">
+             LIMIT #{size}
+             OFFSET (#{page} * #{size})
+         </if>
     </script>
     """)
     @Results({
