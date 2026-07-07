@@ -75,16 +75,17 @@ public class HesClientServiceImpl implements HesService {
             List<MeterConnEvent> meterConnEvent;
 
             if("MD".equalsIgnoreCase(type)){
-                meterConnEvent = hesMapper.getCommunicationReport(0, 0, um.getOrgId(), type, node);
+                meterConnEvent = hesMapper.getCommunicationReport(0, 0, um.getOrgId(), type, um.getNodeInfo().getRegionId());
             } else if("Non-MD".equalsIgnoreCase(type)) {
                 String type1 = "three-phase";
                 String type2 = "single-phase";
-                meterConnEvent = hesMapper.getCommunicationNonMDReport(0, 0, um.getOrgId(), type1, type2, "", node);
+                meterConnEvent = hesMapper.getCommunicationNonMDReport(0, 0, um.getOrgId(), type1, type2, "", um.getNodeInfo().getRegionId());
             } else {
-                String type1 = "three-phase";
-                String type2 = "single-phase";
-                String type3 = "MD";
-                meterConnEvent = hesMapper.getCommunicationNonMDReport(0, 0, um.getOrgId(), type1, type2, type3, node);
+                throw new GlobalExceptionHandler.NotFoundException("Invalid type: " + type);
+//                String type1 = "three-phase";
+//                String type2 = "single-phase";
+//                String type3 = "MD";
+//                meterConnEvent = hesMapper.getCommunicationNonMDReport(0, 0, um.getOrgId(), type1, type2, type3, node);
             }
 
             String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
