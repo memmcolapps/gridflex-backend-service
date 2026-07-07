@@ -132,22 +132,6 @@ public class HesClientServiceImpl implements HesService {
             response.put("size", size);
             response.put("totalPages", size <= 0 ? 1 : (int) Math.ceil((double) totalComm / size));
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
-//            // Call async method (now returns Map<String, Object>)
-//            CompletableFuture<Map<String, Object>> communicationReportFuture =
-//                    asyncService.getAllCommunicationReportAsync(page, size, "lastSync", true, type, search);
-//
-//            // Wait for completion
-//            CompletableFuture.allOf(communicationReportFuture).join();
-//
-//            // Get the data from async response
-//            Map<String, Object> result = communicationReportFuture.join();
-//
-//            // Wrap in your response format
-//            return ResponseMap.response(
-//                    status.getSuccessCode(),
-//                    "Communication Report fetched successfully",
-//                    result
-//            );
 
         } catch (Exception exception) {
             genericHandler.logIncidentReport("fetching communication report service failed");
@@ -196,15 +180,7 @@ public class HesClientServiceImpl implements HesService {
             // Normalize search text
             String searchLower = (search == null) ? "" : search.toLowerCase();
 
-//            // SEARCH ON ANY FIELD
-//            List<Profile> filteredProfiles = profiles.stream()
-//                    .filter(e -> searchLower.isEmpty() ||
-//                            (e.getMeterNumber() != null && e.getMeterNumber().toLowerCase().equalsIgnoreCase(searchLower)) ||
-//                            (e.getMeterModel() != null && e.getMeterModel().toLowerCase().equalsIgnoreCase(searchLower)) ||
-//                            (e.getReceivedAt() != null && e.getReceivedAt().toString().equalsIgnoreCase(searchLower)) ||
-//                            (e.getMeterHealthIndicator() != null && e.getMeterHealthIndicator().toLowerCase().equalsIgnoreCase(searchLower))
-//                    )
-//                    .collect(Collectors.toList());
+            // SEARCH ON ANY FIELD
             List<Profile> filteredProfiles = profiles.stream()
                     .filter(e -> {
                         if (searchLower.isEmpty()) return true;
@@ -219,9 +195,7 @@ public class HesClientServiceImpl implements HesService {
                     .collect(Collectors.toList());
 
             List<Profile> paginatedProfiles;
-//            int totalProfiles = filteredProfiles.size();
             int totalProfiles = filteredProfiles.size();
-//            List<Profile> paginatedProfiles;
             if (size == 0) {
                 paginatedProfiles = filteredProfiles; // Return all users
             } else {
@@ -776,6 +750,8 @@ public class HesClientServiceImpl implements HesService {
             UserModel um = handleUserValidation();
 
             UUID orgId = um.getOrgId();
+            System.out.print("orgId: "+orgId);
+            System.out.print("um.getNodeInfo().getRegionId(): "+um.getNodeInfo().getRegionId());
             List<MeterConnEvent> meterConfig = hesMapper.getMeterConfiguration(0, 0, orgId, um.getNodeInfo().getRegionId());
             String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
 
