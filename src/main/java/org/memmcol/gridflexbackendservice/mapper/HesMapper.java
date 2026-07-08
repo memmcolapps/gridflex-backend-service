@@ -30,9 +30,22 @@ public interface HesMapper {
                 ON fn.root_node_id = m.root
                 AND fn.region_node_id = m.region
                 AND fn.business_node_id = m.node_id
-                AND fn.service_node_id = m.service_center
-                AND fn.feeder_node_id = m.feeder
-                AND fn.dss_node_id = m.dss
+               AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
             <where>
                 <if test="startDate != null">
                     AND e.event_time &gt;= #{startDate}
@@ -60,6 +73,7 @@ public interface HesMapper {
                         OR fn.region_region_id = #{node} 
                         OR fn.service_region_id = #{node} 
                         OR fn.business_region_id = #{node}
+                        OR fn.substation_asset_id = #{node} 
                         OR fn.feeder_asset_id = #{node} 
                         OR fn.dss_asset_id = #{node})
             </where>
@@ -178,9 +192,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -206,6 +233,7 @@ public interface HesMapper {
                 OR fn.region_region_id = #{node}
                 OR fn.service_region_id = #{node}
                 OR fn.business_region_id = #{node}
+                OR fn.substation_asset_id = #{node}
                 OR fn.feeder_asset_id = #{node}
                 OR fn.dss_asset_id = #{node})
         </where>
@@ -309,9 +337,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -336,6 +377,7 @@ public interface HesMapper {
             AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node}
                 OR fn.service_region_id = #{node}
                 OR fn.business_region_id = #{node}
+                OR fn.substation_asset_id = #{node}
                 OR fn.feeder_asset_id = #{node}
                 OR fn.dss_asset_id = #{node})
         </where>
@@ -431,9 +473,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND received_at &gt;= #{startDate}
@@ -459,6 +514,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -557,9 +613,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -585,6 +654,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -679,9 +749,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -707,6 +790,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -800,9 +884,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -827,6 +924,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -923,9 +1021,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -950,6 +1061,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -1039,9 +1151,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1067,6 +1192,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -1157,9 +1283,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1185,6 +1324,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node}
                     OR fn.service_region_id = #{node}
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node}
                     OR fn.feeder_asset_id = #{node}
                     OR fn.dss_asset_id = #{node}
                 )
@@ -1290,9 +1430,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1313,9 +1466,11 @@ public interface HesMapper {
                 </foreach>
             </if>
             AND m.org_id = #{orgId}
-            AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node} 
+            AND (fn.root_region_id = #{node} 
+                    OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -1411,9 +1566,22 @@ public interface HesMapper {
             ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
         <where>
             <if test="startDate != null">
                 AND entry_timestamp &gt;= #{startDate}
@@ -1437,6 +1605,7 @@ public interface HesMapper {
             AND (fn.root_region_id = #{node} OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
         </where>
@@ -1525,7 +1694,7 @@ public interface HesMapper {
 
     @Select("""
     <script>
-       SELECT mc.*, m.*, fn.*, sm.meter_model
+       SELECT DISTINCT mc.*, m.*, fn.*, sm.meter_model
          FROM meters_connection_event mc
          LEFT JOIN meters m
              ON mc.meter_no = m.meter_number
@@ -1535,9 +1704,22 @@ public interface HesMapper {
              ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
          <where>
              <if test="type != null">
                  AND LOWER(m.meter_class) = LOWER(#{type})
@@ -1550,6 +1732,7 @@ public interface HesMapper {
                  OR fn.region_region_id = #{node}
                  OR fn.business_region_id = #{node}
                  OR fn.service_region_id = #{node}
+                 OR fn.substation_asset_id = #{node}
                  OR fn.feeder_asset_id = #{node}
                  OR fn.dss_asset_id = #{node}
              )
@@ -1638,7 +1821,7 @@ public interface HesMapper {
 
     @Select("""
     <script>
-       SELECT mc.*, m.*, fn.*, sm.meter_model
+       SELECT DISTINCT mc.*, m.*, fn.*, sm.meter_model
          FROM meters_connection_event mc
          LEFT JOIN meters m
              ON mc.meter_no = m.meter_number
@@ -1648,9 +1831,22 @@ public interface HesMapper {
              ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
          <where>
              <if test="type != null">
                  AND LOWER(m.meter_class) IN (
@@ -1667,6 +1863,7 @@ public interface HesMapper {
                  OR fn.region_region_id = #{node}
                  OR fn.business_region_id = #{node}
                  OR fn.service_region_id = #{node}
+                 OR fn.substation_asset_id = #{node}
                  OR fn.feeder_asset_id = #{node}
                  OR fn.dss_asset_id = #{node}
              )
@@ -1765,9 +1962,22 @@ public interface HesMapper {
                 ON fn.root_node_id = m.root
             AND fn.region_node_id = m.region
             AND fn.business_node_id = m.node_id
-            AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-            AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-            AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+            AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
             <where>
                 mc.updated_at BETWEEN #{startDate} AND #{endDate}
     
@@ -1787,6 +1997,7 @@ public interface HesMapper {
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
                     OR fn.business_region_id = #{node}
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})
             </where>
@@ -2048,13 +2259,27 @@ public interface HesMapper {
                 ON fn.root_node_id = m.root
                 AND fn.region_node_id = m.region
                 AND fn.business_node_id = m.node_id
-                AND fn.service_node_id IS NOT DISTINCT FROM m.service_center
-                AND fn.feeder_node_id IS NOT DISTINCT FROM m.feeder
-                AND fn.dss_node_id IS NOT DISTINCT FROM m.dss
+                AND (
+                    m.service_center IS NULL
+                        OR fn.service_node_id = m.service_center
+                    )
+                AND (
+                    m.substation IS NULL
+                        OR fn.substation_node_id = m.substation
+                    )
+                AND (
+                    m.feeder IS NULL
+                        OR fn.feeder_node_id = m.feeder
+                    )
+                AND (
+                    m.dss IS NULL
+                        OR fn.dss_node_id = m.dss
+                    )
             WHERE m.org_id = #{orgId} 
                 AND (fn.root_region_id = #{node} 
                     OR fn.region_region_id = #{node} 
                     OR fn.service_region_id = #{node} 
+                    OR fn.substation_asset_id = #{node} 
                     OR fn.business_region_id = #{node}
                     OR fn.feeder_asset_id = #{node} 
                     OR fn.dss_asset_id = #{node})

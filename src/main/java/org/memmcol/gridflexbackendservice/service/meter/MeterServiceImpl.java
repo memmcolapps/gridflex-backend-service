@@ -5611,20 +5611,17 @@ public class MeterServiceImpl implements MeterService {
             switch (type) {
                 case "business hub":
                     if (nodeId.equals(node.getNodeId())) {
-                        System.out.print(">>>>>>>>>>>>222222222");
                         request.setNodeId(node.getNodeId());
                     } else if (check) {
-                        System.out.print(">>>>>66666666666622");
                         request.setNodeId(node.getNodeId());
                     } else {
-                        System.out.print("0000000000000000000");
                         throw new GlobalExceptionHandler
                                 .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
                     }
                     break;
                 case "service center":
                     if (nodeId.equals(node.getNodeId())) {
-                        request.setNodeId(node.getNodeId());
+                        request.setServiceCenter(node.getNodeId());
                         check = true;
                     } else {
                         request.setServiceCenter(node.getNodeId());
@@ -5637,10 +5634,10 @@ public class MeterServiceImpl implements MeterService {
                     request.setSubstation(node.getNodeId());
                     break;
                 case "feeder line":
-                    request.setSubstation(node.getNodeId());
+                    request.setFeeder(node.getNodeId());
                     break;
                 case "dss":
-                    request.setSubstation(node.getNodeId());
+                    request.setDss(node.getNodeId());
                     break;
                 case "root":
                     request.setRoot(node.getNodeId());
