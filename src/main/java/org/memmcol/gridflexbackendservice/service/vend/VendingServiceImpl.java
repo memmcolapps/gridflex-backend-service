@@ -1515,6 +1515,7 @@ public class VendingServiceImpl implements VendingService {
             MeterView meter = vendMapper.getMeterRecord(kctToken.getMeterNumber(), kctToken.getAccountNumber(), user.getOrgId(), nodeId);
 
             TokenGenRequest request = new TokenGenRequest();
+            request.setAmount(kctToken.getUnit());
             request.setMeterNo(meter.getMeterNumber());
             request.setSgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
