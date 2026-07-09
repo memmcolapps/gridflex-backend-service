@@ -2216,18 +2216,18 @@ public interface HesMapper {
     })
     List<Schedule> getScheduleData(int page, int size);
 
-    @Select("SELECT obis_codes, name, job_name, job_group, cron_expression " +
-            "FROM proflile_list WHERE job_group IN ('profile', 'billing') ")
+    @Select("SELECT obis_codes, name, job_name, job_group " +
+            "FROM profile_list WHERE job_group IN ('profile', 'billing') ")
     @Results({
             @Result(column = "obis_codes", property = "obisCode"),
             @Result(column = "name", property = "name"),
             @Result(column = "job_name", property = "jobName"),
             @Result(column = "job_group", property = "jobGroup"),
-            @Result(column = "cron_expression", property = "cronExpression")
+//            @Result(column = "cron_expression", property = "cronExpression")
     })
     List<Schedule> getProfileEvents();
 
-    @Select("SELECT obis_codes, name, job_name, job_group, cron_expression FROM proflile_list WHERE job_name = #{jobName}")
+    @Select("SELECT obis_codes, name, job_name, job_group, cron_expression FROM scheduler_job_info WHERE job_name = #{jobName}")
     @Results({
             @Result(column = "obis_codes", property = "obisCode"),
             @Result(column = "name", property = "name"),

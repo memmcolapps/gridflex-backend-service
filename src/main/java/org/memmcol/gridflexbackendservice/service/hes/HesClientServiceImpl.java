@@ -751,8 +751,6 @@ public class HesClientServiceImpl implements HesService {
             UserModel um = handleUserValidation();
 
             UUID orgId = um.getOrgId();
-            System.out.print("orgId: "+orgId);
-            System.out.print("um.getNodeInfo().getRegionId(): "+um.getNodeInfo().getRegionId());
             List<MeterConnEvent> meterConfig = hesMapper.getMeterConfiguration(0, 0, orgId, um.getNodeInfo().getRegionId());
             String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
 
