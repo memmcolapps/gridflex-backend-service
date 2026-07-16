@@ -68,13 +68,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set clock service failed");
-            genericHandler.logAndSaveException(e, "set clock service");
+//            genericHandler.logIncidentReport("set clock service failed");
+//            genericHandler.logAndSaveException(e, "set clock service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set clock service failed");
-            genericHandler.logAndSaveException(e, "set clock");
+//            genericHandler.logIncidentReport("set clock service failed");
+//            genericHandler.logAndSaveException(e, "set clock");
             throw e;
         }
     }
@@ -110,13 +110,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set ctpt service failed");
-            genericHandler.logAndSaveException(e, "set ctpt service");
+//            genericHandler.logIncidentReport("set ctpt service failed");
+//            genericHandler.logAndSaveException(e, "set ctpt service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set ctpt service failed");
-            genericHandler.logAndSaveException(e, "set ctpt");
+//            genericHandler.logIncidentReport("set ctpt service failed");
+//            genericHandler.logAndSaveException(e, "set ctpt");
             throw e;
         }
     }
@@ -145,13 +145,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set apn service failed");
-            genericHandler.logAndSaveException(e, "set apn service");
+//            genericHandler.logIncidentReport("set apn service failed");
+//            genericHandler.logAndSaveException(e, "set apn service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set apn service failed");
-            genericHandler.logAndSaveException(e, "set apn");
+//            genericHandler.logIncidentReport("set apn service failed");
+//            genericHandler.logAndSaveException(e, "set apn");
             throw e;
         }
     }
@@ -181,13 +181,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set ip port service failed");
-            genericHandler.logAndSaveException(e, "set ip port service");
+//            genericHandler.logIncidentReport("set ip port service failed");
+//            genericHandler.logAndSaveException(e, "set ip port service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set ip port service failed");
-            genericHandler.logAndSaveException(e, "set ip port");
+//            genericHandler.logIncidentReport("set ip port service failed");
+//            genericHandler.logAndSaveException(e, "set ip port");
             throw e;
         }
     }
@@ -224,13 +224,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), results);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("read "+type+" service failed");
-            genericHandler.logAndSaveException(e, "read "+type+" service");
+//            genericHandler.logIncidentReport("read "+type+" service failed");
+//            genericHandler.logAndSaveException(e, "read "+type+" service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("read "+type+" service failed");
-            genericHandler.logAndSaveException(e, "read  "+type);
+//            genericHandler.logIncidentReport("read "+type+" service failed");
+//            genericHandler.logAndSaveException(e, "read  "+type);
             throw e;
         }
     }
@@ -293,13 +293,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set token service failed");
-            genericHandler.logAndSaveException(e, "set token service");
+//            genericHandler.logIncidentReport("set token service failed");
+//            genericHandler.logAndSaveException(e, "set token service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set token service failed");
-            genericHandler.logAndSaveException(e, "set token");
+//            genericHandler.logIncidentReport("set token service failed");
+//            genericHandler.logAndSaveException(e, "set token");
             throw e;
         }
     }
@@ -363,13 +363,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("relay mode service failed");
-            genericHandler.logAndSaveException(e, "relay mode service");
+//            genericHandler.logIncidentReport("relay mode service failed");
+//            genericHandler.logAndSaveException(e, "relay mode service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("relay mode service failed");
-            genericHandler.logAndSaveException(e, "relay mode");
+//            genericHandler.logIncidentReport("relay mode service failed");
+//            genericHandler.logAndSaveException(e, "relay mode");
             throw e;
         }
     }
