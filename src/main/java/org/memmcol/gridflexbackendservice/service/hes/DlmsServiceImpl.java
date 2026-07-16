@@ -328,13 +328,13 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("relay control service failed");
-            genericHandler.logAndSaveException(e, "relay control service");
+//            genericHandler.logIncidentReport("relay control service failed");
+//            genericHandler.logAndSaveException(e, "relay control service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("relay control service failed");
-            genericHandler.logAndSaveException(e, "relay control");
+//            genericHandler.logIncidentReport("relay control service failed");
+//            genericHandler.logAndSaveException(e, "relay control");
             throw e;
         }
     }

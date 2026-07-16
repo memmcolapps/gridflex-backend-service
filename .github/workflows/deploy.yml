@@ -132,8 +132,7 @@ jobs:
             set +a
 
             nohup java -Dspring.profiles.active=staging \
-              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
-              >/dev/null 2>&1 < /dev/null &
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar &
 
             echo "Deployment complete"
           EOF
@@ -219,8 +218,7 @@ jobs:
             set +a
 
             nohup java -Dspring.profiles.active=prod \
-              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
-              >/dev/null 2>&1 < /dev/null &
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar &
 
             echo "Deployment complete"
           EOF
