@@ -71,7 +71,7 @@ jobs:
           REMOTE_PATH="/${{ secrets.LOCATION }}/gridflex-backend-service.jar"
 
           echo "Creating remote directory..."
-          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.ENV_FILE }}/gridflex.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.LOCATION }}"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -79,7 +79,7 @@ jobs:
             $SERVER:$REMOTE_PATH
           
           echo "Writing env file..."
-          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ secrets.ENV_FILE }}/gridflex.env" << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ secrets.LOCATION }}/.env.gridflex" << EOF
           DB_HOST="${{ secrets.STAGING_DB_HOST }}"
           DB_PORT="${{ secrets.STAGING_DB_PORT }}"
           DB_NAME="${{ secrets.STAGING_DB_NAME }}"
@@ -107,7 +107,7 @@ jobs:
           LOCATION="${{ secrets.LOCATION }}"
           EOF
           
-          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.ENV_FILE }}/gridflex.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/.env.gridflex"
 
           echo "Deploying (safe SSH execution)..."
           ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
@@ -128,11 +128,12 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /${{ secrets.ENV_FILE }}/gridflex.env
+            source /${{ secrets.LOCATION }}/.env.gridflex
             set +a
 
             nohup java -Dspring.profiles.active=staging \
-              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar &
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
+              >/dev/null 2>&1 < /dev/null &
 
             echo "Deployment complete"
           EOF
@@ -156,7 +157,7 @@ jobs:
           REMOTE_PATH="/${{ secrets.LOCATION }}/gridflex-backend-service.jar"
 
           echo "Creating remote directory..."
-          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.ENV_FILE }}"
+          ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.LOCATION }}"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -164,7 +165,7 @@ jobs:
             $SERVER:$REMOTE_PATH
           
           echo "Writing env file..."
-          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ secrets.ENV_FILE }}/gridflex.env" << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER "cat > /${{ secrets.LOCATION }}/.env.gridflex" << EOF
           DB_HOST="${{ secrets.PROD_DB_HOST }}"
           DB_PORT="${{ secrets.PROD_DB_PORT }}"
           DB_NAME="${{ secrets.PROD_DB_NAME }}"
@@ -192,7 +193,7 @@ jobs:
           LOCATION="${{ secrets.LOCATION }}"
           EOF
           
-          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.ENV_FILE }}/gridflex.env"
+          ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/.env.gridflex"
 
 
           echo "Deploying (safe SSH execution)..."
@@ -214,11 +215,12 @@ jobs:
             echo "Starting app..."
           
             set -a
-            source /${{ secrets.ENV_FILE }}/gridflex.env
+            source /${{ secrets.LOCATION }}/.env.gridflex
             set +a
 
             nohup java -Dspring.profiles.active=prod \
-              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar &
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
+              >/dev/null 2>&1 < /dev/null &
 
             echo "Deployment complete"
           EOF
