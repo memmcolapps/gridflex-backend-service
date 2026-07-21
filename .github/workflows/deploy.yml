@@ -307,20 +307,21 @@ jobs:
           
           PROD_DB_PASSWORD_XML=$(printf '%s' "$PROD_DB_PASSWORD_XML" | sed 's/&/\\&/g')
           
-          JWT_SECRET_ESC=$(escape_sed "${{ secrets.JWT_SECRET }}")
-          HEADER_KEY_ESC=$(escape_sed "${{ secrets.HEADER_KEY }}")
-          ADMIN_API_VALUE_ESC=$(escape_sed "${{ secrets.ADMIN_API_VALUE }}")
-          USER_API_VALUE_ESC=$(escape_sed "${{ secrets.USER_API_VALUE }}")
-          SETUP_API_VALUE_ESC=$(escape_sed "${{ secrets.SETUP_API_VALUE }}")
+          JWT_SECRET_ESC=$(xml_escape "${{ secrets.JWT_SECRET }}")
+          JWT_SECRET_ESC=$(escape_sed "$JWT_SECRET_ESC")
           
-          USER_API_VALUE_XML=$(printf '%s' "$USER_API_VALUE_ESC" \
-            | sed -e 's/&/\&amp;/g' \
-            -e 's/</\&lt;/g' \
-            -e 's/>/\&gt;/g' \
-            -e "s/'/\&apos;/g" \
-            -e 's/"/\&quot;/g')
+          HEADER_KEY_ESC=$(xml_escape "${{ secrets.HEADER_KEY }}")
+          HEADER_KEY_ESC=$(escape_sed "$HEADER_KEY_ESC")
           
-          USER_API_VALUE_XML=$(printf '%s' "$USER_API_VALUE_XML" | sed 's/&/\\&/g')
+          ADMIN_API_VALUE_ESC=$(xml_escape "${{ secrets.ADMIN_API_VALUE }}")
+          ADMIN_API_VALUE_ESC=$(escape_sed "$ADMIN_API_VALUE_ESC")
+          
+          USER_API_VALUE_ESC=$(xml_escape "${{ secrets.USER_API_VALUE }}")
+          USER_API_VALUE_ESC=$(escape_sed "$USER_API_VALUE_ESC")
+          
+          SETUP_API_VALUE_ESC=$(xml_escape "${{ secrets.SETUP_API_VALUE }}")
+          SETUP_API_VALUE_ESC=$(escape_sed "$SETUP_API_VALUE_ESC")
+        
           
           sed -i "s|\${EUREKA_ADDRESS}|${{ secrets.EUREKA_ADDRESS }}|g" gridflex-backend-service.xml
           sed -i "s|\${EUREKA_PORT}|${{ secrets.EUREKA_PORT }}|g" gridflex-backend-service.xml
@@ -344,7 +345,7 @@ jobs:
           sed -i "s|\${T_PORT}|${{ secrets.T_PORT }}|g" gridflex-backend-service.xml
           sed -i "s|\${ADMIN_API_VALUE}|${ADMIN_API_VALUE_ESC}|g" gridflex-backend-service.xml
           
-          sed -i "s|\${USER_API_VALUE}|${USER_API_VALUE_XML}|g" gridflex-backend-service.xml
+          sed -i "s|\${USER_API_VALUE}|${USER_API_VALUE_ESC}|g" gridflex-backend-service.xml
           sed -i "s|\${SETUP_API_VALUE}|${SETUP_API_VALUE_ESC}|g" gridflex-backend-service.xml
           sed -i "s|\${JWT_SECRET}|${JWT_SECRET_ESC}|g" gridflex-backend-service.xml
           sed -i "s|\${HEADER_KEY}|${HEADER_KEY_ESC}|g" gridflex-backend-service.xml
