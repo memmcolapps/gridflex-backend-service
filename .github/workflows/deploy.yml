@@ -293,6 +293,9 @@ jobs:
       - name: Generate WinSW XML
         shell: bash
         run: |
+          escape_sed() {
+            printf '%s' "$1" | sed 's/[\/&|\\]/\\&/g'
+          }
           cp deployment/gridflex-backend-service.xml.template gridflex-backend-service.xml
           PROD_DB_PASSWORD_XML=$(printf '%s' "${{ secrets.PROD_DB_PASSWORD }}" \
             | sed -e 's/&/\&amp;/g' \
@@ -300,6 +303,16 @@ jobs:
             -e 's/>/\&gt;/g' \
             -e "s/'/\&apos;/g" \
             -e 's/"/\&quot;/g')
+          
+          JWT_SECRET_ESC=$(escape_sed "${{ secrets.JWT_SECRET }}")
+          HEADER_KEY_ESC=$(escape_sed "${{ secrets.HEADER_KEY }}")
+          ADMIN_API_VALUE_ESC=$(escape_sed "${{ secrets.ADMIN_API_VALUE }}")
+          USER_API_VALUE_ESC=$(escape_sed "${{ secrets.USER_API_VALUE }}")
+          SETUP_API_VALUE_ESC=$(escape_sed "${{ secrets.SETUP_API_VALUE }}")
+          BASE_ADDRESS_ESC=$(escape_sed "${{ secrets.BASE_ADDRESS }}")
+          DOC_ADDRESS_ESC=$(escape_sed "${{ secrets.DOC_ADDRESS }}")
+          PROD_HES_ADDRESS_ESC=$(escape_sed "${{ secrets.PROD_HES_ADDRESS }}")
+          WIN_T_ADDRESS_ESC=$(escape_sed "${{ secrets.WIN_T_ADDRESS }}")
           
           sed -i "s|\${EUREKA_ADDRESS}|${{ secrets.EUREKA_ADDRESS }}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 1"
@@ -337,15 +350,15 @@ jobs:
           sed -i "s|\${T_PORT}|${{ secrets.T_PORT }}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 8"
           
-          sed -i "s|\${ADMIN_API_VALUE}|${{ secrets.ADMIN_API_VALUE }}|g" gridflex-backend-service.xml
+          sed -i "s|\${ADMIN_API_VALUE}|${ADMIN_API_VALUE_ESC}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 9"
-          sed -i "s|\${USER_API_VALUE}|${{ secrets.USER_API_VALUE }}|g" gridflex-backend-service.xml
+          sed -i "s|\${USER_API_VALUE}|${USER_API_VALUE_ESC}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 9"
-          sed -i "s|\${SETUP_API_VALUE}|${{ secrets.SETUP_API_VALUE }}|g" gridflex-backend-service.xml
+          sed -i "s|\${SETUP_API_VALUE}|${SETUP_API_VALUE_ESC}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 10"
-          sed -i "s|\${JWT_SECRET}|${{ secrets.JWT_SECRET }}|g" gridflex-backend-service.xml
+          sed -i "s|\${JWT_SECRET}|${JWT_SECRET_ESC}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 10"
-          sed -i "s|\${HEADER_KEY}|${{ secrets.HEADER_KEY }}|g" gridflex-backend-service.xml
+          sed -i "s|\${HEADER_KEY}|${HEADER_KEY_ESC}|g" gridflex-backend-service.xml
           echo "HES_PORT OK 11"
           
           sed -i "s|\${BASE_ADDRESS}|${{ secrets.BASE_ADDRESS }}|g" gridflex-backend-service.xml
