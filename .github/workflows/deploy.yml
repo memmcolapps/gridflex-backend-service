@@ -292,20 +292,30 @@ jobs:
       #######################################################
       - name: Generate WinSW XML
         shell: bash
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          HEADER_KEY: ${{ secrets.HEADER_KEY }}
+          ADMIN_API_VALUE: ${{ secrets.ADMIN_API_VALUE }}
+          USER_API_VALUE: ${{ secrets.USER_API_VALUE }}
+          SETUP_API_VALUE: ${{ secrets.SETUP_API_VALUE }}
         run: |
+          xml_escape() {
+            printf '%s' "$1" \
+              | sed -e 's/&/\&amp;/g' \
+                    -e 's/</\&lt;/g' \
+                    -e 's/>/\&gt;/g' \
+                    -e "s/'/\&apos;/g" \
+                    -e 's/"/\&quot;/g'
+          }
+      
           escape_sed() {
             printf '%s' "$1" | sed 's/[\/&|\\]/\\&/g'
           }
+      
           cp deployment/gridflex-backend-service.xml.template gridflex-backend-service.xml
-          
-          PROD_DB_PASSWORD_XML=$(printf '%s' "${{ secrets.PROD_DB_PASSWORD }}" \
-            | sed -e 's/&/\&amp;/g' \
-            -e 's/</\&lt;/g' \
-            -e 's/>/\&gt;/g' \
-            -e "s/'/\&apos;/g" \
-            -e 's/"/\&quot;/g')
-          
-          PROD_DB_PASSWORD_XML=$(printf '%s' "$PROD_DB_PASSWORD_XML" | sed 's/&/\\&/g')
+
+          PROD_DB_PASSWORD_XML=$(xml_escape "${{ secrets.PROD_DB_PASSWORD }}")
+          PROD_DB_PASSWORD_XML=$(escape_sed "$PROD_DB_PASSWORD_XML")
           
           JWT_SECRET_ESC=$(xml_escape "${{ secrets.JWT_SECRET }}")
           JWT_SECRET_ESC=$(escape_sed "$JWT_SECRET_ESC")
