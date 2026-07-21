@@ -302,6 +302,7 @@ jobs:
             -e 's/"/\&quot;/g')
           
            echo "WIN_LOCATION=${{ secrets.WIN_LOCATION }}"
+           echo "EUREKA_PORT=${{ secrets.EUREKA_PORT }}"
            echo "JWT_SECRET length=${#JWT_SECRET}"
           
           sed -i "s|\${EUREKA_ADDRESS}|${{ secrets.EUREKA_ADDRESS }}|g" gridflex-backend-service.xml
