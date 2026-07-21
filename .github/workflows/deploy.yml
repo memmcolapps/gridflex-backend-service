@@ -422,9 +422,9 @@ jobs:
       - name: Create data folder
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          host: ${{ secrets.WINDOW_SERVER_HOST }}
+          username: ${{ secrets.WINDOW_SERVER_USER }}
+          key: ${{ secrets.WINDOW_SSH_PRIVATE_KEY }}
           script: |
             $dataDir = "C:/${{ secrets.WIN_LOCATION }}/data"
       
