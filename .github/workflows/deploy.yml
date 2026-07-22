@@ -228,415 +228,502 @@ jobs:
 
 
 
-  deploy-window:
+  deploy-windows:
+
     if: github.ref == 'refs/heads/window'
-    name: Deploy Windows
+
     runs-on: ubuntu-latest
 
+    env:
+      APP_NAME: gridflex-backend-service
+      SERVICE_NAME: gridflex-backend-service
+      DEPLOY_DIR: 'C:\${{ secrets.WIN_LOCATION }}'
+      JAR_NAME: gridflex-backend-service.jar
+
     steps:
-      # =====================
-      # Checkout
-      # =====================
-      - name: Checkout code
+      #######################################################
+      # Checkout Repository
+      #######################################################
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # =====================
-      # Java Setup
-      # =====================
-      - name: Set up JDK 17
+      #######################################################
+      # Setup Java
+      #######################################################
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
 
-      # =====================
+      # ==========================
       # Build
-      # =====================
-      - name: Build with Maven
-        run: |
-          chmod +x mvnw
-          ./mvnw clean package -DskipTests
+      # ==========================
+      - name: Build Application
+        run: mvn clean package -DskipTests
 
-      # =====================
-      # Resolve JAR
-      # =====================
-      - name: Resolve JAR
+      #######################################################
+      # Locate JAR
+      #######################################################
+      - name: Locate Executable JAR
+        shell: bash
         run: |
-          JAR_FILE=$(find target -name "*.jar" ! -name "*original*.jar" | head -n 1)
-
-          if [ -z "$JAR_FILE" ]; then
-            echo "No JAR found"
+          
+          JAR=$(find . \
+            -type f \
+            -path "*/target/*.jar" \
+            ! -name "*sources.jar" \
+            ! -name "*javadoc.jar" \
+            ! -name "*original*.jar" \
+            | head -n1)
+          
+          if [ -z "$JAR" ]; then
+            echo "Executable jar not found."
             exit 1
           fi
+          
+          echo "Found: $JAR"
+          
+          cp "$JAR" app.jar
 
-          echo "JAR_FILE=$JAR_FILE" >> $GITHUB_ENV
-          echo "Found: $JAR_FILE"
-
-      # =====================
-      # Setup SSH
-      # =====================
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
-
-      # =====================
-      # Create Environment File
-      # =====================
-      - name: Create Environment File
+      #######################################################
+      # Generate WinSW XML
+      #######################################################
+      - name: Generate WinSW XML
+        shell: bash
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          HEADER_KEY: ${{ secrets.HEADER_KEY }}
+          ADMIN_API_VALUE: ${{ secrets.ADMIN_API_VALUE }}
+          USER_API_VALUE: ${{ secrets.USER_API_VALUE }}
+          SETUP_API_VALUE: ${{ secrets.SETUP_API_VALUE }}
         run: |
-          cat > gridflex.env << EOF
-          DB_HOST="${{ secrets.STAGING_DB_HOST }}"
-          DB_PORT="${{ secrets.STAGING_DB_PORT }}"
-          DB_NAME="${{ secrets.STAGING_DB_NAME }}"
-          DB_USERNAME="${{ secrets.STAGING_DB_USERNAME }}"
-          DB_PASSWORD="${{ secrets.STAGING_DB_PASSWORD }}"
-          MONGO_HOST="${{ secrets.STAGING_MONGO_HOST }}"
-          MONGO_PORT="${{ secrets.STAGING_MONGO_PORT }}"
-          MONGO_DB="${{ secrets.STAGING_MONGO_DB }}"
-          MONGO_USERNAME="${{ secrets.STAGING_MONGO_USERNAME }}"
-          MONGO_PASSWORD="${{ secrets.STAGING_MONGO_PASSWORD }}"
-          HES_PORT="${{ secrets.HES_PORT }}"
-          HES_ADDRESS="${{ secrets.STAGING_HES_ADDRESS }}"
-          T_ADDRESS="${{ secrets.T_WIN_ADDRESS }}"
-          T_PORT="${{ secrets.T_PORT }}"
-          ADMIN_API_VALUE="${{ secrets.ADMIN_API_VALUE }}"
-          USER_API_VALUE="${{ secrets.USER_API_VALUE }}"
-          SETUP_API_VALUE="${{ secrets.SETUP_API_VALUE }}"
-          JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          HEADER_KEY="${{ secrets.HEADER_KEY }}"
-          EUREKA_ADDRESS="${{ secrets.EUREKA_ADDRESS }}"
-          EUREKA_PORT="${{ secrets.EUREKA_PORT }}"
-          BASE_ADDRESS="${{ secrets.BASE_ADDRESS }}"
-          DOC_ADDRESS="${{ secrets.DOC_ADDRESS }}"
-          STAGING_DOMAIN="${{ secrets.STAGING_DOMAIN }}"
-          LOCATION="${{ secrets.LOCATION }}"
+          xml_escape() {
+            printf '%s' "$1" \
+              | sed -e 's/&/\&amp;/g' \
+                    -e 's/</\&lt;/g' \
+                    -e 's/>/\&gt;/g' \
+                    -e "s/'/\&apos;/g" \
+                    -e 's/"/\&quot;/g'
+          }
+      
+          escape_sed() {
+            printf '%s' "$1" | sed 's/[\/&|\\]/\\&/g'
+          }
+      
+          cp deployment/gridflex-backend-service.xml.template gridflex-backend-service.xml
+
+          PROD_DB_PASSWORD_XML=$(xml_escape "${{ secrets.PROD_DB_PASSWORD }}")
+          PROD_DB_PASSWORD_XML=$(escape_sed "$PROD_DB_PASSWORD_XML")
+          
+          JWT_SECRET_ESC=$(xml_escape "${{ secrets.JWT_SECRET }}")
+          JWT_SECRET_ESC=$(escape_sed "$JWT_SECRET_ESC")
+          
+          HEADER_KEY_ESC=$(xml_escape "${{ secrets.HEADER_KEY }}")
+          HEADER_KEY_ESC=$(escape_sed "$HEADER_KEY_ESC")
+          
+          ADMIN_API_VALUE_ESC=$(xml_escape "${{ secrets.ADMIN_API_VALUE }}")
+          ADMIN_API_VALUE_ESC=$(escape_sed "$ADMIN_API_VALUE_ESC")
+          
+          USER_API_VALUE_ESC=$(xml_escape "${{ secrets.USER_API_VALUE }}")
+          USER_API_VALUE_ESC=$(escape_sed "$USER_API_VALUE_ESC")
+          
+          SETUP_API_VALUE_ESC=$(xml_escape "${{ secrets.SETUP_API_VALUE }}")
+          SETUP_API_VALUE_ESC=$(escape_sed "$SETUP_API_VALUE_ESC")
+        
+          
+          sed -i "s|\${EUREKA_ADDRESS}|${{ secrets.EUREKA_ADDRESS }}|g" gridflex-backend-service.xml
+          sed -i "s|\${EUREKA_PORT}|${{ secrets.EUREKA_PORT }}|g" gridflex-backend-service.xml
+          sed -i "s|\${WIN_LOCATION}|C:/${{secrets.WIN_LOCATION}}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_DB_HOST}|${{ secrets.PROD_DB_HOST }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_DB_PORT}|${{ secrets.PROD_DB_PORT }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_DB_NAME}|${{ secrets.PROD_DB_NAME }}|g" gridflex-backend-service.xml
+          
+          sed -i "s|\${PROD_DB_USERNAME}|${{ secrets.PROD_DB_USERNAME }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_DB_PASSWORD}|${PROD_DB_PASSWORD_XML}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_MONGO_HOST}|${{ secrets.PROD_MONGO_HOST }}|g" gridflex-backend-service.xml
+       
+          sed -i "s|\${PROD_MONGO_PORT}|${{ secrets.PROD_MONGO_PORT }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_MONGO_DB}|${{ secrets.PROD_MONGO_DB }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_MONGO_USERNAME}|${{ secrets.PROD_MONGO_USERNAME }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_MONGO_PASSWORD}|${{ secrets.PROD_MONGO_PASSWORD }}|g" gridflex-backend-service.xml
+          
+          sed -i "s|\${HES_PORT}|${{ secrets.HES_PORT }}|g" gridflex-backend-service.xml
+          sed -i "s|\${PROD_HES_ADDRESS}|${{ secrets.PROD_HES_ADDRESS }}|g" gridflex-backend-service.xml
+          sed -i "s|\${WIN_T_ADDRESS}|${{ secrets.WIN_T_ADDRESS }}|g" gridflex-backend-service.xml
+          sed -i "s|\${T_PORT}|${{ secrets.T_PORT }}|g" gridflex-backend-service.xml
+          sed -i "s|\${ADMIN_API_VALUE}|${ADMIN_API_VALUE_ESC}|g" gridflex-backend-service.xml
+          
+          sed -i "s|\${USER_API_VALUE}|${USER_API_VALUE_ESC}|g" gridflex-backend-service.xml
+          sed -i "s|\${SETUP_API_VALUE}|${SETUP_API_VALUE_ESC}|g" gridflex-backend-service.xml
+          sed -i "s|\${JWT_SECRET}|${JWT_SECRET_ESC}|g" gridflex-backend-service.xml
+          sed -i "s|\${HEADER_KEY}|${HEADER_KEY_ESC}|g" gridflex-backend-service.xml
+
+          sed -i "s|\${BASE_ADDRESS}|${{ secrets.BASE_ADDRESS }}|g" gridflex-backend-service.xml
+          sed -i "s|\${DOC_ADDRESS}|${{ secrets.DOC_ADDRESS }}|g" gridflex-backend-service.xml
+          sed -i "s|\${WIN_DOMAIN}|${{ secrets.WIN_DOMAIN }}|g" gridflex-backend-service.xml
+          
+          echo "Generated WinSW XML:"
+          
+          cat gridflex-backend-service.xml
+
+      #######################################################
+      # Configure SSH
+      #######################################################
+      - name: Configure SSH
+        shell: bash
+        run: |
+          
+          mkdir -p ~/.ssh
+          
+          echo "${{ secrets.WINDOW_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          
+          chmod 600 ~/.ssh/id_rsa
+          
+          ssh-keyscan ${{ secrets.WINDOW_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      #######################################################
+      # Create Deployment Directory
+      #######################################################
+      - name: Create Deployment Directory
+        run: |
+          ssh \
+          -i ~/.ssh/id_rsa \
+          -o StrictHostKeyChecking=no \
+          -o ServerAliveInterval=30 \
+          -o ServerAliveCountMax=10 \
+          ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+          "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference = 'Stop'
+          
+          New-Item `
+          -ItemType Directory `
+          -Force `
+          -Path 'C:/${{ secrets.WIN_LOCATION }}' | Out-Null
+          
+          New-Item `
+          -ItemType Directory `
+          -Force `
+          -Path 'C:/${{ secrets.WIN_LOCATION }}/logs' | Out-Null
+          
+          Write-Host "Deployment directory ready."
+          
           EOF
 
-      # =====================
-      # Deploy
-      # =====================
-      - name: Deploy Application
+      #######################################################
+      # Create data directory
+      #######################################################
+      - name: Create data folder
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.WINDOW_SERVER_HOST }}
+          username: ${{ secrets.WINDOW_SERVER_USER }}
+          key: ${{ secrets.WINDOW_SSH_PRIVATE_KEY }}
+          script: |
+            $dataDir = "C:/${{ secrets.WIN_LOCATION }}/data"
+      
+            if (!(Test-Path $dataDir)) {
+                New-Item -ItemType Directory -Path $dataDir | Out-Null
+                Write-Host "Created: $dataDir"
+            } else {
+                Write-Host "Already exists: $dataDir"
+            }
+
+      #######################################################
+      # Stop WinSW Service
+      #######################################################
+      - name: Stop Windows Service
         run: |
-          SERVER="${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }}"
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference = 'Stop'
+          
+          $service = Get-Service -Name 'gridflex-backend-service' -ErrorAction Stop
+          
+          Write-Host "Current Status: $($service.Status)"
+          
+          if ($service.Status -eq 'Running') {
+          
+              Write-Host "Stopping service..."
+          
+              Stop-Service -Name 'gridflex-backend-service'
+          
+              $service.WaitForStatus(
+                  'Stopped',
+                  '00:00:30'
+              )
+          
+          }
+          
+          $service = Get-Service -Name 'gridflex-backend-service'
+          
+          if ($service.Status -ne 'Stopped') {
+          
+              throw "Failed to stop service."
+          
+          }
+          
+          Write-Host "Service stopped successfully."
+          
+          EOF
 
-          echo "Creating deployment directory..."
+      #######################################################
+      # Backup Existing JAR
+      #######################################################
+      - name: Backup Existing JAR
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference='Stop'
+          
+          $jar="C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.jar"
+          
+          $backup="C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.jar.bak"
+          
+          if(Test-Path $jar){
+          
+              Copy-Item `
+                  $jar `
+                  $backup `
+                  -Force
+          
+              Write-Host "Backup completed."
+          
+          }
+          else{
+          
+              Write-Host "No existing JAR. Backup skipped."
+          
+          }
+          
+          EOF
 
-          ssh -o StrictHostKeyChecking=no $SERVER \
-          "powershell -Command \"New-Item -ItemType Directory -Force -Path 'C:\Gridflex' | Out-Null\""
+      #######################################################
+      # Upload New JAR
+      #######################################################
+      - name: Upload Application
+        run: |
+          
+          scp \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            app.jar \
+            "${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }}:/C:/${{secrets.WIN_LOCATION}}/gridflex-backend-service.jar"
 
-          echo "Uploading JAR..."
+      #######################################################
+      # Upload WinSW XML
+      #######################################################
+      - name: Upload WinSW XML
+        run: |
+          scp \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            gridflex-backend-service.xml \
+            "${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }}:/C:/${{secrets.WIN_LOCATION}}/gridflex-backend-service.xml"
 
-          scp -o StrictHostKeyChecking=no \
-          "$JAR_FILE" \
-          "$SERVER:C:/Gridflex/gridflex-backend-service.jar"
+      #######################################################
+      # Verify Uploaded Files
+      #######################################################
+      - name: Verify Upload
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+              $files = @(
+                  'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.exe',
+                  'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.jar',
+                  'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.xml'
+              )
+          
+              foreach($file in $files){
+          
+                  if(!(Test-Path $file)){
+                      throw "Missing: $file"
+                  }
+          
+                  Write-Host "Verified: $file"
+          
+              }
+          
+              Get-ChildItem C:\${{ secrets.WIN_LOCATION }}
+          
+            END
 
-          echo "Uploading Environment File..."
+      #######################################################
+      # Start Windows Service
+      #######################################################
+      - name: Start Windows Service
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference='Stop'
+          
+          Write-Host "Starting gridflex-backend-service..."
+          
+          Start-Service -Name "gridflex-backend-service"
+          
+          Start-Sleep -Seconds 5
+          
+          $service = Get-Service -Name "gridflex-backend-service"
+          
+          $service.WaitForStatus(
+              "Running",
+              "00:00:30"
+          )
+          
+          $service = Get-Service -Name "gridflex-backend-service"
+          
+          if($service.Status -ne "Running"){
+          
+              throw "Service failed to start."
+          
+          }
+          
+          Write-Host "Service started successfully."
+          
+          EOF
 
-          scp -o StrictHostKeyChecking=no \
-          gridflex.env \
-          "$SERVER:C:/Gridflex/gridflex.env"
+      #######################################################
+      # Verify Java Process
+      #######################################################
+      - name: Verify Java Process
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference='Stop'
+          
+          $java = Get-CimInstance Win32_Process |
+          Where-Object {
+          
+              $_.Name -eq "java.exe" -and
+              $_.CommandLine -like "*gridflex-backend-service.jar*"
+          
+          }
+          
+          if(!$java){
+          
+              throw "Java process not running."
+          
+          }
+          
+          Write-Host "Java PID: $($java.ProcessId)"
+          
+          EOF
 
-          echo "Restarting application..."
-
-          ssh -o StrictHostKeyChecking=no $SERVER "powershell -Command \"
-
-            \$process = Get-CimInstance Win32_Process |
-              Where-Object { \$_.CommandLine -like '*gridflex-backend-service.jar*' }
-
-            if (\$process) {
-                Stop-Process -Id \$process.ProcessId -Force
-                Start-Sleep -Seconds 2
+      #######################################################
+      # Verify Deployment
+      #######################################################
+      - name: Verify Deployment
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            powershell -Command "
+          
+            Write-Host ''
+          
+            Write-Host '========== SERVICE =========='
+          
+            Get-Service gridflex-backend-service
+          
+            Write-Host ''
+          
+            Write-Host '========== FILES =========='
+          
+            Get-ChildItem C:/${{ secrets.WIN_LOCATION}}
+          
+            Write-Host ''
+          
+            Write-Host '========== LOGS =========='
+          
+            Get-ChildItem C:/${{ secrets.WIN_LOCATION }}/logs -ErrorAction SilentlyContinue
+          
+            "
+      #######################################################
+      # Display Logs On Failure
+      #######################################################
+      - name: Display Logs
+        if: failure()
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            powershell -Command "
+          
+            Write-Host ''
+            Write-Host '========== WinSW OUT =========='
+          
+            if(Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.out.log'){
+                Get-Content 'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.out.log' -Tail 100
             }
-
-            Get-Content C:\Gridflex\gridflex.env | ForEach-Object {
-
-                if (\$_ -match '^(.+?)=(.*)$') {
-                    [Environment]::SetEnvironmentVariable(
-                        \$matches[1],
-                        \$matches[2],
-                        'Process'
-                    )
-                }
-
+          
+            Write-Host ''
+            Write-Host '========== WinSW ERR =========='
+          
+            if(Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.err.log'){
+                Get-Content 'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.err.log' -Tail 100
             }
-
-            Start-Process java `
-                -ArgumentList '-Dspring.profiles.active=window','-jar','C:\Gridflex\gridflex-backend-service.jar' `
-                -WindowStyle Hidden
-
-          \""
-
-          echo "Deployment completed."
-#  deploy-window:
-#    if: github.ref == 'refs/heads/window'
-#    name: Deploy Windows
-#    runs-on: self-hosted
-#
-#    steps:
-#      # =====================
-#      # Checkout
-#      # =====================
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      # =====================
-#      # Setup Java
-#      # =====================
-#      - name: Set up JDK 17
-#        uses: actions/setup-java@v4
-#        with:
-#          distribution: temurin
-#          java-version: '17'
-#          cache: maven
-#
-#      # =====================
-#      # Build
-#      # =====================
-#      - name: Build
-#        shell: cmd
-#        run: |
-#          mvnw.cmd clean package -DskipTests
-#
-#      # =====================
-#      # Find JAR
-#      # =====================
-#      - name: Locate JAR
-#        id: jar
-#        shell: powershell
-#        run: |
-#          $jar = Get-ChildItem target -Filter *.jar |
-#            Where-Object { $_.Name -notlike "*original*" } |
-#            Select-Object -First 1
-#
-#          if (!$jar) {
-#            throw "No JAR found."
-#          }
-#
-#          echo "jar=$($jar.FullName)" >> $env:GITHUB_OUTPUT
-#
-#      # =====================
-#      # Stop Existing Application
-#      # =====================
-#      - name: Stop Application
-#        shell: powershell
-#        run: |
-#          $process = Get-CimInstance Win32_Process |
-#            Where-Object {
-#              $_.CommandLine -like "*gridflex-backend-service.jar*"
-#            }
-#
-#          if ($process) {
-#            Stop-Process -Id $process.ProcessId -Force
-#            Start-Sleep -Seconds 3
-#          }
-#
-#      # =====================
-#      # Deploy
-#      # =====================
-#      - name: Copy JAR
-#        shell: powershell
-#        run: |
-#          New-Item -ItemType Directory -Force -Path C:\Gridflex | Out-Null
-#
-#          Copy-Item `
-#            "${{ steps.jar.outputs.jar }}" `
-#            "C:\Gridflex\gridflex-backend-service.jar" `
-#            -Force
-#
-#      # =====================
-#      # Start Application
-#      # =====================
-#      - name: Start Application
-#        shell: powershell
-#        run: |
-#          Start-Process java `
-#            -ArgumentList "-Dspring.profiles.active=window","-jar","C:\Gridflex\gridflex-backend-service.jar" `
-#            -WindowStyle Hidden
-
-
-
-
-#  deploy-window:
-#    if: github.ref == 'refs/heads/window'
-#    name: Deploy to Windows
-#    runs-on: self-hosted
-#
-#    steps:
-#      # =====================================
-#      # Checkout
-#      # =====================================
-#      - name: Checkout source
-#        uses: actions/checkout@v4
-#
-#      # =====================================
-#      # Setup Java
-#      # =====================================
-#      - name: Set up JDK 17
-#        uses: actions/setup-java@v4
-#        with:
-#          distribution: temurin
-#          java-version: '17'
-#          cache: maven
-#
-#      # =====================================
-#      # Build Project
-#      # =====================================
-#      - name: Build with Maven
-#        shell: cmd
-#        run: |
-#          mvnw.cmd clean package -DskipTests
-#
-#      # =====================================
-#      # Locate JAR
-#      # =====================================
-#      - name: Locate JAR
-#        id: jar
-#        shell: powershell
-#        run: |
-#          $jar = Get-ChildItem target -Filter *.jar |
-#                 Where-Object { $_.Name -notlike "*original*" } |
-#                 Select-Object -First 1
-#
-#          if ($null -eq $jar) {
-#              throw "No JAR found."
-#          }
-#
-#          echo "jar=$($jar.FullName)" >> $env:GITHUB_OUTPUT
-#
-#      # =====================================
-#      # Stop Service
-#      # =====================================
-#      - name: Stop Gridflex Service
-#        shell: powershell
-#        run: |
-#          $service = Get-Service -Name "GridflexBackend" -ErrorAction SilentlyContinue
-#
-#          if ($service) {
-#              if ($service.Status -eq "Running") {
-#                  Write-Host "Stopping GridflexBackend..."
-#                  Stop-Service GridflexBackend -Force
-#                  $service.WaitForStatus('Stopped','00:00:30')
-#              }
-#          }
-#          else {
-#              Write-Host "GridflexBackend service does not exist."
-#          }
-#
-#      # =====================================
-#      # Backup Existing JAR
-#      # =====================================
-#      - name: Backup Existing JAR
-#        shell: powershell
-#        run: |
-#          $source = "C:\Gridflex\gridflex-backend-service.jar"
-#
-#          if (Test-Path $source) {
-#              Copy-Item `
-#                  $source `
-#                  "C:\Gridflex\gridflex-backend-service-backup.jar" `
-#                  -Force
-#          }
-#
-#      # =====================================
-#      # Deploy JAR
-#      # =====================================
-#      - name: Copy New JAR
-#        shell: powershell
-#        run: |
-#          New-Item `
-#            -ItemType Directory `
-#            -Force `
-#            -Path "C:\Gridflex" | Out-Null
-#
-#          Copy-Item `
-#            "${{ steps.jar.outputs.jar }}" `
-#            "C:\Gridflex\gridflex-backend-service.jar" `
-#            -Force
-#
-#      # =====================================
-#      # Write Environment File
-#      # =====================================
-#      - name: Generate Environment File
-#        shell: powershell
-#        run: |
-#          @"
-#          DB_HOST=${{ secrets.WINDOW_DB_HOST }}
-#          DB_PORT=${{ secrets.WINDOW_DB_PORT }}
-#          DB_NAME=${{ secrets.WINDOW_DB_NAME }}
-#          DB_USERNAME=${{ secrets.WINDOW_DB_USERNAME }}
-#          DB_PASSWORD=${{ secrets.WINDOW_DB_PASSWORD }}
-#
-#          MONGO_HOST=${{ secrets.WINDOW_MONGO_HOST }}
-#          MONGO_PORT=${{ secrets.WINDOW_MONGO_PORT }}
-#          MONGO_DB=${{ secrets.WINDOW_MONGO_DB }}
-#          MONGO_USERNAME=${{ secrets.WINDOW_MONGO_USERNAME }}
-#          MONGO_PASSWORD=${{ secrets.WINDOW_MONGO_PASSWORD }}
-#
-#          HES_PORT=${{ secrets.HES_PORT }}
-#          HES_ADDRESS=${{ secrets.WINDOW_HES_ADDRESS }}
-#
-#          T_ADDRESS=${{ secrets.T_ADDRESS }}
-#          T_PORT=${{ secrets.T_PORT }}
-#
-#          ADMIN_API_VALUE=${{ secrets.ADMIN_API_VALUE }}
-#          USER_API_VALUE=${{ secrets.USER_API_VALUE }}
-#          SETUP_API_VALUE=${{ secrets.SETUP_API_VALUE }}
-#
-#          JWT_SECRET=${{ secrets.JWT_SECRET }}
-#          HEADER_KEY=${{ secrets.HEADER_KEY }}
-#
-#          EUREKA_ADDRESS=${{ secrets.EUREKA_ADDRESS }}
-#          EUREKA_PORT=${{ secrets.EUREKA_PORT }}
-#
-#          BASE_ADDRESS=${{ secrets.BASE_ADDRESS }}
-#          DOC_ADDRESS=${{ secrets.DOC_ADDRESS }}
-#
-#          WINDOW_DOMAIN=${{ secrets.WINDOW_DOMAIN }}
-#          "@ | Set-Content "C:\Gridflex\gridflex.env"
-#
-#      # =====================================
-#      # Start Service
-#      # =====================================
-#      - name: Start Gridflex Service
-#        shell: powershell
-#        run: |
-#          Start-Service GridflexBackend
-#
-#      # =====================================
-#      # Verify Service
-#      # =====================================
-#      - name: Verify Service
-#        shell: powershell
-#        run: |
-#          Start-Sleep -Seconds 10
-#
-#          $service = Get-Service GridflexBackend
-#
-#          if ($service.Status -ne "Running") {
-#              Write-Host "Gridflex service failed to start."
-#              exit 1
-#          }
-#
-#          Write-Host "GridflexBackend is running."
-#
-#      # =====================================
-#      # Display Last Logs
-#      # =====================================
-#      - name: Display Application Logs
-#        if: always()
-#        shell: powershell
-#        run: |
-#          $stdout = "C:\Gridflex\logs\stdout.log"
-#          $stderr = "C:\Gridflex\logs\stderr.log"
-#
-#          if (Test-Path $stdout) {
-#              Write-Host "========== STDOUT =========="
-#              Get-Content $stdout -Tail 100
-#          }
-#
-#          if (Test-Path $stderr) {
-#              Write-Host "========== STDERR =========="
-#              Get-Content $stderr -Tail 100
-#          }
+          
+            Write-Host ''
+            Write-Host '========== WRAPPER LOG =========='
+          
+            if(Test-Path 'C:/${{ secrets.WIN_LOCATION }}/wrapper.log'){
+                Get-Content 'C:/${{ secrets.WIN_LOCATION }}/wrapper.log' -Tail 100
+            }
+          
+            Write-Host ''
+            Write-Host '========== SPRING LOG =========='
+          
+            if(Test-Path 'C:/${{ secrets.WIN_LOCATION }}/logs/gridflex.log'){
+                Get-Content 'C:/${{ secrets.WIN_LOCATION }}/logs/gridflex.log' -Tail 100
+            }
+          
+            Write-Host ''
+            Write-Host '========== GC LOG =========='
+          
+            if(Test-Path 'C:/${{ secrets.WIN_LOCATION }}/logs/gc.log'){
+                Get-Content 'C:/${{ secrets.WIN_LOCATION }}/logs/gc.log' -Tail 100
+            }
+          
+            "
