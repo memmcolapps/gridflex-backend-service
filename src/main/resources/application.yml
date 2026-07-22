@@ -68,19 +68,19 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
 
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-
-  file:
-    name: /${LOCATION}/logs/gridflex.log
-
-  logback:
-    rollingpolicy:
-      max-file-size: 20MB
-      max-history: 1
-      total-size-cap: 100MB
-      file-name-pattern: /${LOCATION}/logs/gridflex.%d{yyyy-MM-dd}.%i.log
+#logging:
+#  level:
+#    org.springframework.cloud.gateway: DEBUG
+#
+#  file:
+#    name: /${LOCATION}/logs/gridflex.log
+#
+#  logback:
+#    rollingpolicy:
+#      max-file-size: 20MB
+#      max-history: 1
+#      total-size-cap: 100MB
+#      file-name-pattern: /${LOCATION}/logs/gridflex.%d{yyyy-MM-dd}.%i.log
 
 
 #  instance:
