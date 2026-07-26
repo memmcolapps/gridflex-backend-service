@@ -239,6 +239,7 @@ jobs:
       SERVICE_NAME: gridflex-backend-service
       DEPLOY_DIR: 'C:\${{ secrets.WIN_LOCATION }}'
       JAR_NAME: gridflex-backend-service.jar
+      DELETE_JARS: ${{ secrets.DELETE_JARS }}
 
     steps:
       #######################################################
@@ -432,6 +433,25 @@ jobs:
             }
 
       #######################################################
+      # Create upload directory
+      #######################################################
+      - name: Create upload folder
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.WINDOW_SERVER_HOST }}
+          username: ${{ secrets.WINDOW_SERVER_USER }}
+          key: ${{ secrets.WINDOW_SSH_PRIVATE_KEY }}
+          script: |
+            $dataDir = "C:/${{ secrets.WIN_LOCATION }}/upload"
+            
+            if (!(Test-Path $dataDir)) {
+                New-Item -ItemType Directory -Path $dataDir | Out-Null
+                Write-Host "Created: $dataDir"
+            } else {
+                Write-Host "Already exists: $dataDir"
+            }
+
+      #######################################################
       # Stop WinSW Service
       #######################################################
       - name: Stop Windows Service
@@ -476,6 +496,39 @@ jobs:
           EOF
 
       #######################################################
+      # Optional: Delete Existing JAR and Backup
+      #######################################################
+      - name: Delete Existing JAR and Backup
+        if: env.DELETE_JARS == 'true'
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference = 'Stop'
+          
+          $files = @(
+              "C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.jar",
+              "C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.jar.bak"
+          )
+          
+          foreach ($file in $files) {
+              if (Test-Path $file) {
+                  Remove-Item $file -Force
+                  Write-Host "Deleted: $file"
+              }
+              else {
+                  Write-Host "Not found: $file"
+              }
+          }
+          
+          EOF
+
+      #######################################################
       # Backup Existing JAR
       #######################################################
       - name: Backup Existing JAR
@@ -507,7 +560,7 @@ jobs:
           else{
           
               Write-Host "No existing JAR. Backup skipped."
-          
+
           }
           
           EOF
