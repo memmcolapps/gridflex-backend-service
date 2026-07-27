@@ -1185,9 +1185,9 @@ public class VendingServiceImpl implements VendingService {
                     user.getOrgId(), kctToken.getMeterNumber(),
                     kctToken.getAccountNumber(), nodeId);
 
-//            if (meterResult == null) {
-//                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
-//            }
+            if (meterResult == null) {
+                throw new GlobalExceptionHandler.NotFoundException("Invalid meter for this organization.");
+            }
 
             boolean isValidForVending =
                     "Prepaid".equalsIgnoreCase(meterResult.getMeterCategory())
