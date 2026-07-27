@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -37,6 +39,8 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+	private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	Map<String, String> errorMessage = new HashMap<>();
 
@@ -73,6 +77,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> handleGenericException(Exception ex, WebRequest request) {
 		ex.printStackTrace();
+		logger.error("Generic exception", ex);
 
 		String message = ex.getMessage();
 
@@ -125,6 +130,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(SQLException.class)
 	public ResponseEntity<?> handleSQLException(SQLException ex) {
+		logger.error("SQL exception", ex);
 		ex.printStackTrace();
 		String msg = "Something went wrong, please try again later";
 		errorMessage.put("responsecode", "101");
@@ -136,6 +142,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NullPointerException.class)
 	public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
 		ex.printStackTrace();
+		logger.error("NullPointer exception", ex);
 		String msg = "We encountered a problem while processing your request, please try a gain later";
 		errorMessage.put("responsecode", "102");
 		errorMessage.put("responsedesc", msg);
@@ -145,6 +152,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(IndexOutOfBoundsException.class)
 	public ResponseEntity<?> handleIndexOutOfBoundsException(IndexOutOfBoundsException ex) {
+		logger.error("IndexOutOfBounds exception", ex);
 		ex.printStackTrace();
 		String msg = "An unexpected error occurred. Please try again or contact support";
 		errorMessage.put("responsecode", "103");
@@ -156,6 +164,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
 		ex.printStackTrace();
+		logger.error("IllegalArgument exception", ex);
 		String msg = ex.getMessage().contains("Longitude")
 				|| ex.getMessage().contains("Latitude") ? ex.getMessage() : "Invalid argument";
 		errorMessage.put("responsecode", "104");
@@ -167,6 +176,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(ArithmeticException.class)
 	public ResponseEntity<?> handleArithmeticException(ArithmeticException ex) {
 		ex.printStackTrace();
+		logger.error("IllegalArgument exception", ex);
 		String msg = "We encountered a problem while performing a calculation";
 		errorMessage.put("responsecode", "105");
 		errorMessage.put("responsedesc", msg);
@@ -177,6 +187,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(FileNotFoundException.class)
 	public ResponseEntity<?> handleFileNotFoundException(FileNotFoundException ex) {
 		ex.printStackTrace();
+		logger.error("FileNotFound exception", ex);
 		String msg = "The file or resource you're looking for could not be found";
 		errorMessage.put("responsecode", "106");
 		errorMessage.put("responsedesc", msg);
@@ -187,6 +198,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(IOException.class)
 	public ResponseEntity<?> handleIOException(IOException ex) {
 		ex.printStackTrace();
+		logger.error("IO exception", ex);
 		String msg = "There was an issue with processing your file";
 		errorMessage.put("responsecode", "107");
 		errorMessage.put("responsedesc", msg);
@@ -197,6 +209,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<?> handleNoResourceFoundException(NoResourceFoundException ex) {
 		ex.printStackTrace();
+		logger.error("NoResourceFound exception", ex);
 		String msg = "Resources not found";
 		errorMessage.put("responsecode", "108");
 		errorMessage.put("responsedesc", msg);
@@ -207,6 +220,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NumberFormatException.class)
 	public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
 		ex.printStackTrace();
+		logger.error("NumberFormat exception", ex);
 		String msg = "The data provided isn't in the correct format";
 		errorMessage.put("responsecode", "109");
 		errorMessage.put("responsedesc", msg);
@@ -217,6 +231,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(ArrayIndexOutOfBoundsException.class)
 	public ResponseEntity<?> handleArrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException ex) {
 		ex.printStackTrace();
+		logger.error("ArrayIndexOutOfBounds exception", ex);
 		String msg = "We're encountering difficulties accessing the requested data";
 		errorMessage.put("responsecode", "110");
 		errorMessage.put("responsedesc", msg);
@@ -227,6 +242,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(ClassCastException.class)
 	public ResponseEntity<?> handleClassCastException(ClassCastException ex) {
 		ex.printStackTrace();
+		logger.error("ClassCast exception", ex);
+
 		String msg = "It seems we encountered an unexpected error while processing your request.";
 		errorMessage.put("responsecode", "111");
 		errorMessage.put("responsedesc", msg);
@@ -238,7 +255,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleDataAccessException(DataAccessException ex) {
 		ex.printStackTrace();
 
-		System.out.println("Log: "+ex.getMessage());
+		logger.error("DataAccess exception", ex);
 //		String msg = "There's a problem with accessing some data [See server logs for more details]";
 		String msg = "There's a problem with accessing some data, please try again later";
 		errorMessage.put("responsecode", "112");
@@ -250,6 +267,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(ResourceNotFoundException.class)
 	public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException ex) {
 		ex.printStackTrace();
+		logger.error("ResourceNotFound exception", ex);
 		String msg = "Resources not found.";
 		errorMessage.put("responsecode", "113");
 		errorMessage.put("responsedesc", msg);
@@ -260,6 +278,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<?> handleNotFoundException(NotFoundException ex) {
 		ex.printStackTrace();
+		logger.error("NotFound exception", ex);
 		String msg = "Not found";
 		errorMessage.put("responsecode", "060");
 		errorMessage.put("responsedesc", ex.getMessage());
@@ -270,6 +289,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<?> handleUnauthorizedException(UnauthorizedException ex) {
 		ex.printStackTrace();
+		logger.error("Unauthorized exception", ex);
 		String msg = "Unauthorized";
 		errorMessage.put("responsecode", "114");
 		errorMessage.put("responsedesc", msg);
@@ -280,6 +300,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
 		ex.printStackTrace();
+		logger.error("MethodArgumentNotValid exception", ex);
 		Map<String, String> msg = new HashMap<>();
 		ex.getBindingResult().getAllErrors().forEach((error) -> {
 			String fieldName = ((FieldError) error).getField();
@@ -297,6 +318,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(AuthenticationException.class)
 	public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
 		ex.printStackTrace();
+		logger.error("Authentication exception", ex);
 		String msg = "Authentication failed";
 		errorMessage.put("responsecode", "116");
 		errorMessage.put("responsedesc", msg);
@@ -307,6 +329,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(AuthorizationException.class)
 	public ResponseEntity<?> handleAuthorizationException(AuthorizationException ex) {
 		ex.printStackTrace();
+		logger.error("Authorization exception", ex);
 		String msg = "Authorization forbidden";
 		errorMessage.put("responsecode", "117");
 		errorMessage.put("responsedesc", msg);
@@ -317,6 +340,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodNotAllowedException.class)
 	public ResponseEntity<?> handleMethodNotAllowedException(MethodNotAllowedException ex) {
 		ex.printStackTrace();
+		logger.error("exception", ex);
 		String msg = "The action you're trying to perform is not supported";
 		errorMessage.put("responsecode", "118");
 		errorMessage.put("responsedesc", msg);
@@ -327,6 +351,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(ConcurrencyFailureException.class)
 	public ResponseEntity<?> handleConcurrencyFailureException(ConcurrencyFailureException ex) {
 		ex.printStackTrace();
+		logger.error("exception", ex);
 		String msg = "We encountered a problem while processing your request. Concurrency failure";
 		errorMessage.put("responsecode", "119");
 		errorMessage.put("responsedesc", msg);
@@ -337,6 +362,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataNotFoundException.class)
 	public ResponseEntity<?> DataNotFoundException(DataNotFoundException ex) {
 		ex.printStackTrace();
+		logger.error("exception", ex);
 		String msg = "Data not found";
 		errorMessage.put("responsecode", "120");
 		errorMessage.put("responsedesc", msg);
@@ -347,6 +373,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(LockedException.class)
 	public ResponseEntity<?> handleLockedException(LockedException ex) {
 		ex.printStackTrace();
+		logger.error("exception", ex);
 		String msg = "User is blocked";
 		errorMessage.put("responsecode", "122");
 		errorMessage.put("responsedesc", msg);
@@ -357,7 +384,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UsernameNotFoundException.class)
 	public ResponseEntity<?> handleUsernameNotFoundException(LockedException ex) {
 		ex.printStackTrace();
-//		String msg = "User not found";
+		logger.error("exception", ex);
 		errorMessage.put("responsecode", "123");
 		errorMessage.put("responsedesc", ex.getMessage());
 		errorMessage.put("responsedata", "");
@@ -367,6 +394,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UncategorizedSQLException.class)
 	public ResponseEntity<Object> handleUncategorizedSQLException(UncategorizedSQLException ex, WebRequest request) {
 		ex.printStackTrace();
+		logger.error("exception", ex);
 		String msg = "The offset specified in a OFFSET clause may not be negative.";
 		errorMessage.put("responsecode", "123");
 		errorMessage.put("responsedesc", msg);
@@ -377,6 +405,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MissingServletRequestParameterException.class)
 	public ResponseEntity<?> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+		logger.error("exception", ex);
 		String parameterName = ex.getParameterName();
 		String msg = String.format("Required request parameter '%s' is not present", parameterName);
 		errorMessage.put("responsecode", "124");
@@ -387,6 +416,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ResponseEntity<?> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+		logger.error("exception", ex);
 		ex.printStackTrace();
 		String msg = String.format("Request method '%s' is not supported for this endpoint. Supported methods are %s.",
 				ex.getMethod(), ex.getSupportedHttpMethods());
@@ -399,6 +429,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(CannotCreateTransactionException.class)
 	public ResponseEntity<?> handleCannotCreateTransactionException(CannotCreateTransactionException ex,
 																	WebRequest request) {
+		logger.error("exception", ex);
 		ex.printStackTrace();
 		String msg = "Unable to connect to the database. Please try again later";
 		errorMessage.put("responsecode", "126");
@@ -410,6 +441,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<?> handleDataIntegrityViolationException(DataIntegrityViolationException ex,
 																   WebRequest request) {
+		logger.error("exception", ex);
 		// Log the exception for debugging purposes
 		ex.printStackTrace();
 
@@ -424,6 +456,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+		logger.error("exception", ex);
 		ex.printStackTrace();
 
 		String msg = "Incorrect payload request";//"Malformed JSON request [See logs for more details]";
@@ -436,6 +469,7 @@ public class GlobalExceptionHandler {
 	// Handles when HikariCP can’t provide a connection in time
 	@ExceptionHandler(SQLTransientConnectionException.class)
 	public ResponseEntity<?> handleConnectionPoolExhaustion(SQLTransientConnectionException ex) {
+		logger.error("exception", ex);
 		ex.printStackTrace();
 		errorMessage.put("responsecode", "130");
 		errorMessage.put("responsedesc", "Server is busy, please try again later");
@@ -445,6 +479,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(WebClientResponseException.class)
 	public ResponseEntity<Map<String, Object>> handleWebClientResponseException(WebClientResponseException ex) {
+
 		Map<String, Object> errorMessage = new HashMap<>();
 		errorMessage.put("responsecode", String.valueOf(ex.getRawStatusCode())); // HTTP status code
 		errorMessage.put("responsedesc", ex.getStatusText());                     // HTTP reason phrase
