@@ -282,7 +282,7 @@ public interface VendMapper {
             "    m.credit_payment_plan, " +
             "    m.tariff_id " +
             "FROM vw_meter_summary m " +
-            "WHERE m.org_id = #{orgId} AND (node_id = #{nodeId} OR service_center = #{nodeId} OR m.region = #{nodeId}) " +
+            "WHERE m.org_id = #{orgId} AND (node_id = #{nodeId} OR service_center = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId}) " +
             "AND (m.meter_number = #{meterNumber} OR m.meter_account_number = #{accountNumber}) " +
             "GROUP BY " +
             "    m.meter_id, " +
@@ -344,7 +344,8 @@ public interface VendMapper {
     @Select("SELECT m.*, c.*, t.id as tariff_id FROM meters m " +
             "LEFT JOIN customers c ON c.customer_id = m.customer_id " +
             "LEFT JOIN tariffs t ON t.id = m.tariff " +
-            "WHERE m.org_id = #{orgId} AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId} OR m.region = #{nodeId}) " +
+            "WHERE m.org_id = #{orgId} AND (m.node_id = #{nodeId} OR m.service_center = #{nodeId} " +
+            "OR m.region = #{nodeId} OR m.root = #{nodeId}) " +
             "AND (m.meter_number = #{meterNumber} OR m.account_number = #{accountNumber})")
     @Results({
             @Result(property = "id", column = "id"),
