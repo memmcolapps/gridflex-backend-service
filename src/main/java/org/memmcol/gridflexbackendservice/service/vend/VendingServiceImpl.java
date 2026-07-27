@@ -1229,10 +1229,6 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setKct1(tokens != null && tokens.size() > 0 ? tokens.get(0) : null);
             kctToken.setKct2(tokens != null && tokens.size() > 1 ? tokens.get(1) : null);
             kctToken.setKct3(tokens != null && tokens.size() > 2 ? tokens.get(2) : null);
-//            kctToken.setKct2(tokenResponse.getTokens().get(0));
-//            kctToken.setKct3(tokenResponse.getTokens().get(1));
-//            kctToken.setKct1(generateDummyToken());
-//            kctToken.setKct2(generateDummyToken());
             kctToken.setMeterId(meter.getMeterId());
             kctToken.setTxNodeId(nodeId);
             kctToken.setStatus("Successful");
@@ -1241,7 +1237,6 @@ public class VendingServiceImpl implements VendingService {
             kctToken.setUserId(user.getId());
             kctToken.setReceiptNo(generateReceiptNumber(kctToken.getMeterNumber()));
             kctToken.setTariffId(meter.getTariffId());
-//            kctToken.setToken(generateDummyToken());
 
             int kct = vendMapper.createKctToken(kctToken);
             if(kct == 0) {
