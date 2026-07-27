@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -24,6 +25,7 @@ public class ReportQueryService {
     @Autowired
     private UptimeReportRepository reportRepository;
 
+    @Transactional
     public void calculateDailyReport(String serviceName, LocalDate date) {
         Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay;
@@ -138,6 +140,7 @@ public class ReportQueryService {
         }
     }
 
+    @Transactional
     public void calculateMonthlyReport(String serviceName, YearMonth month) {
         Instant monthStart = month.atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant monthEnd;
@@ -421,6 +424,7 @@ public class ReportQueryService {
         return null;
     }
 
+    @Transactional
     public void saveAlert(Map<String, Object> payload) {
         logger.info("Received alert payload: {}", payload);
 

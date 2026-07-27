@@ -26,21 +26,21 @@ public class ServiceAlertController {
         service.saveAlert(payload);
     }
 
-    // Manually trigger daily report for yesterday
-    @PostMapping("/trigger/daily")
-    public ResponseEntity<String> triggerDaily() {
-        service.calculateDailyReport("GRIDFLEX-BACKEND-SERVICE", LocalDate.now().minusDays(1));
-        service.calculateDailyReport("API-GATEWAY-SERVICE", LocalDate.now().minusDays(1));
-        return ResponseEntity.ok("Daily report triggered successfully");
-    }
-
-    // Manually trigger monthly report for last month
-    @PostMapping("/trigger/monthly")
-    public ResponseEntity<String> triggerMonthly() {
-        service.calculateMonthlyReport("GRIDFLEX-BACKEND-SERVICE", YearMonth.now().minusMonths(1));
-        service.calculateMonthlyReport("API-GATEWAY-SERVICE", YearMonth.now().minusMonths(1));
-        return ResponseEntity.ok("Monthly report triggered successfully");
-    }
+//    // Manually trigger daily report for yesterday
+//    @PostMapping("/trigger/daily")
+//    public ResponseEntity<String> triggerDaily() {
+//        service.calculateDailyReport("GRIDFLEX-BACKEND-SERVICE", LocalDate.now().minusDays(1));
+//        service.calculateDailyReport("API-GATEWAY-SERVICE", LocalDate.now().minusDays(1));
+//        return ResponseEntity.ok("Daily report triggered successfully");
+//    }
+//
+//    // Manually trigger monthly report for last month
+//    @PostMapping("/trigger/monthly")
+//    public ResponseEntity<String> triggerMonthly() {
+//        service.calculateMonthlyReport("GRIDFLEX-BACKEND-SERVICE", YearMonth.now().minusMonths(1));
+//        service.calculateMonthlyReport("API-GATEWAY-SERVICE", YearMonth.now().minusMonths(1));
+//        return ResponseEntity.ok("Monthly report triggered successfully");
+//    }
 
 }
 

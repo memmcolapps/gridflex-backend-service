@@ -1,6 +1,8 @@
 server:
   port: 9080
 
+
+
 app:
   base-path: /${BASE_ADDRESS}
 #  /api/v1
@@ -9,6 +11,8 @@ app:
 spring:
   jackson:
     default-property-inclusion: non_null
+    jackson:
+      time-zone: Africa/Lagos
 
 odyssey:
   jwt-secret: ${JWT_SECRET}
