@@ -1,29 +1,74 @@
 package org.memmcol.gridflexbackendservice.components;
 
-import org.memmcol.gridflexbackendservice.mapper.BillingMapper;
-import org.memmcol.gridflexbackendservice.mapper.MeterMapper;
-import org.memmcol.gridflexbackendservice.service.billing.BillingServiceImpl;
-import org.memmcol.gridflexbackendservice.service.service_alert.ReportQueryService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.List;
-import java.util.UUID;
+
+import org.memmcol.gridflexbackendservice.service.service_alert.ReportQueryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 @Component
 public class UptimeScheduler {
 
-    @Autowired
-    private ReportQueryService service;
+    private static final Logger logger = LoggerFactory.getLogger(UptimeScheduler.class);
 
-    @Autowired
-    private BillingServiceImpl billingService;
+    private final ReportQueryService reportQueryService;
 
-    @Autowired
-    private BillingMapper billingMapper;
+    public UptimeScheduler(ReportQueryService reportQueryService) {
+        this.reportQueryService = reportQueryService;
+    }
+
+    /**
+     * Runs every day at 00:05 AM.
+     * Generates report for yesterday.
+     */
+    @Scheduled(cron = "0 5 0 * * *")
+    public void generateDailyReports() {
+
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+
+        logger.info("Starting daily report generation for {}", yesterday);
+
+        reportQueryService.calculateDailyReport("GRIDFLEX-BACKEND-SERVICE", yesterday);
+        reportQueryService.calculateDailyReport("API-GATEWAY-SERVICE", yesterday);
+
+        logger.info("Daily report generation completed.");
+    }
+
+    /**
+     * Runs on the 1st day of every month at 00:10 AM.
+     * Generates report for the previous month.
+     */
+    @Scheduled(cron = "0 10 0 1 * *")
+    public void generateMonthlyReports() {
+
+        YearMonth previousMonth = YearMonth.now().minusMonths(1);
+
+        logger.info("Starting monthly report generation for {}", previousMonth);
+
+        reportQueryService.calculateMonthlyReport("GRIDFLEX-BACKEND-SERVICE", previousMonth);
+        reportQueryService.calculateMonthlyReport("API-GATEWAY-SERVICE", previousMonth);
+
+        logger.info("Monthly report generation completed.");
+    }
+
+}
+
+
+
+//@Component
+//public class UptimeScheduler {
+//
+//    @Autowired
+//    private ReportQueryService service;
+//
+//    @Autowired
+//    private BillingServiceImpl billingService;
+//
+//    @Autowired
+//    private BillingMapper billingMapper;
 
 //    @Scheduled(cron = "0 5 0 * * *") // every day at 00:05
 //    public void daily() {
@@ -47,7 +92,7 @@ public class UptimeScheduler {
 //            billingService.calculateMonthlyConsumption(meterId, billingMonth);
 //        }
 //    }
-}
+//}
 
 //@Component
 //public class UptimeScheduler {
