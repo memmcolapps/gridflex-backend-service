@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.exception;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.dao.ConcurrencyFailureException;
@@ -67,15 +69,54 @@ public class GlobalExceptionHandler {
 	}
 
 
+
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> handleGenericException(Exception ex, WebRequest request) {
 		ex.printStackTrace();
-		String msg = "An unexpected error occurred: " + ex.getMessage();
+
+		String message = ex.getMessage();
+
+		try {
+			if (message != null && message.contains("{")) {
+				// Extract JSON part from the exception message
+				String json = message.substring(message.indexOf("{"));
+
+				ObjectMapper mapper = new ObjectMapper();
+				JsonNode node = mapper.readTree(json);
+
+				String error = node.path("error").asText("").trim();
+				String details = node.path("details").asText("").trim();
+
+				if (!error.isEmpty() && !details.isEmpty()) {
+					message = error + ": " + details;
+				} else if (!error.isEmpty()) {
+					message = error;
+				} else if (!details.isEmpty()) {
+					message = details;
+				}
+			}
+		} catch (Exception e) {
+			// If parsing fails, keep the original exception message
+			message = ex.getMessage();
+		}
+
 		errorMessage.put("responsecode", "100");
-		errorMessage.put("responsedesc", msg);
+		errorMessage.put("responsedesc", message);
 		errorMessage.put("responsedata", "");
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(errorMessage);
 	}
+
+//	@ExceptionHandler(Exception.class)
+//	public ResponseEntity<?> handleGenericException(Exception ex, WebRequest request) {
+//		ex.printStackTrace();
+//		String msg = "An unexpected error occurred: " + ex.getMessage();
+//		errorMessage.put("responsecode", "100");
+//		errorMessage.put("responsedesc", msg);
+//		errorMessage.put("responsedata", "");
+//		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
+//	}
 
 	@ExceptionHandler(SQLServerException.class)
 	public ResponseEntity<?> handleSQLServerException(SQLServerException e) {
