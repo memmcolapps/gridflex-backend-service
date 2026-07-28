@@ -18,26 +18,8 @@ import java.util.UUID;
 @Mapper
 public interface BillingMapper {
 
-//    @Select("SELECT * FROM meters WHERE id = #{id}")
-//    Meter findById(UUID id);
-
     @Select("SELECT id FROM meters")
     List<UUID> findAllMeterIds();
-
-//    @Insert("""
-//        INSERT INTO meter_consumption
-//        (meter_id, month, consumption, cumulative_consumption, consumption_type, pre_cummulative, created_at)
-//        VALUES (#{meterId}, #{month}, #{consumption}, #{cumulative}, #{type}, #{preCumulative}, #{createdAt})
-//    """)
-//    void insertMonthlyConsumption(
-//            @Param("meterId") UUID meterId,
-//            @Param("month") String month,
-//            @Param("consumption") BigDecimal consumption,
-//            @Param("type") String type,
-//            @Param("cumulative") BigDecimal cumulative,
-//             @Param("preCumulative") BigDecimal preCumulative,
-//            LocalDateTime createdAt
-//    );
 
     @Insert("""
         INSERT INTO meter_consumption
