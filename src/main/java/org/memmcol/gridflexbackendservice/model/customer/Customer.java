@@ -101,7 +101,7 @@ public class Customer implements Serializable {
     }
 
     public String getFirstname() {
-        return firstname;
+        return firstname == null || firstname.isBlank() ? firstname : firstname.trim();
     }
 
     public void setFirstname(String firstname) {
@@ -109,7 +109,7 @@ public class Customer implements Serializable {
     }
 
     public String getLastname() {
-        return lastname;
+        return lastname == null || lastname.isBlank() ? lastname : lastname.trim();
     }
 
     public void setLastname(String lastname) {
@@ -125,7 +125,7 @@ public class Customer implements Serializable {
     }
 
     public String getNin() {
-        return nin;
+        return nin == null || nin.isBlank() ? nin : nin.trim();
     }
 
     public void setNin(String nin) {
@@ -133,7 +133,7 @@ public class Customer implements Serializable {
     }
 
     public String getPhoneNumber() {
-        return phoneNumber;
+        return phoneNumber == null || phoneNumber.isBlank() ? phoneNumber : phoneNumber.trim();
     }
 
     public void setPhoneNumber(String phoneNumber) {
@@ -141,7 +141,7 @@ public class Customer implements Serializable {
     }
 
     public String getEmail() {
-        return email;
+        return email == null || email.isBlank() ? email : email.trim();
     }
 
     public void setEmail(String email) {
@@ -149,7 +149,7 @@ public class Customer implements Serializable {
     }
 
     public String getState() {
-        return state;
+        return state == null || state.isBlank() ? state : state.trim();
     }
 
     public void setState(String state) {
@@ -157,7 +157,7 @@ public class Customer implements Serializable {
     }
 
     public String getCity() {
-        return city;
+        return city == null || city.isBlank() ? city : city.trim();
     }
 
     public void setCity(String city) {
@@ -165,7 +165,7 @@ public class Customer implements Serializable {
     }
 
     public String getHouseNo() {
-        return houseNo;
+        return houseNo == null || houseNo.isBlank() ? houseNo : houseNo.trim();
     }
 
     public void setHouseNo(String houseNo) {
@@ -173,7 +173,7 @@ public class Customer implements Serializable {
     }
 
     public String getStreetName() {
-        return streetName;
+        return streetName == null || streetName.isBlank() ? streetName : streetName.trim();
     }
 
     public void setStreetName(String streetName) {
@@ -205,7 +205,7 @@ public class Customer implements Serializable {
     }
 
     public String getVat() {
-        return vat;
+        return vat == null || vat.isBlank() ? vat : vat.trim();
     }
 
     public void setVat(String vat) {

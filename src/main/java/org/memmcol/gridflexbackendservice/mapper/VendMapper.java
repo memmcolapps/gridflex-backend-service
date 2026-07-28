@@ -452,7 +452,8 @@ public interface VendMapper {
                     SELECT *
                     FROM vw_vending_transactions_summary
                     WHERE org_id = #{orgId} 
-                    AND (node_id = #{nodeId} OR service_center = #{nodeId} OR region = #{nodeId} OR root = #{nodeId})
+                    AND (node_id = #{nodeId} OR service_center = #{nodeId} 
+                        OR region = #{nodeId} OR root = #{nodeId})
                     
                     <if test="meterNumber != null and meterNumber != ''">
                         AND meter_number ILIKE CONCAT('%', #{meterNumber}, '%')
