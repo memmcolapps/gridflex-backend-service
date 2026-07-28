@@ -17,32 +17,6 @@ import java.util.UUID;
 @Mapper
 public interface DashboardMapper {
 
-
-//    @Select("SELECT * FROM meters WHERE org_id = #{orgId}")
-//    @Results({
-//            @Result(property = "id", column = "id"),
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "nodeId", column = "node_id"),
-//            @Result(property = "customerId", column = "customer_id"),
-//            @Result(property = "meterNumber", column = "meter_number"),
-//            @Result(property = "accountNumber", column = "account_number"),
-//            @Result(property = "meterStage", column = "meter_stage"),
-//            @Result(property = "manufacturer", column = "meter_manufacturer",
-//                    one = @One(select = "org.memmcol.gridflexbackendservice.mapper.DashboardMapper.getMeterManufacturer")),
-//
-//    })
-//    List<Meter> getMeters(UUID orgId);
-//
-//
-//    @Select("SELECT * FROM manufacturers WHERE id = #{meter_manufacturer}")
-//    @Results({
-//            @Result(property = "orgId", column = "org_id"),
-//            @Result(property = "manufacturerId", column = "manufacturer_id"),
-//            @Result(property = "contactPerson", column = "contact_person"),
-//            @Result(property = "phoneNo", column = "phone_no"),
-//    })
-//    Manufacturer getMeterManufacturer(UUID meter_manufacturer);
-
     @Select("""
     SELECT m.*, 
            mf.id AS mf_id,
@@ -95,10 +69,7 @@ public interface DashboardMapper {
 
     })
     List<Meter> getMeters(UUID orgId);
-////"AND (v.node_id = #{nodeId} OR v.service_center = #{nodeId} OR v.region = #{nodeId})")
-//    @Select("SELECT v.*, r.name FROM vw_vending_transactions_summary v " +
-//            "LEFT JOIN region_bhub_service_centers r " +
-//            "ON (v.node_id = r.node_id OR v.region = r.node_id OR v.service_center = r.node_id) WHERE v.org_id = #{orgId} ")
+
     @Select("""
         SELECT v.*, r.name
         FROM vw_vending_transactions_summary v

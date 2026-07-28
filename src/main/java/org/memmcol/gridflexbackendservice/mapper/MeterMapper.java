@@ -133,10 +133,6 @@ public interface MeterMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertVirtualMDMeterInfo(MDMeterInfo request);
 
-//    @Select("SELECT * FROM meters WHERE id = #{meterId} " +
-//            "AND (node_id = #{nodeId} OR feeder = #{nodeId} " +
-//            "OR dss = #{nodeId} OR service_center = #{nodeId}) " +
-//            "AND org_id = #{orgId}")
     @Select("SELECT * FROM meters WHERE id = #{meterId} " +
             "AND (node_id = #{nodeId} OR service_center = #{nodeId} " +
             "OR region = #{nodeId} OR root = #{nodeId}) " +
@@ -348,13 +344,8 @@ public interface MeterMapper {
     })
     LiabilityCause getLcById(UUID liabilityCauseId);
 
-
-    //    @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} AND " +
-//            "(meter_stage = 'Pending-created' OR meter_stage = 'Pending-edited' OR meter_stage = 'Pending-allocated' " +
-//            "OR meter_stage = 'Pending-assigned' OR meter_stage = 'Pending-detached' OR meter_stage = 'Pending-migrated' " +
-//            "OR status = 'Pending-deactivated' OR status = 'Pending-activated') ")
     @Select("SELECT * FROM meters_version WHERE meter_id = #{meterId} AND org_id = #{orgId} " +
-            "AND (node_id = #{nodeId} OR service_center = #{nodeId}) " +
+            "AND (node_id = #{nodeId} OR service_center = #{nodeId} OR root = #{nodeId}) " +
             "AND (meter_stage IN ('Pending-created','Pending-edited','Pending-allocated', 'Pending-assigned', " +
             "'Pending-detached', 'Pending-migrated', 'Assign-edited') " +
             "OR status IN ('Pending-deactivated', 'Pending-activated')) ")
