@@ -452,7 +452,7 @@ public interface VendMapper {
                     SELECT *
                     FROM vw_vending_transactions_summary
                     WHERE org_id = #{orgId} 
-                    AND (node_id = #{nodeId} OR service_center = #{nodeId} OR region = #{nodeId})
+                    AND (node_id = #{nodeId} OR service_center = #{nodeId} OR region = #{nodeId} OR root = #{nodeId})
                     
                     <if test="meterNumber != null and meterNumber != ''">
                         AND meter_number ILIKE CONCAT('%', #{meterNumber}, '%')
@@ -602,7 +602,7 @@ public interface VendMapper {
             "FROM vw_meter_summary m " +
             "LEFT JOIN credit_debit_adjustment cd ON cd.org_id = m.org_id " +
             " AND cd.meter_id = m.meter_id " +
-            " AND (m.service_center = #{nodeId} OR m.node_id = #{nodeId} OR m.region = #{nodeId}) " +
+            " AND (m.service_center = #{nodeId} OR m.node_id = #{nodeId} OR m.region = #{nodeId} OR m.root = #{nodeId}) " +
             "WHERE m.org_id = #{orgId} " +
             "AND (m.meter_number = #{meterNumber} " +
             "OR m.meter_account_number = #{accountNumber} AND m.adjustment_status IN('PARTIALLY_PAID','UNPAID')) " +
