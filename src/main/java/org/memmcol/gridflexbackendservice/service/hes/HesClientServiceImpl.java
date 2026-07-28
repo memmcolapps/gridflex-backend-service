@@ -635,18 +635,6 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
-//    @Override
-//    public Map<String, Object> profileEvents() {
-//        try {
-//            handleUserValidation();
-//            List<Schedule> resp = hesMapper.getProfileEvents();
-//
-//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
-//        } catch (Exception e){
-//            throw e;
-//        }
-//    }
-
     @Transactional
     @Override
     public Map<String, Object> setCron(String jobGroup, String jobName, String cronExpression) {
