@@ -74,7 +74,7 @@ public class Band implements Serializable {
     }
 
     public String getName() {
-        return name == null ? name : name.trim();
+        return name == null || name.isBlank() ? name : name.trim();
     }
 
     public void setName(String name) {
@@ -82,7 +82,7 @@ public class Band implements Serializable {
     }
 
     public String getHour() {
-        return hour == null ? hour : hour.trim();
+        return hour == null || hour.isBlank() ? hour : hour.trim();
     }
 
     public void setHour(String hour) {
@@ -123,7 +123,7 @@ public class Band implements Serializable {
     }
 
     public String getDescription() {
-        return description == null ? description : description.trim();
+        return description == null || description.isBlank() ? description : description.trim();
     }
 
     public void setDescription(String description) {

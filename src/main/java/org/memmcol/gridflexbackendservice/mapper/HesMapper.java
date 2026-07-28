@@ -2362,7 +2362,7 @@ public interface HesMapper {
     List<MeterConnEvent> getMeterConfiguration(int page, int size, UUID orgId, String node);
 
     @Select("""
-        SELECT * FROM vw_meter_obis_mapping
+        SELECT DISTINCT ON (obis_code_combined) * FROM vw_meter_obis_mapping
         WHERE meter_number = #{meterNumber}
         AND LOWER(operation_code) = LOWER(#{type})
     """)

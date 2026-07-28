@@ -29,13 +29,13 @@ public class HandleValidUser {
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
             username = principal.getUsername();
         }
+        if(username == null || username.isEmpty()) {
+            throw new GlobalExceptionHandler.NotFoundException("Username not found");
+        }
         UserModel user = staticOperatorMapper.findAuthByUserEmail(username);
-
-//        System.out.println("user info: " + user.getFirstname());
 
         if (user == null) {
             throw new GlobalExceptionHandler.NotFoundException("User not found");
-//            throw new UsernameNotFoundException("User not found");
         }
 
         if (!user.getStatus()) {
