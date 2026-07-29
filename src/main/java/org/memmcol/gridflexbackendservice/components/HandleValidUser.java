@@ -23,7 +23,16 @@ public class HandleValidUser {
 
     public static UserModel handleUserValidation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Authentication1: " + authentication);
         String username = "";
+
+        System.out.println("Authentication2: " + authentication);
+
+        if (authentication != null) {
+            System.out.println("Principal class: " + authentication.getPrincipal().getClass());
+            System.out.println("Principal: " + authentication.getPrincipal());
+            System.out.println("Authenticated: " + authentication.isAuthenticated());
+        }
 
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
