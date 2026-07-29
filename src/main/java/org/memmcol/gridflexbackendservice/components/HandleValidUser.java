@@ -22,17 +22,23 @@ public class HandleValidUser {
     }
 
     public static UserModel handleUserValidation() {
+
+        System.out.println("--------------------------------");
+        System.out.println("Thread: " + Thread.currentThread().getName());
+        System.out.println("Authentication: " + SecurityContextHolder.getContext().getAuthentication());
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("Authentication1: " + authentication);
-        String username = "";
 
-        System.out.println("Authentication2: " + authentication);
+        String username = null;
 
-        if (authentication != null) {
-            System.out.println("Principal class: " + authentication.getPrincipal().getClass());
-            System.out.println("Principal: " + authentication.getPrincipal());
-            System.out.println("Authenticated: " + authentication.isAuthenticated());
+        if (authentication != null &&
+                authentication.getPrincipal() instanceof CustomUserPrincipal principal) {
+
+            username = principal.getUsername();
         }
+
+        System.out.println("Username: " + username);
+        System.out.println("--------------------------------");
 
 
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
@@ -43,6 +49,7 @@ public class HandleValidUser {
         }
         System.out.println("username>>>: " + username);
         if(username == null || username.isEmpty()) {
+            System.out.println("Throwing Username not found");
             throw new GlobalExceptionHandler.NotFoundException("Username not found");
         }
         UserModel user = staticOperatorMapper.findAuthByUserEmail(username);
