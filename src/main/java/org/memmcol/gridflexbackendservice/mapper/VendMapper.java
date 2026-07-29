@@ -665,7 +665,7 @@ public interface VendMapper {
             @Result(property = "oldSgc", column = "old_sgc"),
             @Result(property = "newSgc", column = "new_sgc"),
             @Result(property = "oldKrn", column = "old_krn"),
-            @Result(property = "oldKrn", column = "old_krn"),
+            @Result(property = "newKrn", column = "new_krn"),
             @Result(property = "oldTariffIndex", column = "old_tariff_index"),
             @Result(property = "newTariffIndex", column = "new_tariff_index"),
             @Result(property = "liabilityName", column = "liability_name"),
