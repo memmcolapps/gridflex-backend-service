@@ -137,7 +137,7 @@ public class LicenceServiceImpl implements LicenceService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("License validation failed");
+            genericHandler.logIncidentReport("License validation failed", organisationId);
             genericHandler.logAndSaveException(ex, "validating license");
             throw ex;
         }
@@ -169,7 +169,7 @@ public class LicenceServiceImpl implements LicenceService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("License retrieval failed");
+            genericHandler.logIncidentReport("License retrieval failed", organisationId);
             genericHandler.logAndSaveException(ex, "retrieving license");
             throw ex;
         }
@@ -197,7 +197,7 @@ public class LicenceServiceImpl implements LicenceService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Fingerprint generation failed");
+            genericHandler.logIncidentReport("Fingerprint generation failed", organisationId);
             genericHandler.logAndSaveException(ex, "generating fingerprint");
             throw ex;
         }
@@ -237,7 +237,7 @@ public class LicenceServiceImpl implements LicenceService {
         } catch (GlobalExceptionHandler.NotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("License save failed");
+            genericHandler.logIncidentReport("License save failed", orgId);
             genericHandler.logAndSaveException(ex, "saving license");
             throw ex;
         }
@@ -274,7 +274,7 @@ public class LicenceServiceImpl implements LicenceService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Fingerprint retrieval failed");
+            genericHandler.logIncidentReport("Fingerprint retrieval failed", organisationId);
             genericHandler.logAndSaveException(ex, "retrieving fingerprint");
             throw ex;
         }

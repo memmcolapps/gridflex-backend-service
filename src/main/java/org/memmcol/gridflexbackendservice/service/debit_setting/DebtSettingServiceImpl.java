@@ -83,11 +83,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> createLiabilityCause(LiabilityCause request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -121,7 +123,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("creating liability cause service failed");
+            genericHandler.logIncidentReport("creating liability cause service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating liability cause");
             throw exception;
         }
@@ -131,10 +133,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> updateLiabilityCause(LiabilityCause request) {
+        UUID orgId = null;
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
             LiabilityCause isExist = debtMapper.getLiabilityCauseByIdForUpdate(request.getLiabilityCauseId(), um.getOrgId());
@@ -170,7 +174,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching liability cause service failed");
+            genericHandler.logIncidentReport("fetching liability cause service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing liability cause");
             throw exception;
         }
@@ -179,9 +183,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getLiabilityCauses(String type, String search, String sort) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             String cacheKey = "lc_"+ um.getOrgId()+"_"+type;
             Object cachedBand = debtCache.get(cacheKey);
 
@@ -222,7 +227,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("fetching liability cause services failed");
+            genericHandler.logIncidentReport("fetching liability cause services failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching liability causes");
             throw exception;
         }
@@ -231,8 +236,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getLiabilityCause(UUID id, UUID lcVersionId) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Object cachedLc = null;
             if(id != null){
                 cachedLc = debtCache.get(id.toString());
@@ -263,7 +270,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), lc + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("fetching liability cause service failed");
+            genericHandler.logIncidentReport("fetching liability cause service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching liability cause");
             throw exception;
         }
@@ -274,10 +281,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> approveLiabilityCause(UUID liabilityCauseId, String approveStatus) throws MissingServletRequestParameterException {
         int result;
         String desc = "";
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
             UUID nodeId = um.getNodeInfo().getNodeId();
+            orgId = um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
@@ -356,7 +365,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
 
-            genericHandler.logIncidentReport("approve liability cause service failed");
+            genericHandler.logIncidentReport("approve liability cause service failed", orgId);
             genericHandler.logAndSaveException(exception, "approving liability cause");
             throw exception;
         }
@@ -365,11 +374,13 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> createPercentage(PercentageRange request) {
+        UUID orgId = null;
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -430,7 +441,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("creating percentage range service failed");
+            genericHandler.logIncidentReport("creating percentage range service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating percentage range");
             throw exception;
         }
@@ -440,10 +451,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional
     @Override
     public Map<String, Object> updatePercentage(PercentageRange request) {
+        UUID orgId = null;
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -504,7 +517,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("editing percentage range service failed");
+            genericHandler.logIncidentReport("editing percentage range service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing percentage range");
             throw exception;
         }
@@ -513,9 +526,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllPercentages(String type, String search, String sort) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             String cacheKey = "pr_"+um.getOrgId()+type;
             Object cachedBand = debtCache.get(cacheKey);
 
@@ -558,7 +572,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("fetching all percentage range service failed");
+            genericHandler.logIncidentReport("fetching all percentage range service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching percentage ranges");
             throw exception;
         }
@@ -579,8 +593,10 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getPercentage(UUID id, UUID percentageVersionId) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Object cachedLc = null;
             if(id != null){
                 cachedLc = debtCache.get(id.toString());
@@ -611,7 +627,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("fetching percentage range service failed");
+            genericHandler.logIncidentReport("fetching percentage range service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching percentage range");
             throw exception;
         }
@@ -622,9 +638,11 @@ public class DebtSettingServiceImpl implements DebtSettingService {
     public Map<String, Object> approvePercentage(UUID percentageId, String approveStatus) throws MissingServletRequestParameterException {
         int result;
         String desc = "";
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -698,7 +716,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("approve percentage range service failed");
+            genericHandler.logIncidentReport("approve percentage range service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching percentage range");
             throw exception;
         }
@@ -706,10 +724,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Override
     public Map<String, Object> liabilityCauseChangeState(UUID id, Boolean state) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -760,7 +780,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(), lc + (state ? " activated ": " deactivated ")+"successfully", "");
         }  catch (Exception exception) {
-            genericHandler.logIncidentReport("changing liability cause status service failed");
+            genericHandler.logIncidentReport("changing liability cause status service failed", orgId);
             genericHandler.logAndSaveException(exception, "changing liability cause state");
             throw exception;
         }
@@ -768,10 +788,12 @@ public class DebtSettingServiceImpl implements DebtSettingService {
 
     @Override
     public Map<String, Object> parcentageChangeState(UUID id, Boolean state) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -827,7 +849,7 @@ public class DebtSettingServiceImpl implements DebtSettingService {
             return ResponseMap.response(status.getSuccessCode(), pr +(state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Changing percentage range status service failed");
+            genericHandler.logIncidentReport("Changing percentage range status service failed", orgId);
             genericHandler.logAndSaveException(exception, "changing state percentage range");
             throw exception;
         }

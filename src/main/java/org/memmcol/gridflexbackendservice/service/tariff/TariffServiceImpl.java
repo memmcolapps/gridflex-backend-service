@@ -89,11 +89,13 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> createTariff(Tariff tariff) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             String desc = "Newly Added";
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -130,7 +132,7 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Creating tariff service failed");
+            genericHandler.logIncidentReport("Creating tariff service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating tariff");
             throw exception;
         }
@@ -141,9 +143,11 @@ public class TariffServiceImpl implements TariffService {
     public Map<String, Object> approve(UUID tariffVersionId, String approveStatus) throws MissingServletRequestParameterException {
         int result;
         String desc = "";
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -227,7 +231,7 @@ public class TariffServiceImpl implements TariffService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Approving tariff service failed");
+            genericHandler.logIncidentReport("Approving tariff service failed", orgId);
             genericHandler.logAndSaveException(exception, "approving tariff");
             throw exception;
         }
@@ -236,10 +240,12 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID id, Boolean state) {
+        UUID orgId  = null;
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -304,7 +310,7 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + (state ? " activated ": "deactivated ")+"successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Changing tariff status service failed");
+            genericHandler.logIncidentReport("Changing tariff status service failed", orgId);
             genericHandler.logAndSaveException(exception, "changing tariff status");
             throw exception;
         }
@@ -377,9 +383,10 @@ public class TariffServiceImpl implements TariffService {
             String type,
             String search,
             String sort) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("tariffs_" + um.getOrgId());
             if (tariffName != null && !tariffName.isEmpty()) cacheKeyBuilder.append("_name_").append(tariffName);
@@ -465,7 +472,7 @@ public class TariffServiceImpl implements TariffService {
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching all tariffs service failed");
+            genericHandler.logIncidentReport("Fetching all tariffs service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching tariffs");
             throw exception;
         }
@@ -474,10 +481,12 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     @Override
     public Map<String, Object> updateTariff(Tariff tariff) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -525,7 +534,7 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Editing tariff service failed");
+            genericHandler.logIncidentReport("Editing tariff service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing tariff");
             throw exception;
         }
@@ -534,8 +543,10 @@ public class TariffServiceImpl implements TariffService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getTariff(UUID tariffId, UUID tariffVersionId) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 //            Object cachedTariff = null;
 //            if(tariffId != null) {
 //                cachedTariff = tariffCache.get(tariffId.toString());
@@ -566,7 +577,7 @@ public class TariffServiceImpl implements TariffService {
             return ResponseMap.response(status.getSuccessCode(), tariffName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching tariff service failed");
+            genericHandler.logIncidentReport("Fetching tariff service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching tariff");
             throw exception;
         }

@@ -90,12 +90,14 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> createCustomer(Customer request) {
+        UUID orgId = null;
         try {
             handleRequired(request);
 
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Customer newly created";
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -135,7 +137,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Creating customer Service failed");
+            genericHandler.logIncidentReport("Creating customer Service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating customer");
             throw exception;
         }
@@ -183,12 +185,14 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> updateCustomer(Customer request) {
+        UUID orgId = null;
         try {
             handleRequired(request);
 
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -226,7 +230,7 @@ public class CustomerServiceImpl implements CustomerService {
             return ResponseMap.response(status.getSuccessCode(), customerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating customer [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Editing customer Service failed");
+            genericHandler.logIncidentReport("Editing customer Service failed", orgId);
             genericHandler.logAndSaveException(exception, "updating customer");
             throw exception;
         }
@@ -260,9 +264,11 @@ public class CustomerServiceImpl implements CustomerService {
             String accountNumber, String assignedStatus, String customerId,
             String sortBy, String sortDirection) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -360,7 +366,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching customers Service failed");
+            genericHandler.logIncidentReport("Fetching customers Service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
@@ -483,10 +489,12 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public Map<String, Object> changeState(UUID customerId, String state, String reason) throws MissingServletRequestParameterException {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -528,7 +536,7 @@ public class CustomerServiceImpl implements CustomerService {
             
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("changing customer status Service failed");
+            genericHandler.logIncidentReport("changing customer status Service failed", orgId);
             genericHandler.logAndSaveException(exception, "changing customer state");
             throw exception;
         }
@@ -536,8 +544,10 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+        UUID orgId = null;
         try {
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             String filename = file.getOriginalFilename();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
@@ -567,7 +577,7 @@ public class CustomerServiceImpl implements CustomerService {
             throw e;
         } catch (Exception e){
             log.error("Error in bulk upload: {}", e.getMessage(), e);
-            genericHandler.logIncidentReport("Bulk upload service failed");
+            genericHandler.logIncidentReport("Bulk upload service failed", orgId);
             genericHandler.logAndSaveException(e, "Bulk upload meter");
             throw e;
 //            throw new IOException("Bulk upload failed: " + e.getMessage());

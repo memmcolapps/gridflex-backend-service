@@ -88,6 +88,8 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> createBand(Band band) {
+        UUID orgId = null;
+        UserModel um = null;
         try {
 
             handleRequestCheck(band);
@@ -96,13 +98,8 @@ public class BandServiceImpl implements BandService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = "Newly Added";
 
-//            UserPermissionResponse principal = securityContext.getPrincipal();
-//            UUID orgId = principal.getPermissionTree().get(0).getGroup().getOrgId();
-//            UUID nodeId = principal.getPermissionTree().get(0).getGroup().getNodeId();
-//            String nodeType = principal.getPermissionTree().get(0).getGroup().getNodeType();
-//            UUID userId = principal.getPermissionTree().get(0).getGroup().getUserId();
-            UserModel um = handleUserValidation();
-            UUID orgId = um.getOrgId();
+            um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -136,7 +133,7 @@ public class BandServiceImpl implements BandService {
 //            handleAddCache(bandByName);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("Creating band service failed");
+            genericHandler.logIncidentReport("Creating band service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating band");
             throw exception;
         }
@@ -156,16 +153,19 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> updateBand(Band band) {
+        UUID orgId = null;
+        UserModel um = null;
         try {
             handleRequestCheck(band);
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
-            UserModel um = handleUserValidation();
+            um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
-            Band isExist = bandMapper.getBandByIdForUpdate(band.getBandId(), um.getOrgId());
+            Band isExist = bandMapper.getBandByIdForUpdate(band.getBandId(), orgId);
             if (isExist == null) {
                 throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getNotFoundDesc());
             }
@@ -194,7 +194,7 @@ public class BandServiceImpl implements BandService {
                     throw new GlobalExceptionHandler.NotFoundException(bandName + " " + status.getUpdateDesc());
                 }
             }
-            Band bandById = bandMapper.getBandById(band.getBandId(), um.getOrgId());
+            Band bandById = bandMapper.getBandById(band.getBandId(), orgId);
 
 
 //            handleAddCache(bandById);
@@ -205,7 +205,7 @@ public class BandServiceImpl implements BandService {
 ////			authCache.remove("dashboard");
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("Editing band service failed");
+            genericHandler.logIncidentReport("Editing band service failed", orgId);
             genericHandler.logAndSaveException(exception, "edited band");
             throw exception;
         }
@@ -217,9 +217,12 @@ public class BandServiceImpl implements BandService {
         Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
         int result;
         String desc = "";
+        UUID orgId = null;
+        UserModel um = null;
         try {
             //check if organization user have access
-            UserModel um = handleUserValidation();
+            um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -231,6 +234,7 @@ public class BandServiceImpl implements BandService {
             if(band == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Band either have no pending state or not found");
             }
+            orgId = um.getOrgId();
             band.setApproveBy(um.getId());
             if(approveStatus != null && approveStatus.equalsIgnoreCase("approve")) {
 
@@ -301,7 +305,7 @@ public class BandServiceImpl implements BandService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("approving band service failed");
+            genericHandler.logIncidentReport("approving band service failed", orgId);
             genericHandler.logAndSaveException(exception, "approve band");
             throw exception;
         }
@@ -310,8 +314,11 @@ public class BandServiceImpl implements BandService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getBands(String type, String search, String sort) {
+        UUID orgId = null;
+        UserModel um = null;
         try {
-            UserModel um = handleUserValidation();
+            um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -350,7 +357,7 @@ public class BandServiceImpl implements BandService {
 //            bandCache.put(cacheKey, result);
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("fetching all bands service failed");
+            genericHandler.logIncidentReport("fetching all bands service failed", orgId);
            genericHandler.logAndSaveException(exception, "fetch bands");
             throw exception;
         }
@@ -370,8 +377,11 @@ public class BandServiceImpl implements BandService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getBand(UUID bandId, UUID bandVersionId) {
+        UUID orgId = null;
+        UserModel um = null;
         try {
-            UserModel um = handleUserValidation();
+            um = handleUserValidation();
+            orgId = um.getOrgId();
 
 //            Object cachedBand = null;
 //
@@ -403,7 +413,7 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("fetching band service failed");
+            genericHandler.logIncidentReport("fetching band service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch band");
             throw exception;
         }
@@ -412,10 +422,13 @@ public class BandServiceImpl implements BandService {
     @Transactional
     @Override
     public Map<String, Object> changeStatus(UUID bandId, Boolean state) {
+        UUID orgId = null;
+        UserModel um = null;
         try {
             int result;
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
-            UserModel um = handleUserValidation();
+            um = handleUserValidation();
+            orgId = um.getOrgId();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
@@ -480,7 +493,7 @@ public class BandServiceImpl implements BandService {
             return ResponseMap.response(status.getSuccessCode(), bandName+(state ? " Activated " : " Deactivated ")+ "Successfully", "");
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("changing band service status failed");
+            genericHandler.logIncidentReport("changing band service status failed", orgId);
             genericHandler.logAndSaveException(exception, "change band status");
             throw exception;
         }

@@ -79,9 +79,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> createUser(CreateUserRequest request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -119,7 +121,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
 
-            genericHandler.logIncidentReport("Creating user service failed");
+            genericHandler.logIncidentReport("Creating user service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating user");
             throw exception;
         }
@@ -128,9 +130,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> updateUserGroup(CreateUserRequest request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -180,7 +184,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
 
-            genericHandler.logIncidentReport("Editing user service failed");
+            genericHandler.logIncidentReport("Editing user service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing user");
             throw exception;
         }
@@ -190,10 +194,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> updateUser(UserModel request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             if(!request.getId().equals(um.getId())) {
                 throw new GlobalExceptionHandler.NotFoundException("Editing someone else record is not permissible");
             }
@@ -221,7 +226,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
 
-            genericHandler.logIncidentReport("Editing user service failed");
+            genericHandler.logIncidentReport("Editing user service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing user");
             throw exception;
         }
@@ -233,9 +238,10 @@ public class UserServiceImpl implements  UserService {
             String firstname, String lastname, String email, String permission,
             String dateAdded, String lastActive, String search, Boolean userStatus,
             String sortDirection, int page, int size) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             // Build a unique cache key
             StringBuilder cacheKeyBuilder = new StringBuilder("users_"+um.getOrgId());
             if (firstname != null && !firstname.isEmpty()) cacheKeyBuilder.append("_firstname_").append(firstname);
@@ -381,7 +387,7 @@ public class UserServiceImpl implements  UserService {
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
 
-            genericHandler.logIncidentReport("Fetching users service failed");
+            genericHandler.logIncidentReport("Fetching users service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch users");
             throw exception;
         }
@@ -390,10 +396,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> changeGroupPermissionStatus(UUID groupId, Boolean state) {
-
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -413,7 +420,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), desc + " successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while updating user [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Changing group permission status service failed");
+            genericHandler.logIncidentReport("Changing group permission status service failed", orgId);
             genericHandler.logAndSaveException(exception, "changing group permission status");
             throw exception;
         }
@@ -423,10 +430,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getUser(UUID userId) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
 //            Object cachedUser = userCache.get(userId.toString()+"_"+um.getOrgId());
 //
 //            if (cachedUser != null) {
@@ -469,7 +477,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(), userName + " " + status.getDesc(), userDTO);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching user service failed");
+            genericHandler.logIncidentReport("Fetching user service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching user status");
             throw exception;
         }
@@ -478,10 +486,12 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> changeState(UUID userId, Boolean state) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -506,7 +516,7 @@ public class UserServiceImpl implements  UserService {
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
 
-            genericHandler.logIncidentReport("Changing user status service failed");
+            genericHandler.logIncidentReport("Changing user status service failed", orgId);
             genericHandler.logAndSaveException(exception, "changing user state");
             throw exception;
         }
@@ -514,14 +524,16 @@ public class UserServiceImpl implements  UserService {
 
     @Transactional
     public Map<String, Object> createGroupPermission(CreateGroupRequest request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
-            UUID orgId =  um.getOrgId();
+            orgId =  um.getOrgId();
 
             Group group = new Group();
             group.setGroupTitle(request.getGroupTitle());
@@ -605,7 +617,7 @@ public class UserServiceImpl implements  UserService {
             safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(),  "Group "+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("Creating group permission service failed");
+            genericHandler.logIncidentReport("Creating group permission service failed", orgId);
             genericHandler.logAndSaveException(exception, "create group permission failed");
             throw exception;
         }
@@ -623,10 +635,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional
     @Override
     public Map<String, Object> updateGroupPermission(CreateGroupRequest request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
-            UUID orgId =  um.getOrgId();
+            orgId =  um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
@@ -711,7 +724,7 @@ public class UserServiceImpl implements  UserService {
             safeAuditService.saveAudit(auditLog);
             return ResponseMap.response(status.getSuccessCode(),  "Group '"+ request.getGroupTitle() +"' "+ status.getRegDesc(), "");
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("Updating group permission service failed");
+            genericHandler.logIncidentReport("Updating group permission service failed", orgId);
             genericHandler.logAndSaveException(exception, "update group permission failed");
             throw exception;
         }
@@ -720,10 +733,11 @@ public class UserServiceImpl implements  UserService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getGroups(String search, Boolean groupStatus, String sortDirection) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             List<Group> groups = userMapper.getGroups(um.getOrgId());
             if (groups == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Group " + status.getNotFoundDesc());
@@ -765,7 +779,7 @@ public class UserServiceImpl implements  UserService {
             return ResponseMap.response(status.getSuccessCode(),  "Group Permission " + status.getDesc(), groupDTOs);
         } catch (Exception exception) {
             log.error("Error occurred while fetching user [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching groups service failed");
+            genericHandler.logIncidentReport("Fetching groups service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching groups status");
             throw exception;
         }

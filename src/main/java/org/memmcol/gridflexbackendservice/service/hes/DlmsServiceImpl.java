@@ -4,6 +4,7 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
 import org.memmcol.gridflexbackendservice.model.hes.ObisMapping;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +19,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
 @Service
 public class DlmsServiceImpl implements DlmsService {
@@ -47,7 +47,11 @@ public class DlmsServiceImpl implements DlmsService {
     public Map<String, Object> setClock(String serial, LocalDateTime dateTime) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
             Map<String, Object> resp = dlmsWriteOpsClient.post()
@@ -68,12 +72,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set clock service failed");
+            genericHandler.logIncidentReport("set clock service failed", orgId);
             genericHandler.logAndSaveException(e, "set clock service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set clock service failed");
+            genericHandler.logIncidentReport("set clock service failed", orgId);
             genericHandler.logAndSaveException(e, "set clock");
             throw e;
         }
@@ -88,7 +92,11 @@ public class DlmsServiceImpl implements DlmsService {
                                        long ptDenominator) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/setCtpt")
@@ -110,12 +118,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set ctpt service failed");
+            genericHandler.logIncidentReport("set ctpt service failed", orgId);
             genericHandler.logAndSaveException(e, "set ctpt service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set ctpt service failed");
+            genericHandler.logIncidentReport("set ctpt service failed", orgId);
             genericHandler.logAndSaveException(e, "set ctpt");
             throw e;
         }
@@ -126,7 +134,11 @@ public class DlmsServiceImpl implements DlmsService {
     public Map<String, Object> setApn(String serial, String apn) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/setApn")
@@ -145,12 +157,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set apn service failed");
+            genericHandler.logIncidentReport("set apn service failed", orgId);
             genericHandler.logAndSaveException(e, "set apn service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set apn service failed");
+            genericHandler.logIncidentReport("set apn service failed", orgId);
             genericHandler.logAndSaveException(e, "set apn");
             throw e;
         }
@@ -161,7 +173,11 @@ public class DlmsServiceImpl implements DlmsService {
     public Map<String, Object> setIpPort(String serial, String ip, int port) {
         String token = auth.getAccessToken();
         String ipPorts = ip+":"+port;
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/setIpPort")
@@ -181,12 +197,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set ip port service failed");
+            genericHandler.logIncidentReport("set ip port service failed", orgId);
             genericHandler.logAndSaveException(e, "set ip port service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set ip port service failed");
+            genericHandler.logIncidentReport("set ip port service failed", orgId);
             genericHandler.logAndSaveException(e, "set ip port");
             throw e;
         }
@@ -197,7 +213,11 @@ public class DlmsServiceImpl implements DlmsService {
     public Map<String, Object> readMeter(String serial, String type) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<ObisMapping> obisInfo = hesMapper.getObisCodeByMeter(serial, type);
 
             if (obisInfo == null || obisInfo.isEmpty()) {
@@ -224,12 +244,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), results);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("read "+type+" service failed");
+            genericHandler.logIncidentReport("read "+type+" service failed", orgId);
             genericHandler.logAndSaveException(e, "read "+type+" service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("read "+type+" service failed");
+            genericHandler.logIncidentReport("read "+type+" service failed", orgId);
             genericHandler.logAndSaveException(e, "read  "+type);
             throw e;
         }
@@ -274,7 +294,11 @@ public class DlmsServiceImpl implements DlmsService {
     public Map<String, Object> setToken(String serial, String credit) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/setToken")
@@ -293,12 +317,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set token service failed");
+            genericHandler.logIncidentReport("set token service failed", orgId);
             genericHandler.logAndSaveException(e, "set token service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set token service failed");
+            genericHandler.logIncidentReport("set token service failed", orgId);
             genericHandler.logAndSaveException(e, "set token");
             throw e;
         }
@@ -309,7 +333,11 @@ public class DlmsServiceImpl implements DlmsService {
     public Map<String, Object> setRelayControl(String serial, boolean state) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/controlRelay")
@@ -328,12 +356,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("relay control service failed");
+            genericHandler.logIncidentReport("relay control service failed", orgId);
             genericHandler.logAndSaveException(e, "relay control service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("relay control service failed");
+            genericHandler.logIncidentReport("relay control service failed", orgId);
             genericHandler.logAndSaveException(e, "relay control");
             throw e;
         }
@@ -343,8 +371,11 @@ public class DlmsServiceImpl implements DlmsService {
     @Transactional
     public Map<String, Object> setRelayMode(String serial, int mode) {
         String token = auth.getAccessToken();
-
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/setRelayMode")
@@ -363,12 +394,12 @@ public class DlmsServiceImpl implements DlmsService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("relay mode service failed");
+            genericHandler.logIncidentReport("relay mode service failed", orgId);
             genericHandler.logAndSaveException(e, "relay mode service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("relay mode service failed");
+            genericHandler.logIncidentReport("relay mode service failed", orgId);
             genericHandler.logAndSaveException(e, "relay mode");
             throw e;
         }
