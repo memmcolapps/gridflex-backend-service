@@ -14,10 +14,12 @@ import com.itextpdf.layout.properties.UnitValue;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
+import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.service.debit_credit_adjustment.CreditDebitAdjustmentSettlementService;
@@ -27,6 +29,9 @@ import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,6 +81,9 @@ public class VendingServiceImpl implements VendingService {
 
     @Autowired
     private PercentageCreditStrategy percentageCreditStrategy;
+
+    @Autowired
+    private AuthMapper staticOperatorMapper;
 
     @Transactional
     @Override
@@ -497,7 +505,31 @@ public class VendingServiceImpl implements VendingService {
     public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
 
         try {
-            UserModel user = handleUserValidation();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = null;
+
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
+                CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+                System.out.println("Username cal: [" + principal.getUsername() + "]");
+                System.out.println("Principal cal: " + principal);
+                username = principal.getUsername();
+            }
+            System.out.println("username cal>>>: " + username);
+            if(username == null || username.isEmpty()) {
+                System.out.println("Throwing Username cal not found");
+                throw new GlobalExceptionHandler.NotFoundException("Username calc not found");
+            }
+            UserModel user = staticOperatorMapper.findAuthByUserEmail(username);
+
+            if (user == null) {
+                throw new GlobalExceptionHandler.NotFoundException("User calc not found");
+            }
+
+            if (!user.getStatus()) {
+                throw new LockedException("Access calc has been revoked");
+            }
+
+//            UserModel user = handleUserValidation();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
