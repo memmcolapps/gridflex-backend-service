@@ -159,7 +159,7 @@ public class VendingServiceImpl implements VendingService {
                 kctRequest.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
                 kctRequest.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
                 kctRequest.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
-                kctRequest.setToMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
+                kctRequest.setTometerType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
                 kctRequest.setAllowkrn(true);
                 kctRequest.setAllow(creditToken.getAllow());
 
@@ -1226,7 +1226,7 @@ public class VendingServiceImpl implements VendingService {
             request.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
             request.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
             request.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
-            request.setToMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
+            request.setTometerType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
             request.setAllow(kctToken.getAllow());
             request.setAllowkrn(true);
 
