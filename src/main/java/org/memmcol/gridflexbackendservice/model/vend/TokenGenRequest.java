@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 public class TokenGenRequest {
 
     private String meterType;
-    private String tometerType;
+    private String toMeterType;
     private String meterNo;
     private Integer sgc;
     private Integer tosgc;
@@ -27,12 +27,12 @@ public class TokenGenRequest {
         this.meterType = meterType;
     }
 
-    public String getTometerType() {
-        return tometerType;
+    public String getToMeterType() {
+        return toMeterType;
     }
 
-    public void setTometerType(String tometerType) {
-        this.tometerType = tometerType;
+    public void setToMeterType(String toMeterType) {
+        this.toMeterType = toMeterType;
     }
 
     public String getMeterNo() {

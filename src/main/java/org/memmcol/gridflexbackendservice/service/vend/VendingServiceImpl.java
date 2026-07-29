@@ -158,8 +158,8 @@ public class VendingServiceImpl implements VendingService {
                 kctRequest.setTosgc(Integer.parseInt(meter.getNewSgc()));
                 kctRequest.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
                 kctRequest.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
-                kctRequest.setMeterType("STS6");
-                kctRequest.setTometerType("STS6");
+                kctRequest.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
+                kctRequest.setToMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
                 kctRequest.setAllowkrn(true);
                 kctRequest.setAllow(creditToken.getAllow());
 
@@ -1225,8 +1225,8 @@ public class VendingServiceImpl implements VendingService {
             request.setTosgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getOldTariffIndex().toString()));
             request.setToti(Integer.parseInt(meter.getNewTariffIndex().toString()));
-            request.setMeterType("STS6");
-            request.setTometerType("STS6");
+            request.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
+            request.setToMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
             request.setAllow(kctToken.getAllow());
             request.setAllowkrn(true);
 
@@ -1292,8 +1292,6 @@ public class VendingServiceImpl implements VendingService {
                    kctToken.getMeterNumber(), kctToken.getAccountNumber(),
                    user.getOrgId(), nodeId);
 
-           System.out.println("oldSgc: "+meter.getOldSgc());
-
            kctToken.setOldSgc(meter.getOldSgc());
            kctToken.setNewSgc(meter.getNewSgc());
            kctToken.setNewKrn(meter.getNewKrn());
@@ -1356,7 +1354,7 @@ public class VendingServiceImpl implements VendingService {
             request.setSgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
             request.setSbc(5);
-            request.setMeterType("STS6");
+            request.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
 
             TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearTamper.getTokenType(), orgId);
 
@@ -1446,7 +1444,7 @@ public class VendingServiceImpl implements VendingService {
             request.setSgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
             request.setSbc(1);
-            request.setMeterType("STS6");
+            request.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
 
             TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearCredit.getTokenType(), orgId);
 
@@ -1534,7 +1532,7 @@ public class VendingServiceImpl implements VendingService {
             request.setMeterNo(meter.getMeterNumber());
             request.setSgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
-            request.setMeterType("STS6");
+            request.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
 
             TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", kctToken.getTokenType(), orgId);
 
