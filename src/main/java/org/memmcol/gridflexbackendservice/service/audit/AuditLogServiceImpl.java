@@ -46,8 +46,10 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     public Map<String, Object> getAuditLog(int page, int size) {
-        try {
+        UUID orgId = null;
+        try{
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Map<String, Object> response = new HashMap<>();
 
             // If page or size is null, 0, or less than 1, fetch all
@@ -99,7 +101,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         } catch (Exception exception) {
             log.error("Error occurred while fetching audit logs: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching all audit log service failed");
+            genericHandler.logIncidentReport("Fetching all audit log service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating band");
 
             throw exception;
@@ -108,9 +110,10 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     public Map<String, Object> getAuditLogById(String id) {
+        UUID orgId = null;
         try{
             UserModel um = handleUserValidation();
-            UUID orgId = um.getOrgId();
+            orgId = um.getOrgId();
 
             Optional<AuditLog> result = auditRepository.findByIdAndCreator_OrgId(id, orgId);
             if (result.isEmpty()) {
@@ -119,7 +122,7 @@ public class AuditLogServiceImpl implements AuditLogService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching audit log service failed");
+            genericHandler.logIncidentReport("Fetching audit log service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching audit log ");
             throw exception;
         }
@@ -127,9 +130,10 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     public Map<String, Object> incidentReport(IncidentReport incidentReport) {
+        UUID orgId = null;
         try{
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             incidentReport.setOrgId(um.getOrgId());
             incidentReport.setUserId(um.getId());
             incidentReport.setStatus(false);
@@ -142,7 +146,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 //            }
             return ResponseMap.response(status.getSuccessCode(), "Incident Report "+status.getRegDesc(), "");
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("Creating incident report service failed");
+            genericHandler.logIncidentReport("Creating incident report service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating band");
             throw exception;
         }

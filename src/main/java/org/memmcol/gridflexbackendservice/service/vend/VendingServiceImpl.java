@@ -14,10 +14,12 @@ import com.itextpdf.layout.properties.UnitValue;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
+import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.NodeMapper;
 import org.memmcol.gridflexbackendservice.mapper.VendMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.meter.Meter;
+import org.memmcol.gridflexbackendservice.model.user.CustomUserPrincipal;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 import org.memmcol.gridflexbackendservice.service.debit_credit_adjustment.CreditDebitAdjustmentSettlementService;
@@ -27,6 +29,9 @@ import org.memmcol.gridflexbackendservice.util.HandlePermission;
 import org.memmcol.gridflexbackendservice.util.HeaderFooterPageEvent;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,10 +82,14 @@ public class VendingServiceImpl implements VendingService {
     @Autowired
     private PercentageCreditStrategy percentageCreditStrategy;
 
+    @Autowired
+    private AuthMapper staticOperatorMapper;
+
     @Transactional
     @Override
     public Map<String, Object> createCreditToken(CreditToken creditToken) {
         UserModel user = handleUserValidation();
+        UUID orgId = user.getOrgId();
         UUID nodeId = user.getNodeInfo().getNodeId();
         String nodeType = user.getNodeInfo().getType();
 
@@ -154,7 +163,7 @@ public class VendingServiceImpl implements VendingService {
                 kctRequest.setAllowkrn(true);
                 kctRequest.setAllow(creditToken.getAllow());
 
-                TokenGenResponse kctResponse = tokenGenClient.generateToken(kctRequest, "/kcttokenGen", "kct");
+                TokenGenResponse kctResponse = tokenGenClient.generateToken(kctRequest, "/kcttokenGen", "kct", user.getOrgId());
 
                 if (kctResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(kctResponse.getCode())) {
                     throw new GlobalExceptionHandler.NotFoundException("KCT token generation failed");
@@ -254,7 +263,7 @@ public class VendingServiceImpl implements VendingService {
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
             request.setMeterType("STS6");
 
-            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType());
+            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType(), orgId);
 
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
@@ -341,7 +350,7 @@ public class VendingServiceImpl implements VendingService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Creating credit token service failed");
+            genericHandler.logIncidentReport("Creating credit token service failed", orgId);
             genericHandler.logAndSaveException(ex, "creating credit token");
             throw ex;
         }
@@ -495,9 +504,10 @@ public class VendingServiceImpl implements VendingService {
     @Transactional
     @Override
     public Map<String, Object> calculateCreditToken(CreditToken creditToken) {
-
+        UUID orgId = null;
         try {
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -658,7 +668,7 @@ public class VendingServiceImpl implements VendingService {
             );
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Calculate credit token service failed");
+            genericHandler.logIncidentReport("Calculate credit token service failed", orgId);
             genericHandler.logAndSaveException(ex, "calculate credit token");
             throw ex;
         }
@@ -1173,9 +1183,11 @@ public class VendingServiceImpl implements VendingService {
     @Transactional
     @Override
     public Map<String, Object> createKctToken(KctToken kctToken) {
+        UUID orgId = null;
         try{
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -1218,7 +1230,7 @@ public class VendingServiceImpl implements VendingService {
             request.setAllow(kctToken.getAllow());
             request.setAllowkrn(true);
 
-            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/kcttokenGen", kctToken.getTokenType());
+            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/kcttokenGen", kctToken.getTokenType(), orgId);
 
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
@@ -1252,7 +1264,7 @@ public class VendingServiceImpl implements VendingService {
 
             return ResponseMap.response(status.getSuccessCode(), "Kct token generated successfully", transaction);
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Creating kct token service failed");
+            genericHandler.logIncidentReport("Creating kct token service failed", orgId);
             genericHandler.logAndSaveException(ex, "creating kct token");
             throw ex;
         }
@@ -1261,9 +1273,11 @@ public class VendingServiceImpl implements VendingService {
     @Transactional
     @Override
     public Map<String, Object> getKctMeterInfo(KctToken kctToken) {
+        UUID orgId = null;
        try{
 //           Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
            UserModel user = handleUserValidation();
+           orgId = user.getOrgId();
 
            if(!kctToken.getTokenType().equalsIgnoreCase("kct")) {
                throw new GlobalExceptionHandler.NotFoundException("Token type not found or attempt to generate wrong token");
@@ -1295,7 +1309,7 @@ public class VendingServiceImpl implements VendingService {
 
            return ResponseMap.response(status.getSuccessCode(), "Meter data fetched successfully", kctToken);
        } catch (Exception ex) {
-           genericHandler.logIncidentReport("Fetching meter kct service failed");
+           genericHandler.logIncidentReport("Fetching meter kct service failed", orgId);
            genericHandler.logAndSaveException(ex, "Fetching meter kct service");
            throw ex;
        }
@@ -1303,9 +1317,11 @@ public class VendingServiceImpl implements VendingService {
 
     @Override
     public Map<String, Object> createClearTamperToken(ClearTamper clearTamper) {
+        UUID orgId = null;
         try{
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -1342,7 +1358,7 @@ public class VendingServiceImpl implements VendingService {
             request.setSbc(5);
             request.setMeterType("STS6");
 
-            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearTamper.getTokenType());
+            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearTamper.getTokenType(), orgId);
 
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
@@ -1380,7 +1396,7 @@ public class VendingServiceImpl implements VendingService {
 
             return ResponseMap.response(status.getSuccessCode(), "Clear tamper token generated successfully", transaction);
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Creating clear tamper token service failed");
+            genericHandler.logIncidentReport("Creating clear tamper token service failed", orgId);
             genericHandler.logAndSaveException(ex, "creating clear tamper token");
             throw ex;
         }
@@ -1388,9 +1404,11 @@ public class VendingServiceImpl implements VendingService {
 
     @Override
     public Map<String, Object> createClearCreditToken(ClearCredit clearCredit) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -1430,7 +1448,7 @@ public class VendingServiceImpl implements VendingService {
             request.setSbc(1);
             request.setMeterType("STS6");
 
-            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearCredit.getTokenType());
+            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/msetokenGen", clearCredit.getTokenType(), orgId);
 
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
@@ -1469,7 +1487,7 @@ public class VendingServiceImpl implements VendingService {
             return ResponseMap.response(status.getSuccessCode(), "Clear credit token generated successfully", transaction);
 
         }catch (Exception ex) {
-            genericHandler.logIncidentReport("Creating clear credit token service failed");
+            genericHandler.logIncidentReport("Creating clear credit token service failed", orgId);
             genericHandler.logAndSaveException(ex, "creating clear credit token");
             throw ex;
         }
@@ -1477,9 +1495,11 @@ public class VendingServiceImpl implements VendingService {
 
     @Override
     public Map<String, Object> createCompensationToken(KctToken kctToken) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -1516,7 +1536,7 @@ public class VendingServiceImpl implements VendingService {
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
             request.setMeterType("STS6");
 
-            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", kctToken.getTokenType());
+            TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", kctToken.getTokenType(), orgId);
 
             if (tokenResponse.getCode() == null || !"SUCCESS".equalsIgnoreCase(tokenResponse.getCode())) {
                 throw new GlobalExceptionHandler.NotFoundException("Token generation failed");
@@ -1555,7 +1575,7 @@ public class VendingServiceImpl implements VendingService {
             return ResponseMap.response(status.getSuccessCode(), "Compensation token generated successfully", transaction);
 
         }catch (Exception ex) {
-            genericHandler.logIncidentReport("Creating compensation token service failed");
+            genericHandler.logIncidentReport("Creating compensation token service failed", orgId);
             genericHandler.logAndSaveException(ex, "creating compensation token");
             throw ex;
         }
@@ -1566,7 +1586,8 @@ public class VendingServiceImpl implements VendingService {
                                            String tariffName, String tokenType, String stat,
                                            String search, String sortDirection, int page, int size) {
         UserModel user = handleUserValidation();
-        UUID uId = user.getOrgId();
+
+        UUID orgId = user.getOrgId();
         UUID nodeId = user.getNodeInfo().getNodeId();
         String nodeType = user.getNodeInfo().getType();
 
@@ -1584,7 +1605,7 @@ public class VendingServiceImpl implements VendingService {
         try {
             int offset = page * size;
             List<Transaction> allReadings = vendMapper.getAllToken(
-                    uId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size, nodeId
+                    orgId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size, nodeId
             );
 
             if (search != null && !search.trim().isEmpty()) {
@@ -1623,7 +1644,7 @@ public class VendingServiceImpl implements VendingService {
             return ResponseMap.response(status.getSuccessCode(), "Token fetched successfully", responseData);
 
         } catch (Exception ex) {
-            genericHandler.logIncidentReport("Token fetched service failed");
+            genericHandler.logIncidentReport("Token fetched service failed", orgId);
             genericHandler.logAndSaveException(ex, "token fetched");
             throw ex;
         }

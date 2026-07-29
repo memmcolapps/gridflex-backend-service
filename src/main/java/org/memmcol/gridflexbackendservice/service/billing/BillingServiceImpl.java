@@ -97,7 +97,7 @@ public class BillingServiceImpl implements BillingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while generating meter readings : {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Generate meter readings service failed");
+            genericHandler.logIncidentReport("Generate meter readings service failed", orgId);
             genericHandler.logAndSaveException(exception, "generate meter readings");
             throw exception;
         }
@@ -300,7 +300,7 @@ public class BillingServiceImpl implements BillingService {
             );
         } catch (Exception exception) {
             log.error("Error occurred while creating meter reading [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Creating meter reading service failed");
+            genericHandler.logIncidentReport("Creating meter reading service failed", operatorOrgId);
             genericHandler.logAndSaveException(exception, "creating meter reading");
             throw exception;
         }
@@ -311,6 +311,7 @@ public class BillingServiceImpl implements BillingService {
     @Override
     public Map<String, Object> getAllMeterReading(String search,int page, int size, String month, Integer year, String meterClass) {
         UserModel um = handleUserValidation();
+        UUID operatorOrgId = um.getOrgId();
         try {
             List<MeterReadingSheet> allReadings;
             MeterReadingDTO meterReadingDTO = new MeterReadingDTO();
@@ -409,7 +410,7 @@ public class BillingServiceImpl implements BillingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while retrieving meter readings : {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching meter readings service failed");
+            genericHandler.logIncidentReport("Fetching meter readings service failed",operatorOrgId);
             genericHandler.logAndSaveException(exception, "fetching meter readings");
             throw exception;
         }
@@ -476,7 +477,7 @@ public class BillingServiceImpl implements BillingService {
             return ResponseMap.response(status.getFailCode(), "No changes were applied to the record.", "");
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Editing meter reading service failed");
+            genericHandler.logIncidentReport("Editing meter reading service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing meter reading");
             throw exception;
         }
@@ -485,9 +486,11 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public void calculateMonthlyConsumption(UUID meterId, LocalDate date) {
+        UUID operatorOrgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            operatorOrgId = um.getOrgId();
 
             Meter meter = meterMapper.findById(meterId, um.getOrgId(), um.getNodeInfo().getNodeId());
 
@@ -564,7 +567,7 @@ public class BillingServiceImpl implements BillingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Editing meter reading service failed");
+            genericHandler.logIncidentReport("Editing meter reading service failed", operatorOrgId);
             genericHandler.logAndSaveException(exception, "editing meter reading");
             throw exception;
         }
@@ -574,9 +577,11 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public Map<String, Object> monthlyConsumption(int page, int size, String search, String month, Integer year) {
-        try{
+         UUID operatorOrgId = null;
+        try {
 
             UserModel um = handleUserValidation();
+            operatorOrgId = um.getOrgId();
 
             List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumption(
                     um.getOrgId(), page, size, month, year);
@@ -630,7 +635,7 @@ public class BillingServiceImpl implements BillingService {
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logIncidentReport("meter monthly consumption service failed", operatorOrgId);
             genericHandler.logAndSaveException(exception, "meter monthly consumption");
             throw exception;
         }
@@ -773,7 +778,7 @@ public class BillingServiceImpl implements BillingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while importing meter consumption", exception);
-            genericHandler.logIncidentReport("Energy import failed");
+            genericHandler.logIncidentReport("Energy import failed", orgId);
             genericHandler.logAndSaveException(exception, "energy import");
             throw exception;
         }
@@ -783,10 +788,11 @@ public class BillingServiceImpl implements BillingService {
     @Override
     public Map<String, Object> monthlyConsumptionByFeeder(
             int page, int size, String search, String month, Integer year, UUID nodeId) {
+        UUID orgId = null;
         try{
 
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyConsumptionByFeederLine(
                     um.getOrgId(), page, size, month, year, nodeId);
 
@@ -841,7 +847,7 @@ public class BillingServiceImpl implements BillingService {
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logIncidentReport("meter monthly consumption service failed", orgId);
             genericHandler.logAndSaveException(exception, "meter monthly consumption");
             throw exception;
         }
@@ -850,6 +856,7 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public Map<String, Object> generateMonthlyFeederReading(FeederReadingSheet feederReadingSheet) {
+        UUID orgId = null;
         try{
             BigDecimal hundred = BigDecimal.valueOf(100);
             if(feederReadingSheet.getCommercialLoss().compareTo(hundred) > 0
@@ -860,6 +867,7 @@ public class BillingServiceImpl implements BillingService {
             }
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             Meter node = billingMapper.verifyMeterNode(feederReadingSheet.getAssetId(), um.getOrgId());
 
@@ -971,7 +979,7 @@ public class BillingServiceImpl implements BillingService {
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logIncidentReport("meter monthly consumption service failed", orgId);
             genericHandler.logAndSaveException(exception, "meter monthly consumption");
             throw exception;
         }
@@ -980,9 +988,11 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public Map<String, Object> updateMonthlyFeederReading(FeederReadingSheet feederReadingSheet) {
+        UUID orgId = null;
         try{
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             Meter node = billingMapper.verifyMeterNode(feederReadingSheet.getAssetId(), um.getOrgId());
 
@@ -1065,7 +1075,7 @@ public class BillingServiceImpl implements BillingService {
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logIncidentReport("meter monthly consumption service failed", orgId);
             genericHandler.logAndSaveException(exception, "meter monthly consumption");
             throw exception;
         }
@@ -1074,9 +1084,11 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public Map<String, Object> getOverallConsumption(int page, int size, String search, String month, Integer year) {
+        UUID orgId = null;
         try{
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             List<OverallEnergyImport> monthlyConsumption = billingMapper.getOverallConsumption(
                     um.getOrgId(), page, size, month, year);
@@ -1134,7 +1146,7 @@ public class BillingServiceImpl implements BillingService {
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logIncidentReport("meter monthly consumption service failed", orgId);
             genericHandler.logAndSaveException(exception, "meter monthly consumption");
             throw exception;
         }
@@ -1143,6 +1155,7 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public Map<String, Object> virtualNonMeterReading(List<MeterReadingSheet> payloads) {
+        UUID orgId = null;
 
         if (payloads == null || payloads.isEmpty()) {
             return ResponseMap.response(
@@ -1156,7 +1169,7 @@ public class BillingServiceImpl implements BillingService {
                 genericHandler.extractRequestMetadata(httpServletRequest);
 
         UserModel operatorAction = handleUserValidation();
-        UUID orgId = operatorAction.getOrgId();
+        orgId = operatorAction.getOrgId();
 
         try {
 
@@ -1206,7 +1219,7 @@ public class BillingServiceImpl implements BillingService {
 
         } catch (Exception exception) {
             log.error("Error occurred while importing meter consumption", exception);
-            genericHandler.logIncidentReport("Energy import failed");
+            genericHandler.logIncidentReport("Energy import failed", orgId);
             genericHandler.logAndSaveException(exception, "energy import");
             throw exception;
         }
@@ -1215,9 +1228,11 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     @Override
     public Map<String, Object> monthlyNonMDConsumptionByFeeder(int page, int size, String search, String month, Integer year, UUID nodeId) {
+        UUID orgId = null;
         try{
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             List<MeterReadingSheet> monthlyConsumption = billingMapper.getMonthlyNonMDConsumptionByFeederLine(
                     um.getOrgId(), page, size, month, year, nodeId);
@@ -1273,7 +1288,7 @@ public class BillingServiceImpl implements BillingService {
 
         }  catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("meter monthly consumption service failed");
+            genericHandler.logIncidentReport("meter monthly consumption service failed", orgId);
             genericHandler.logAndSaveException(exception, "meter monthly consumption");
             throw exception;
         }

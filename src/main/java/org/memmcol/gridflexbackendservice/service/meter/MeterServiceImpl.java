@@ -124,12 +124,14 @@ public class MeterServiceImpl implements MeterService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Map<String, Object> createMeter(Meter request) {
+        UUID orgId = null;
         try {
 
             handlePayloadCheck(request);
             // --- Step 1: Context & Validation ---
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -170,7 +172,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception ex) {
             log.error("Error creating meter: {}", ex.getMessage(), ex);
-            genericHandler.logIncidentReport("Creating meter service failed");
+            genericHandler.logIncidentReport("Creating meter service failed", orgId);
             genericHandler.logAndSaveException(ex, "creating meter");
             throw ex;
         }
@@ -453,12 +455,14 @@ public class MeterServiceImpl implements MeterService {
     @Transactional
     @Override
     public Map<String, Object> updateMeter(Meter request) {
+        UUID orgId = null;
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             // Validate user and set organization ID
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             request.setOrgId(user.getOrgId());
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
@@ -550,7 +554,7 @@ public class MeterServiceImpl implements MeterService {
             return ResponseMap.response(status.getSuccessCode(), meterName + " " + status.getUpdateDesc(), "");
         } catch (Exception ex) {
             log.error("Error updating meter: {}", ex.getMessage(), ex);
-            genericHandler.logIncidentReport("Editing meter service failed");
+            genericHandler.logIncidentReport("Editing meter service failed",orgId);
             genericHandler.logAndSaveException(ex, "editing meter");
             throw ex;
         }
@@ -857,10 +861,11 @@ public class MeterServiceImpl implements MeterService {
             int page, int size, String search, String meterNumber, String simNo, String manufacturer, String meterStage,
             String meterClass, String category, String state, String createdAt, String customerId, String type,
             String sortBy, String sortDirection) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
-
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -1023,7 +1028,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching users: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching meter service failed");
+            genericHandler.logIncidentReport("Fetching meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "fetching meter");
             throw exception;
         }
@@ -1115,9 +1120,11 @@ public class MeterServiceImpl implements MeterService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getSingleMeter(UUID meterId, String meterNumber, String accountNumber, UUID meterVersionId, String versionMeterNumber, String cin) {
+        UUID orgId = null;
         try {
             Meter meter = null;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
 
             if (meterId == null && meterNumber == null && accountNumber == null && meterVersionId == null && versionMeterNumber == null) {
@@ -1177,7 +1184,7 @@ public class MeterServiceImpl implements MeterService {
             return ResponseMap.response(status.getSuccessCode(),  meterName + " " + status.getDesc(), meter);
         } catch (Exception exception) {
             log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Editing meter service failed");
+            genericHandler.logIncidentReport("Editing meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "fetching meter");
             throw exception;
         }
@@ -1187,10 +1194,12 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> changeStatus(UUID meterId, Boolean state, String reason) throws MissingServletRequestParameterException {
         int result;
+        UUID orgId = null;
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
             Meter meterById = meterMapper.findById(meterId, user.getOrgId(),nodeId);
@@ -1260,7 +1269,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Editing meter service failed");
+            genericHandler.logIncidentReport("Editing meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "changing meter state");
             throw exception;
         }
@@ -1280,9 +1289,11 @@ public class MeterServiceImpl implements MeterService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getManufacturers() {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             // Get all manufacturers
             List<Manufacturer> manufacturers = meterMapper.getManufacturers(um.getOrgId());
@@ -1290,7 +1301,7 @@ public class MeterServiceImpl implements MeterService {
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), manufacturers);
         } catch (Exception exception) {
             log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("fetching manufacturer service failed");
+            genericHandler.logIncidentReport("fetching manufacturer service failed",orgId);
             genericHandler.logAndSaveException(exception, "fetching manufacturers");
             throw exception;
         }
@@ -1299,9 +1310,11 @@ public class MeterServiceImpl implements MeterService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> singleCustomer(String customerId) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             String virtualMeterNo = handleGetVirtualMeter();
             String accountNumber = handleGetAccountNumber();
             UUID nodeId = um.getNodeInfo().getNodeId();
@@ -1343,7 +1356,7 @@ public class MeterServiceImpl implements MeterService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), response);
         } catch (Exception exception) {
             log.error("Error occurred while fetching customer [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching customer in meter service failed");
+            genericHandler.logIncidentReport("Fetching customer in meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "fetching customer in meter");
             throw exception;
         }
@@ -1352,10 +1365,12 @@ public class MeterServiceImpl implements MeterService {
     @Transactional
     @Override
     public Map<String, Object> assignMeterToCustomer(AssignMeterToCustomer request, MultipartFile image) {
+        UUID orgId = null;
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -1481,7 +1496,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error occurred during meter assignment: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Assigning meter service failed");
+            genericHandler.logIncidentReport("Assigning meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "assigning meter");
             throw exception;
         }
@@ -1665,10 +1680,12 @@ public class MeterServiceImpl implements MeterService {
     public Map<String, Object> continueAssignMeter(AssignMeterToCustomer request, MultipartFile image) {
         int result;
         boolean state = false;
+        UUID orgId = null;
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -1804,7 +1821,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Assigning meter with an existing cin failed");
+            genericHandler.logIncidentReport("Assigning meter with an existing cin failed",orgId);
             genericHandler.logAndSaveException(exception, "continue assign meter");
             throw exception;
         }
@@ -1814,10 +1831,12 @@ public class MeterServiceImpl implements MeterService {
     @Transactional
     @Override
     public Map<String, Object> detachMeter(UUID meterId, String reason) {
+        UUID orgId = null;
         try{
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -1906,7 +1925,7 @@ public class MeterServiceImpl implements MeterService {
             return ResponseMap.response(status.getSuccessCode(), "Meter detached successfully", "");
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Migrating meter service failed");
+            genericHandler.logIncidentReport("Migrating meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "migrating meter");
             throw exception;
         }
@@ -1917,10 +1936,12 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> migrate(PaymentMode request) {
         String desc = "";
+        UUID orgId = null;
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
             // verify if meter exist
@@ -2041,7 +2062,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error occurred while changing user status [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Migrating meter service failed");
+            genericHandler.logIncidentReport("Migrating meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "migrating meter");
             throw exception;
         }
@@ -2051,11 +2072,12 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> approve(UUID meterVersionId, String approveStatus)
             throws MissingServletRequestParameterException {
-
+            UUID orgId = null;
         try {
             // --- Step 1: Validate request ---
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -2099,7 +2121,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception ex) {
             log.error("Error occurred while approving/rejecting meter: {}", ex.getMessage(), ex);
-            genericHandler.logIncidentReport("approving meter service failed");
+            genericHandler.logIncidentReport("approving meter service failed",orgId);
             genericHandler.logAndSaveException(ex, "approving meter");
             throw ex;
         }
@@ -2572,11 +2594,13 @@ public class MeterServiceImpl implements MeterService {
     @Transactional
     @Override
     public Map<String, Object> allocateMeter(String meterNumber, String regionId) {
+        UUID orgId = null;
         try {
             // Gather client metadata
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeName = um.getNodeInfo().getType();
@@ -2602,59 +2626,6 @@ public class MeterServiceImpl implements MeterService {
             if (node == null) {
                 throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
             }
-
-//            resolveNodeHierarchyById(verifyMeter, node.getNodeId(), um.getOrgId());
-//            UUID currentNodeId = node.getNodeId();
-//
-//            Set<UUID> visited = new HashSet<>();
-//
-//            while (currentNodeId != null) {
-//
-//                if (!visited.add(currentNodeId)) {
-//                    throw new IllegalStateException("Circular hierarchy detected");
-//                }
-//
-//                NodeSummary currentNode = nodeMapper.getNodeByNodeId(currentNodeId, um.getOrgId());
-//
-//                if (currentNode  == null) {
-//                    break;
-//                }
-//
-//                String type = currentNode.getType() == null ? "" : currentNode.getType().toLowerCase();
-//
-//                switch (type) {
-//
-//                    case "region":
-//                        verifyMeter.setRegion(currentNode.getNodeId());
-//                        break;
-//
-//                    case "service center":
-//                        verifyMeter.setServiceCenter(currentNode.getNodeId());
-//                        break;
-//
-//                    case "business hub":
-//                        verifyMeter.setNodeId(currentNode.getNodeId());
-//                        break;
-//
-//                    case "feeder line":
-//                        verifyMeter.setFeeder(currentNode.getNodeId());
-//                        break;
-//
-//                    case "dss":
-//                        verifyMeter.setDss(currentNode.getNodeId());
-//                        break;
-//
-//                    case "substation":
-//                        verifyMeter.setSubstation(currentNode.getNodeId());
-//                        break;
-//
-//                    case "root":
-//                        verifyMeter.setRoot(currentNode.getNodeId());
-//                        break;
-//                }
-//
-//                currentNodeId = currentNode.getParentId();
-//            }
 
             verifyMeter.setCreatedAt(LocalDateTime.now());
             verifyMeter.setUpdatedAt(LocalDateTime.now());
@@ -2685,54 +2656,11 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching meters: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Allocating meter service failed");
+            genericHandler.logIncidentReport("Allocating meter service failed",orgId);
             genericHandler.logAndSaveException(exception, "allocating meter");
             throw exception;
         }
     }
-
-//    private void resolveNodeHierarchyById(Meter request, UUID startNodeId, UUID orgId) {
-//
-//        UUID currentNodeId = startNodeId;
-//        Set<UUID> visited = new HashSet<>();
-//
-//        while (currentNodeId != null) {
-//
-//            if (!visited.add(currentNodeId)) {
-//                throw new IllegalStateException("Circular hierarchy detected");
-//            }
-//
-//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
-//            if (node == null) break;
-//
-//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
-//
-//            switch (type) {
-//                case "business hub":
-//                        request.setNodeId(node.getNodeId());
-//                    break;
-//                case "service center":
-//                    request.setServiceCenter(node.getNodeId());
-//                    break;
-//                case "region":
-//                    if(!request.getRegionInfo().getNodeId().equals(node.getNodeId())){
-//                        throw new GlobalExceptionHandler
-//                                .NotFoundException("Meter does not belong to this region");
-//
-//                    }
-//                    request.setRegion(node.getNodeId());
-//                    break;
-//                case "substation":
-//                    request.setSubstation(node.getNodeId());
-//                    break;
-//                case "root":
-//                    request.setRoot(node.getNodeId());
-//                    break;
-//            }
-//
-//            currentNodeId = node.getParentId();
-//        }
-//    }
 
 
     @Async("bulkUploadExecutor")
@@ -2757,9 +2685,10 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     public Map<String, Object> bulkUpload(MultipartFile file) throws IOException {
+        UUID orgId = null;
         try {
             UserModel user = handleUserValidation();
-
+            orgId = user.getOrgId();
             // Determine file type
             String filename = Optional.ofNullable(file.getOriginalFilename())
                     .orElseThrow(() -> new IOException("File has no name"));
@@ -2783,347 +2712,18 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Error in bulk upload: {}", e.getMessage(), e);
-            genericHandler.logIncidentReport("Bulk upload service failed");
+            genericHandler.logIncidentReport("Bulk upload service failed",orgId);
             genericHandler.logAndSaveException(e, "Bulk upload meter");
             throw new IOException("Bulk upload failed: " + e.getMessage());
         }
     }
-//
-//    private void resolveNodeHierarchy(Meter request, UUID startNodeId, UUID orgId) {
-//
-//        UUID currentNodeId = startNodeId;
-//        Set<UUID> visited = new HashSet<>();
-//
-//        while (currentNodeId != null) {
-//
-//            if (!visited.add(currentNodeId)) {
-//                throw new IllegalStateException("Circular hierarchy detected");
-//            }
-//
-//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
-//            if (node == null) break;
-//
-//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
-//
-//            switch (type) {
-////                case "business hub":
-////                    System.out.println("bbbhhh:: "+node.getNodeId());
-////                    if(bhubId.equals(node.getNodeId())){
-////                        request.setNodeId(node.getNodeId());
-////                    } else {
-////                        throw new GlobalExceptionHandler
-////                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
-////                    }
-////
-////                    break;
-////                case "service center":
-////                    request.setServiceCenter(node.getNodeId());
-////                    break;
-//                case "region":
-//                    request.setRegion(node.getNodeId());
-//                    break;
-////                case "substation":
-////                    request.setSubstation(node.getNodeId());
-////                    break;
-//                case "root":
-//                    request.setRoot(node.getNodeId());
-//                    break;
-//            }
-//
-//            currentNodeId = node.getParentId();
-//        }
-//    }
-//
-//    private void prepareMeters(
-//            List<Meter> batch,
-//            UserModel user,
-//            Map<String, UUID> manufacturerNameToId,
-//            List<GenericResp> failedRecords
-//    ) {
-//        Iterator<Meter> iterator = batch.iterator();
-//
-//        while (iterator.hasNext()) {
-//            Meter meter = iterator.next();
-//
-////            if(meter != null){
-////                GenericResp resp = new GenericResp();
-////                resp.setId(meter.getMeterNumber());
-////                resp.setMessage("Meter already exist");
-////                resp.setData(meter);
-////
-////                failedRecords.add(resp);
-////                iterator.remove();
-////                continue;
-////            }
-//
-//            // --- Validate and set Manufacturer ID ---
-//            String manuName = meter.getMeterManufacturerName();
-//            if (manuName == null || manuName.trim().isBlank()) {
-//                GenericResp resp = new GenericResp();
-//                resp.setId(meter.getMeterNumber());
-//                resp.setMessage("Missing manufacturer name");
-//                resp.setData(meter.getMeterNumber());
-//
-//                failedRecords.add(resp);
-//                iterator.remove();
-//                continue;
-//            }
-//
-//            UUID manuId = manufacturerNameToId.get(manuName.trim().toLowerCase());
-//            if (manuId == null) {
-//                GenericResp resp = new GenericResp();
-//                resp.setId(meter.getMeterNumber());
-//                resp.setMessage("Invalid manufacturer: "+manuName);
-//                resp.setData(meter.getMeterNumber());
-//
-//                failedRecords.add(resp);
-////                failedRecords.add(meter.getMeterNumber() + " (Invalid manufacturer: " + manuName + ")");
-//                iterator.remove();
-//                continue;
-//            }
-//
-//            meter.setMeterManufacturer(manuId);
-//
-//            String validationError = validateRequiredFields(meter);
-//
-//            if (validationError != null) {
-//                GenericResp resp = new GenericResp();
-//                resp.setId(String.valueOf(meter.getMeterNumber()));
-//                resp.setMessage(validationError);
-//                resp.setData(meter.getMeterNumber());
-//
-//                failedRecords.add(resp);
-//                iterator.remove();
-//                continue;
-//            }
-//
-//            // --- Default Meter Fields ---
-//            meter.setOrgId(user.getOrgId());
-//            meter.setCreatedBy(user.getId());
-//            meter.setStatus("Active");
-//            meter.setMeterStage("Pending-created");
-//            meter.setType("NON-VIRTUAL");
-//            meter.setDescription("Newly Added");
-//        }
-//    }
-//public Map<String, Object> bulkInsertMeters(List<Meter> meters, UserModel user) {
-//    Map<String, Object> result = new HashMap<>();
-//    List<GenericResp> failedRecords = new ArrayList<>();
-//
-//    if (meters == null || meters.isEmpty()) {
-//        throw new IllegalArgumentException("Meter list cannot be empty");
-//    }
-//
-//    int totalRecords = meters.size();
-//    int successCount = 0;
-//
-//    // ------------------------------------------
-//    // Load Manufacturers
-//    // ------------------------------------------
-//    List<Manufacturer> manufacturers = meterMapper.getManufacturers(user.getOrgId());
-//    Map<String, UUID> manufacturerNameToId = manufacturers.stream()
-//            .collect(Collectors.toMap(
-//                    m -> m.getName().trim().toLowerCase(),
-//                    Manufacturer::getId
-//            ));
-//
-//    if(manufacturerNameToId.isEmpty()) {
-//        throw new GlobalExceptionHandler.PartialFailureException(
-//                "Meters upload failed - manufacturer not found",
-//                result
-//        );
-//    }
-//
-//    //------------------------------------------------
-//    // Validate duplicates INSIDE FILE
-//    //------------------------------------------------
-//
-//    Set<String> seenMeters = new HashSet<>();
-//    Set<String> seenSims = new HashSet<>();
-//
-//    Iterator<Meter> fileIterator = meters.iterator();
-//
-//    while (fileIterator.hasNext()) {
-//
-//        Meter meter = fileIterator.next();
-//
-//        String meterNumber = Optional.ofNullable(meter.getMeterNumber()).orElse("").trim();
-//        String simNumber = Optional.ofNullable(meter.getSimNumber()).orElse("").trim();
-//
-//        if (!seenMeters.add(meterNumber)) {
-//            GenericResp resp = new GenericResp();
-//            resp.setId(meterNumber);
-//            resp.setMessage("Duplicate meter number in uploaded file");
-//            resp.setData(simNumber);
-//            failedRecords.add(resp);
-//            fileIterator.remove();
-//            continue;
-//        }
-//
-//        if (!simNumber.isEmpty() && !seenSims.add(simNumber)) {
-//            GenericResp resp = new GenericResp();
-//            resp.setId(meterNumber);
-//            resp.setMessage("Duplicate SIM number in uploaded file");
-//            resp.setData(simNumber);
-//            failedRecords.add(resp);
-//            fileIterator.remove();
-//            continue;
-//        }
-//    }
-//
-//    // ------------------------------------------
-//    // Extract MeterNumbers + SimNumbers
-//    // ------------------------------------------
-//
-//    Set<String> meterNumbers = meters.stream()
-//            .map(Meter::getMeterNumber)
-//            .filter(Objects::nonNull)
-//            .map(String::trim)
-//            .collect(Collectors.toSet());
-//
-//    Set<String> simNumbers = meters.stream()
-//            .map(Meter::getSimNumber)
-//            .filter(Objects::nonNull)
-//            .map(String::trim)
-//            .collect(Collectors.toSet());
-//
-//    // ---------------------------------------------------
-//    // Fetch Existing Meter Numbers (ONE DB CALL)
-//    // ---------------------------------------------------
-//    Set<String> allMeterNumbers = meters.stream()
-//            .map(Meter::getMeterNumber)
-//            .filter(Objects::nonNull)
-//            .map(String::trim)
-//            .filter(s -> !s.isEmpty())
-//            .collect(Collectors.toSet());
-//
-//
-//    // ------------------------------------------
-//    // Fetch Existing
-//    // ------------------------------------------
-//
-//    List<Meter> existingMeters =
-//            meterMapper.getMetersList(
-//                    new ArrayList<>(meterNumbers),
-////                        new ArrayList<>(simNumbers),
-//                    user.getOrgId()
-//            );
-//
-//    Set<String> existingMeterNumbers = existingMeters.stream()
-//            .map(Meter::getMeterNumber)
-//            .collect(Collectors.toSet());
-//
-//    Set<String> existingSimNumbers = existingMeters.stream()
-//            .map(Meter::getSimNumber)
-//            .collect(Collectors.toSet());
-//
-//
-//    int batchSize = 500; // try 500–1000 for optimal JDBC performance
-//
-//    for (int i = 0; i < meters.size(); i += batchSize) {
-//        int end = Math.min(i + batchSize, meters.size());
-////            List<Meter> batch = meters.subList(i, end);
-//        List<Meter> batch = new ArrayList<>(meters.subList(i, end));
-//
-//        // -----------------------------------------------
-//        // Remove duplicates (already existing meters)
-//        // -----------------------------------------------
-//        Iterator<Meter> iterator = batch.iterator();
-//
-//        while (iterator.hasNext()) {
-//
-//            Meter meter = iterator.next();
-//
-//            String meterNumber = meter.getMeterNumber();
-//            String simNumber = meter.getSimNumber();
-//            String manufacturer = meter.getMeterManufacturerName();
-//
-//            if (meterNumber == null || meterNumber.trim().isEmpty()) {
-//                GenericResp resp = new GenericResp();
-//                resp.setId(null);
-//                resp.setMessage("Missing meter number");
-//                resp.setData(null);
-//                failedRecords.add(resp);
-//                iterator.remove();
-//                continue;
-//            }
-//
-//            meterNumber = meterNumber.trim();
-//
-//            if (existingMeterNumbers.contains(meterNumber)) {
-//
-//                GenericResp resp = new GenericResp();
-//                resp.setId(meterNumber);
-//                resp.setMessage("Meter already exists");
-//                resp.setData(meterNumber);
-//                failedRecords.add(resp);
-//                iterator.remove();
-//                continue;
-//            }
-//
-//            if (simNumber != null && existingSimNumbers.contains(simNumber.trim())) {
-//
-//                GenericResp resp = new GenericResp();
-//                resp.setId(meterNumber);
-//                resp.setMessage("SIM number already exists");
-//                resp.setData(meterNumber);
-//                failedRecords.add(resp);
-//                iterator.remove();
-//                continue;
-//            }
-//
-//            if (manufacturer == null ||
-//                    !manufacturerNameToId.containsKey(manufacturer.trim().toLowerCase())) {
-//
-//                GenericResp resp = new GenericResp();
-//                resp.setId(meterNumber);
-//                resp.setMessage("Manufacturer does not exist: " + manufacturer);
-//                resp.setData(manufacturer);
-//                failedRecords.add(resp);
-//                iterator.remove();
-////                    continue;
-//            }
-//        }
-//
-//        if (batch.isEmpty()) {
-//            continue;
-//        }
-//
-//
-//        try {
-//            insertBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
-//            successCount += batch.size();
-//        } catch (Exception e) {
-//            log.warn("Batch {} failed — retrying sub batch upload", (i / batchSize) + 1);
-//            // Attempt smaller sub-batches to isolate failure
-//            successCount += insertSubBatchTransactional(batch, user, manufacturerNameToId, failedRecords);
-//        }
-//    }
-//
-//    result.put("totalRecords", totalRecords);
-//    result.put("successCount", successCount);
-//    result.put("failedCount", failedRecords.size());
-//    result.put("failedRecords", failedRecords);
-//
-//    if (!failedRecords.isEmpty()) {
-//        return ResponseMap.response(
-//                "131",
-//                failedRecords.size() + " of " + totalRecords + " Meters upload failed",
-//                result
-//        );
-//    }
-//
-//    return ResponseMap.response(
-//            status.getSuccessCode(),
-//            successCount + " of " + totalRecords + " Meters uploaded successfully",
-//            result
-//    );
-//}
 
     @Override
     public Map<String, Object> bulkAllocate(MultipartFile file) throws IOException {
+        UUID orgId = null;
         try {
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
 
             // Determine file type
             String filename = Optional.ofNullable(file.getOriginalFilename())
@@ -3148,7 +2748,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Error in bulk allocate upload: {}", e.getMessage(), e);
-            genericHandler.logIncidentReport("Bulk allocate service failed");
+            genericHandler.logIncidentReport("Bulk allocate service failed",orgId);
             genericHandler.logAndSaveException(e, "Bulk allocate meter");
             throw new IOException("Bulk allocate failed: " + e.getMessage());
         }
@@ -3334,7 +2934,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Transaction failed during allocation, rolling back batch of size {}: {}", batch.size(), e.getMessage());
-            genericHandler.logIncidentReport("Bulk allocate batch service failed");
+            genericHandler.logIncidentReport("Bulk allocate batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk allocate batch meter");
             throw new RuntimeException("Batch allocation transaction failed. Rolled back.", e);
         }
@@ -3364,7 +2964,7 @@ public class MeterServiceImpl implements MeterService {
 
             return successCount;
         } catch (Exception e) {
-            genericHandler.logIncidentReport("Bulk allocate sub batch service failed");
+            genericHandler.logIncidentReport("Bulk allocate sub batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk allocate sub batch meter");
             throw new RuntimeException("Sub Batch allocation transaction failed. Rolled back.", e);
         }
@@ -3844,7 +3444,7 @@ public class MeterServiceImpl implements MeterService {
         } catch (Exception e) {
             log.error("Transaction failed, rolling back batch of size {}: {}", batch.size(), e.getMessage());
 //            failedRecords.add("Sub-batch failed: " + e.getMessage());
-            genericHandler.logIncidentReport("Bulk approve sub batch service failed");
+            genericHandler.logIncidentReport("Bulk approve sub batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk approve sub batch meter");
             throw new RuntimeException("Batch transaction failed. Rolled back.", e);
         }
@@ -5057,55 +4657,13 @@ public class MeterServiceImpl implements MeterService {
             throw new RuntimeException("Error exporting meter data", e);
         }
     }
-//    private void resolveHierarchy(AssignMeterToCustomer request, UUID startNodeId, UUID orgId, UUID bhubId) {
-//
-//        UUID currentNodeId = startNodeId;
-//        Set<UUID> visited = new HashSet<>();
-//
-//        while (currentNodeId != null) {
-//
-//            if (!visited.add(currentNodeId)) {
-//                throw new IllegalStateException("Circular hierarchy detected");
-//            }
-//
-//            NodeSummary node = nodeMapper.getNodeByNodeId(currentNodeId, orgId);
-//            if (node == null) break;
-//
-//            String type = node.getType() == null ? "" : node.getType().toLowerCase();
-//
-//            switch (type) {
-//                case "business hub":
-//                    System.out.println("bbbhhh:: "+node.getNodeId());
-//                    if(bhubId.equals(node.getNodeId())){
-//                        request.setNodeId(node.getNodeId());
-//                    } else {
-//                        throw new GlobalExceptionHandler
-//                                .NotFoundException("Feeder does not belong to the bushiness hub meter is allocated");
-//                    }
-//
-//                    break;
-//                case "service center":
-//                    request.setServiceCenter(node.getNodeId());
-//                    break;
-//                case "region":
-//                    request.setRegion(node.getNodeId());
-//                    break;
-//                case "substation":
-//                    request.setSubstation(node.getNodeId());
-//                    break;
-//                case "root":
-//                    request.setRoot(node.getNodeId());
-//                    break;
-//            }
-//
-//            currentNodeId = node.getParentId();
-//        }
-//    }
 
     @Override
     public Map<String, Object> bulkAssign(MultipartFile file) throws IOException {
+        UUID orgId = null;
         try {
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             Map<String, Object> result;
             if(!user.getNodeInfo().getType().equalsIgnoreCase("Root")
                     || !user.getNodeInfo().getType().equalsIgnoreCase("Region")
@@ -5132,7 +4690,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Error in bulk assign upload: {}", e.getMessage(), e);
-            genericHandler.logIncidentReport("Bulk assign service failed");
+            genericHandler.logIncidentReport("Bulk assign service failed",orgId);
             genericHandler.logAndSaveException(e, "Bulk assign meter");
             throw new IOException("Bulk assigned failed: " + e.getMessage());
         }
@@ -5140,8 +4698,11 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     public Map<String, Object> bulkVirtualAssign(MultipartFile file) throws IOException {
+        UUID orgId = null;
         try {
+
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
 
             // Determine file type
             String filename = Optional.ofNullable(file.getOriginalFilename())
@@ -5163,7 +4724,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Error in bulk assign upload: {}", e.getMessage(), e);
-            genericHandler.logIncidentReport("Bulk virtual assign service failed");
+            genericHandler.logIncidentReport("Bulk virtual assign service failed",orgId);
             genericHandler.logAndSaveException(e, "Bulk virtual assign meter");
             throw new IOException("Bulk virtual assign failed: " + e.getMessage());
         }
@@ -5976,7 +5537,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Transaction failed during assign, rolling back batch of size {}: {}", batch.size(), e.getMessage());
-            genericHandler.logIncidentReport("Bulk virtual assign batch service failed");
+            genericHandler.logIncidentReport("Bulk virtual assign batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk virtual assign batch meter");
             throw new RuntimeException("Batch virtual assign transaction failed. Rolled back.", e);
         }
@@ -6007,7 +5568,7 @@ public class MeterServiceImpl implements MeterService {
 
         } catch (Exception e) {
             log.error("Transaction failed during assign, rolling back batch of size {}: {}", batch.size(), e.getMessage());
-            genericHandler.logIncidentReport("Bulk assign batch service failed");
+            genericHandler.logIncidentReport("Bulk assign batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk assign batch meter");
             throw new RuntimeException("Batch virtual assign transaction failed. Rolled back.", e);
         }
@@ -6037,7 +5598,7 @@ public class MeterServiceImpl implements MeterService {
 
             return successCount;
         } catch (Exception e) {
-            genericHandler.logIncidentReport("Bulk assign sub batch service failed");
+            genericHandler.logIncidentReport("Bulk assign sub batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk assign sub batch meter");
             throw new RuntimeException("Sub Batch assign transaction failed. Rolled back.", e);
         }
@@ -6068,7 +5629,7 @@ public class MeterServiceImpl implements MeterService {
 
             return successCount;
         } catch (Exception e) {
-            genericHandler.logIncidentReport("Bulk virtual assign sub batch service failed");
+            genericHandler.logIncidentReport("Bulk virtual assign sub batch service failed",user.getOrgId());
             genericHandler.logAndSaveException(e, "Bulk virtual assign sub batch meter");
             throw new RuntimeException("Sub Batch allocation transaction failed. Rolled back.", e);
         }
@@ -6098,95 +5659,6 @@ public class MeterServiceImpl implements MeterService {
 
         return futures.stream().mapToInt(CompletableFuture::join).sum();
     }
-
-
-//    public int assignSinglesFallback(
-//            List<Meter> batch,
-//            UserModel user,
-//            List<GenericResp> failedRecords,
-//            List<MeterAssignLocation> locations,
-//            List<PaymentMode> paymentModes
-//    ) {
-//
-//        int THREAD_POOL_SIZE = 10; // tune based on server capacity
-//        int TIMEOUT_SECONDS = 5;
-//
-//        ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-//
-//        List<Future<Boolean>> futures = new ArrayList<>();
-//
-//        for (Meter meter : batch) {
-//
-//            Future<Boolean> future = executor.submit(() -> {
-//                try {
-//                    log.debug("Fallback assign for meter: {}", meter.getMeterNumber());
-//
-//                    // IMPORTANT: avoid Mongo/logging inside this method if possible
-//                    assignSingleTransactional(meter, user, locations, paymentModes);
-//
-//                    return true;
-//
-//                } catch (Exception e) {
-//
-//                    String reason = extractErrorMessage(e);
-//
-//                    GenericResp resp = new GenericResp();
-//                    resp.setId(
-//                            meter.getMeterId() != null
-//                                    ? meter.getMeterId().toString()
-//                                    : meter.getMeterNumber()
-//                    );
-//                    resp.setMessage("Meter assign failed: " + reason);
-//                    resp.setData(meter.getMeterNumber());
-//
-//                    // Thread-safe add
-//                    synchronized (failedRecords) {
-//                        failedRecords.add(resp);
-//                    }
-//
-//                    log.warn("Meter {} failed individually: {}", meter.getMeterNumber(), reason);
-//
-//                    return false;
-//                }
-//            });
-//
-//            futures.add(future);
-//        }
-//
-//        int successCount = 0;
-//
-//        for (Future<Boolean> future : futures) {
-//            try {
-//                Boolean result = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-//                if (Boolean.TRUE.equals(result)) {
-//                    successCount++;
-//                }
-//            } catch (TimeoutException e) {
-//                future.cancel(true);
-//                log.error("Meter assignment timed out");
-//            } catch (Exception e) {
-//                log.error("Unexpected error during fallback execution: {}", e.getMessage());
-//            }
-//        }
-//
-//        executor.shutdown();
-//
-//        try {
-//            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-//                executor.shutdownNow();
-//            }
-//        } catch (InterruptedException e) {
-//            executor.shutdownNow();
-//            Thread.currentThread().interrupt();
-//        }
-//
-//        log.info("Fallback completed: {} success, {} failed",
-//                successCount, failedRecords.size());
-//
-//        return successCount;
-//    }
-
-
 
     public int assignSinglesFallback(
             List<Meter> batch, UserModel user, List<GenericResp> failedRecords) {
@@ -6335,7 +5807,11 @@ public class MeterServiceImpl implements MeterService {
     @Override
     public Map<String, Object> meterInfoLookUp(String meterNumber) {
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             // 1. RETURN DB DATA IMMEDIATELY
             MeterView meter = meterMapper.getMeterLookUp(meterNumber);
@@ -6352,7 +5828,7 @@ public class MeterServiceImpl implements MeterService {
 
             log.error("Meter lookup failed: {}", exception.getMessage(), exception);
 
-            genericHandler.logIncidentReport("Meter lookup service failed");
+            genericHandler.logIncidentReport("Meter lookup service failed",orgId);
             genericHandler.logAndSaveException(exception, "meter lookup");
 
             throw exception;
@@ -6367,7 +5843,11 @@ public class MeterServiceImpl implements MeterService {
 
         List<Map<String, Object>> data = new ArrayList<>();
 
+        UUID orgId = null;
         try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             List<ObisMapping> obisList = new ArrayList<>();
 
@@ -6438,7 +5918,7 @@ public class MeterServiceImpl implements MeterService {
 
             log.error("Read Meter lookup failed: {}", exception.getMessage(), exception);
 
-            genericHandler.logIncidentReport("Read Meter lookup service failed");
+            genericHandler.logIncidentReport("Read Meter lookup service failed",orgId);
             genericHandler.logAndSaveException(exception, "Read meter lookup");
 
             throw exception;

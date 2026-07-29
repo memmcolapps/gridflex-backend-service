@@ -221,7 +221,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     ) throws IOException {
 
         try {
-            genericHandler.logIncidentReport("Login service failed");
+            genericHandler.logIncidentReport("Login service failed", null);
         } catch (Exception ex) {
             log.error("Incident logging failed", ex);
             // DO NOT rethrow

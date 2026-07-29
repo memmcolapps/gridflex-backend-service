@@ -256,7 +256,6 @@ public class GlobalExceptionHandler {
 		ex.printStackTrace();
 
 		logger.error("DataAccess exception", ex);
-//		String msg = "There's a problem with accessing some data [See server logs for more details]";
 		String msg = "There's a problem with accessing some data, please try again later";
 		errorMessage.put("responsecode", "112");
 		errorMessage.put("responsedesc", msg);
