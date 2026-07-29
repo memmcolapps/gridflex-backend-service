@@ -34,10 +34,14 @@ public class HandleValidUser {
             System.out.println("Authenticated: " + authentication.isAuthenticated());
         }
 
+
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserPrincipal) {
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+            System.out.println("Username: [" + principal.getUsername() + "]");
+            System.out.println("Principal: " + principal);
             username = principal.getUsername();
         }
+        System.out.println("username>>>: " + username);
         if(username == null || username.isEmpty()) {
             throw new GlobalExceptionHandler.NotFoundException("Username not found");
         }
