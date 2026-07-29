@@ -69,9 +69,11 @@ public class HesClientServiceImpl implements HesService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> communicationReport(int page, int size, String type, String search, String connectionType, String sortDirection, String node) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<MeterConnEvent> meterConnEvent;
 
             if("MD".equalsIgnoreCase(type)){
@@ -135,7 +137,7 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("fetching communication report service failed");
+            genericHandler.logIncidentReport("fetching communication report service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching communication report");
             throw exception;
         }
@@ -145,9 +147,11 @@ public class HesClientServiceImpl implements HesService {
     @Override
     public Map<String, Object> profile(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber,
                                        String profile, List<String> model,int page, int size, String search, String node) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<Profile> profiles;
 
             if(startDate == null || endDate == null) {
@@ -216,7 +220,7 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Meter profile fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("profile report service failed");
+            genericHandler.logIncidentReport("profile report service failed", orgId);
             genericHandler.logAndSaveException(exception, "profile report");
             throw exception;
         }
@@ -325,8 +329,11 @@ public class HesClientServiceImpl implements HesService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> event(LocalDateTime startDate, LocalDateTime endDate, List<String> meterNumber, Long eventTypeId, List<String> model, String search, int page, int size, String node) {
+        UUID orgId = null;
         try {
+
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<Event> events;
 
             if(startDate == null || endDate == null) {
@@ -375,7 +382,7 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Meter event fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("event report service failed");
+            genericHandler.logIncidentReport("event report service failed", orgId);
             genericHandler.logAndSaveException(exception, "event report");
             throw exception;
         }
@@ -384,9 +391,11 @@ public class HesClientServiceImpl implements HesService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> modelEventType() {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             // Fetch all event type
             List<EventType> event_type = hesMapper.getEventType();
@@ -469,7 +478,7 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("profile event filter service failed");
+            genericHandler.logIncidentReport("profile event filter service failed", orgId);
             genericHandler.logAndSaveException(exception, "profile event filter");
             throw exception;
         }
@@ -498,8 +507,11 @@ public class HesClientServiceImpl implements HesService {
     @Override
     public Map<String, Object> communicationRangeReport(int page, int size, LocalDateTime startDate, LocalDateTime endDate, String type, String search, List<String> meterNumber,String node) {
 
+        UUID orgId = null;
         try {
+
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<MeterConnEvent> meterConnEvent = hesMapper.getRangeCommunicationReport(page, size, startDate, endDate, um.getOrgId(), type, meterNumber, node);
 
             // Normalize search text
@@ -534,7 +546,7 @@ public class HesClientServiceImpl implements HesService {
             response.put("totalPages", (int) Math.ceil((double) paginatedEvents.size() / size));
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
         }  catch (Exception exception) {
-            genericHandler.logIncidentReport("communication daily/monthly report service failed");
+            genericHandler.logIncidentReport("communication daily/monthly report service failed", orgId);
             genericHandler.logAndSaveException(exception, "communication daily/monthly report");
             throw exception;
         }
@@ -544,8 +556,11 @@ public class HesClientServiceImpl implements HesService {
     @Transactional
     @Override
     public Map<String, Object> scheduleData(int page, int size, String search) {
+        UUID orgId = null;
         try {
-            handleUserValidation();
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<Schedule> meterConnEvent = hesMapper.getScheduleData(page, size);
 
             // Normalize search text
@@ -584,7 +599,7 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), "Fetched successfully", response);
 
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("data schedule service failed");
+            genericHandler.logIncidentReport("data schedule service failed", orgId);
             genericHandler.logAndSaveException(exception, "data schedule report");
             throw exception;
         }
@@ -596,8 +611,11 @@ public class HesClientServiceImpl implements HesService {
     public Map<String, Object> setSchedule(String jobGroup, String timeInterval, String unit, String jobName) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
-            handleUserValidation();
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Schedule response = hesMapper.getProfileEvent(jobName);
             if(response == null){
                 throw new GlobalExceptionHandler.NotFoundException("Job Name "+status.getNotFoundDesc());
@@ -624,12 +642,12 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set schedule service failed");
+            genericHandler.logIncidentReport("set schedule service failed", orgId);
             genericHandler.logAndSaveException(e, "set schedule service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set schedule service failed");
+            genericHandler.logIncidentReport("set schedule service failed", orgId);
             genericHandler.logAndSaveException(e, "set schedule");
             throw e;
         }
@@ -639,9 +657,11 @@ public class HesClientServiceImpl implements HesService {
     @Override
     public Map<String, Object> setCron(String jobGroup, String jobName, String cronExpression) {
         String token = auth.getAccessToken();
-
+        UUID orgId = null;
         try {
-            handleUserValidation();
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             Schedule response = hesMapper.getProfileEvent(jobName.trim());
             if(response == null){
@@ -676,12 +696,12 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set cron service failed");
+            genericHandler.logIncidentReport("set cron service failed", orgId);
             genericHandler.logAndSaveException(e, "set cron service");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set cron service failed");
+            genericHandler.logIncidentReport("set cron service failed", orgId);
             genericHandler.logAndSaveException(e, "set cron");
             throw e;
         }
@@ -692,8 +712,11 @@ public class HesClientServiceImpl implements HesService {
     public Map<String, Object> triggerEvent(String jobGroup, String jobName) {
         String token = auth.getAccessToken();
 
+        UUID orgId = null;
         try {
-            handleUserValidation();
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             Schedule response = hesMapper.getProfileEvent(jobName);
             if(response == null){
                 throw new GlobalExceptionHandler.NotFoundException("Job Name "+status.getNotFoundDesc());
@@ -734,11 +757,12 @@ public class HesClientServiceImpl implements HesService {
     @Override
     public Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
                                            String businessHub, String manufacturer, String meterStatus, String search,
-                                           String sortBy, String sortDirection, int page, int size) {
+                                           String sortBy, String sortDirection, int page, int size){
+        UUID orgId = null;
         try {
-            UserModel um = handleUserValidation();
 
-            UUID orgId = um.getOrgId();
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             List<MeterConnEvent> meterConfig = hesMapper.getMeterConfiguration(0, 0, orgId, um.getNodeInfo().getRegionId());
             String searchLower = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
 
@@ -781,7 +805,7 @@ public class HesClientServiceImpl implements HesService {
             return ResponseMap.response(this.status.getSuccessCode(), "Fetched successfully", response);
 
         }catch (Exception e){
-            genericHandler.logIncidentReport("meterConfiguration failed");
+            genericHandler.logIncidentReport("meterConfiguration failed", orgId);
             genericHandler.logAndSaveException(e, "meterConfiguration");
             throw e;
         }

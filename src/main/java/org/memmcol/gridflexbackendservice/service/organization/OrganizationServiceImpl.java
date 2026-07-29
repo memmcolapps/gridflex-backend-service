@@ -83,7 +83,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         } catch (Exception exception) {
             log.error("Error fetching organization {}: {}", id, exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching organization service failed");
+            genericHandler.logIncidentReport("Fetching organization service failed", id);
             genericHandler.logAndSaveException(exception, "fetching organization");
             throw exception;
         }
@@ -92,10 +92,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Transactional
     @Override
     public Map<String, Object> updateOrganization(Organization organization) {
-
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -125,7 +126,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         } catch (Exception exception) {
             log.error("Error updating organization: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Editing organization service failed");
+            genericHandler.logIncidentReport("Editing organization service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing organization");
             throw exception;
         }

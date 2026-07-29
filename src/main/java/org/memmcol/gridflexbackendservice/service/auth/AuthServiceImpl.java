@@ -5,7 +5,6 @@ import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
-import org.memmcol.gridflexbackendservice.model.audit.ExceptionErrorLogs;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.repository.ExceptionAuditRepository;
@@ -76,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	public Map<String, Object> logout() {
+		UUID orgId = null;
 		try {
 			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
@@ -87,6 +87,7 @@ public class AuthServiceImpl implements AuthService {
 			String rawToken = authorizationHeader.substring("Bearer ".length());
 
 			UserModel operator = handleUserValidation();
+			orgId = operator.getOrgId();
 			operator.setPassword("");
 			operatorMapper.updateLogoutState(operator.getEmail());
 
@@ -100,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
 
 		} catch (Exception exception) {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			genericHandler.logIncidentReport("Logout user service failed");
+			genericHandler.logIncidentReport("Logout user service failed", orgId);
 			genericHandler.logAndSaveException(exception, "user logout");
 			throw exception;
 		}
@@ -108,7 +109,7 @@ public class AuthServiceImpl implements AuthService {
 
 
 	@Transactional
-	public Map<String, Object> handleForgetPassword(UserModel isOperator, String password) {
+	public Map<String, Object> handleForgetPassword(UserModel isOperator, String password, UUID orgId) {
 		try {
 			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
@@ -141,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
 
 		} catch (Exception exception) {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			genericHandler.logIncidentReport("Forget password service failed");
+			genericHandler.logIncidentReport("Forget password service failed", orgId);
 			genericHandler.logAndSaveException(exception, "changing operator password");
 			throw exception;
 		}
@@ -149,11 +150,11 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	public Map<String, Object> generateOtp(String username) {
-		return handleGenerateOtp(username);
+		return handleGenerateOtp(username, null);
 	}
 
 	@Transactional
-	public Map<String, Object>  handleGenerateOtp(String username) {
+	public Map<String, Object>  handleGenerateOtp(String username, UUID orgId) {
 
 		String otp = String.format("%04d", random.nextInt(10000));
 
@@ -167,7 +168,7 @@ public class AuthServiceImpl implements AuthService {
 			), Void.class);
 		} catch (RestClientException emailException) {
 			log.error("Failed to send OTP email to {}: {}", username, emailException.getMessage().trim(), emailException);
-			genericHandler.logIncidentReport("OTP mailer service failed");
+			genericHandler.logIncidentReport("OTP mailer service failed", orgId);
 			genericHandler.logAndSaveException(emailException, "OTP mailer failed");
 			throw emailException;
 		}
@@ -179,11 +180,12 @@ public class AuthServiceImpl implements AuthService {
 	@Transactional(readOnly = true)
 	@Override
 	public Map<String, Object> profile(UUID userId) {
+		UUID orgId = null;
 		try {
 
 			UserModel um = handleUserValidation();
-
-			handleGenerateOtp(um.getEmail());
+			orgId = um.getOrgId();
+			handleGenerateOtp(um.getEmail(), orgId);
 
             UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
 			user.setPassword("");
@@ -191,19 +193,21 @@ public class AuthServiceImpl implements AuthService {
 			return ResponseMap.response(status.getNotFoundCode(), "User " + status.getDesc(), user);
 		} catch (Exception exception){
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			genericHandler.logIncidentReport("Fetching user service failed");
+			genericHandler.logIncidentReport("Fetching user service failed", orgId);
 			genericHandler.logAndSaveException(exception, "fetching user ");
 			throw exception;
 		}
 	}
 
 	public  Map<String, Object>  verifyOtp(String email, String otp, String password) {
+		UUID orgId = null;
 		try {
 			UserModel isOperator = operatorMapper.findAuthByUserEmail(email);
 
 			if (isOperator == null) {
 				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
 			}
+			orgId = isOperator.getOrgId();
 			String storedOtp = otpCache.get(email);
 
 			if (storedOtp != null && storedOtp.equals(otp)) {
@@ -211,13 +215,13 @@ public class AuthServiceImpl implements AuthService {
 
 				verifiedUsers.put(email, true, 2, TimeUnit.MINUTES);
 
-				return handleForgetPassword(isOperator, password);
+				return handleForgetPassword(isOperator, password, isOperator.getOrgId());
 
 			}
 			return ResponseMap.response(status.getNotFoundCode(), "OTP verification failed", "");
 		} catch (Exception exception){
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-			genericHandler.logIncidentReport("Verify OTP service failed");
+			genericHandler.logIncidentReport("Verify OTP service failed", orgId);
 			genericHandler.logAndSaveException(exception, "verifying OTP");
 			throw exception;
 		}

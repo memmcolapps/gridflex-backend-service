@@ -65,6 +65,7 @@ public class NodeServiceImpl implements NodeService {
     public Map<String, Object> createRegionBhubServiceCenterNode(RegionBhubServiceCenter request) {
         RegionBhubServiceCenter regionBhubServiceCenter;
         UUID id;
+        UUID orgId = null;
         try {
 
             handleRegionPayloadCheck(request);
@@ -72,6 +73,7 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
@@ -152,7 +154,7 @@ public class NodeServiceImpl implements NodeService {
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Creating region business hub service failed");
+            genericHandler.logIncidentReport("Creating region business hub service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating region business hub");
             throw exception;
         }
@@ -164,6 +166,7 @@ public class NodeServiceImpl implements NodeService {
             SubStationTransformerFeederLine request) {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
         UUID id;
+        UUID orgId = null;
         try {
 
             handlePayloadCheck(request);
@@ -171,6 +174,7 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
@@ -259,7 +263,7 @@ public class NodeServiceImpl implements NodeService {
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Creating substation/feeder service failed");
+            genericHandler.logIncidentReport("Creating substation/feeder service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating substation/feeder line node");
 
             throw exception;
@@ -270,6 +274,7 @@ public class NodeServiceImpl implements NodeService {
     @Override
     public Map<String, Object> updateRegionBhubServiceCenterNode(RegionBhubServiceCenter request) {
         RegionBhubServiceCenter regionBhubServiceCenter;
+        UUID orgId = null;
         try {
 
             handleRegionPayloadCheck(request);
@@ -277,6 +282,7 @@ public class NodeServiceImpl implements NodeService {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -364,7 +370,7 @@ public class NodeServiceImpl implements NodeService {
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Editing region business hub service failed");
+            genericHandler.logIncidentReport("Editing region business hub service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing region business node");
             throw exception;
         }
@@ -374,13 +380,14 @@ public class NodeServiceImpl implements NodeService {
     @Override
     public Map<String, Object> updateSubStationFeederLineTransformerNode(SubStationTransformerFeederLine request) {
         SubStationTransformerFeederLine subStationTransformerFeederLine;
-        try {
-
+        UUID orgId = null;
+        try{
             handlePayloadCheck(request);
 
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 
             HandlePermission.perm(nodeType);
@@ -477,7 +484,7 @@ public class NodeServiceImpl implements NodeService {
 
         } catch (Exception exception) {
             log.error("Error occurred while creating node [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Editing substation/feeder line service failed");
+            genericHandler.logIncidentReport("Editing substation/feeder line service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing substation/feeder line node");
             throw exception;
         }
@@ -561,9 +568,11 @@ public class NodeServiceImpl implements NodeService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllNodes() {
-        try {
+        UUID orgId = null;
+        try{
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             StringBuilder cacheKeyBuilder = new StringBuilder("nodes_"+um.getOrgId());
             String cacheKey = cacheKeyBuilder.toString();
@@ -604,7 +613,7 @@ public class NodeServiceImpl implements NodeService {
             return ResponseMap.response(status.getSuccessCode(),  "Node "+status.getDesc(), roots);
         } catch (Exception exception) {
             log.error("Error occurred while updated node [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching all node service failed");
+            genericHandler.logIncidentReport("Fetching all node service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching all node");
             throw exception;
         }
@@ -613,9 +622,11 @@ public class NodeServiceImpl implements NodeService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getBusinessHubByOrgId() {
-        try {
+        UUID orgId = null;
+        try{
 
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             String nodeType = user.getNodeInfo().getType();
             UUID userRegionId = user.getNodeInfo().getNodeId();
 
@@ -632,7 +643,7 @@ public class NodeServiceImpl implements NodeService {
 
         }catch (Exception exception) {
             log.error("Error occurred while fetching business hub [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching all business hub service failed");
+            genericHandler.logIncidentReport("Fetching all business hub service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching all business hub");
             throw exception;
         }
@@ -641,8 +652,11 @@ public class NodeServiceImpl implements NodeService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllFeeder(){
-        try {
+        UUID orgId = null;
+        try{
+
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
@@ -661,7 +675,7 @@ public class NodeServiceImpl implements NodeService {
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error fetching feeders: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching feeders service failed");
+            genericHandler.logIncidentReport("fetching feeders service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching feeders");
             throw exception;
         }
@@ -670,15 +684,18 @@ public class NodeServiceImpl implements NodeService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getAllDss(UUID assetId){
-        try {
+        UUID orgId = null;
+        try{
+
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 //            UUID nodeId = nodeMapper.getFeederNodeId(um.getOrgId(),assetId);
             List<SubStationTransformerFeederLine> result = nodeMapper.getAllDssByNodeId(um.getOrgId(), assetId);
 
             return ResponseMap.response(status.getSuccessCode(),  status.getDesc(), result);
         }catch (Exception exception) {
             log.error("Error fetching dss: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching dss service failed");
+            genericHandler.logIncidentReport("fetching dss service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching dss");
             throw exception;
         }
@@ -687,9 +704,11 @@ public class NodeServiceImpl implements NodeService {
     @Transactional
     @Override
     public Map<String, Object> getFeederByBhub(UUID nodeId) {
+        UUID orgId = null;
         try{
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             List<NodeSummary> result = nodeMapper.getFeederByBhub(um.getOrgId(), nodeId);
 
@@ -697,7 +716,7 @@ public class NodeServiceImpl implements NodeService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching feeders : {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching feeders service failed");
+            genericHandler.logIncidentReport("fetching feeders service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching feeders");
             throw exception;
         }
@@ -706,9 +725,11 @@ public class NodeServiceImpl implements NodeService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getFeederAndDssNode() {
+        UUID orgId = null;
         try{
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             List<SubStationTransformerFeederLine> result = nodeMapper.getFeederDss(um.getOrgId());
 
@@ -716,7 +737,7 @@ public class NodeServiceImpl implements NodeService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching feeders and dss: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching feeders and dss service failed");
+            genericHandler.logIncidentReport("fetching feeders and dss service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching feeders and dss");
             throw exception;
         }

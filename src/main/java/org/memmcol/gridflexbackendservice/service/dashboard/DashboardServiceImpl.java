@@ -47,8 +47,10 @@ public class DashboardServiceImpl implements  DashboardService{
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> dataManagementDashboard(String band, String year, String meterClass) {
+        UUID orgId = null;
     try {
         UserModel um = handleUserValidation();
+        orgId = um.getOrgId();
         UUID nodeId = um.getNodeInfo().getNodeId();
         String nodeType = um.getNodeInfo().getType();
 
@@ -304,7 +306,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
     } catch (Exception exception) {
         log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-        genericHandler.logIncidentReport("fetching data management dashboard failed");
+        genericHandler.logIncidentReport("fetching data management dashboard failed",orgId);
         genericHandler.logAndSaveException(exception, "fetch data management dashboard");
         throw exception;
     }
@@ -359,8 +361,10 @@ public class DashboardServiceImpl implements  DashboardService{
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> vendingDashboard(String band, String year, String meterClass) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -700,7 +704,7 @@ public class DashboardServiceImpl implements  DashboardService{
 
         } catch (Exception exception) {
             log.error("Error occurred while fetching vending dashboard: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("fetching vending dashboard failed");
+            genericHandler.logIncidentReport("fetching vending dashboard failed",orgId);
             genericHandler.logAndSaveException(exception, "fetch vending dashboard");
             throw exception;
         }
@@ -714,9 +718,11 @@ public class DashboardServiceImpl implements  DashboardService{
 
     @Transactional(readOnly = true)
     public Map<String, Object> hesDashboard() {
+        UUID orgId = null;
 
         try {
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
             UUID nodeId = user.getNodeInfo().getNodeId();
             String nodeType = user.getNodeInfo().getType();
 
@@ -837,7 +843,7 @@ public class DashboardServiceImpl implements  DashboardService{
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
 
 } catch (Exception exception) {
-            genericHandler.logIncidentReport("fetching hes dashboard service failed");
+            genericHandler.logIncidentReport("fetching hes dashboard service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching hes dashboard");
             throw exception;
         }
@@ -846,14 +852,16 @@ public class DashboardServiceImpl implements  DashboardService{
     @Transactional
     @Override
     public Map<String, Object> getBands() {
+        UUID orgId = null;
         try {
             UserModel user = handleUserValidation();
+            orgId = user.getOrgId();
 
             List<Band> bandName = dashboardMapper.getBands(user.getOrgId());
 
             return ResponseMap.response(status.getSuccessCode(), status.getDesc(), bandName);
         } catch (Exception exception) {
-            genericHandler.logIncidentReport("fetching band dashboard service failed");
+            genericHandler.logIncidentReport("fetching band dashboard service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching band hes dashboard");
             throw exception;
         }
