@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.vend;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
+import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.View;
+
+import java.util.UUID;
 
 @Service
 public class TokenGenClientService {
@@ -34,7 +37,8 @@ public class TokenGenClientService {
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public TokenGenResponse generateToken(TokenGenRequest request, String url, String tokenType) {
+    public TokenGenResponse generateToken(
+            TokenGenRequest request, String url, String tokenType, UUID orgId) {
 
 //        request.setMeterNo("62124022443");
 //        request.setSgc(600849);
@@ -63,13 +67,13 @@ public class TokenGenClientService {
                 .bodyToMono(String.class)
                 .map(rawResponse -> {
                     // Print the raw response for debugging
-                    return parseResponse(rawResponse, tokenType);
+                    return parseResponse(rawResponse, tokenType, orgId);
                 })
                 .block(); // OK because service is transactional
     }
 
 
-    private TokenGenResponse parseResponse(String rawResponse, String tokenType) {
+    private TokenGenResponse parseResponse(String rawResponse, String tokenType, UUID orgId) {
 
         String msg = switch (tokenType.toLowerCase()) {
             case "credit-token" -> "Generating credit token service failed";
@@ -109,7 +113,7 @@ public class TokenGenClientService {
 
         } catch (Exception ex) {
             System.out.println("Invalid token generation response: " + ex.getMessage());
-            genericHandler.logIncidentReport(msg);
+            genericHandler.logIncidentReport(msg, orgId);
             genericHandler.logAndSaveException(ex, msg);
             throw new RuntimeException("Invalid token generation response: " + rawResponse, ex);
         }

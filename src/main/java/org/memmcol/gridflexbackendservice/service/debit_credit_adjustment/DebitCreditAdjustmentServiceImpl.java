@@ -94,11 +94,13 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Transactional
     @Override
     public Map<String, Object> createDebitAdjustment(DebitCreditAdjust request) {
+        UUID orgId = null;
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             int result;
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -195,7 +197,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Creating debit adjustment service failed");
+            genericHandler.logIncidentReport("Creating debit adjustment service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating debit-credit adjustment");
             throw exception;
         }
@@ -331,11 +333,13 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Override
     public Map<String, Object> reconcileDebt(
             UUID meterId, UUID liabilityCauseId, String amount) {
+        UUID orgId = null;
 
         try {
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 //            if(!nodeType.equalsIgnoreCase("Business hub")
@@ -427,7 +431,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Reconciliation dept service failed");
+            genericHandler.logIncidentReport("Reconciliation dept service failed", orgId);
             genericHandler.logAndSaveException(exception, "reconcile dept");
             throw exception;
         }
@@ -436,9 +440,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getMeterAndLiabilityCause(String meterNumber, String accountNumber) {
+        UUID orgId = null;
         try {
             Meter meter = null;
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             if (meterNumber == null && accountNumber == null) {
                 throw new GlobalExceptionHandler.NotFoundException("At least one of meterNumber or accountNumber must be provided.");
@@ -465,7 +471,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             return ResponseMap.response(status.getSuccessCode(),  "Meter " + status.getDesc(), meterAndLiabilityCause);
         } catch (Exception exception) {
             log.error("Error occurred while fetching feeder lines [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching meter & liability causes service failed");
+            genericHandler.logIncidentReport("Fetching meter & liability causes service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch meter liability cause");
             throw exception;
         }
@@ -475,10 +481,12 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Override
     public Map<String, Object> getDebitAdjustmentPaymentHistory(
             UUID meterId, UUID liabilityCauseId, String type) {
+        UUID orgId = null;
 
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -525,7 +533,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             log.error("Error occurred while fetching debit/credit payment history: {}",
                     exception.getMessage().trim(), exception);
 
-            genericHandler.logIncidentReport("Fetching debit/credit payment history failed");
+            genericHandler.logIncidentReport("Fetching debit/credit payment history failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch debit/credit payment history");
 
             throw exception;
@@ -1739,9 +1747,11 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Override
     public Map<String, Object> getDebitAdjustments(
             int page, int size, String type, String search, String sortBy, String sortDirection, DebitCreditAdjust debitCreditAdjust) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeType = um.getNodeInfo().getType();
 
@@ -1811,7 +1821,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
 
         } catch (Exception exception) {
             log.error("Error occurred while filtering tariffs: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching debit adjustments service failed");
+            genericHandler.logIncidentReport("Fetching debit adjustments service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch debit adjustments");
             throw exception;
         }
@@ -1912,8 +1922,10 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getDebitAdjustment(UUID meterId, String type) {
+        UUID orgId = null;
         try {
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             UUID nodeId = um.getNodeInfo().getNodeId();
 
             List<DebitCreditAdjust> result = mapper.getDebitAdjustmentByMeterId(meterId, um.getOrgId(), type, nodeId);
@@ -1925,7 +1937,7 @@ public class DebitCreditAdjustmentServiceImpl implements DebitCreditAdjustmentSe
             return ResponseMap.response(status.getSuccessCode(), debit + " " + status.getDesc(), result);
         } catch (Exception exception) {
             log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
-            genericHandler.logIncidentReport("Fetching debit adjustment service failed");
+            genericHandler.logIncidentReport("Fetching debit adjustment service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetch debit adjustment");
             throw exception;
         }

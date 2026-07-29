@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.memmcol.gridflexbackendservice.components.HandleValidUser.handleUserValidation;
 
@@ -66,12 +67,12 @@ public class GenericHandler {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void logIncidentReport(String msg) {
-        UserModel user = handleUserValidation();
+    public void logIncidentReport(String msg, UUID orgId) {
+//        UserModel user = handleUserValidation();
 
         IncidentReport incidentReport = new IncidentReport();
-        incidentReport.setOrgId(user.getOrgId());
-//        incidentReport.setUserId(user.getId());
+
+        incidentReport.setOrgId(orgId);
         incidentReport.setMessage(msg);
         incidentReport.setType("auto");
         incidentReport.setStatus(false);

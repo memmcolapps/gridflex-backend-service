@@ -56,6 +56,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Transactional
     @Override
     public Map<String, Object> createManufacturer(Manufacturer request) {
+        UUID orgId = null;
         try {
 
             handlePayloadCheck(request);
@@ -63,6 +64,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
             String desc = capitalizeFirstLetter(request.getName()) + "newly created";
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 //            if(!nodeType.equalsIgnoreCase("Region")
 //                    && !nodeType.equalsIgnoreCase("Root")
@@ -90,7 +92,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getRegDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while creating manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Creating manufacturer service failed");
+            genericHandler.logIncidentReport("Creating manufacturer service failed", orgId);
             genericHandler.logAndSaveException(exception, "creating manufacturer");
 
             throw exception;
@@ -125,12 +127,14 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Transactional
     @Override
     public Map<String, Object> updateManufacturer(Manufacturer request) {
+        UUID orgId = null;
         try {
             handlePayloadCheck(request);
 
             Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
             String desc = capitalizeFirstLetter(request.getName()) + "edited";
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
             String nodeType = um.getNodeInfo().getType();
 
 //            if(!nodeType.equalsIgnoreCase("Region")
@@ -166,7 +170,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getUpdateDesc(), "");
         } catch (Exception exception) {
             log.error("Error occurred while updating manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Editing manufacturer service failed");
+            genericHandler.logIncidentReport("Editing manufacturer service failed", orgId);
             genericHandler.logAndSaveException(exception, "editing manufacturer");
             throw exception;
         }
@@ -175,9 +179,11 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Transactional(readOnly = true)
     @Override
     public Map<String, Object> getManufacturer(UUID id) {
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             // check if operator exist
             Manufacturer manufacturer = manufacturerMapper.findById(id, um.getOrgId());
@@ -188,7 +194,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
             return ResponseMap.response(status.getSuccessCode(), manufacturerName + " " + status.getDesc(), manufacturer);
         } catch (Exception exception) {
             log.error("Error occurred while creating manufacturer [ACTION]: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching manufacturer service failed");
+            genericHandler.logIncidentReport("Fetching manufacturer service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching manufacturer");
             throw exception;
         }
@@ -198,9 +204,11 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Override
     public Map<String, Object> getManufacturers(String name, String manufacturerId, String contactPerson, String dateAdded) {
         ExceptionErrorLogs exceptionErrorLogs = new ExceptionErrorLogs();
+        UUID orgId = null;
         try {
 
             UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
 
             List<Manufacturer> manufacturers = manufacturerMapper.getAllManufacturers(um.getOrgId());
 
@@ -238,7 +246,7 @@ public class ManufacturerServiceImpl implements ManufacturerService {
 
         } catch (Exception exception) {
             log.error("Error filtering / fetching manufacturers: {}", exception.getMessage(), exception);
-            genericHandler.logIncidentReport("Fetching all manufacturers service failed");
+            genericHandler.logIncidentReport("Fetching all manufacturers service failed", orgId);
             genericHandler.logAndSaveException(exception, "fetching manufacturers");
             throw exception;
         }

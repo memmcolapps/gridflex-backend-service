@@ -107,7 +107,7 @@ public class UserModel implements Serializable {
     }
 
     public String getEmail() {
-        return email;
+        return email == null ? email : email.trim();
     }
 
     public void setEmail(String email) {
@@ -147,7 +147,7 @@ public class UserModel implements Serializable {
     }
 
     public String getPassword() {
-        return password;
+        return password == null ? password : password.trim();
     }
 
     public void setPassword(String password) {
