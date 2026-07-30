@@ -154,6 +154,7 @@ public class SecurityConfig {
 
 				// public endpoints - do not required authentication token to be accessible
 				.requestMatchers(
+						"/actuator/**",
 						"/auth/service/admin/login",
 						"/auth/service/generate-otp/**",
 						"/auth/service/forget-password/**",
