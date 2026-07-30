@@ -12,9 +12,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.model.licence.LicenceValidationResult;
 import org.memmcol.gridflexbackendservice.service.licence.LicenceValidator;
+import org.memmcol.gridflexbackendservice.service.meter.MeterServiceImpl;
 import org.memmcol.gridflexbackendservice.util.LicenceFileUtil;
 import org.memmcol.gridflexbackendservice.util.LicenceSecurityConstants;
 import org.memmcol.gridflexbackendservice.util.LicenceSignerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,6 +30,7 @@ import java.util.UUID;
 
 @Component
 public class LicenceInterceptor implements HandlerInterceptor {
+    private static final Logger log = LoggerFactory.getLogger(LicenceInterceptor.class);
 
     @Value("${gridflex.data.dir}")
     private String dataDir;
@@ -133,7 +137,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
     private void blockAccess(HttpServletResponse response, String message) throws Exception {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
+        log.error("Error licence: {}", message);
         Map<String, Object> error = new HashMap<>();
         error.put("responsecode", "403");
         error.put("responsedesc", "Access denied: " + message);
