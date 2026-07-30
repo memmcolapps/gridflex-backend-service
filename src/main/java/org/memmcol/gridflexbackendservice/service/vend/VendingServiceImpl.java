@@ -261,7 +261,7 @@ public class VendingServiceImpl implements VendingService {
             request.setMeterNo(meter.getMeterNumber());
             request.setSgc(Integer.parseInt(meter.getNewSgc()));
             request.setTi(Integer.parseInt(meter.getNewTariffIndex().toString()));
-            request.setMeterType("STS6");
+            request.setMeterType(meter.getNewKrn().equalsIgnoreCase("1") ? "STS" : "STS6");
 
             TokenGenResponse tokenResponse = tokenGenClient.generateToken(request, "/tokenGen", creditToken.getTokenType(), orgId);
 
