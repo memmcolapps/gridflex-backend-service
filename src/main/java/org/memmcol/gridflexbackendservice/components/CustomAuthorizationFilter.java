@@ -68,6 +68,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 || path.startsWith("/swagger-resources")
                 || path.startsWith("/webjars")
                 || path.equals("/swagger-ui.html")
+                || path.startsWith("/actuator")
                 || path.startsWith("/actuator/info")
                 || path.startsWith("/actuator/health")
                 || path.startsWith("/actuator/prometheus")
