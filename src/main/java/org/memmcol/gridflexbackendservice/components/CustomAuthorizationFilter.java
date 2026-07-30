@@ -89,6 +89,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 || path.startsWith("/admin/setup/client")
                 || path.startsWith("/client/auth/token")
                 || path.startsWith("/license/service");
+//                || path.startsWith("/actuator");
     }
 
 	@Override

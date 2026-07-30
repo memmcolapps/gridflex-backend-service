@@ -87,9 +87,9 @@ public class LicenceInterceptor implements HandlerInterceptor {
             Licence licence = LicenceFileUtil.readLicenceFile(dataDir, orgId);
 
             if (licence == null) {
-//                blockAccess(response, "License not found");
-//                return false;
-                return true;
+                blockAccess(response, "License not found");
+                return false;
+//                return true;
             }
 
             // Verify HMAC signature to detect tampering
