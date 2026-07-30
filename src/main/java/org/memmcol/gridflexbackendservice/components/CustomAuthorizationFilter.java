@@ -67,9 +67,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 || path.startsWith( "/apidoc")
                 || path.startsWith("/swagger-resources")
                 || path.startsWith("/webjars")
-                || path.startsWith("/actuator/prometheus")
                 || path.equals("/swagger-ui.html")
-                || path.startsWith("/actuator")
+                || path.startsWith("/actuator/info")
+                || path.startsWith("/actuator/health")
+                || path.startsWith("/actuator/prometheus")
+                || path.startsWith("/actuator/metrics")
                 || path.startsWith("/gridflex/api-docs/Client Authentication")
                 || path.startsWith("/gridflex/api-docs/Odyssey")
 
