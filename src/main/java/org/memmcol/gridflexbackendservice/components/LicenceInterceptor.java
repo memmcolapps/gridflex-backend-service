@@ -129,6 +129,7 @@ public class LicenceInterceptor implements HandlerInterceptor {
             // Let CustomAuthorizationFilter handle JWT errors
             return true;
         } catch (Exception e) {
+            log.error("Error licence: {}",  e.getMessage(), e);
             blockAccess(response, "License validation failed: " + e.getMessage());
             return false;
         }
