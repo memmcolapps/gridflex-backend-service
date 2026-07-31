@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.memmcol.gridflexbackendservice.model.licence.SaveLicenceRequest;
 import org.memmcol.gridflexbackendservice.service.licence.LicenceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/license/service")
+@Profile("window")
 @Tag(name = "License", description = "License Management APIs")
 public class LicenceController {
 
