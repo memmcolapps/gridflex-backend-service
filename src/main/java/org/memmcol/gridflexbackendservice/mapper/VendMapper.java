@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.tariff.Tariff;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -447,34 +448,102 @@ public interface VendMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createCompensationToken(KctToken kctToken);
 
+//    @Select("""
+//                <script>
+//                    SELECT *
+//                    FROM vw_vending_transactions_summary
+//                    WHERE org_id = #{orgId}
+//                    AND (node_id = #{nodeId} OR service_center = #{nodeId}
+//                        OR region = #{nodeId} OR root = #{nodeId})
+//
+//                    <if test="meterNumber != null and meterNumber != ''">
+//                        AND meter_number ILIKE CONCAT('%', #{meterNumber}, '%')
+//                    </if>
+//                    <if test="meterAccountNumber != null and meterAccountNumber != ''">
+//                        AND meter_account_number ILIKE CONCAT('%', #{meterAccountNumber}, '%')
+//                    </if>
+//                    <if test="tariffName != null and tariffName != ''">
+//                        AND tariff_name ILIKE CONCAT('%', #{tariffName}, '%')
+//                    </if>
+//                    <if test="tokenType != null and tokenType != ''">
+//                        AND token_type = #{tokenType}
+//                    </if>
+//                    <if test="status != null and status != ''">
+//                        AND status = #{status}
+//                    </if>
+//                     <if test="from != null">
+//                            AND created_at &gt;= #{from}
+//                    </if>
+//
+//                    <if test="to != null">
+//                            AND created_at &lt; (#{to} + INTERVAL '1 day')
+//                    </if>
+//
+//                    ORDER BY created_at DESC
+//
+//                </script>
+//            """)
+//@Results({
+//        @Result(property = "transactionId", column = "transaction_id"),
+//        @Result(property = "meterId", column = "meter_id"),
+//        @Result(property = "nodeId", column = "node_id"),
+//        @Result(property = "serviceCenter", column = "service_center"),
+//        @Result(property = "meterNumber", column = "meter_number"),
+//        @Result(property = "meterAccountNumber", column = "meter_account_number"),
+//        @Result(property = "userFullname", column = "user_Fullname"),
+//        @Result(property = "customerFullname", column = "customer_Fullname"),
+//        @Result(property = "tariffName", column = "tariff_name"),
+//        @Result(property = "tariffRate", column = "tariff_rate"),
+//        @Result(property = "liabilityName", column = "liability_name"),
+//        @Result(property = "balanceAfterAdjustment", column = "balance"),
+//
+//        @Result(property = "userId", column = "user_id"),
+//        @Result(property = "customerId", column = "customer_id"),
+//
+//        @Result(property = "InitialAmount", column = "Initial_amount"),
+//        @Result(property = "FinalAmount", column = "Final_amount"),
+//        @Result(property = "vatAmount", column = "vat_amount"),
+//        @Result(property = "receiptNo", column = "receipt_no"),
+//        @Result(property = "unitCost", column = "unit_cost"),
+//        @Result(property = "tokenType", column = "token_type"),
+//
+//        @Result(property = "tariffName", column = "tariff_name"),
+//        @Result(property = "tariffRate", column = "tariff_rate"),
+//        @Result(property = "bandName", column = "band_name"),
+//        @Result(property = "bandHour", column = "band_hour"),
+//
+//        @Result(property = "createdAt", column = "created_at"),
+//        @Result(property = "updatedAt", column = "updated_at"),
+//        @Result(property = "creditAdjustment", column = "meter_id",
+//                one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getCreditAdjustment")),
+//        @Result(property = "debitAdjustment", column = "meter_id",
+//                one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getDebitAdjustment")),
+//})
+//List<Transaction> getAllToken(
+//        @Param("orgId") UUID orgId,
+//        @Param("meterNumber") String meterNumber,
+//        @Param("meterAccountNumber") String meterAccountNumber,
+//        @Param("tariffName") String tariffName,
+//        @Param("tokenType") String tokenType,
+//        @Param("status") String status,
+//        @Param("limit") int limit,
+//        @Param("offset") int offset,
+//        @Param("nodeId") UUID nodeId,
+//        @Param("from") LocalDate from,
+//        @Param("to") LocalDate to
+//);
     @Select("""
-                <script>
-                    SELECT *
-                    FROM vw_vending_transactions_summary
-                    WHERE org_id = #{orgId} 
-                    AND (node_id = #{nodeId} OR service_center = #{nodeId} 
-                        OR region = #{nodeId} OR root = #{nodeId})
-                    
-                    <if test="meterNumber != null and meterNumber != ''">
-                        AND meter_number ILIKE CONCAT('%', #{meterNumber}, '%')
-                    </if>
-                    <if test="meterAccountNumber != null and meterAccountNumber != ''">
-                        AND meter_account_number ILIKE CONCAT('%', #{meterAccountNumber}, '%')
-                    </if>
-                    <if test="tariffName != null and tariffName != ''">
-                        AND tariff_name ILIKE CONCAT('%', #{tariffName}, '%')
-                    </if>
-                    <if test="tokenType != null and tokenType != ''">
-                        AND token_type = #{tokenType}
-                    </if>
-                    <if test="status != null and status != ''">
-                        AND status = #{status}
-                    </if>
-
-                    ORDER BY created_at DESC
-
-                </script>
-            """)
+        SELECT *
+        FROM vw_vending_transactions_summary
+        WHERE org_id = #{orgId}
+          AND (
+                node_id = #{nodeId}
+             OR service_center = #{nodeId}
+             OR region = #{nodeId}
+             OR root = #{nodeId}
+          )
+        ORDER BY created_at DESC
+    """)
     @Results({
             @Result(property = "transactionId", column = "transaction_id"),
             @Result(property = "meterId", column = "meter_id"),
@@ -511,15 +580,8 @@ public interface VendMapper {
             @Result(property = "debitAdjustment", column = "meter_id",
                     one = @One(select = "org.memmcol.gridflexbackendservice.mapper.VendMapper.getDebitAdjustment")),
     })
-    List<Transaction> getAllToken(
+    List<Transaction> getTransactions(
             @Param("orgId") UUID orgId,
-            @Param("meterNumber") String meterNumber,
-            @Param("meterAccountNumber") String meterAccountNumber,
-            @Param("tariffName") String tariffName,
-            @Param("tokenType") String tokenType,
-            @Param("status") String status,
-            @Param("limit") int limit,
-            @Param("offset") int offset,
             @Param("nodeId") UUID nodeId
     );
 
