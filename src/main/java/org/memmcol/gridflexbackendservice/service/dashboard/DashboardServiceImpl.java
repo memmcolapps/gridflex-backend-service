@@ -392,7 +392,8 @@ public class DashboardServiceImpl implements  DashboardService{
                     .filter(t -> {
                         if (year == null || year.isEmpty() || t.getCreatedAt() == null)
                             return true;
-                        ZonedDateTime zoned = t.getCreatedAt().toInstant().atZone(ZoneId.systemDefault());
+                            ZonedDateTime zoned = t.getCreatedAt().atZone(ZoneId.systemDefault());
+//                        ZonedDateTime zoned = t.getCreatedAt().toInstant().atZone(ZoneId.systemDefault());
                         return String.valueOf(zoned.getYear()).equals(year);
                     })
                     .collect(Collectors.toList());
@@ -497,9 +498,13 @@ public class DashboardServiceImpl implements  DashboardService{
             List<Transaction> previousYearTransactions = transactions.stream()
                     .filter(t -> t.getCreatedAt() != null)
                     .filter(t -> {
-                        int yr = t.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear();
+                        int yr = t.getCreatedAt().getYear();
                         return yr == previousYear;
                     })
+//                    .filter(t -> {
+//                        int yr = t.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear();
+//                        return yr == previousYear;
+//                    })
                     .collect(Collectors.toList());
 
             long previousTransactionCount = previousYearTransactions.size();
@@ -561,54 +566,103 @@ public class DashboardServiceImpl implements  DashboardService{
             double failPercent = (fail * 100.0) / total;
 
             // === Group transactions by year and month (for charts) ===
-            Map<Integer, Map<String, Map<String, BigDecimal>>> transactionByYearAndMonth = transactions.stream()
-                    .filter(m -> m.getCreatedAt() != null)
-                    .collect(Collectors.groupingBy(
-                            m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear(),
-                            Collectors.groupingBy(
-                                    m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault())
-                                            .getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                                    Collectors.collectingAndThen(Collectors.toList(), list -> {
-                                        BigDecimal amountSum = list.stream()
-                                                .map(Transaction::getInitialAmount)
-                                                .filter(Objects::nonNull)
-                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            Map<Integer, Map<String, Map<String, BigDecimal>>> transactionByYearAndMonth =
+                    transactions.stream()
+                            .filter(t -> t.getCreatedAt() != null)
+                            .collect(Collectors.groupingBy(
+                                    t -> t.getCreatedAt().getYear(),
+                                    Collectors.groupingBy(
+                                            t -> t.getCreatedAt()
+                                                    .getMonth()
+                                                    .getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                                            Collectors.collectingAndThen(
+                                                    Collectors.toList(),
+                                                    list -> {
 
-//                                        BigDecimal costUnitSum = list.stream()
-//                                                .map(Transaction::getUnitCost)
+                                                        BigDecimal amountSum = list.stream()
+                                                                .map(Transaction::getInitialAmount)
+                                                                .filter(Objects::nonNull)
+                                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                                                        BigDecimal costUnitSum = list.stream()
+                                                                .map(tr -> {
+                                                                    BigDecimal unitCost = tr.getUnitCost();
+                                                                    BigDecimal unit = tr.getUnit();
+
+                                                                    if (unitCost != null && unit != null) {
+                                                                        return unitCost.multiply(unit);
+                                                                    }
+
+                                                                    return BigDecimal.ZERO;
+                                                                })
+                                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                                                        BigDecimal vatAmountSum = list.stream()
+                                                                .map(Transaction::getVatAmount)
+                                                                .filter(Objects::nonNull)
+                                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                                                        Map<String, BigDecimal> sums = new HashMap<>();
+                                                        sums.put("amountSum", amountSum);
+                                                        sums.put("costUnitSum", costUnitSum);
+                                                        sums.put("vatAmountSum", vatAmountSum);
+
+                                                        return sums;
+                                                    }
+                                            )
+                                    )
+                            ));
+
+//            // === Group transactions by year and month (for charts) ===
+//            Map<Integer, Map<String, Map<String, BigDecimal>>> transactionByYearAndMonth = transactions.stream()
+//                    .filter(m -> m.getCreatedAt() != null)
+//                    .collect(
+//                            Collectors.groupingBy(
+//                            m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).getYear(),
+//                            Collectors.groupingBy(
+//                                    m -> m.getCreatedAt().toInstant().atZone(ZoneId.systemDefault())
+//                                            .getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+//                                    Collectors.collectingAndThen(Collectors.toList(), list -> {
+//                                        BigDecimal amountSum = list.stream()
+//                                                .map(Transaction::getInitialAmount)
 //                                                .filter(Objects::nonNull)
 //                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 //
-//                                        BigDecimal unitSum = list.stream()
-//                                                .map(Transaction::getUnit)
+////                                        BigDecimal costUnitSum = list.stream()
+////                                                .map(Transaction::getUnitCost)
+////                                                .filter(Objects::nonNull)
+////                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+////
+////                                        BigDecimal unitSum = list.stream()
+////                                                .map(Transaction::getUnit)
+////                                                .filter(Objects::nonNull)
+////                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//                                        BigDecimal costUnitSum = list.stream()
+//                                                .map(t -> {
+//                                                    BigDecimal uc = t.getUnitCost();
+//                                                    BigDecimal u = t.getUnit();
+//                                                    if (uc != null && u != null) {
+//                                                        return uc.multiply(u);
+//                                                    }
+//                                                    return BigDecimal.ZERO;
+//                                                })
+//                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//                                        BigDecimal vatAmountSum = list.stream()
+//                                                .map(Transaction::getVatAmount)
 //                                                .filter(Objects::nonNull)
 //                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                                        BigDecimal costUnitSum = list.stream()
-                                                .map(t -> {
-                                                    BigDecimal uc = t.getUnitCost();
-                                                    BigDecimal u = t.getUnit();
-                                                    if (uc != null && u != null) {
-                                                        return uc.multiply(u);
-                                                    }
-                                                    return BigDecimal.ZERO;
-                                                })
-                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                                        BigDecimal vatAmountSum = list.stream()
-                                                .map(Transaction::getVatAmount)
-                                                .filter(Objects::nonNull)
-                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                                        Map<String, BigDecimal> sums = new HashMap<>();
-                                        sums.put("amountSum", amountSum);
-                                        sums.put("costUnitSum", costUnitSum);
-//                                        sums.put("costUnitSum", costUnitSum.multiply(unitSum));
-                                        sums.put("vatAmountSum", vatAmountSum);
-                                        return sums;
-                                    })
-                            )
-                    ));
+//
+//                                        Map<String, BigDecimal> sums = new HashMap<>();
+//                                        sums.put("amountSum", amountSum);
+//                                        sums.put("costUnitSum", costUnitSum);
+////                                        sums.put("costUnitSum", costUnitSum.multiply(unitSum));
+//                                        sums.put("vatAmountSum", vatAmountSum);
+//                                        return sums;
+//                                    })
+//                            )
+//                    ));
 
 
             // === Find Top BHUB for Current Year ===
