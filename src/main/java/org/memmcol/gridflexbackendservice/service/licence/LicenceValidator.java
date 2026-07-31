@@ -3,10 +3,12 @@ package org.memmcol.gridflexbackendservice.service.licence;
 import org.memmcol.gridflexbackendservice.model.licence.Licence;
 import org.memmcol.gridflexbackendservice.model.licence.LicenceValidationResult;
 import org.memmcol.gridflexbackendservice.util.TrustedTimeProvider;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+@Profile("window")
 public class LicenceValidator {
 
     private static final long EXPIRY_WARNING_DAYS = 30;
