@@ -276,26 +276,56 @@ public interface DebitCreditAdjustmentMapper {
     List<DebitCreditAdjust> FetchDebitCreditAdjustmentById(
             UUID meterId, UUID liabilityCauseId, String type, UUID orgId);
 
+//    @Select("""
+//        SELECT p.*,
+//               adj_total.total_balance AS outstanding_balance
+//        FROM credit_debit_payment p
+//         JOIN credit_debit_adjustment ca
+//              ON ca.id = p.credit_debit_adj_id
+//         JOIN (
+//            SELECT id, SUM(balance) OVER () AS total_balance
+//            FROM credit_debit_adjustment
+//            WHERE meter_id = #{meterId}
+//              AND org_id = #{orgId}
+//              AND liability_cause_id = #{liabilityCauseId}
+//              AND UPPER(type) = UPPER(#{type})
+//        ) adj_total
+//                      ON adj_total.id = ca.id
+//        WHERE UPPER(ca.type) = UPPER(#{type})
+//        ORDER BY
+//             COALESCE(p.parent_id, p.id),   -- group parent + children
+//              p.parent_id NULLS FIRST,       -- parent first
+//              p.created_at ASC;              -- then chronological
+//    """)
     @Select("""
         SELECT p.*,
                adj_total.total_balance AS outstanding_balance
         FROM credit_debit_payment p
-                 JOIN credit_debit_adjustment ca
-                      ON ca.id = p.credit_debit_adj_id
-                 JOIN (
-            SELECT id, SUM(balance) OVER () AS total_balance
+        
+        LEFT JOIN credit_debit_payment parent
+               ON parent.id = p.parent_id
+        
+        JOIN credit_debit_adjustment ca
+             ON ca.id = p.credit_debit_adj_id
+        
+        JOIN (
+            SELECT id,
+                   SUM(balance) OVER () AS total_balance
             FROM credit_debit_adjustment
             WHERE meter_id = #{meterId}
               AND org_id = #{orgId}
               AND liability_cause_id = #{liabilityCauseId}
               AND UPPER(type) = UPPER(#{type})
         ) adj_total
-                      ON adj_total.id = ca.id
+             ON adj_total.id = ca.id
+        
         WHERE UPPER(ca.type) = UPPER(#{type})
+        
         ORDER BY
-             COALESCE(p.parent_id, p.id),   -- group parent + children
-              p.parent_id NULLS FIRST,       -- parent first
-              p.created_at ASC;              -- then chronological
+            COALESCE(parent.created_at, p.created_at),
+            CASE WHEN p.parent_id IS NULL THEN 0 ELSE 1 END,
+            p.created_at,
+            p.id;
     """)
     @Results({
             @Result(column = "id", property = "id"),
