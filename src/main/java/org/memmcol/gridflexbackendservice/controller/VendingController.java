@@ -119,14 +119,14 @@ public class VendingController {
                                @RequestParam(value = "size",required = false,defaultValue = "0") int size,
                                @RequestParam(required = false)
                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                               LocalDate from,
+                               LocalDate startDate,
 
                                @RequestParam(required = false)
                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                               LocalDate to){
+                               LocalDate endDate){
         try {
             Map<String, Object> result = vendingService.getTransactions(meterNumber,accountNumber,tariffName,
-                    tokenType,status,search,sortDirection,page,size, from, to);
+                    tokenType,status,search,sortDirection,page,size, startDate, endDate);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
