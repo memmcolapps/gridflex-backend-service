@@ -26,11 +26,6 @@ public class WebConfig implements WebMvcConfigurer {
                     .addPathPatterns("/**");
         }
     }
-//    @Override
-//    public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(licenceInterceptor)
-//                .addPathPatterns("/**");
-//    }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
