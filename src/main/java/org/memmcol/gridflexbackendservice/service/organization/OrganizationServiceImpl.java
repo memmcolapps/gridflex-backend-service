@@ -16,6 +16,7 @@ import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -50,6 +51,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private HttpServletRequest httpServletRequest;
 
+    @Value("${file.base-address}"+"${app.base-path}")
+    private String uploadDir;
+
     // Other mappers can be added as needed
     public OrganizationServiceImpl(OrganizationMapper organizationMapper,
                                    ExceptionAuditRepository exceptionAuditRepository,
@@ -63,7 +67,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public Map<String, Object> getOrganizationById(UUID id) {
         try {
-            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+//            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
             Organization result = organizationMapper.getOrganizationById(id);
 
             if(result == null){
@@ -71,7 +75,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             }
             if (result.getImage() != null) {
                 // Convert relative path to full URL
-                String fullUrl = baseUrl + result.getImage();
+                String fullUrl = uploadDir + result.getImage();
                 result.setImage(fullUrl);
             }
 
