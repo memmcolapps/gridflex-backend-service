@@ -668,6 +668,7 @@ public interface HesMapper {
             @Result(column = "voltage_l1", property = "voltageL1"),
             @Result(column = "voltage_l2", property = "voltageL2"),
             @Result(column = "voltage_l3", property = "voltageL3"),
+            @Result(column = "current_l1", property = "currentL1"),
             @Result(column = "current_l2", property = "currentL2"),
             @Result(column = "current_l3", property = "currentL3"),
             @Result(column = "received_at", property = "receivedAt"),
@@ -734,8 +735,7 @@ public interface HesMapper {
             @Result(property = "meter.flatNode.dssAssetId", column = "dss_asset_id"),
             @Result(property = "meter.flatNode.dssName", column = "dss_name"),
     })
-    List<Profile>
-    getProfileChannelTwoHouseHold(
+    List<Profile> getProfileChannelTwoHouseHold(
             LocalDateTime startDate, LocalDateTime endDate,
             List<String> meterNumber, List<String> meterModel,
             UUID orgId, int page, int size, String node);
