@@ -886,9 +886,10 @@ public class UserServiceImpl implements  UserService {
                     "Password must contain at least one number.");
         }
 
-//		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
-//			return "Password must contain at least one special character.";
-//		}
+		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Password must contain at least one special character.");
+		}
 //
     }
 

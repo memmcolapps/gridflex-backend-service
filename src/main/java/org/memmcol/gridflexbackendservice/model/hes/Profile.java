@@ -79,6 +79,7 @@ public class Profile implements Serializable {
     // Profile channel two household
     private String voltageL1;
     private String voltageL2;
+    private String voltageL3;
     private String currentL1;
     private String currentL2;
     private String currentL3;
@@ -503,6 +504,14 @@ public class Profile implements Serializable {
 
     public void setVoltageL2(String voltageL2) {
         this.voltageL2 = voltageL2;
+    }
+
+    public String getVoltageL3() {
+        return voltageL3;
+    }
+
+    public void setVoltageL3(String voltageL3) {
+        this.voltageL3 = voltageL3;
     }
 
     public String getCurrentL1() {
