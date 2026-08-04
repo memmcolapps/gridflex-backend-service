@@ -102,15 +102,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		String username = request.getParameter("username");
 		String password = request.getParameter("password");
 
-		// Fetch user details before authentication
-//		UserModel user = authMapper.findAuthByUserEmail(username.trim().toLowerCase());
-
-//		String isSuperAdmin = user.getGroups().getModules().get(0).getName();
-//		String requiredHeaderKey = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_KEY : USER_HEADER_KEY;
-//		String requiredHeaderValue = isSuperAdmin.equalsIgnoreCase("Full Access") ? ADMIN_HEADER_VALUE : USER_HEADER_VALUE;
-
-		// Validate the required header
-		System.out.println(adminHeaderKey);
 		String headerValue = request.getHeader(adminHeaderKey);
 		if (headerValue == null || !headerValue.equals(adminHeaderValue)) {
 			throw new BadCredentialsException(
@@ -118,13 +109,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 			) {
 			};
 		}
-
-//		// Dynamically set service URL
-//		if (isSuperAdmin.equalsIgnoreCase("Full Access")) {
-//			setFilterProcessesUrl("/auth/service/admin/login");
-//		} else {
-//			setFilterProcessesUrl("/auth/service/login");
-//		}
 		
 		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
 		

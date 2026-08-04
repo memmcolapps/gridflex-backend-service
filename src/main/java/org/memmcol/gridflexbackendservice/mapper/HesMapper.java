@@ -2387,7 +2387,7 @@ public interface HesMapper {
     List<ObisMapping> getObisCodeByMeter(String meterNumber, String type);
 
     @Select("""
-        SELECT DISTINCT ON (meter_number), connection_type FROM vw_meter_summary 
+        SELECT DISTINCT ON (meter_number) meter_number FROM vw_meter_summary 
                WHERE org_id = #{orgId} AND UPPER(connection_type) = 'ONLINE' 
              AND UPPER(meter_class) IN (#{type}, #{type2})
     """)

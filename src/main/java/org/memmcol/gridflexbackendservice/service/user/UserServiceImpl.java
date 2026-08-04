@@ -10,6 +10,7 @@ import org.memmcol.gridflexbackendservice.model.node.Node;
 import org.memmcol.gridflexbackendservice.model.user.Module;
 import org.memmcol.gridflexbackendservice.model.user.*;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
+import org.memmcol.gridflexbackendservice.repository.AuditRepository;
 import org.memmcol.gridflexbackendservice.service.audit.SafeAuditService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -61,9 +62,14 @@ public class UserServiceImpl implements  UserService {
     @Autowired
     private GenericHandler genericHandler;
 
+    @Autowired
+    private AuditRepository auditRepository;
+
     private String userName = "User";
 
     private final IMap<String, Object> userCache;
+
+    private final IMap<String, Boolean> verifiedUsers;
 
     private boolean containsIgnoreCase(String field, String search) {
         return field != null && field.toLowerCase(Locale.ROOT).contains(search);
@@ -74,6 +80,7 @@ public class UserServiceImpl implements  UserService {
     public UserServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
         this.userCache = hazelcastInstance.getMap("userCache");
         this.auditCache = hazelcastInstance.getMap("auditCache");
+        this.verifiedUsers = hazelcastInstance.getMap("verifiedUsers");
     }
 
     @Transactional
@@ -90,6 +97,15 @@ public class UserServiceImpl implements  UserService {
             HandlePermission.perm(nodeType);
 
             UserModel operator = request.getUser();
+            // Optional password validation
+            String validationMessage = validatePassword(operator.getPassword());
+            if (validationMessage != null) {
+                return ResponseMap.response(
+                        status.getBlockCode(),
+                        validationMessage,
+                        ""
+                );
+            }
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             // check if operator exist
@@ -799,6 +815,93 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
+    @Transactional
+    @Override
+    public Map<String, Object> changePassword(String oldPassword, String newPassword, String confirmPassword) {
+
+        UUID orgId = null;
+        try {
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+            UserModel operator = handleUserValidation();
+
+            orgId = operator.getOrgId();
+
+            // Validate old password
+            if (!passwordEncoder.matches(oldPassword, operator.getPassword())) {
+                throw new GlobalExceptionHandler.NotFoundException("Old password provided is incorrect");
+            }
+
+            // Confirm password
+            if (!newPassword.equals(confirmPassword)) {
+                throw new GlobalExceptionHandler.NotFoundException("New password and confirm password do not match");
+            }
+
+            // Prevent reusing same password
+            if (passwordEncoder.matches(newPassword, operator.getPassword())) {
+                throw new GlobalExceptionHandler.NotFoundException("New password cannot be the same as the current password");
+            }
+
+            // Optional password validation
+            String validationMessage = validatePassword(newPassword);
+            if (validationMessage != null) {
+                return ResponseMap.response(
+                        status.getBlockCode(),
+                        validationMessage,
+                        ""
+                );
+            }
+
+            int result = operatorMapper.resetPassword(
+                    operator.getEmail(),
+                    passwordEncoder.encode(newPassword)
+            );
+
+            if (result == 0) {
+                throw new GlobalExceptionHandler.NotFoundException("Password update failed");
+            }
+
+            operator.setPassword("");
+
+            verifiedUsers.remove(operator.getEmail());
+            AuditLog auditLog = buildAuditLog(operator, "Change password", "auth", metadata);
+            auditRepository.save(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), "Password " + status.getUpdateDesc(), "");
+
+        } catch (Exception exception) {
+            log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
+            genericHandler.logIncidentReport("Change password service failed", orgId);
+            genericHandler.logAndSaveException(exception, "changing operator password");
+            throw exception;
+        }
+    }
+
+    private String validatePassword(String password) {
+
+        if (password.length() < 8) {
+            return "Password must be at least 8 characters.";
+        }
+
+        if (!password.matches(".*[A-Z].*")) {
+            return "Password must contain at least one uppercase letter.";
+        }
+
+        if (!password.matches(".*[a-z].*")) {
+            return "Password must contain at least one lowercase letter.";
+        }
+
+        if (!password.matches(".*\\d.*")) {
+            return "Password must contain at least one number.";
+        }
+
+//		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
+//			return "Password must contain at least one special character.";
+//		}
+
+        return null;
+    }
+
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
         AuditLog log = new AuditLog();
@@ -812,6 +915,19 @@ public class UserServiceImpl implements  UserService {
         log.setHttpMethod(metadata.get("httpMethod"));
         return log;
     }
+
+    private AuditLog buildAuditLog(UserModel creator, String description, String type, Map<String, String> metadata) {
+        AuditLog log = new AuditLog();
+        log.setCreator(creator);
+        log.setDescription(description);
+        log.setType(type);
+        log.setIpAddress(metadata.get("ipAddress"));
+        log.setUserAgent(metadata.get("userAgent"));
+        log.setEndpoint(metadata.get("endpoint"));
+        log.setHttpMethod(metadata.get("httpMethod"));
+        return log;
+    }
+
 
     private void handleAddCache(UserModel user) {
         userCache.remove(user.getId().toString()+"_"+user.getOrgId());
