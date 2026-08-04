@@ -98,14 +98,8 @@ public class UserServiceImpl implements  UserService {
 
             UserModel operator = request.getUser();
             // Optional password validation
-            String validationMessage = validatePassword(operator.getPassword());
-            if (validationMessage != null) {
-                return ResponseMap.response(
-                        status.getBlockCode(),
-                        validationMessage,
-                        ""
-                );
-            }
+            validatePassword(operator.getPassword());
+
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
             // check if operator exist
@@ -843,14 +837,7 @@ public class UserServiceImpl implements  UserService {
             }
 
             // Optional password validation
-            String validationMessage = validatePassword(newPassword);
-            if (validationMessage != null) {
-                return ResponseMap.response(
-                        status.getBlockCode(),
-                        validationMessage,
-                        ""
-                );
-            }
+            validatePassword(newPassword);
 
             int result = operatorMapper.resetPassword(
                     operator.getEmail(),
@@ -877,29 +864,32 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
-    private String validatePassword(String password) {
+    private void validatePassword(String password) {
 
         if (password.length() < 8) {
-            return "Password must be at least 8 characters.";
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Password must be at least 8 characters.");
         }
 
         if (!password.matches(".*[A-Z].*")) {
-            return "Password must contain at least one uppercase letter.";
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Password must contain at least one uppercase letter.");
         }
 
         if (!password.matches(".*[a-z].*")) {
-            return "Password must contain at least one lowercase letter.";
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Password must contain at least one lowercase letter.");
         }
 
         if (!password.matches(".*\\d.*")) {
-            return "Password must contain at least one number.";
+            throw new GlobalExceptionHandler.NotFoundException(
+                    "Password must contain at least one number.");
         }
 
 //		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
 //			return "Password must contain at least one special character.";
 //		}
-
-        return null;
+//
     }
 
 

@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.auth;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -190,29 +191,31 @@ public class AuthServiceImpl implements AuthService {
 		}
 	}
 
-	private String validatePassword(String password) {
+	private void validatePassword(String password) {
 
 		if (password.length() < 8) {
-			return "Password must be at least 8 characters.";
+			throw new GlobalExceptionHandler.NotFoundException(
+					"Password must be at least 8 characters.");
 		}
 
 		if (!password.matches(".*[A-Z].*")) {
-			return "Password must contain at least one uppercase letter.";
+			throw new GlobalExceptionHandler.NotFoundException(
+					"Password must contain at least one uppercase letter.");
 		}
 
 		if (!password.matches(".*[a-z].*")) {
-			return "Password must contain at least one lowercase letter.";
+			throw new GlobalExceptionHandler.NotFoundException(
+					"Password must contain at least one lowercase letter.");
 		}
 
 		if (!password.matches(".*\\d.*")) {
-			return "Password must contain at least one number.";
+			throw new GlobalExceptionHandler.NotFoundException(
+					"Password must contain at least one number.");
 		}
 
 //		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
 //			return "Password must contain at least one special character.";
 //		}
-
-		return null;
 	}
 
 
@@ -233,14 +236,7 @@ public class AuthServiceImpl implements AuthService {
 				verifiedUsers.put(email, true, 2, TimeUnit.MINUTES);
 
 				// Optional password validation
-				String validationMessage = validatePassword(password);
-				if (validationMessage != null) {
-					return ResponseMap.response(
-							status.getBlockCode(),
-							validationMessage,
-							""
-					);
-				}
+				validatePassword(password);
 
 				return handleForgetPassword(isOperator, password, isOperator.getOrgId());
 
