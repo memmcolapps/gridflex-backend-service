@@ -1946,7 +1946,8 @@ public interface HesMapper {
 
             @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
-    List<MeterConnEvent> getCommunicationNonMDReport(int page, int size, UUID orgId, String type, String type2, String type3, String node);
+    List<MeterConnEvent> getCommunicationNonMDReport(
+            int page, int size, UUID orgId, String type, String type2, String type3, String node);
 
     @Select("""
         <script>
