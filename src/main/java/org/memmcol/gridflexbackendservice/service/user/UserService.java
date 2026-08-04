@@ -31,4 +31,6 @@ public interface UserService {
     Map<String, Object> updateUserGroup(CreateUserRequest request);
 
     Map<String, Object> getOrgModule();
+
+    Map<String, Object> changePassword(String oldPassword, String newPassword, String confirmPassword);
 }
