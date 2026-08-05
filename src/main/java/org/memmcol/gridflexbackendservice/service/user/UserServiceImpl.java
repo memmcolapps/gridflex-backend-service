@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.user;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.components.PasswordValidator;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.mapper.UserMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
@@ -44,8 +45,8 @@ public class UserServiceImpl implements  UserService {
     @Autowired
     private ResponseProperties status;
 
-//    @Autowired
-//    private AuditRepository auditRepository;
+    @Autowired
+    private PasswordValidator validator;
 
     @Autowired
     private SafeAuditService safeAuditService;
@@ -98,7 +99,7 @@ public class UserServiceImpl implements  UserService {
 
             UserModel operator = request.getUser();
             // Optional password validation
-            validatePassword(operator.getPassword());
+            validator.validatePassword(operator.getPassword());
 
             operator.setPassword(passwordEncoder.encode(operator.getPassword()));
 
@@ -837,7 +838,7 @@ public class UserServiceImpl implements  UserService {
             }
 
             // Optional password validation
-            validatePassword(newPassword);
+            validator.validatePassword(newPassword);
 
             int result = operatorMapper.resetPassword(
                     operator.getEmail(),
@@ -864,34 +865,34 @@ public class UserServiceImpl implements  UserService {
         }
     }
 
-    private void validatePassword(String password) {
-
-        if (password.length() < 8) {
-            throw new GlobalExceptionHandler.NotFoundException(
-                    "Password must be at least 8 characters.");
-        }
-
-        if (!password.matches(".*[A-Z].*")) {
-            throw new GlobalExceptionHandler.NotFoundException(
-                    "Password must contain at least one uppercase letter.");
-        }
-
-        if (!password.matches(".*[a-z].*")) {
-            throw new GlobalExceptionHandler.NotFoundException(
-                    "Password must contain at least one lowercase letter.");
-        }
-
-        if (!password.matches(".*\\d.*")) {
-            throw new GlobalExceptionHandler.NotFoundException(
-                    "Password must contain at least one number.");
-        }
-
-		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
-            throw new GlobalExceptionHandler.NotFoundException(
-                    "Password must contain at least one special character.");
-		}
+//    private void validatePassword(String password) {
 //
-    }
+//        if (password.length() < 8) {
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "Password must be at least 8 characters.");
+//        }
+//
+//        if (!password.matches(".*[A-Z].*")) {
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "Password must contain at least one uppercase letter.");
+//        }
+//
+//        if (!password.matches(".*[a-z].*")) {
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "Password must contain at least one lowercase letter.");
+//        }
+//
+//        if (!password.matches(".*\\d.*")) {
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "Password must contain at least one number.");
+//        }
+//
+//		if (!password.matches(".*[!@#$%^&*()_+=<>?/{}\\[\\]-].*")) {
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "Password must contain at least one special character.");
+//		}
+////
+//    }
 
 
     private AuditLog buildAuditLog(UserModel creator, String description, String type, Object createdEntity, Map<String, String> metadata) {
