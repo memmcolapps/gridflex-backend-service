@@ -179,7 +179,7 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>application-dev.properties.yml</exclude>
+                    <exclude>application-dev.properties</exclude>
                 </excludes>
             </resource>
         </resources>

@@ -4,10 +4,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Local override configs (if you ever create these for local dev)
-application-dev.properties.yml
-**/application-dev.properties.yml
-
 ### STS ###
 .apt_generated
 .classpath
@@ -36,3 +32,5 @@ build/
 /uploads
 ### VS Code ###
 .vscode/
+
+src/main/resources/application-dev.properties
