@@ -35,6 +35,16 @@ public class UserController {
         }
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestParam String oldPassword, @RequestParam String newPassword, @RequestParam String confirmPassword) {
+        try {
+            Map<String, Object> result = service.changePassword(oldPassword, newPassword, confirmPassword);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     // Update user group by assigning the user to another group
     @PutMapping("/group/update")
     public ResponseEntity<?> updateGroupUser(@RequestBody CreateUserRequest request) {

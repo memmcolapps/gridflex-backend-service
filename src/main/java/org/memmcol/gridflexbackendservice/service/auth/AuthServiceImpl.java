@@ -3,6 +3,8 @@ package org.memmcol.gridflexbackendservice.service.auth;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.components.PasswordValidator;
+import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.memmcol.gridflexbackendservice.mapper.AuthMapper;
 import org.memmcol.gridflexbackendservice.model.audit.AuditLog;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
@@ -48,9 +50,13 @@ public class AuthServiceImpl implements AuthService {
 	private GenericHandler genericHandler;
 
 	@Autowired
+	private PasswordValidator validator;
+
+	@Autowired
 	private ExceptionAuditRepository exceptionAuditRepository;
 
-	@Autowired private RestTemplate restTemplate;
+	@Autowired
+	private RestTemplate restTemplate;
 
 	@Autowired
 	private HttpServletRequest httpServletRequest;
@@ -63,8 +69,8 @@ public class AuthServiceImpl implements AuthService {
 	private final IMap<String, Object> auditCache;
 	private final IMap<String, String> otpCache;
 	private final IMap<String, Boolean> verifiedUsers;
-    @Autowired
-    private AuthMapper authMapper;
+	@Autowired
+	private AuthMapper authMapper;
 
 	public AuthServiceImpl(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance) {
 		this.authCache = hazelcastInstance.getMap("authCache");
@@ -113,16 +119,6 @@ public class AuthServiceImpl implements AuthService {
 		try {
 			Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
 
-//			UserModel um = handleUserValidation();
-
-//			UserModel isOperator = operatorMapper.findAuthByUserEmail(username);
-//
-//			if (isOperator == null) {
-//				return ResponseMap.response(status.getExistCode(), user + " " + status.getExistDesc(), "");
-//			}
-//			if(!Objects.equals(um.getEmail(), isOperator.getEmail())){
-//				return ResponseMap.response(status.getNotFoundCode(), "Do not have access to change an operator password", "");
-//			}
 			if (!verifiedUsers.containsKey(isOperator.getEmail())) {
 				return ResponseMap.response(status.getNotFoundCode(), "OTP verification required before password change", "");
 			}
@@ -154,7 +150,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Transactional
-	public Map<String, Object>  handleGenerateOtp(String username, UUID orgId) {
+	public Map<String, Object> handleGenerateOtp(String username, UUID orgId) {
 
 		String otp = String.format("%04d", random.nextInt(10000));
 
@@ -187,17 +183,18 @@ public class AuthServiceImpl implements AuthService {
 			orgId = um.getOrgId();
 			handleGenerateOtp(um.getEmail(), orgId);
 
-            UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
+			UserModel user = operatorMapper.findAuthByUserId(userId, um.getOrgId());
 			user.setPassword("");
 
 			return ResponseMap.response(status.getNotFoundCode(), "User " + status.getDesc(), user);
-		} catch (Exception exception){
+		} catch (Exception exception) {
 			log.error("Error occurred while [ACTION]: {}", exception.getMessage().trim(), exception);
 			genericHandler.logIncidentReport("Fetching user service failed", orgId);
 			genericHandler.logAndSaveException(exception, "fetching user ");
 			throw exception;
 		}
 	}
+
 
 	public  Map<String, Object>  verifyOtp(String email, String otp, String password) {
 		UUID orgId = null;
@@ -214,6 +211,9 @@ public class AuthServiceImpl implements AuthService {
 				otpCache.remove(email);
 
 				verifiedUsers.put(email, true, 2, TimeUnit.MINUTES);
+
+				// Optional password validation
+				validator.validatePassword(password);
 
 				return handleForgetPassword(isOperator, password, isOperator.getOrgId());
 

@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.vend;
 import org.memmcol.gridflexbackendservice.model.vend.*;
 
 import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,13 +20,15 @@ public interface VendingService {
 
     Map<String, Object> createCompensationToken(KctToken kctToken);
 
-    Map<String, Object> getAllToken(String meterNumber, String meterAccountNumber,
+    Map<String, Object> getTransactions(String meterNumber, String meterAccountNumber,
                                     String tariffName, String tokenType, String status,
-                                    String search, String sortDirection, int page, int size);
+                                    String search, String sortDirection, int page, int size,
+                                    LocalDate from, LocalDate to);
 
     Map<String, Object> calculateCreditToken(CreditToken creditToken);
 
     Map<String, Object> getKctMeterInfo(KctToken kctToken);
 
     ByteArrayInputStream printToken(String tokenType, UUID id);
+
 }

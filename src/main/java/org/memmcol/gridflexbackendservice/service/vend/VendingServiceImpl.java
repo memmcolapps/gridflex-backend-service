@@ -39,6 +39,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -894,66 +895,84 @@ public class VendingServiceImpl implements VendingService {
     }
 
     @Override
-    public Map<String, Object> getAllToken(String meterNumber, String accountNumber,
-                                           String tariffName, String tokenType, String stat,
-                                           String search, String sortDirection, int page, int size) {
+    public Map<String, Object> getTransactions(
+            String meterNumber,
+            String accountNumber,
+            String tariffName,
+            String tokenType,
+            String stat,
+            String search,
+            String sortDirection,
+            int page,
+            int size,
+            LocalDate from,
+            LocalDate to) {
+
         UserModel user = handleUserValidation();
 
         UUID orgId = user.getOrgId();
         UUID nodeId = user.getNodeInfo().getNodeId();
-        String nodeType = user.getNodeInfo().getType();
-
-//        if(!nodeType.equalsIgnoreCase("Business hub")
-//                && !nodeType.equalsIgnoreCase("Service center")
-//                && !nodeType.equalsIgnoreCase("Region")) {
-//            throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
-//        }
-
-//        resolveBulkNodeHierarchy(Transaction );
-//        if(nodeType.equalsIgnoreCase("Service center")){
-//            nodeId = nodeMapper.getParentNode(user.getOrgId(), nodeId);
-//        }
 
         try {
-            int offset = page * size;
-            List<Transaction> allReadings = vendMapper.getAllToken(
-                    orgId, meterNumber, accountNumber, tariffName, tokenType, stat, offset, size, nodeId
-            );
 
+            // Fetch everything for this organization/node
+            List<Transaction> allReadings = vendMapper.getTransactions(orgId, nodeId);
+
+            // Apply filters
+            allReadings = allReadings.stream()
+                    .filter(transaction -> matchesFilters(
+                            transaction,
+                            meterNumber,
+                            accountNumber,
+                            tariffName,
+                            tokenType,
+                            stat,
+                            from,
+                            to
+                    ))
+                    .collect(Collectors.toList());
+
+            // Global search
             if (search != null && !search.trim().isEmpty()) {
                 allReadings = allReadings.stream()
                         .filter(transaction -> transactionMatchesSearch(transaction, search))
                         .collect(Collectors.toList());
             }
 
+            // Sort
             sortVendingTransactions(allReadings, sortDirection);
 
+            // Pagination
             int totalCount = allReadings.size();
+
             List<Transaction> paginatedReadings;
 
-
-            if (size == 0) {
+            if (size <= 0) {
                 paginatedReadings = allReadings;
             } else {
-                int fromIndex = Math.min(page * size, totalCount);
-                int toIndex = Math.min(fromIndex + size, totalCount);
 
-                if (fromIndex > toIndex) {
-                    fromIndex = toIndex;
+                int fromIndex = page * size;
+
+                if (fromIndex >= totalCount) {
+                    paginatedReadings = Collections.emptyList();
+                } else {
+                    int toIndex = Math.min(fromIndex + size, totalCount);
+                    paginatedReadings = allReadings.subList(fromIndex, toIndex);
                 }
-
-                paginatedReadings = allReadings.subList(fromIndex, toIndex);
             }
 
-            // Build response
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("messages", paginatedReadings);
             responseData.put("totalCount", totalCount);
             responseData.put("page", page);
             responseData.put("size", size);
-            responseData.put("totalPages", size == 0 ? 1 : (int) Math.ceil((double) totalCount / size));
+            responseData.put("totalPages",
+                    size <= 0 ? 1 : (int) Math.ceil((double) totalCount / size));
 
-            return ResponseMap.response(status.getSuccessCode(), "Token fetched successfully", responseData);
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    "Token fetched successfully",
+                    responseData);
 
         } catch (Exception ex) {
             genericHandler.logIncidentReport("Token fetched service failed", orgId);
@@ -961,6 +980,129 @@ public class VendingServiceImpl implements VendingService {
             throw ex;
         }
     }
+
+    private boolean matchesFilters(
+            Transaction transaction,
+            String meterNumber,
+            String accountNumber,
+            String tariffName,
+            String tokenType,
+            String status,
+            LocalDate from,
+            LocalDate to) {
+
+        if (meterNumber != null &&
+                !meterNumber.isBlank() &&
+                (transaction.getMeterNumber() == null ||
+                        !transaction.getMeterNumber().toLowerCase()
+                                .contains(meterNumber.toLowerCase()))) {
+            return false;
+        }
+
+        if (accountNumber != null &&
+                !accountNumber.isBlank() &&
+                (transaction.getMeterAccountNumber() == null ||
+                        !transaction.getMeterAccountNumber().toLowerCase()
+                                .contains(accountNumber.toLowerCase()))) {
+            return false;
+        }
+
+        if (tariffName != null &&
+                !tariffName.isBlank() &&
+                (transaction.getTariffName() == null ||
+                        !transaction.getTariffName().toLowerCase()
+                                .contains(tariffName.toLowerCase()))) {
+            return false;
+        }
+
+        if (tokenType != null &&
+                !tokenType.isBlank() &&
+                (transaction.getTokenType() == null ||
+                        !transaction.getTokenType().equalsIgnoreCase(tokenType))) {
+            return false;
+        }
+
+        if (status != null &&
+                !status.isBlank() &&
+                (transaction.getStatus() == null ||
+                        !transaction.getStatus().equalsIgnoreCase(status))) {
+            return false;
+        }
+
+        if (from != null &&
+                transaction.getCreatedAt() != null &&
+                transaction.getCreatedAt().toLocalDate().isBefore(from)) {
+            return false;
+        }
+
+        if (to != null &&
+                transaction.getCreatedAt() != null &&
+                transaction.getCreatedAt().toLocalDate().isAfter(to)) {
+            return false;
+        }
+
+        return true;
+    }
+
+//    @Override
+//    public Map<String, Object> getAllToken(String meterNumber, String accountNumber,
+//                                           String tariffName, String tokenType, String stat,
+//                                           String search, String sortDirection, int page, int size,
+//                                           LocalDate from, LocalDate to) {
+//        UserModel user = handleUserValidation();
+//
+//        UUID orgId = user.getOrgId();
+//        UUID nodeId = user.getNodeInfo().getNodeId();
+//        String nodeType = user.getNodeInfo().getType();
+//
+//        try {
+//            int offset = page * size;
+//            List<Transaction> allReadings = vendMapper.getAllToken(
+//                    orgId, meterNumber, accountNumber, tariffName, tokenType,
+//                    stat, offset, size, nodeId, from, to
+//            );
+//
+//            if (search != null && !search.trim().isEmpty()) {
+//                allReadings = allReadings.stream()
+//                        .filter(transaction -> transactionMatchesSearch(transaction, search))
+//                        .collect(Collectors.toList());
+//            }
+//
+//            sortVendingTransactions(allReadings, sortDirection);
+//
+//            int totalCount = allReadings.size();
+//            List<Transaction> paginatedReadings;
+//
+//
+//            if (size == 0) {
+//                paginatedReadings = allReadings;
+//            } else {
+//                int fromIndex = Math.min(page * size, totalCount);
+//                int toIndex = Math.min(fromIndex + size, totalCount);
+//
+//                if (fromIndex > toIndex) {
+//                    fromIndex = toIndex;
+//                }
+//
+//                paginatedReadings = allReadings.subList(fromIndex, toIndex);
+//            }
+//
+//            // Build response
+//            Map<String, Object> responseData = new HashMap<>();
+//            responseData.put("messages", paginatedReadings);
+//            responseData.put("totalCount", totalCount);
+//            responseData.put("page", page);
+//            responseData.put("size", size);
+//            responseData.put("totalPages", size == 0 ? 1 : (int) Math.ceil((double) totalCount / size));
+//
+//            return ResponseMap.response(status.getSuccessCode(), "Token fetched successfully", responseData);
+//
+//        } catch (Exception ex) {
+//            genericHandler.logIncidentReport("Token fetched service failed", orgId);
+//            genericHandler.logAndSaveException(ex, "token fetched");
+//            throw ex;
+//        }
+//    }
 
     private boolean transactionMatchesSearch(Transaction transaction, String search) {
         return containsIgnoreCase(transaction.getMeterAccountNumber(), search)

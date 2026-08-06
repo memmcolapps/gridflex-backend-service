@@ -6,6 +6,7 @@ import org.memmcol.gridflexbackendservice.service.vend.VendingService;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -106,7 +108,7 @@ public class VendingController {
     }
 
     @GetMapping("/all")
-    ResponseEntity<?> allToken(@RequestParam(required = false) String meterNumber,
+    ResponseEntity<?> getTransactions(@RequestParam(required = false) String meterNumber,
                                @RequestParam(required = false) String accountNumber,
                                @RequestParam(required = false) String tariffName,
                                @RequestParam(required = false) String tokenType,
@@ -114,10 +116,17 @@ public class VendingController {
                                @RequestParam(required = false, defaultValue = "") String search,
                                @RequestParam(required = false, defaultValue = "desc") String sortDirection,
                                @RequestParam(value = "page", required = false,defaultValue = "0") int page,
-                               @RequestParam(value = "size",required = false,defaultValue = "0") int size){
+                               @RequestParam(value = "size",required = false,defaultValue = "0") int size,
+                               @RequestParam(required = false)
+                               @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                               LocalDate startDate,
+
+                               @RequestParam(required = false)
+                               @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                               LocalDate endDate){
         try {
-            Map<String, Object> result = vendingService.getAllToken(meterNumber,accountNumber,tariffName,
-                    tokenType,status,search,sortDirection,page,size);
+            Map<String, Object> result = vendingService.getTransactions(meterNumber,accountNumber,tariffName,
+                    tokenType,status,search,sortDirection,page,size, startDate, endDate);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);

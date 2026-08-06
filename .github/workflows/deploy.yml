@@ -442,7 +442,7 @@ jobs:
           username: ${{ secrets.WINDOW_SERVER_USER }}
           key: ${{ secrets.WINDOW_SSH_PRIVATE_KEY }}
           script: |
-            $dataDir = "C:/${{ secrets.WIN_LOCATION }}/upload"
+            $dataDir = "C:/${{ secrets.WIN_LOCATION }}/uploads"
             
             if (!(Test-Path $dataDir)) {
                 New-Item -ItemType Directory -Path $dataDir | Out-Null

@@ -14,4 +14,5 @@ public interface AuthService {
 	Map<String, Object> verifyOtp(String username, String otp, String password);
 
     Map<String, Object> profile(UUID userId);
+
 }

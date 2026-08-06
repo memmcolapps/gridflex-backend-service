@@ -667,6 +667,7 @@ public interface HesMapper {
             @Result(column = "entry_timestamp", property = "entryTimestamp"),
             @Result(column = "voltage_l1", property = "voltageL1"),
             @Result(column = "voltage_l2", property = "voltageL2"),
+            @Result(column = "voltage_l3", property = "voltageL3"),
             @Result(column = "current_l1", property = "currentL1"),
             @Result(column = "current_l2", property = "currentL2"),
             @Result(column = "current_l3", property = "currentL3"),
@@ -1946,7 +1947,8 @@ public interface HesMapper {
 
             @Result(property = "meter.smartMeterInfo.meterModel", column = "meter_model"),
     })
-    List<MeterConnEvent> getCommunicationNonMDReport(int page, int size, UUID orgId, String type, String type2, String type3, String node);
+    List<MeterConnEvent> getCommunicationNonMDReport(
+            int page, int size, UUID orgId, String type, String type2, String type3, String node);
 
     @Select("""
         <script>
@@ -2387,7 +2389,7 @@ public interface HesMapper {
     List<ObisMapping> getObisCodeByMeter(String meterNumber, String type);
 
     @Select("""
-        SELECT meter_number, connection_type FROM vw_meter_summary 
+        SELECT DISTINCT ON (meter_number) meter_number FROM vw_meter_summary 
                WHERE org_id = #{orgId} AND UPPER(connection_type) = 'ONLINE' 
              AND UPPER(meter_class) IN (#{type}, #{type2})
     """)
