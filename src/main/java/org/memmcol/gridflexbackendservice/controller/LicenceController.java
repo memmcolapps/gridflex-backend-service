@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/license/service")
-@Profile("alfuttaim")
+@Profile("window")
 @Tag(name = "License", description = "License Management APIs")
 public class LicenceController {
 
