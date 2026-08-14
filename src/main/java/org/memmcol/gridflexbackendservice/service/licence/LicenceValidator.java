@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
-@Profile("window")
+@Profile("alfuttaim")
 public class LicenceValidator {
 
     private static final long EXPIRY_WARNING_DAYS = 30;

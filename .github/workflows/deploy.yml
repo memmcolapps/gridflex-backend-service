@@ -228,7 +228,7 @@ jobs:
 
 
 
-  deploy-windows:
+  deploy-alfuttaim:
 
     if: github.ref == 'refs/heads/alfuttaim'
 

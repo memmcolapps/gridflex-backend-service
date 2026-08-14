@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-@Profile("window")
+@Profile("alfuttaim")
 public class LicenceInterceptor implements HandlerInterceptor {
     private static final Logger log = LoggerFactory.getLogger(LicenceInterceptor.class);
 
