@@ -196,34 +196,12 @@ jobs:
           ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/.env.gridflex"
 
 
-          echo "Deploying (safe SSH execution)..."
-          ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
+          echo "Starting service..."
+          ssh -o StrictHostKeyChecking=no $SERVER "sudo systemctl start gridflex"
 
-            set -e
-
-            echo "Stopping app safely..."
-
-            PID=$(ps -ef | grep gridflex-backend-service.jar | grep -v grep | awk '{print $2}')
-
-            if [ -n "$PID" ]; then
-              echo "Killing PID: $PID"
-              kill -9 $PID || true
-            else
-              echo "No running process found"
-            fi
-
-            echo "Starting app..."
+          echo "Verifying service is running..."
+          ssh -o StrictHostKeyChecking=no $SERVER "sleep 5 && sudo systemctl is-active gridflex"
           
-            set -a
-            source /${{ secrets.LOCATION }}/.env.gridflex
-            set +a
-
-            nohup java -Dspring.profiles.active=prod \
-              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
-              >/dev/null 2>&1 < /dev/null &
-
-            echo "Deployment complete"
-          EOF
 
 
 
