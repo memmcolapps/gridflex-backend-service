@@ -72,6 +72,9 @@ jobs:
 
           echo "Creating remote directory..."
           ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /${{ secrets.LOCATION }}"
+          
+          echo "Stopping service before upload..."
+          ssh -o StrictHostKeyChecking=no $SERVER "sudo systemctl stop gridflex"
 
           echo "Uploading JAR..."
           rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" \
@@ -109,34 +112,14 @@ jobs:
           
           ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/.env.gridflex"
 
-          echo "Deploying (safe SSH execution)..."
-          ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
+          echo "Starting service..."
+          ssh -o StrictHostKeyChecking=no $SERVER "sudo systemctl start gridflex"
 
-            set -e
+          echo "Verifying service is running..."
+          ssh -o StrictHostKeyChecking=no $SERVER "sleep 5 && sudo systemctl is-active gridflex"
 
-            echo "Stopping app safely..."
-
-            PID=$(ps -ef | grep gridflex-backend-service.jar | grep -v grep | awk '{print $2}')
-
-            if [ -n "$PID" ]; then
-              echo "Killing PID: $PID"
-              kill -9 $PID || true
-            else
-              echo "No running process found"
-            fi
-
-            echo "Starting app..."
-          
-            set -a
-            source /${{ secrets.LOCATION }}/.env.gridflex
-            set +a
-
-            nohup java -Dspring.profiles.active=staging \
-              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
-              >/dev/null 2>&1 < /dev/null &
-
-            echo "Deployment complete"
-          EOF
+          echo "Deployment complete"
+    
 
       # =====================================================
       # SSH SETUP (PRODUCTION)
@@ -196,12 +179,34 @@ jobs:
           ssh -o StrictHostKeyChecking=no $SERVER "chmod 600 /${{ secrets.LOCATION }}/.env.gridflex"
 
 
-          echo "Starting service..."
-          ssh -o StrictHostKeyChecking=no $SERVER "sudo systemctl start gridflex"
+          echo "Deploying (safe SSH execution)..."
+          ssh -o StrictHostKeyChecking=no $SERVER 'bash -s' << 'EOF'
 
-          echo "Verifying service is running..."
-          ssh -o StrictHostKeyChecking=no $SERVER "sleep 5 && sudo systemctl is-active gridflex"
+            set -e
+
+            echo "Stopping app safely..."
+
+            PID=$(ps -ef | grep gridflex-backend-service.jar | grep -v grep | awk '{print $2}')
+
+            if [ -n "$PID" ]; then
+              echo "Killing PID: $PID"
+              kill -9 $PID || true
+            else
+              echo "No running process found"
+            fi
+
+            echo "Starting app..."
           
+            set -a
+            source /${{ secrets.LOCATION }}/.env.gridflex
+            set +a
+
+            nohup java -Dspring.profiles.active=prod \
+              -jar /${{ secrets.LOCATION }}/gridflex-backend-service.jar \
+              >/dev/null 2>&1 < /dev/null &
+
+            echo "Deployment complete"
+          EOF
 
 
 
@@ -428,6 +433,59 @@ jobs:
             } else {
                 Write-Host "Already exists: $dataDir"
             }
+            
+      #######################################################
+      # Upload WinSW Wrapper
+      #######################################################
+      - name: Upload WinSW Wrapper
+        run: |
+          
+          ssh \
+          -i ~/.ssh/id_rsa \
+          -o StrictHostKeyChecking=no \
+          -o ServerAliveInterval=30 \
+          -o ServerAliveCountMax=10 \
+          ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+          "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          if (Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-service.exe') {
+          
+           Write-Host "WinSW wrapper already exists."
+           Write-Host "Skipping wrapper upload."
+          
+           exit 0
+          }
+          
+          Write-Host "WinSW wrapper does not exist."
+          Write-Host "Wrapper will be uploaded."
+          
+          EOF
+          
+          WRAPPER_EXISTS=$(ssh \
+          -i ~/.ssh/id_rsa \
+          -o StrictHostKeyChecking=no \
+          ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+          "powershell -NoProfile -NonInteractive -Command \"if (Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-service.exe') { exit 0 } else { exit 1 }\"" \
+          >/dev/null 2>&1 && echo "yes" || echo "no")
+          
+          if [ "$WRAPPER_EXISTS" = "no" ]; then
+
+          echo "Uploading gridflex-service.exe..."
+
+          scp \
+           -i ~/.ssh/id_rsa \
+           -o StrictHostKeyChecking=no \
+           -o ServerAliveInterval=30 \
+           -o ServerAliveCountMax=10 \
+           deployment/gridflex-service.exe \
+           "${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }}:/C:/${{ secrets.WIN_LOCATION }}/gridflex-service.exe"
+          
+          else
+
+          echo "gridflex-service.exe already exists. Upload skipped."
+          
+          fi
+
 
       #######################################################
       # Stop WinSW Service
@@ -445,6 +503,14 @@ jobs:
           $ErrorActionPreference = 'Stop'
           
           $service = Get-Service -Name 'gridflex-backend-service' -ErrorAction Stop
+          
+          if ($null -eq $service) {
+
+            Write-Host "gridflex-service does not exist yet."
+            Write-Host "Skipping stop. Service will be installed later."
+
+            exit 0
+          }
           
           Write-Host "Current Status: $($service.Status)"
           
@@ -570,6 +636,81 @@ jobs:
             gridflex-backend-service.xml \
             "${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }}:/C:/${{secrets.WIN_LOCATION}}/gridflex-backend-service.xml"
 
+
+      #######################################################
+      # Install WinSW Service If Missing
+      #######################################################
+      - name: Install WinSW Service If Missing
+        run: |
+          ssh \
+            -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
+            "powershell -NoProfile -NonInteractive -" <<'EOF'
+          
+          $ErrorActionPreference = 'Stop'
+          
+          $serviceName = 'gridflex-service'
+          
+          $base = 'C:/${{ secrets.WIN_LOCATION }}'
+          
+          $wrapper = "$base/gridflex-service.exe"
+          
+          $config = "$base/gridflex-service.xml"
+          
+          $service = Get-Service `
+            -Name $serviceName `
+            -ErrorAction SilentlyContinue
+          
+          if ($null -eq $service) {
+          
+              Write-Host ""
+              Write-Host "============================================"
+              Write-Host "Installing WinSW Service"
+              Write-Host "============================================"
+          
+              if (!(Test-Path -LiteralPath $wrapper -PathType Leaf)) {
+                  throw "WinSW wrapper not found: $wrapper"
+              }
+          
+              if (!(Test-Path -LiteralPath $config -PathType Leaf)) {
+                  throw "WinSW configuration not found: $config"
+              }
+          
+              Write-Host "Wrapper: $wrapper"
+              Write-Host "Config:  $config"
+          
+              Push-Location $base
+          
+              try {
+          
+                  & $wrapper install
+          
+                  if ($LASTEXITCODE -ne 0) {
+                      throw "WinSW service installation failed."
+                  }
+          
+              }
+              finally {
+          
+                  Pop-Location
+              }
+          
+              Write-Host "WinSW service installed successfully."
+          
+          }
+          else {
+          
+              Write-Host ""
+              Write-Host "gridflex-service already exists."
+              Write-Host "Skipping WinSW installation."
+          
+          }
+          
+          EOF
+      
       #######################################################
       # Verify Uploaded Files
       #######################################################
