@@ -448,7 +448,7 @@ jobs:
           ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
           "powershell -NoProfile -NonInteractive -" <<'EOF'
           
-          if (Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-service.exe') {
+          if (Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.exe') {
           
            Write-Host "WinSW wrapper already exists."
            Write-Host "Skipping wrapper upload."
@@ -465,24 +465,24 @@ jobs:
           -i ~/.ssh/id_rsa \
           -o StrictHostKeyChecking=no \
           ${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }} \
-          "powershell -NoProfile -NonInteractive -Command \"if (Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-service.exe') { exit 0 } else { exit 1 }\"" \
+          "powershell -NoProfile -NonInteractive -Command \"if (Test-Path 'C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.exe') { exit 0 } else { exit 1 }\"" \
           >/dev/null 2>&1 && echo "yes" || echo "no")
           
           if [ "$WRAPPER_EXISTS" = "no" ]; then
 
-          echo "Uploading gridflex-service.exe..."
+          echo "Uploading gridflex-backend-service.exe..."
 
           scp \
            -i ~/.ssh/id_rsa \
            -o StrictHostKeyChecking=no \
            -o ServerAliveInterval=30 \
            -o ServerAliveCountMax=10 \
-           deployment/gridflex-service.exe \
-           "${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }}:/C:/${{ secrets.WIN_LOCATION }}/gridflex-service.exe"
+           deployment/gridflex-backend-service.exe \
+           "${{ secrets.WINDOW_SERVER_USER }}@${{ secrets.WINDOW_SERVER_HOST }}:/C:/${{ secrets.WIN_LOCATION }}/gridflex-backend-service.exe"
           
           else
 
-          echo "gridflex-service.exe already exists. Upload skipped."
+          echo "gridflex-backend-service.exe already exists. Upload skipped."
           
           fi
 
@@ -506,7 +506,7 @@ jobs:
           
           if ($null -eq $service) {
 
-            Write-Host "gridflex-service does not exist yet."
+            Write-Host "gridflex-backend-service does not exist yet."
             Write-Host "Skipping stop. Service will be installed later."
 
             exit 0
@@ -652,13 +652,13 @@ jobs:
           
           $ErrorActionPreference = 'Stop'
           
-          $serviceName = 'gridflex-service'
+          $serviceName = 'gridflex-backend-service'
           
           $base = 'C:/${{ secrets.WIN_LOCATION }}'
           
-          $wrapper = "$base/gridflex-service.exe"
+          $wrapper = "$base/gridflex-backend-service.exe"
           
-          $config = "$base/gridflex-service.xml"
+          $config = "$base/gridflex-backend-service.xml"
           
           $service = Get-Service `
             -Name $serviceName `
@@ -704,7 +704,7 @@ jobs:
           else {
           
               Write-Host ""
-              Write-Host "gridflex-service already exists."
+              Write-Host "gridflex-backend-service already exists."
               Write-Host "Skipping WinSW installation."
           
           }
