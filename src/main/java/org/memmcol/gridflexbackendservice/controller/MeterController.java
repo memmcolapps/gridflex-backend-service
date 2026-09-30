@@ -758,7 +758,36 @@ public class MeterController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/deallocate")
+    public ResponseEntity<?> deallocatedMeter(
+            @RequestParam(value = "meterNumber", required = true) String meterNumber
+    ) {
+        try {
+            Map<String, Object> result = service.deallocateMeter(meterNumber);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
     }
+//
+//    @PutMapping("/bulk-deallocate")
+//    public ResponseEntity<Map<String, Object>> bulkDeallocateMeter(@RequestParam("file") MultipartFile file) {
+//        try {
+//            Map<String, Object> result =  service.bulkDeallocate(file);
+//            String code = (String) result.get("responsecode");
+//
+//            if ("131".equals(code)) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+//            }
+//            return ResponseEntity.ok(result);
+//        } catch (SQLServerException e) {
+//            return handleException(e);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 }
