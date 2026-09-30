@@ -4743,7 +4743,6 @@ public class MeterServiceImpl implements MeterService {
             UUID nodeId = um.getNodeInfo().getNodeId();
             String nodeName = um.getNodeInfo().getType();
 
-
             Meter verifyMeter = meterMapper.getMeter(um.getOrgId(), null, meterNumber, null, null, "", nodeId);
             if(verifyMeter == null){
                 throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc() +"or No Permission");
