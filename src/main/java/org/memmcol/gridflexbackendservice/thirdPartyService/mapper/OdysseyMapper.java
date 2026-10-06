@@ -41,7 +41,7 @@ public interface OdysseyMapper {
                         COALESCE(customer_fullname, '') AS customer_fullname,
                         COALESCE(connection_type, '') AS connection_type
                     FROM vw_meter_summary
-                    WHERE meter_stage IN ('Assigned', 'Assign-edited') AND org_id = #{orgId}
+                    WHERE meter_stage IN ('Assigned', 'Assign-edited', 'Unassigned') AND org_id = #{orgId}
                 ) ms
                 LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
                 -- latest energy reading
