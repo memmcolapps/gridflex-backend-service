@@ -23,4 +23,9 @@ public interface CustomerService {
     Map<String, Object> changeState(UUID customerId, String status, String reason) throws MissingServletRequestParameterException;
 
     Map<String, Object> bulkUpload(MultipartFile file) throws IOException;
+
+    String exportCustomers(String search, String firstname, String lastname, String accountNumber,
+                                        String assignedStatus, String customerId, String sortBy, String sortDirection);
+
+
 }
