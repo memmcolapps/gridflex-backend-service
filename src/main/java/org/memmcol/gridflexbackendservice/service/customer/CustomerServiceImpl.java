@@ -6,6 +6,7 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -38,6 +39,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -370,6 +372,105 @@ public class CustomerServiceImpl implements CustomerService {
             genericHandler.logAndSaveException(exception, "fetch customers");
             throw exception;
         }
+    }
+
+    @Override
+    public String exportCustomers(String search, String firstname, String lastname, String accountNumber,
+                                               String assignedStatus, String customerId, String sortBy, String sortDirection) {
+
+        UUID orgId = null;
+        try {
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+            UUID nodeId = um.getNodeInfo().getNodeId();
+
+            if (um.getNodeInfo().getType().equalsIgnoreCase("Service center")){
+                nodeId = nodeMapper.getParentNode(um.getOrgId(), nodeId);
+            }
+            List<Customer> customers = customerMapper.findAllCustomers(um.getOrgId(), 0, 0, nodeId);
+
+            List<Customer> filteredCustomers = applyFilters(customers, search, firstname, lastname,
+                    assignedStatus, accountNumber, customerId, sortBy, sortDirection);
+            return buildCustomerCsv(filteredCustomers);
+
+        } catch (Exception exception){
+            throw new RuntimeException("");
+        }
+    }
+
+    private List<Customer> applyFilters(List<Customer> customers, String search, String firstname,
+                                        String lastname, String assignedStatus, String accountNumber, String customerId,
+                                        String sortBy, String sortDirection) {
+        Stream<Customer> userStream = customers.stream();
+
+        if (firstname != null && !firstname.isEmpty()) {
+            userStream = userStream.filter(u -> containsIgnoreCase(u.getFirstname(), firstname));
+        }
+
+        if (lastname != null && !lastname.isEmpty()) {
+            userStream = userStream.filter(u -> containsIgnoreCase(u.getLastname(), lastname));
+        }
+
+        if (assignedStatus != null && !assignedStatus.isEmpty()) {
+            userStream = userStream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(assignedStatus));
+        }
+
+        if (accountNumber != null && !accountNumber.isEmpty()) {
+            userStream = userStream.filter(u -> customerHasMeterValue(u, accountNumber));
+        }
+
+        if (customerId != null && !customerId.isEmpty()) {
+            userStream = userStream.filter(u -> containsIgnoreCase(u.getCustomerId(), customerId));
+        }
+
+        if (search != null && !search.trim().isEmpty()) {
+            userStream = userStream.filter(u -> customerMatchesSearch(u, search));
+        }
+
+        return sortCustomers(userStream.toList(), sortBy, sortDirection);
+    }
+
+    private String buildCustomerCsv(List<Customer> customers) {
+        String[] header = {
+                "S/N","customerId", "firstname", "lastname", "nin", "phoneNumber", "email",
+                "state", "city", "houseNo", "streetName", "vat", "status", "meterCount", "createdAt"
+        };
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        try (StringWriter writer = new StringWriter();
+        CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT)){
+            printer.printRecord((Object[]) header);
+
+            int serial = 1;
+            for (Customer customer : customers) {
+                printer.printRecord(
+                        serial ++,
+                        valueOrEmpty(customer.getCustomerId()),
+                        valueOrEmpty(customer.getFirstname()),
+                        valueOrEmpty(customer.getLastname()),
+                        valueOrEmpty(customer.getNin()),
+                        valueOrEmpty(customer.getPhoneNumber()),
+                        valueOrEmpty(customer.getEmail()),
+                        valueOrEmpty(customer.getState()),
+                        valueOrEmpty(customer.getCity()),
+                        valueOrEmpty(customer.getHouseNo()),
+                        valueOrEmpty(customer.getStreetName()),
+                        valueOrEmpty(customer.getVat()),
+                        valueOrEmpty(customer.getStatus()),
+                        customer.getMeter() == null ? 0 : customer.getMeter().size(),
+                        customer.getCreatedAt() == null ? "" : customer.getCreatedAt().format(formatter)
+                );
+            }
+
+            return writer.toString();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error building customer export CSV", e);
+        }
+    }
+
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private boolean containsIgnoreCase(String value, String term) {
