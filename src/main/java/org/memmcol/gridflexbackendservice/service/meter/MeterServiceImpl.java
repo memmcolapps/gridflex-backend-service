@@ -4730,7 +4730,379 @@ public class MeterServiceImpl implements MeterService {
         }
     }
 
+    @Override
+    public Map<String, Object> deallocateMeter(String meterNumber) {
+        UUID orgId = null;
+        try {
+            // Gather client metadata
+            Map<String, String> metadata = genericHandler.extractRequestMetadata(httpServletRequest);
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+
+            UUID nodeId = um.getNodeInfo().getNodeId();
+            String nodeName = um.getNodeInfo().getType();
+
+            Meter verifyMeter = meterMapper.getMeter(um.getOrgId(), null, meterNumber, null, null, "", nodeId);
+            if(verifyMeter == null){
+                throw new GlobalExceptionHandler.NotFoundException("Meter " + status.getNotFoundDesc() +"or No Permission");
+            }
+
+            if(verifyMeter.getCustomerId() != null){
+                throw new GlobalExceptionHandler.NotFoundException("Meter already assigned and can not be deallocated");
+            }
+
+//            if (verifyMeter.getMeterStage().contains("Pending") || verifyMeter.getStatus().contains("Pending")) {
+//                throw new GlobalExceptionHandler.NotFoundException("Meter has a pending record that needs to be cleared");
+//            }
+
+            if((!nodeName.equalsIgnoreCase("Region")
+                    && !nodeId.equals(verifyMeter.getRegion()))
+                    && (!nodeName.equalsIgnoreCase("Root")
+                    && !nodeId.equals(verifyMeter.getRoot()))) {
+                throw new GlobalExceptionHandler.NotFoundException("You do not have permission");
+            }
+
+
+
+            // Fetch starting node using regionId
+//            NodeSummary node = nodeMapper.verifyNode(regionId, um.getOrgId());
+//            if (node == null) {
+//                throw new GlobalExceptionHandler.NotFoundException("Node " + status.getNotFoundDesc());
+//            }
+
+            verifyMeter.setCreatedAt(LocalDateTime.now());
+            verifyMeter.setUpdatedAt(LocalDateTime.now());
+
+            String desc = meterNumber + " meter deallocated";
+
+            //Allocate meter
+            int result;
+//            result = meterMapper.allocateMeterVersion(verifyMeter, node.getNodeId(), um.getId(), "Meter Allocated", node.getParentId());
+//            if(result == 0){
+//                throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
+//            }
+
+//            result = meterMapper.updateMeter("Pending-allocated", verifyMeter.getId(), verifyMeter.getUpdatedAt(), verifyMeter.getStatus());
+//            if(result == 0){
+//                throw new GlobalExceptionHandler.NotFoundException("Meter allocation failed");
+//            }
+
+            result = meterMapper.deallocateMeter(meterNumber);
+            if(result == 0){
+                throw new GlobalExceptionHandler.NotFoundException("Meter deallocation failed");
+            }
+
+            //fetch meter from the database
+            Meter meter = meterMapper.getVersionMeter(um.getOrgId(), null, meterNumber, null);
+//            String desc = capitalizeFirstLetter(meter.getMeterNumber() + " allocated " + node.getName());
+            //save to audit (mongodb)
+            AuditLog auditLog = buildAuditLog(um, desc, meterName, meter, metadata, "");
+            safeAuditService.saveAudit(auditLog);
+
+            return ResponseMap.response(status.getSuccessCode(), meterName + " deallocated successfully" , "");
+
+        } catch (Exception exception) {
+            log.error("Error filtering / fetching meters: {}", exception.getMessage(), exception);
+            genericHandler.logIncidentReport("Deallocating meter service failed",orgId);
+            genericHandler.logAndSaveException(exception, "deallocating meter");
+            throw exception;
+        }
+    }
+
 //    @Override
+//    public Map<String, Object> bulkDeallocate(MultipartFile file) throws IOException {
+//        UUID orgId = null;
+//
+//        try {
+//            UserModel user = handleUserValidation();
+//            orgId = user.getOrgId();
+//
+//            String filename = Optional.ofNullable(file.getOriginalFilename())
+//                    .orElseThrow(() -> new IOException("File has no name"));
+//
+//            String nodeName = user.getNodeInfo().getType();
+//
+//            if (!nodeName.equalsIgnoreCase("Region")
+//                    && !nodeName.equalsIgnoreCase("Root")) {
+//                throw new IOException("You do not have permission");
+//            }
+//
+//            List<MeterRequest> meters;
+//
+//            if (filename.toLowerCase().endsWith(".csv")) {
+//                meters = processAllocateCsv(file.getInputStream());
+//            } else if (filename.toLowerCase().endsWith(".xlsx")) {
+//                meters = processAllocateExcel(file.getInputStream());
+//            } else {
+//                throw new IOException(
+//                        "Unsupported file format. Only .csv or .xlsx allowed."
+//                );
+//            }
+//
+//            return bulkDeallocateMeters(meters, user);
+//
+//        } catch (Exception e) {
+//            log.error("Error in bulk deallocate upload: {}", e.getMessage(), e);
+//
+//            genericHandler.logIncidentReport(
+//                    "Bulk deallocate service failed",
+//                    orgId
+//            );
+//
+//            genericHandler.logAndSaveException(
+//                    e,
+//                    "Bulk deallocate meter"
+//            );
+//
+//            throw new IOException(
+//                    "Bulk deallocate failed: " + e.getMessage(),
+//                    e
+//            );
+//        }
+//    }
+//
+//    public Map<String, Object> bulkDeallocateMeters(
+//            List<MeterRequest> deallocations,
+//            UserModel user
+//    ) {
+//        Map<String, Object> result = new HashMap<>();
+//
+//        List<GenericResp> failedRecords = new ArrayList<>();
+//
+//        int successCount = 0;
+//
+//        Set<String> seenMeters = new HashSet<>();
+//
+//        if (deallocations == null || deallocations.isEmpty()) {
+//            throw new GlobalExceptionHandler.NotFoundException(
+//                    "No records found in uploaded file"
+//            );
+//        }
+//
+//        Iterator<MeterRequest> iterator = deallocations.iterator();
+//
+//        while (iterator.hasNext()) {
+//
+//            MeterRequest request = iterator.next();
+//
+//            String meterNumber = Optional
+//                    .ofNullable(request.getMeterNumber())
+//                    .orElse("")
+//                    .trim();
+//
+//            if (meterNumber.isEmpty()) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId("");
+//                resp.setMessage("Meter number is required");
+//                resp.setData("");
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//                continue;
+//            }
+//
+//            if (!seenMeters.add(meterNumber)) {
+//                GenericResp resp = new GenericResp();
+//                resp.setId(meterNumber);
+//                resp.setMessage("Duplicate meter number in uploaded file");
+//                resp.setData(meterNumber);
+//
+//                failedRecords.add(resp);
+//                iterator.remove();
+//            }
+//        }
+//
+//        final int BATCH_SIZE = 500;
+//
+//        for (int i = 0; i < deallocations.size(); i += BATCH_SIZE) {
+//
+//            int end = Math.min(i + BATCH_SIZE, deallocations.size());
+//
+//            List<MeterRequest> subBatch =
+//                    new ArrayList<>(deallocations.subList(i, end));
+//
+//            List<String> meterNumbers = subBatch.stream()
+//                    .map(MeterRequest::getMeterNumber)
+//                    .filter(Objects::nonNull)
+//                    .map(String::trim)
+//                    .filter(s -> !s.isEmpty())
+//                    .toList();
+//
+//            if (meterNumbers.isEmpty()) {
+//                continue;
+//            }
+//
+//            List<Meter> meters =
+//                    meterMapper.getMetersByMeterNumbers(
+//                            meterNumbers,
+//                            user.getOrgId(),
+//                            user.getNodeInfo().getNodeId()
+//                    );
+//
+//            Map<String, Meter> meterMap = meters.stream()
+//                    .filter(m -> m.getMeterNumber() != null)
+//                    .collect(Collectors.toMap(
+//                            m -> m.getMeterNumber().trim(),
+//                            m -> m,
+//                            (a, b) -> a
+//                    ));
+//
+//            List<Meter> validDeallocations = new ArrayList<>();
+//
+//            for (MeterRequest request : subBatch) {
+//
+//                String meterNumber = Optional
+//                        .ofNullable(request.getMeterNumber())
+//                        .orElse("")
+//                        .trim();
+//
+//                Meter meter = meterMap.get(meterNumber);
+//
+//                if (meter == null) {
+//                    GenericResp resp = new GenericResp();
+//                    resp.setId(meterNumber);
+//                    resp.setMessage("Meter not found");
+//                    resp.setData(meterNumber);
+//
+//                    failedRecords.add(resp);
+//                    continue;
+//                }
+//
+//                /*
+//                 * Add your deallocation-state validation here.
+//                 *
+//                 * Example:
+//                 *
+//                 * if (meter.getNodeId() == null) {
+//                 *     ...
+//                 * }
+//                 */
+//
+//                validDeallocations.add(meter);
+//            }
+//
+//            if (validDeallocations.isEmpty()) {
+//                continue;
+//            }
+//
+//            try {
+//
+//                log.info(
+//                        "Processing deallocation batch {} - {} ({} records)",
+//                        i,
+//                        end - 1,
+//                        validDeallocations.size()
+//                );
+//
+//                int deallocated =
+//                        deallocateBatchTransactional(
+//                                validDeallocations,
+//                                user
+//                        );
+//
+//                successCount += deallocated;
+//
+//            } catch (Exception e) {
+//
+//                log.warn(
+//                        "Deallocation batch {} failed: {}",
+//                        (i / BATCH_SIZE) + 1,
+//                        e.getMessage()
+//                );
+//
+//                /*
+//                 * Do not silently lose these records.
+//                 * We should eventually add the individual batch
+//                 * records to failedRecords if the transaction fails.
+//                 */
+//            }
+//        }
+//
+//        int total = successCount + failedRecords.size();
+//
+//        result.put("totalRecords", total);
+//        result.put("successCount", successCount);
+//        result.put("failedCount", failedRecords.size());
+//        result.put("failedRecords", failedRecords);
+//
+//        if (!failedRecords.isEmpty()) {
+//            return ResponseMap.response(
+//                    "131",
+//                    failedRecords.size() + " of " + total
+//                            + " meters deallocate failed",
+//                    result
+//            );
+//        }
+//
+//        return ResponseMap.response(
+//                status.getSuccessCode(),
+//                String.format(
+//                        "%d of %d meters deallocated successfully",
+//                        successCount,
+//                        total
+//                ),
+//                result
+//        );
+//    }
+//
+//    @Transactional(
+//            propagation = Propagation.REQUIRES_NEW,
+//            rollbackFor = Exception.class
+//    )
+//    public int deallocateBatchTransactional(
+//            List<Meter> batch,
+//            UserModel user
+//    ) {
+//        if (batch.isEmpty()) {
+//            return 0;
+//        }
+//
+//        try {
+//
+//            // Reset allocation information
+//            meterMapper.updateBatchMeterDeallocation(batch);
+//
+//            // Save meter version
+//            meterMapper.insertMeterVersions(batch);
+//
+//            // Audit
+//            auditBatch(batch, user, "Meter Deallocated");
+//
+//            log.info(
+//                    "Deallocated {} meters successfully",
+//                    batch.size()
+//            );
+//
+//            return batch.size();
+//
+//        } catch (Exception e) {
+//
+//            log.error(
+//                    "Transaction failed during deallocation, " +
+//                            "rolling back batch of size {}: {}",
+//                    batch.size(),
+//                    e.getMessage()
+//            );
+//
+//            genericHandler.logIncidentReport(
+//                    "Bulk deallocate batch service failed",
+//                    user.getOrgId()
+//            );
+//
+//            genericHandler.logAndSaveException(
+//                    e,
+//                    "Bulk deallocate batch meter"
+//            );
+//
+//            throw new RuntimeException(
+//                    "Batch deallocation transaction failed. Rolled back.",
+//                    e
+//            );
+//        }
+//    }
+
+    //    @Override
     public Map<String, Object> bulkAssignMeters(List<AssignMeterToCustomer> assign, UserModel user) {
         Map<String, Object> result = new HashMap<>();
         List<GenericResp> failedRecords = new ArrayList<>();
