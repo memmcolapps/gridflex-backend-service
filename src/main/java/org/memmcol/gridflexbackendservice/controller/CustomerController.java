@@ -95,7 +95,7 @@ public class CustomerController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<?> exportCustomers(
+    public ResponseEntity<Resource> exportCsv(
             @RequestParam(value = "search", required = false, defaultValue = "") String search,
             @RequestParam(value = "firstname", required = false, defaultValue = "") String firstname,
             @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
@@ -103,16 +103,18 @@ public class CustomerController {
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
             @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
-            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection){
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection
+    ) {
+        String csv = service.exportCustomers(search, firstname, lastname, accountNumber,
+                status, customerId, sortBy, sortDirection);
+        ByteArrayResource resource = new ByteArrayResource(csv.getBytes(StandardCharsets.UTF_8));
 
-        String result = service.exportCustomers(search, firstname, lastname, accountNumber, status, customerId, sortBy, sortDirection);
-        ByteArrayResource resource = new ByteArrayResource(result.getBytes(StandardCharsets.UTF_8));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename=customers_export_" + LocalDate.now() + ".csv")
+                        "attachment; filename=customers_export_" + LocalDate.now() + ".csv")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .contentLength(resource.contentLength())
-                .body(result);
+                .body(resource);
     }
 
 //    @GetMapping("/single")
