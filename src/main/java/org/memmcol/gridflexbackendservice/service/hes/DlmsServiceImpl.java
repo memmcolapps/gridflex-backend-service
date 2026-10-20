@@ -4,6 +4,7 @@ import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
 import org.memmcol.gridflexbackendservice.model.hes.ObisMapping;
+import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -401,6 +402,41 @@ public class DlmsServiceImpl implements DlmsService {
         } catch (Exception e) {
             genericHandler.logIncidentReport("relay mode service failed", orgId);
             genericHandler.logAndSaveException(e, "relay mode");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> profileProcess(ProfileProcessRequest request) {
+        String token = auth.getAccessToken();
+        UUID orgId = null;
+        try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri("/profiles/process")
+                    .headers(h -> h.setBearerAuth(token))
+                    .bodyValue(request)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set energy consumption service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("energy consumption service failed", orgId);
+            genericHandler.logAndSaveException(e, "energy consumption");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("energy consumption service failed", orgId);
+            genericHandler.logAndSaveException(e, "energy consumption");
             throw e;
         }
     }
