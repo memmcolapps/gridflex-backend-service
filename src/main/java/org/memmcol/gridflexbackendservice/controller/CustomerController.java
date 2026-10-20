@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -91,6 +92,29 @@ public class CustomerController {
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
         }
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<Resource> exportCsv(
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "firstname", required = false, defaultValue = "") String firstname,
+            @RequestParam(value = "lastname", required = false, defaultValue = "") String lastname,
+            @RequestParam(value = "accountNumber", required = false, defaultValue = "") String accountNumber,
+            @RequestParam(value = "status", required = false, defaultValue = "") String status,
+            @RequestParam(value = "customerId", required = false, defaultValue = "") String customerId,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "desc") String sortDirection
+    ) {
+        String csv = service.exportCustomers(search, firstname, lastname, accountNumber,
+                status, customerId, sortBy, sortDirection);
+        ByteArrayResource resource = new ByteArrayResource(csv.getBytes(StandardCharsets.UTF_8));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=customers_export_" + LocalDate.now() + ".csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(resource.contentLength())
+                .body(resource);
     }
 
 //    @GetMapping("/single")

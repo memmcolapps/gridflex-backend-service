@@ -4042,6 +4042,10 @@ public interface MeterMapper {
             @Param("meterNumber") String meterNumber,
             @Param("operationCode") String operationCode
     );
+
+    @Update("UPDATE meters SET node_id = NULL, meter_stage = 'Created'  WHERE meter_number = #{meterNumber}")
+    int deallocateMeter(String meterNumber);
+
 //    @Update("""
 //        UPDATE customersn
 //        SET status = 'Active'

@@ -1,6 +1,8 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
 
+import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;

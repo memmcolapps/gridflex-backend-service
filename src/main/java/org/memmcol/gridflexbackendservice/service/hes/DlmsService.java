@@ -1,5 +1,7 @@
 package org.memmcol.gridflexbackendservice.service.hes;
 
+import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -24,4 +26,5 @@ public interface DlmsService {
 
     Map<String, Object> setRelayMode(String serial, int mode);
 
+    Map<String, Object> profileProcess(ProfileProcessRequest request);
 }
