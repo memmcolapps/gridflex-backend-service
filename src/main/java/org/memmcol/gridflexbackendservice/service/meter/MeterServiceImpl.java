@@ -260,22 +260,9 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("New tariff index field is required");
         }
 
-//        if(!request.getMeterClass().toLowerCase().contains("single phase")
-//                && !request.getMeterClass().toLowerCase().contains("singlephase")
-//                && !request.getMeterClass().toLowerCase().contains("three phase")
-//                && !request.getMeterClass().toLowerCase().contains("threephase")
-//                && !request.getMeterClass().toLowerCase().contains("md")){
-//            throw new GlobalExceptionHandler.NotFoundException("Meter class is not supported");
-//        }
-//        if (request.getMeterClass().toLowerCase().contains("single phase")
-//                && request.getMeterClass().toLowerCase().contains("singlephase")){
-//            request.setMeterClass("Single-Phase");
-//        }
-//
-//        if (request.getMeterClass().toLowerCase().contains("three phase")
-//                && request.getMeterClass().toLowerCase().contains("threephase")){
-//            request.setMeterClass("Three-Phase");
-//        }
+        if(request.getOldSgc() == null || request.getOldSgc().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Old sgc field is required");
+        }
 
         if(request.getSmartStatus()) {
             if(request.getSmartMeterInfo() == null){
