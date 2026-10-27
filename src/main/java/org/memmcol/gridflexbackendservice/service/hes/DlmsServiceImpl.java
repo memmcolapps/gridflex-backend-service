@@ -3,7 +3,9 @@ package org.memmcol.gridflexbackendservice.service.hes;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
+import org.memmcol.gridflexbackendservice.model.hes.ClockSyncRequest;
 import org.memmcol.gridflexbackendservice.model.hes.ObisMapping;
+import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
 import org.memmcol.gridflexbackendservice.model.user.UserModel;
 import org.memmcol.gridflexbackendservice.model.vend.MeterView;
 import org.memmcol.gridflexbackendservice.util.ResponseMap;
@@ -401,6 +403,165 @@ public class DlmsServiceImpl implements DlmsService {
         } catch (Exception e) {
             genericHandler.logIncidentReport("relay mode service failed", orgId);
             genericHandler.logAndSaveException(e, "relay mode");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> profileProcess(ProfileProcessRequest request) {
+        String token = auth.getAccessToken();
+        UUID orgId = null;
+        try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri("/profiles/process")
+                    .headers(h -> h.setBearerAuth(token))
+                    .bodyValue(request)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set energy consumption service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("energy consumption service failed", orgId);
+            genericHandler.logAndSaveException(e, "energy consumption");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("energy consumption service failed", orgId);
+            genericHandler.logAndSaveException(e, "energy consumption");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> setBulkMeterClock(ClockSyncRequest serial) {
+        String token = auth.getAccessToken();
+
+        UUID orgId = null;
+        try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            List<String> meterNumbers =
+                    serial == null ? null : serial.getMeterNumbers();
+
+            Map<String, Object> resp = dlmsWriteOpsClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/synchronize/clock")
+                            .queryParam("meterNumbers", meterNumbers)
+//                            .queryParam("dateTime", dateTime.format(formatter))
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("set clock bulk service error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("set clock bulk service failed", orgId);
+            genericHandler.logAndSaveException(e, "set clock bulk service");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("set clock bulk service failed", orgId);
+            genericHandler.logAndSaveException(e, "set bulk clock");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> getHesGroupLog() {
+        String token = auth.getAccessToken();
+
+        UUID orgId = null;
+        try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+
+            Map<String, Object> resp = dlmsWriteOpsClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/synchronize/clock")
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("get hes service log error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("get hes service log failed", orgId);
+            genericHandler.logAndSaveException(e, "get hes service log");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("get hes service log failed", orgId);
+            genericHandler.logAndSaveException(e, "get hes log");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> getHesMeterLog(Long jobId, String state, String page, String size) {
+        String token = auth.getAccessToken();
+
+        UUID orgId = null;
+        try {
+
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+
+            Map<String, Object> resp = dlmsWriteOpsClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/synchronize/clock/meters")
+                            .queryParam("jobId", jobId)
+                            .queryParam("status", state)
+                            .queryParam("page", page)
+                            .queryParam("size", size)
+                            .build())
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("get hes service meter log error: " + body))
+                    )
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("get hes service log meter failed", orgId);
+            genericHandler.logAndSaveException(e, "get hes service meter log");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("get hes service log meter failed", orgId);
+            genericHandler.logAndSaveException(e, "get hes meter log");
             throw e;
         }
     }

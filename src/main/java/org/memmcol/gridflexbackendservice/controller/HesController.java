@@ -2,7 +2,9 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.memmcol.gridflexbackendservice.model.hes.ClockSyncRequest;
 import org.memmcol.gridflexbackendservice.model.hes.Cron;
+import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
 import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
 import org.memmcol.gridflexbackendservice.service.hes.*;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
@@ -381,6 +383,72 @@ public class HesController {
     public ResponseEntity<?> getObisMappingData(@RequestParam String type) {
         try {
             Map<String, Object> result = hesService.getObisMappingData(type);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+//    ###Read using profile processor class
+//    POST http://localhost:9061/api/dlms/profiles/process
+//    Authorization: Bearer {{accessToken}}
+//    Content-Type: application/json
+//
+//    {
+//        "model": "MMX-313-CT",
+//            "meterSerial": "202006001314",
+//            "profileObis": "1.0.99.2.0.255",
+//            "from": "2025-08-11T08:00:00",
+//            "to": "2025-08-11T12:00:00",
+//            "mdMeter": true
+//    }
+
+    @PostMapping("/dlms/profiles/process")
+    public ResponseEntity<?> profileProcess(@RequestBody ProfileProcessRequest request) {
+        try {
+            Map<String, Object> result = dlmsService.profileProcess(request);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+
+    @PostMapping("/dlms/set-bulk-meter-clock")
+    public ResponseEntity<?> setClock(
+            @RequestParam(required = false) ClockSyncRequest serial
+//            @RequestParam
+//            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+//            LocalDateTime dateTime
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setBulkMeterClock(serial);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    @GetMapping("/dlms/synchronize/clock")
+    public ResponseEntity<?> getHesGroupLog() {
+        try {
+            Map<String, Object> result = dlmsService.getHesGroupLog();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+
+    @GetMapping("/dlms/synchronize/clock/meters")
+    public ResponseEntity<?> getHesMeterLog(
+            @RequestParam Long jobId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, defaultValue = "0") String page,
+            @RequestParam(required = false, defaultValue = "100") String size
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.getHesMeterLog(jobId, status, page, size);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
