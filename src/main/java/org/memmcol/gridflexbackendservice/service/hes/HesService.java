@@ -29,7 +29,7 @@ public interface HesService {
 
     Map<String, Object> setCron(String jobGroup, String jobName, String cronExpression);
 
-    Map<String, Object> triggerEvent(String jobGroup, String jobName);
+    Map<String, Object> triggerJob(String jobGroup, String jobName);
 
     Map<String, Object> meterConfiguration(String meterNumber, String simNo, String model, String meterClass, String category,
             String businessHub, String manufacturer, String meterStatus, String search, String sortBy, String sortDirection,

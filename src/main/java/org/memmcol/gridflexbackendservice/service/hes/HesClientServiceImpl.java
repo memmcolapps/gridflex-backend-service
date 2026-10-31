@@ -707,48 +707,96 @@ public class HesClientServiceImpl implements HesService {
         }
     }
 
-    @Transactional
-    @Override
-    public Map<String, Object> triggerEvent(String jobGroup, String jobName) {
+//    @Transactional
+//    @Override
+//    public Map<String, Object> triggerJob(String jobGroup, String jobName) {
+//        String token = auth.getAccessToken();
+//
+//        UUID orgId = null;
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//            orgId = um.getOrgId();
+//            Schedule response = hesMapper.getProfileEvent(jobName);
+//            if(response == null){
+//                throw new GlobalExceptionHandler.NotFoundException("Job Name "+status.getNotFoundDesc());
+//            }
+//            if(!response.getJobGroup().trim().equals(jobGroup.trim())){
+//                throw new GlobalExceptionHandler.NotFoundException("Job group is wrong");
+//            }
+//
+//            Map<String, Object> resp = hesWebClient.post()
+//                    .uri(uriBuilder -> uriBuilder
+//                            .path("/quartz/trigger/{jobGroup}/{jobName}")
+//                            .build(jobGroup, jobName)
+//                    )
+//                    .headers(h -> h.setBearerAuth(token))
+//                    .retrieve()
+//                    .onStatus(HttpStatusCode::isError,    // <-- use lambda here
+//                            clientResponse -> clientResponse.bodyToMono(String.class)
+//                                    .map(body -> new RuntimeException("set schedule service error: " + body))
+//                    )
+//                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+//                    .block();
+//
+//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+//
+//        } catch (WebClientResponseException e) {
+////            genericHandler.logIncidentReport("test schedule service failed");
+////            genericHandler.logAndSaveException(e, "test schedule service");
+//            throw e;
+//
+//        } catch (Exception e) {
+////            genericHandler.logIncidentReport("set schedule service failed");
+////            genericHandler.logAndSaveException(e, "set schedule");
+//            throw e;
+//        }
+//    }
+
+
+    public Map<String, Object> triggerJob(
+            String jobGroup,
+            String jobName) {
+
         String token = auth.getAccessToken();
-
         UUID orgId = null;
-        try {
 
+        try {
             UserModel um = handleUserValidation();
             orgId = um.getOrgId();
-            Schedule response = hesMapper.getProfileEvent(jobName);
-            if(response == null){
-                throw new GlobalExceptionHandler.NotFoundException("Job Name "+status.getNotFoundDesc());
-            }
-            if(!response.getJobGroup().trim().equals(jobGroup.trim())){
-                throw new GlobalExceptionHandler.NotFoundException("Job group is wrong");
-            }
 
-            Map<String, Object> resp = hesWebClient.post()
+            Object resp = dlmsWriteOpsClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/quartz/trigger/{jobGroup}/{jobName}")
-                            .build(jobGroup, jobName)
-                    )
-                    .headers(h -> h.setBearerAuth(token))
+                            .path("/trigger/{jobGroup}/{jobName}")
+                            .build(jobGroup, jobName))
+                    .headers(headers -> headers.setBearerAuth(token))
                     .retrieve()
-                    .onStatus(HttpStatusCode::isError,    // <-- use lambda here
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("set schedule service error: " + body))
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse
+                                    .bodyToMono(String.class)
+                                    .map(body -> new RuntimeException(
+                                            "HES service job trigger failed: " + body))
                     )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(Object.class)
                     .block();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    resp
+            );
 
         } catch (WebClientResponseException e) {
-//            genericHandler.logIncidentReport("test schedule service failed");
-//            genericHandler.logAndSaveException(e, "test schedule service");
+            genericHandler.logIncidentReport(
+                    "HES service job trigger failed", orgId);
+            genericHandler.logAndSaveException(e, "HES service job trigger");
             throw e;
 
         } catch (Exception e) {
-//            genericHandler.logIncidentReport("set schedule service failed");
-//            genericHandler.logAndSaveException(e, "set schedule");
+            genericHandler.logIncidentReport(
+                    "HES service job trigger failed", orgId);
+            genericHandler.logAndSaveException(e, "HES service job trigger");
             throw e;
         }
     }
