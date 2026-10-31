@@ -2,9 +2,7 @@ package org.memmcol.gridflexbackendservice.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import org.memmcol.gridflexbackendservice.model.hes.Cron;
-import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
-import org.memmcol.gridflexbackendservice.model.hes.RealTimeReadRequest;
+import org.memmcol.gridflexbackendservice.model.hes.*;
 import org.memmcol.gridflexbackendservice.service.hes.*;
 import org.memmcol.gridflexbackendservice.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -209,13 +207,13 @@ public class HesController {
 //    }
 
     //---------- Test schedule Api-----------
-    @PostMapping("/trigger")
+    @PostMapping("/trigger/{jobGroup}/{jobName}")
     public ResponseEntity<?> triggerEvent(
-            @RequestParam String jobGroup,
-            @RequestParam String jobName
+            @PathVariable String jobGroup,
+            @PathVariable String jobName
     ) {
         try {
-            Map<String, Object> result = hesService.triggerEvent(jobGroup, jobName);
+            Map<String, Object> result = hesService.triggerJob(jobGroup, jobName);
             return ResponseEntity.ok(result);
         } catch (GlobalExceptionHandler.SQLServerException e) {
             return handleException(e);
@@ -389,20 +387,6 @@ public class HesController {
         }
     }
 
-//    ###Read using profile processor class
-//    POST http://localhost:9061/api/dlms/profiles/process
-//    Authorization: Bearer {{accessToken}}
-//    Content-Type: application/json
-//
-//    {
-//        "model": "MMX-313-CT",
-//            "meterSerial": "202006001314",
-//            "profileObis": "1.0.99.2.0.255",
-//            "from": "2025-08-11T08:00:00",
-//            "to": "2025-08-11T12:00:00",
-//            "mdMeter": true
-//    }
-
     @PostMapping("/dlms/profiles/process")
     public ResponseEntity<?> profileProcess(@RequestBody ProfileProcessRequest request) {
         try {
@@ -413,14 +397,99 @@ public class HesController {
         }
     }
 
-//    /**
-//     * Optional endpoint: start a parameterized stream without subscribing (e.g., start background forwarding).
-//     */
-//    @PostMapping("/start-param-only")
-//    public String startParamOnly(@RequestBody RealTimeReadRequest req) {
-//        hesServiceConsumer.startParameterizedStream(req);
-//        return "started";
-//    }
+
+    // write clock to meter in bulk
+    @PostMapping("/dlms/set-bulk-meter-clock")
+    public ResponseEntity<?> setClock(
+            @RequestBody(required = false) ClockSyncRequest serial
+//            @RequestParam
+//            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+//            LocalDateTime dateTime
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.setBulkMeterClock(serial);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    // Get the total meters the job is currently running or done running
+    @GetMapping("/dlms/synchronize/clock")
+    public ResponseEntity<?> getHesGroupLog() {
+        try {
+            Map<String, Object> result = dlmsService.getHesGroupLog();
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    // Get all meters that Job is currently running or done running
+    @GetMapping("/dlms/synchronize/clock/meters")
+    public ResponseEntity<?> getHesMeterLog(
+            @RequestParam Long jobId,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size,
+            @RequestParam(defaultValue = "id,asc") String sort
+    ) {
+        try {
+            Map<String, Object> result = dlmsService.getHesMeterLog(jobId, status, page, size, sort);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    // Read a specific profile or event from a meters within a specific time range
+    @PostMapping("/read/{jobGroup}/{jobName}")
+    public ResponseEntity<?> readBatch(
+            @PathVariable String jobName,
+            @PathVariable String jobGroup,
+            @RequestBody BulkTriggerRequest request) {
+        try {
+            Map<String, Object> result = dlmsService.executeBulkJob(jobGroup, jobName, request);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+                return handleException(e);
+        }
+    }
+
+
+    //Get Job status
+    @GetMapping("/status/{executionId}")
+    public ResponseEntity<?> getBatchStatus(
+            @PathVariable Long executionId) {
+        try {
+            Map<String, Object> result = dlmsService.getBulkExecutionStatus(executionId);
+            return ResponseEntity.ok(result);
+        } catch (GlobalExceptionHandler.SQLServerException e) {
+            return handleException(e);
+        }
+    }
+
+    //Pause Job
+    @PostMapping("/quartz/pause/{jobGroup}/{jobName}")
+    public ResponseEntity<Map<String, Object>> pauseJob(
+            @PathVariable String jobGroup,
+            @PathVariable String jobName) {
+
+        return ResponseEntity.ok(
+                dlmsService.pauseJob(jobGroup, jobName)
+        );
+    }
+
+    //Resume Job
+    @PostMapping("/quartz/resume/{jobGroup}/{jobName}")
+    public ResponseEntity<Map<String, Object>> resumeJob(
+            @PathVariable String jobGroup,
+            @PathVariable String jobName) {
+
+        return ResponseEntity.ok(
+                dlmsService.resumeJob(jobGroup, jobName)
+        );
+    }
 
     private ResponseEntity<Map<String, Object>> handleException(GlobalExceptionHandler.SQLServerException e) {
         return (ResponseEntity<Map<String, Object>>) exception.handleSQLServerException(e);
