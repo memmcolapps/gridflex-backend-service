@@ -3,6 +3,7 @@ package org.memmcol.gridflexbackendservice.service.hes;
 import org.memmcol.gridflexbackendservice.components.GenericHandler;
 import org.memmcol.gridflexbackendservice.config.ResponseProperties;
 import org.memmcol.gridflexbackendservice.mapper.HesMapper;
+import org.memmcol.gridflexbackendservice.model.hes.BulkTriggerRequest;
 import org.memmcol.gridflexbackendservice.model.hes.ClockSyncRequest;
 import org.memmcol.gridflexbackendservice.model.hes.ObisMapping;
 import org.memmcol.gridflexbackendservice.model.hes.ProfileProcessRequest;
@@ -34,6 +35,10 @@ public class DlmsServiceImpl implements DlmsService {
     @Qualifier("dlmsWriteOpsClient")
     @Autowired
     private WebClient dlmsWriteOpsClient;
+
+    @Qualifier("hesWebClient")
+    @Autowired
+    private WebClient hesWebClient;
 
     @Autowired
     private GenericHandler genericHandler;
@@ -442,46 +447,101 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+//    @Transactional
+//    @Override
+//    public Map<String, Object> setBulkMeterClock(ClockSyncRequest serial) {
+//        String token = auth.getAccessToken();
+//
+//        UUID orgId = null;
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//            orgId = um.getOrgId();
+////            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+//
+//            List<String> meterNumbers =
+//                    serial == null ? null : serial.getMeterNumbers();
+//
+//            Map<String, Object> resp = dlmsWriteOpsClient.post()
+//                    .uri(uriBuilder -> uriBuilder
+//                            .path("/synchronize/clock")
+//                            .queryParam("meterNumbers", meterNumbers)
+////                            .queryParam("dateTime", dateTime.format(formatter))
+//                            .build())
+//                    .headers(h -> h.setBearerAuth(token))
+//                    .retrieve()
+//                    .onStatus(HttpStatusCode::isError,
+//                            clientResponse -> clientResponse.bodyToMono(String.class)
+//                                    .map(body -> new RuntimeException("set clock bulk service error: " + body))
+//                    )
+//                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+//                    .block();
+//
+//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+//
+//        } catch (WebClientResponseException e) {
+//            genericHandler.logIncidentReport("set clock bulk service failed", orgId);
+//            genericHandler.logAndSaveException(e, "set clock bulk service");
+//            throw e;
+//
+//        } catch (Exception e) {
+//            genericHandler.logIncidentReport("set clock bulk service failed", orgId);
+//            genericHandler.logAndSaveException(e, "set bulk clock");
+//            throw e;
+//        }
+//    }
+
     @Transactional
     @Override
-    public Map<String, Object> setBulkMeterClock(ClockSyncRequest serial) {
+    public Map<String, Object> setBulkMeterClock(ClockSyncRequest request) {
+
         String token = auth.getAccessToken();
-
         UUID orgId = null;
-        try {
 
+        try {
             UserModel um = handleUserValidation();
             orgId = um.getOrgId();
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-            List<String> meterNumbers =
-                    serial == null ? null : serial.getMeterNumbers();
+            WebClient.RequestBodySpec requestSpec = dlmsWriteOpsClient.post()
+                    .uri("/synchronize/clock")
+                    .headers(headers -> headers.setBearerAuth(token));
 
-            Map<String, Object> resp = dlmsWriteOpsClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/synchronize/clock")
-                            .queryParam("meterNumbers", meterNumbers)
-//                            .queryParam("dateTime", dateTime.format(formatter))
-                            .build())
-                    .headers(h -> h.setBearerAuth(token))
+            WebClient.RequestHeadersSpec<?> requestHeadersSpec =
+                    request == null
+                            ? requestSpec
+                            : requestSpec.bodyValue(request);
+
+            Map<String, Object> resp = requestHeadersSpec
                     .retrieve()
-                    .onStatus(HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("set clock bulk service error: " + body))
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse
+                                    .bodyToMono(String.class)
+                                    .map(body -> new RuntimeException(
+                                            "HES write clock synchronization failed: " + body))
                     )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(
+                            new ParameterizedTypeReference<Map<String, Object>>() {})
                     .block();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    resp
+            );
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("set clock bulk service failed", orgId);
-            genericHandler.logAndSaveException(e, "set clock bulk service");
+            genericHandler.logIncidentReport(
+                    "HES write clock synchronization failed", orgId);
+            genericHandler.logAndSaveException(
+                    e, "HES write clock synchronization");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("set clock bulk service failed", orgId);
-            genericHandler.logAndSaveException(e, "set bulk clock");
+            genericHandler.logIncidentReport(
+                    "HES write clock synchronization failed", orgId);
+            genericHandler.logAndSaveException(
+                    e, "HES write clock synchronization");
             throw e;
         }
     }
@@ -524,44 +584,305 @@ public class DlmsServiceImpl implements DlmsService {
         }
     }
 
+//    @Transactional
+//    @Override
+//    public Map<String, Object> getHesMeterLog(Long jobId, String state, int page, int size, String sort) {
+//        String token = auth.getAccessToken();
+//
+//        UUID orgId = null;
+//        try {
+//
+//            UserModel um = handleUserValidation();
+//            orgId = um.getOrgId();
+//
+//            Map<String, Object> resp = dlmsWriteOpsClient.get()
+//                    .uri(uriBuilder -> uriBuilder
+//                            .path("/synchronize/clock/meters")
+//                            .queryParam("jobId", jobId)
+//                            .queryParam("status", state)
+//                            .queryParam("page", page)
+//                            .queryParam("size", size)
+//                            .build())
+//                    .headers(h -> h.setBearerAuth(token))
+//                    .retrieve()
+//                    .onStatus(HttpStatusCode::isError,
+//                            clientResponse -> clientResponse.bodyToMono(String.class)
+//                                    .map(body -> new RuntimeException("get hes service meter log error: " + body))
+//                    )
+//                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+//                    .block();
+//
+//            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+//
+//        } catch (WebClientResponseException e) {
+//            genericHandler.logIncidentReport("get hes service log meter failed", orgId);
+//            genericHandler.logAndSaveException(e, "get hes service meter log");
+//            throw e;
+//
+//        } catch (Exception e) {
+//            genericHandler.logIncidentReport("get hes service log meter failed", orgId);
+//            genericHandler.logAndSaveException(e, "get hes meter log");
+//            throw e;
+//        }
+//    }
+public Map<String, Object> getHesMeterLog(
+        Long jobId,
+        String meterStatus,
+        int page,
+        int size,
+        String sort) {
+
+    String token = auth.getAccessToken();
+    UUID orgId = null;
+
+    try {
+        UserModel um = handleUserValidation();
+        orgId = um.getOrgId();
+
+        Map<String, Object> resp = dlmsWriteOpsClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder
+                            .path("/synchronize/clock/meters")
+                            .queryParam("jobId", jobId)
+                            .queryParam("page", page)
+                            .queryParam("size", size);
+
+                    if (meterStatus != null && !meterStatus.isBlank()) {
+                        uriBuilder.queryParam("status", meterStatus);
+                    }
+
+                    if (sort != null && !sort.isBlank()) {
+                        uriBuilder.queryParam("sort", sort);
+                    } else {
+                        uriBuilder.queryParam("sort", "id,asc");
+                    }
+
+                    return uriBuilder.build();
+                })
+                .headers(headers -> headers.setBearerAuth(token))
+                .retrieve()
+                .onStatus(
+                        HttpStatusCode::isError,
+                        clientResponse -> clientResponse
+                                .bodyToMono(String.class)
+                                .map(body -> new RuntimeException(
+                                        "HES service meter logs error: " + body))
+                )
+                .bodyToMono(
+                        new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+
+        return ResponseMap.response(
+                status.getSuccessCode(),
+                status.getDesc(),
+                resp
+        );
+
+    } catch (WebClientResponseException e) {
+        genericHandler.logIncidentReport(
+                "Get HES meter logs failed", orgId);
+        genericHandler.logAndSaveException(
+                e, "Get HES meter logs");
+        throw e;
+
+    } catch (Exception e) {
+        genericHandler.logIncidentReport(
+                "Get HES meter logs failed", orgId);
+        genericHandler.logAndSaveException(
+                e, "Get HES meter logs");
+        throw e;
+    }
+}
+
     @Transactional
     @Override
-    public Map<String, Object> getHesMeterLog(Long jobId, String state, String page, String size) {
+    public Map<String, Object> executeBulkJob(
+            String jobGroup,
+            String jobName,
+            BulkTriggerRequest request) {
+
         String token = auth.getAccessToken();
-
         UUID orgId = null;
-        try {
 
+        try {
             UserModel um = handleUserValidation();
             orgId = um.getOrgId();
 
-            Map<String, Object> resp = dlmsWriteOpsClient.get()
+            Map<String, Object> resp = hesWebClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/synchronize/clock/meters")
-                            .queryParam("jobId", jobId)
-                            .queryParam("status", state)
-                            .queryParam("page", page)
-                            .queryParam("size", size)
-                            .build())
+                            .path("/batch/read/{jobGroup}/{jobName}")
+                            .build(jobGroup, jobName))
                     .headers(h -> h.setBearerAuth(token))
+                    .bodyValue(request)
                     .retrieve()
-                    .onStatus(HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .map(body -> new RuntimeException("get hes service meter log error: " + body))
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse
+                                    .bodyToMono(String.class)
+                                    .map(body -> new RuntimeException(
+                                            "HES service bulk job execution failed: " + body))
                     )
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(
+                            new ParameterizedTypeReference<Map<String, Object>>() {})
                     .block();
 
-            return ResponseMap.response(status.getSuccessCode(), status.getDesc(), resp);
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    resp
+            );
 
         } catch (WebClientResponseException e) {
-            genericHandler.logIncidentReport("get hes service log meter failed", orgId);
-            genericHandler.logAndSaveException(e, "get hes service meter log");
+            genericHandler.logIncidentReport(
+                    "HES service bulk job execution failed", orgId);
+            genericHandler.logAndSaveException(
+                    e, "HES service bulk job execution");
             throw e;
 
         } catch (Exception e) {
-            genericHandler.logIncidentReport("get hes service log meter failed", orgId);
-            genericHandler.logAndSaveException(e, "get hes meter log");
+            genericHandler.logIncidentReport(
+                    "HES service bulk job execution failed", orgId);
+            genericHandler.logAndSaveException(
+                    e, "HES service bulk job execution");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> getBulkExecutionStatus(Long executionId) {
+        String token = auth.getAccessToken();
+        UUID orgId = null;
+
+        try {
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+
+            Map<String, Object> resp = hesWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/batch/status/{executionId}")
+                            .build(executionId))
+                    .headers(h -> h.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException(
+                                            "HES service bulk execution status error: " + body))
+                    )
+                    .bodyToMono(
+                            new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    resp
+            );
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport(
+                    "HES service bulk execution status failed", orgId);
+            genericHandler.logAndSaveException(
+                    e, "HES service bulk execution status");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport(
+                    "HES service bulk execution status failed", orgId);
+            genericHandler.logAndSaveException(
+                    e, "HES service bulk execution status");
+            throw e;
+        }
+    }
+
+
+    @Transactional
+    @Override
+    public Map<String, Object> pauseJob(String jobGroup, String jobName) {
+
+        String token = auth.getAccessToken();
+        UUID orgId = null;
+
+        try {
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+
+            String resp = hesWebClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/quartz/pause/{jobGroup}/{jobName}")
+                            .build(jobGroup, jobName))
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse
+                                    .bodyToMono(String.class)
+                                    .map(body -> new RuntimeException(
+                                            "HES job pause failed: " + body))
+                    )
+                    .bodyToMono(String.class)
+                    .block();
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    resp
+            );
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("HES job pause failed", orgId);
+            genericHandler.logAndSaveException(e, "HES job pause");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("HES job pause failed", orgId);
+            genericHandler.logAndSaveException(e, "HES job pause");
+            throw e;
+        }
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> resumeJob(String jobGroup, String jobName) {
+
+        String token = auth.getAccessToken();
+        UUID orgId = null;
+
+        try {
+            UserModel um = handleUserValidation();
+            orgId = um.getOrgId();
+
+            String resp = hesWebClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/quartz/resume/{jobGroup}/{jobName}")
+                            .build(jobGroup, jobName))
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse
+                                    .bodyToMono(String.class)
+                                    .map(body -> new RuntimeException(
+                                            "HES job resume failed: " + body))
+                    )
+                    .bodyToMono(String.class)
+                    .block();
+
+            return ResponseMap.response(
+                    status.getSuccessCode(),
+                    status.getDesc(),
+                    resp
+            );
+
+        } catch (WebClientResponseException e) {
+            genericHandler.logIncidentReport("HES job resume failed", orgId);
+            genericHandler.logAndSaveException(e, "HES job resume");
+            throw e;
+
+        } catch (Exception e) {
+            genericHandler.logIncidentReport("HES job resume failed", orgId);
+            genericHandler.logAndSaveException(e, "HES job resume");
             throw e;
         }
     }
