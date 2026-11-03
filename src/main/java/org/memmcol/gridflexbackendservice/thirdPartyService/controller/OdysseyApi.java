@@ -88,9 +88,9 @@ public class OdysseyApi {
 
             @Parameter(
                     description = "Default maximum records per page",
-                    example = "100"
+                    example = "all"
             )
-            @RequestParam(required = false, defaultValue = "100") int pageLimit
+            @RequestParam(required = false, defaultValue = "0") int pageLimit
     ) {
         try {
             OffsetDateTime startOffset = OffsetDateTime.parse(FROM);
