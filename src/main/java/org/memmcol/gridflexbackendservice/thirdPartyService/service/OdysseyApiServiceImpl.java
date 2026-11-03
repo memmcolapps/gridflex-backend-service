@@ -64,22 +64,7 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
             if (!principal.hasScope("METER_READ")) {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
-//            Duration duration = Duration.between(startDate, endDate);
-//
-//            if (duration.isNegative()) {
-//                throw new IllegalArgumentException("startDate must be before endDate");
-//            }
-//            if (duration.toHours() > 24) {
-//                throw new IllegalArgumentException("Date range must not exceed 24 hours");
-//            }
             List<MeterReadingModel> allReadings = odysseyMapper.getMeterReadingModel(startDate, endDate, principal.getOrgId(), meterId);
-
-//            int totalReadings = allReadings.size();
-//            int fromIndex = Math.min(offSet, totalReadings);
-//            int toIndex = Math.min(offSet + pageLimit, totalReadings);
-//
-//            List<MeterReadingModel> pagedReadings =
-//                    allReadings.subList(fromIndex, toIndex);
 
             int totalReadings = allReadings.size();
             int fromIndex = Math.max(offSet, 0);
