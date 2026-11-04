@@ -45,14 +45,13 @@ public interface OdysseyMapper {
                 ) ms
                 LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
                 -- latest energy reading
-                LEFT JOIN LATERAL (
+                INNER JOIN LATERAL (
                     SELECT
-                        COALESCE(de.cumulative_energy_consumption, 0.1) AS energy_consumption,
-                        COALESCE(de.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp
+                        COALESCE(de.cumulative_energy_consumption, 0) AS energy_consumption,
+                        de.entry_timestamp AS entry_timestamp
                     FROM vw_daily_energy_consumption de
                     WHERE de.meter_serial = ms.meter_number
-                      AND de.entry_timestamp BETWEEN
-                          #{startDate} AND #{endDate}
+                      AND de.entry_timestamp BETWEEN #{startDate} AND #{endDate}
                     ORDER BY de.entry_timestamp DESC
                     LIMIT 1
                 ) latest ON TRUE
@@ -104,8 +103,6 @@ public interface OdysseyMapper {
             @Result(property = "timeIntervalMinutes", column = "time_interval_minutes"),
             @Result(property = "timestamp", column = "entry_timestamp"),
             @Result(property = "customerAccountId", column = "meter_account_number"),
-//            @Result(property = "energyReadingKwh", column = "meter_id"),
-//            @Result(property = "energyBalanceKwh", column = "meter_id"),
             @Result(property = "customerName", column = "customer_fullname"),
             @Result(property = "meterState", column = "connection_type"),
             @Result(property = "latitude", column = "latitude"),
@@ -194,3 +191,87 @@ public interface OdysseyMapper {
     })
     List<OdysseyPaymentModel> getOdysseyPayment(LocalDateTime startDate, LocalDateTime endDate, String txId, UUID orgId);
 }
+
+
+//            <script>
+//                SELECT
+//                    ms.meter_id,
+//                    COALESCE(ms.meter_number, '') AS meter_number,
+//                    COALESCE(ms.meter_account_number, '') AS meter_account_number,
+//                    COALESCE(ms.customer_fullname, '') AS customer_fullname,
+//                    COALESCE(ms.connection_type, '') AS connection_type,
+//                	md.latitude,
+//                	md.longitude,
+//
+//                    COALESCE(latest.energy_consumption, 0.1) AS energy_consumption_kwh,
+//                    COALESCE(latest.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp,
+//                    COALESCE(interval_data.time_interval_minutes, 0) AS time_interval_minutes,
+//
+//
+//                    COALESCE(debt.balance_after_adjustment, 0) AS debt,
+//                    COALESCE(credit.balance_after_adjustment, 0) AS credit
+//
+//                FROM (
+//                    SELECT DISTINCT
+//                        meter_id,
+//                        COALESCE(meter_number, '') AS meter_number,
+//                        COALESCE(meter_account_number, '') AS meter_account_number,
+//                        COALESCE(customer_fullname, '') AS customer_fullname,
+//                        COALESCE(connection_type, '') AS connection_type
+//                    FROM vw_meter_summary
+//                    WHERE meter_stage IN ('Assigned', 'Assign-edited', 'Unassigned') AND org_id = #{orgId}
+//                ) ms
+//                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
+//                -- latest energy reading
+//                LEFT JOIN LATERAL (
+//                    SELECT
+//                        COALESCE(de.cumulative_energy_consumption, 0.1) AS energy_consumption,
+//                        COALESCE(de.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp
+//                    FROM vw_daily_energy_consumption de
+//                    WHERE de.meter_serial = ms.meter_number
+//                      AND de.entry_timestamp BETWEEN
+//                          #{startDate} AND #{endDate}
+//                    ORDER BY de.entry_timestamp DESC
+//                    LIMIT 1
+//                ) latest ON TRUE
+//
+//                -- time interval
+//                LEFT JOIN LATERAL (
+//                    SELECT
+//                        ROUND(EXTRACT(
+//                            EPOCH FROM (MAX(de.entry_timestamp) - MIN(de.entry_timestamp))
+//                        ) / 60, 2) AS time_interval_minutes
+//                    FROM vw_daily_energy_consumption de
+//                    WHERE de.meter_serial = ms.meter_number
+//                      AND de.entry_timestamp BETWEEN
+//                          #{startDate} AND #{endDate}
+//                ) interval_data ON TRUE
+//
+//                -- latest DEBT (NO SUM)
+//                LEFT JOIN LATERAL (
+//                    SELECT
+//                        balance_after_adjustment
+//                    FROM vw_meter_summary m2
+//                    WHERE m2.meter_number = ms.meter_number
+//                      AND m2.org_id = #{orgId}
+//                      AND m2.adjustment_type = 'debit'
+//                    ORDER BY m2.created_at DESC
+//                    LIMIT 1
+//                ) debt ON TRUE
+//
+//                -- latest CREDIT (NO SUM)
+//                LEFT JOIN LATERAL (
+//                    SELECT
+//                        balance_after_adjustment
+//                    FROM vw_meter_summary m3
+//                    WHERE m3.meter_number = ms.meter_number
+//                      AND m3.org_id = #{orgId}
+//                      AND m3.adjustment_type = 'credit'
+//                    ORDER BY m3.created_at DESC
+//                    LIMIT 1
+//                ) credit ON TRUE
+//                WHERE 1 = 1
+//                     <if test="meterId != null and meterId != ''">
+//                         AND ms.meter_number = #{meterId}
+//                     </if>
+//        </script>
