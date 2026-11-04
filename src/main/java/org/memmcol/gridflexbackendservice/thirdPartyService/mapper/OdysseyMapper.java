@@ -80,7 +80,7 @@ public interface OdysseyMapper {
                     LIMIT 1
                 ) debt ON TRUE
                 
-                -- latest CREDIT (NO SUM)
+                --- latest CREDIT (NO SUM)
                 LEFT JOIN LATERAL (
                     SELECT
                         balance_after_adjustment
