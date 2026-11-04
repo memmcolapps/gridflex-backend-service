@@ -125,15 +125,6 @@ public class OdysseyApiServiceImpl implements ThirdPartyApiService {
                 throw new AccessDeniedException("You do not have permission to access this service");
             }
 
-//            Duration duration = Duration.between(startDate, endDate);
-//
-//            if (duration.isNegative()) {
-//                throw new IllegalArgumentException("startDate must be before endDate");
-//            }
-//            if (duration.toHours() > 24) {
-//                throw new IllegalArgumentException("Date range must not exceed 24 hours");
-//            }
-
             List<OdysseyPaymentModel> data = odysseyMapper.getOdysseyPayment(startDate, endDate, id, principal.getOrgId());
 
             int totalReadings = data.size();
