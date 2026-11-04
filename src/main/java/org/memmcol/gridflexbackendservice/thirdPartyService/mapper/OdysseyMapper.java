@@ -49,9 +49,9 @@ public interface OdysseyMapper {
                         de.entry_timestamp AT TIME ZONE 'UTC' AS entry_timestamp
                     FROM vw_daily_energy_consumption de
                     WHERE de.meter_serial = ms.meter_number
-                      AND de.entry_timestamp >=
+                      AND de.entry_timestamp <![CDATA[ >= ]]>
                           (CAST(#{startDate} AS timestamptz) AT TIME ZONE 'UTC')
-                      AND de.entry_timestamp <
+                      AND de.entry_timestamp <![CDATA[ < ]]>
                           (CAST(#{endDate} AS timestamptz) AT TIME ZONE 'UTC')
                     ORDER BY de.entry_timestamp DESC
                     LIMIT 1
