@@ -44,15 +44,14 @@ public interface OdysseyMapper {
                     WHERE meter_stage IN ('Assigned', 'Assign-edited') AND org_id = #{orgId}
                 ) ms
                 INNER JOIN LATERAL (
+                LEFT JOIN LATERAL (
                     SELECT
-                        COALESCE(de.cumulative_energy_consumption, 0) AS energy_consumption,
-                        de.entry_timestamp AT TIME ZONE 'UTC' AS entry_timestamp
+                        COALESCE(de.cumulative_energy_consumption, 0.1) AS energy_consumption,
+                        COALESCE(de.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp
                     FROM vw_daily_energy_consumption de
                     WHERE de.meter_serial = ms.meter_number
-                      AND de.entry_timestamp <![CDATA[ >= ]]>
-                          (CAST(#{startDate} AS timestamptz) AT TIME ZONE 'UTC')
-                      AND de.entry_timestamp <![CDATA[ < ]]>
-                          (CAST(#{endDate} AS timestamptz) AT TIME ZONE 'UTC')
+                      AND de.entry_timestamp BETWEEN
+                          #{startDate} AND #{endDate}
                     ORDER BY de.entry_timestamp DESC
                     LIMIT 1
                 ) latest ON TRUE
