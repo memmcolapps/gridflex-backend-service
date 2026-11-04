@@ -43,17 +43,24 @@ public interface OdysseyMapper {
                     FROM vw_meter_summary
                     WHERE meter_stage IN ('Assigned', 'Assign-edited') AND org_id = #{orgId}
                 ) ms
-                INNER JOIN LATERAL (
+                LEFT JOIN md_meters_info md ON ms.meter_id = md.meter_id AND md.org_id = #{orgId}
+                -- latest energy reading
                 LEFT JOIN LATERAL (
                     SELECT
                         COALESCE(de.cumulative_energy_consumption, 0.1) AS energy_consumption,
-                        COALESCE(de.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp
+                        de.entry_timestamp AT TIME ZONE 'UTC' AS entry_timestamp
+            
                     FROM vw_daily_energy_consumption de
+            
                     WHERE de.meter_serial = ms.meter_number
-                      AND de.entry_timestamp BETWEEN
-                          #{startDate} AND #{endDate}
+                      AND de.entry_timestamp <![CDATA[ >= ]]>
+                          (CAST(#{startDate} AS timestamptz) AT TIME ZONE 'UTC')
+                      AND de.entry_timestamp <![CDATA[ < ]]>
+                          (CAST(#{endDate} AS timestamptz) AT TIME ZONE 'UTC')
+            
                     ORDER BY de.entry_timestamp DESC
                     LIMIT 1
+            
                 ) latest ON TRUE
                 
                 -- time interval
@@ -80,7 +87,7 @@ public interface OdysseyMapper {
                     LIMIT 1
                 ) debt ON TRUE
                 
-                --- latest CREDIT (NO SUM)
+                -- latest CREDIT (NO SUM)
                 LEFT JOIN LATERAL (
                     SELECT
                         balance_after_adjustment
