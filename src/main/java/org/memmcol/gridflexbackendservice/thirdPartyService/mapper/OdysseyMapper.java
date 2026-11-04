@@ -26,7 +26,7 @@ public interface OdysseyMapper {
                 	md.longitude,
                 
                     COALESCE(latest.energy_consumption, 0.1) AS energy_consumption_kwh,
-                    COALESCE(latest.entry_timestamp, CURRENT_TIMESTAMP) AS entry_timestamp,
+                    latest.entry_timestamp,
                     COALESCE(interval_data.time_interval_minutes, 0) AS time_interval_minutes,
                     
                 
