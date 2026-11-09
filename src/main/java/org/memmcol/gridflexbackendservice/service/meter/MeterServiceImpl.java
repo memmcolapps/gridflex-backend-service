@@ -5320,7 +5320,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (c != null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("CIN already exist");
                     resp.setData(req.getMeterNumber());
 
@@ -5363,7 +5363,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (feederId == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("Feeder not found");
                     resp.setData(req.getMeterNumber());
 
