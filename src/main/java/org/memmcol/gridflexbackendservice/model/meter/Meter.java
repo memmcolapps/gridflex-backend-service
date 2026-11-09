@@ -48,14 +48,14 @@ public class Meter implements Serializable {
     private UUID feeder;
     private String meterCategory;
     private String meterClass;
-    //    private String meterModel;
+
     private String meterType;
     private UUID meterManufacturer;
     private String meterManufacturerName;
     private String meterStage;
     private String status;
     private String image;
-    //    private String approveState;
+
     private Boolean smartStatus;
     private String customerId;
     private String oldSgc;
@@ -64,6 +64,14 @@ public class Meter implements Serializable {
     private String newKrn;
     private Long oldTariffIndex;
     private Long newTariffIndex;
+
+    private String oldGenSgc;
+    private String newGenSgc;
+    private String oldGenKrn;
+    private String newGenKrn;
+    private Long oldGenTariffIndex;
+    private Long newGenTariffIndex;
+
     private UUID createdBy;
     private UUID approveBy;
     private String description;

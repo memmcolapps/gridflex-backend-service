@@ -36,15 +36,3 @@ public class EndpointRegistry {
 //        return MAPPING.getOrDefault(submodule.trim().toLowerCase(), List.of());
     }
 }
-
-//            "Meter Management", List.of("/meter/**", "/dashboard/service/data-management/**",
-//                    "/manufacturer/**", "/audit-log/service"),
-//            "Band Management", List.of("/band/**"),
-//            "Tariff", List.of("/tariff/**"),
-//            "Debt Management", List.of("/debt-setting/**", "/debit-credit-adjustment/**"),
-//            "Customer Management", List.of("/customer/**"),
-//            "User Management", List.of("/user/**", "/dashboard/service/data-management/**"),
-////            "Review and Approval", List.of(""),
-//            "Vending", List.of("/vending/**", "/dashboard/service/vending/**", "/audit-log/service"),
-//            "HES", List.of("/hes/**", "/dashboard/service/hes/**"),
-//            "Organization", List.of("/organization/**", "/node/**")

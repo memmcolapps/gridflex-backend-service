@@ -260,22 +260,9 @@ public class MeterServiceImpl implements MeterService {
             throw new GlobalExceptionHandler.NotFoundException("New tariff index field is required");
         }
 
-//        if(!request.getMeterClass().toLowerCase().contains("single phase")
-//                && !request.getMeterClass().toLowerCase().contains("singlephase")
-//                && !request.getMeterClass().toLowerCase().contains("three phase")
-//                && !request.getMeterClass().toLowerCase().contains("threephase")
-//                && !request.getMeterClass().toLowerCase().contains("md")){
-//            throw new GlobalExceptionHandler.NotFoundException("Meter class is not supported");
-//        }
-//        if (request.getMeterClass().toLowerCase().contains("single phase")
-//                && request.getMeterClass().toLowerCase().contains("singlephase")){
-//            request.setMeterClass("Single-Phase");
-//        }
-//
-//        if (request.getMeterClass().toLowerCase().contains("three phase")
-//                && request.getMeterClass().toLowerCase().contains("threephase")){
-//            request.setMeterClass("Three-Phase");
-//        }
+        if(request.getOldSgc() == null || request.getOldSgc().isBlank()) {
+            throw new GlobalExceptionHandler.NotFoundException("Old sgc field is required");
+        }
 
         if(request.getSmartStatus()) {
             if(request.getSmartMeterInfo() == null){
@@ -5333,7 +5320,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (c != null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("CIN already exist");
                     resp.setData(req.getMeterNumber());
 
@@ -5376,7 +5363,7 @@ public class MeterServiceImpl implements MeterService {
 
                 if (feederId == null) {
                     GenericResp resp = new GenericResp();
-                    resp.setId(meter.getMeterId().toString());
+                    resp.setId(meter.getMeterNumber());
                     resp.setMessage("Feeder not found");
                     resp.setData(req.getMeterNumber());
 
